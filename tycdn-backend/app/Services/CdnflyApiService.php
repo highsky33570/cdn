@@ -545,28 +545,28 @@ class CdnflyApiService
             return $this->disabledReadPayload('list acls');
         }
 
-        $response = $this->userHttp($user)->get('/v1/acls', $params);
+        $response = $this->userHttp($user)->get('/v1/waf-rules', $params);
 
         return $this->parseResponse($response, 'list acls');
     }
 
     public function createAcl(User $user, array $data): array
     {
-        $response = $this->userHttp($user)->post('/v1/acls', $data);
+        $response = $this->userHttp($user)->post('/v1/waf-rules', $data);
 
         return $this->parseResponse($response, 'create acl');
     }
 
     public function updateAcl(User $user, int $aclId, array $data): array
     {
-        $response = $this->userHttp($user)->put("/v1/acls/{$aclId}", $data);
+        $response = $this->userHttp($user)->put("/v1/waf-rules/{$aclId}", $data);
 
         return $this->parseResponse($response, 'update acl');
     }
 
     public function deleteAcl(User $user, int $aclId): array
     {
-        $response = $this->userHttp($user)->delete("/v1/acls/{$aclId}");
+        $response = $this->userHttp($user)->delete("/v1/waf-rules/{$aclId}");
 
         return $this->parseResponse($response, 'delete acl');
     }
@@ -778,7 +778,7 @@ class CdnflyApiService
     public function adminCreateAcl(array $data): array
     {
         $this->ensureOutboundEnabled('admin create acl');
-        $response = $this->adminHttp()->post('/v1/acls', $data);
+        $response = $this->adminHttp()->post('/v1/waf-rules', $data);
 
         return $this->parseResponse($response, 'admin create acl');
     }
@@ -786,7 +786,7 @@ class CdnflyApiService
     public function adminUpdateAcl(int $id, array $data): array
     {
         $this->ensureOutboundEnabled('admin update acl');
-        $response = $this->adminHttp()->put("/v1/acls/{$id}", $data);
+        $response = $this->adminHttp()->put("/v1/waf-rules/{$id}", $data);
 
         return $this->parseResponse($response, 'admin update acl');
     }
@@ -794,7 +794,7 @@ class CdnflyApiService
     public function adminDeleteAcl(int $id): array
     {
         $this->ensureOutboundEnabled('admin delete acl');
-        $response = $this->adminHttp()->delete("/v1/acls/{$id}");
+        $response = $this->adminHttp()->delete("/v1/waf-rules/{$id}");
 
         return $this->parseResponse($response, 'admin delete acl');
     }
@@ -969,7 +969,7 @@ class CdnflyApiService
             return $this->disabledReadPayload('list all acls');
         }
 
-        $response = $this->adminHttp()->get('/v1/acls', $params);
+        $response = $this->adminHttp()->get('/v1/waf-rules', $params);
 
         return $this->parseResponse($response, 'list all acls');
     }

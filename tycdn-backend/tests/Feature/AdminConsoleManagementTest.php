@@ -7,6 +7,7 @@ use App\Models\Product;
 use App\Models\ServiceInstance;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Routing\Middleware\ThrottleRequests;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
@@ -56,7 +57,8 @@ class AdminConsoleManagementTest extends TestCase
                 'code' => 0,
                 'data' => ['total' => 13, 'data' => []],
             ]),
-            'https://cdnfly.example.test/v1/acls*' => Http::response([
+            // v6 renamed /v1/acls to /v1/waf-rules
+            'https://cdnfly.example.test/v1/waf-rules*' => Http::response([
                 'code' => 0,
                 'data' => ['total' => 14, 'data' => []],
             ]),
@@ -256,7 +258,7 @@ class AdminConsoleManagementTest extends TestCase
 
     public function test_admin_can_manage_nodes_through_cdnfly_gateway(): void
     {
-        $this->withoutMiddleware(\Illuminate\Routing\Middleware\ThrottleRequests::class);
+        $this->withoutMiddleware(ThrottleRequests::class);
 
         config([
             'services.cdnfly.base_url' => 'https://cdnfly.example.test',

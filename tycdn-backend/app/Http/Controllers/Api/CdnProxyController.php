@@ -7,6 +7,7 @@ use App\Services\CdnflyApiService;
 use App\Support\CdnflyRequestGuard;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 
 class CdnProxyController extends Controller
@@ -15,7 +16,7 @@ class CdnProxyController extends Controller
         '/v1/sites' => ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
         '/v1/certs' => ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
         '/v1/site-groups' => ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
-        '/v1/acls' => ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
+        '/v1/waf-rules' => ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
         '/v1/dnsapis' => ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
         '/v1/cc-matchs' => ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
         '/v1/cc-filters' => ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
@@ -24,6 +25,11 @@ class CdnProxyController extends Controller
         '/v1/monitor/site/realtime' => ['GET'],
         '/v1/monitor/site/top' => ['GET'],
         '/v1/monitor/site/blackip' => ['GET'],
+        // Sibling reads for the same blocked-IP page. Separate entries because the
+        // allowlist matches on exact path or "prefix/", so `blackip` does not cover
+        // `history-blackip` or `blackip-count`.
+        '/v1/monitor/site/history-blackip' => ['GET'],
+        '/v1/monitor/site/blackip-count' => ['GET'],
         '/v1/monitor/site/access-log' => ['GET'],
         '/v1/domains' => ['GET'],
         '/v1/cname-check' => ['POST'],
@@ -88,7 +94,19 @@ class CdnProxyController extends Controller
             return response()->json(['ok' => true, 'data' => $result]);
         } catch (ValidationException $e) {
             throw $e;
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            // The generic message is deliberate — upstream detail must not reach a
+            // customer's browser. But it used to be discarded entirely (`catch
+            // (\Throwable)` with no binding), so a failing page gave a bare 502 with
+            // nothing to diagnose from. Record who/what/why here instead.
+            Log::warning('CDNfly user proxy failed', [
+                'user_id' => $request->user()?->id,
+                'method' => $method,
+                'path' => $path,
+                'exception' => $e::class,
+                'message' => $e->getMessage(),
+            ]);
+
             return response()->json([
                 'ok' => false,
                 'message' => 'CDNfly 通讯失败，请稍后重试',
@@ -106,5 +124,4 @@ class CdnProxyController extends Controller
 
         return false;
     }
-
 }

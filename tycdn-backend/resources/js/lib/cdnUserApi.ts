@@ -234,24 +234,24 @@ export async function deleteUserDnsApi(id: number): Promise<CdnflyRecord> {
 export async function listUserAcls(
     params: Record<string, string | number> = {},
 ): Promise<CdnflyListData> {
-    return proxyGet('/v1/acls', params);
+    return proxyGet('/v1/waf-rules', params);
 }
 
 export async function createUserAcl(
     payload: CdnAclPayload,
 ): Promise<CdnflyRecord> {
-    return proxyRequest('/v1/acls', 'POST', payload);
+    return proxyRequest('/v1/waf-rules', 'POST', payload);
 }
 
 export async function updateUserAcl(
     id: number,
     payload: Partial<CdnAclPayload>,
 ): Promise<CdnflyRecord> {
-    return proxyRequest(`/v1/acls/${id}`, 'PUT', payload);
+    return proxyRequest(`/v1/waf-rules/${id}`, 'PUT', payload);
 }
 
 export async function deleteUserAcl(id: number): Promise<CdnflyRecord> {
-    return proxyRequest(`/v1/acls/${id}`, 'DELETE');
+    return proxyRequest(`/v1/waf-rules/${id}`, 'DELETE');
 }
 
 export async function listUserCcMatchers(
