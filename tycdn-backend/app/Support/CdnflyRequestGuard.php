@@ -6,13 +6,28 @@ use Illuminate\Validation\ValidationException;
 
 class CdnflyRequestGuard
 {
+    /**
+     * Fields a caller must never be able to inject, because they decide *whose*
+     * data is touched or *what powers* an account has.
+     *
+     * `type` and `status` deliberately are NOT here. They read like privileged
+     * flags, but on every path the proxy allows they are ordinary resource
+     * attributes and filters — which metric to chart, an HTTP status code to
+     * filter access logs by, a DNS provider type, an order state. Blocking them
+     * broke roughly nine console pages while protecting nothing: the account
+     * record where `type` really does mean admin-vs-user lives under /v1/users,
+     * and the path allowlist already refuses that outright.
+     *
+     * `uid` and `owner_id` are here because CDNfly's own payloads use `uid` for
+     * ownership, so omitting it left the actual hole this guard exists to close.
+     */
     private const PRIVILEGED_FIELDS = [
         'user_id',
-        'role',
-        'status',
-        'type',
-        'is_admin',
+        'uid',
+        'owner_id',
         'cdnfly_user_id',
+        'is_admin',
+        'role',
     ];
 
     /**

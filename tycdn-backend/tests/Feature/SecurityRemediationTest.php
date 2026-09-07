@@ -233,13 +233,14 @@ class SecurityRemediationTest extends TestCase
 
         $this->actingAs($user)->postJson('/api/cdn/sites', [
             'name' => 'example.com',
-            'status' => 'active',
+            'uid' => 123,
         ])->assertStatus(422);
 
+        // nested too, since payloads are walked recursively
         $this->actingAs($user)->putJson('/api/cdn/certs/1', [
             'name' => 'cert',
             'meta' => [
-                'type' => 'admin-only',
+                'owner_id' => 7,
             ],
         ])->assertStatus(422);
 
@@ -257,7 +258,7 @@ class SecurityRemediationTest extends TestCase
 
         $this->actingAs($admin)->postJson('/api/admin/proxy/v1/sites', [
             'name' => 'example.com',
-            'status' => 'active',
+            'user_id' => 123,
         ])->assertStatus(422);
     }
 
