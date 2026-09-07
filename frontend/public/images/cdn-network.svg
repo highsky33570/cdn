@@ -1,0 +1,163 @@
+<svg viewBox="0 0 1000 600" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+  <style>
+    /* 所有的动效代码都封装在 SVG 内部，原生驱动 */
+    .floor-stream {
+      stroke-dasharray: 60 800;
+      animation: stream-flow 3s linear infinite;
+      opacity: 0.8;
+    }
+    @keyframes stream-flow {
+      0% { stroke-dashoffset: 860; opacity: 0; }
+      10% { opacity: 1; }
+      90% { opacity: 1; }
+      100% { stroke-dashoffset: 0; opacity: 0; }
+    }
+
+    .ring-pulse {
+      transform-origin: 500px 460px;
+      animation: pulse-out 3s ease-out infinite;
+    }
+    @keyframes pulse-out {
+      0% { transform: scale(0.8); opacity: 1; }
+      100% { transform: scale(2.2); opacity: 0; stroke-width: 0.5; }
+    }
+
+    .blink-fast { animation: blink 0.8s infinite alternate; }
+    .blink-slow { animation: blink 2.5s infinite alternate; }
+    .blink-random { animation: blink 1.2s infinite alternate; animation-delay: 0.5s; }
+    @keyframes blink {
+      0% { opacity: 0.1; }
+      100% { opacity: 1; }
+    }
+
+    .data-up {
+      stroke-dasharray: 15 150;
+      animation: move-up 2s linear infinite;
+    }
+    @keyframes move-up {
+      0% { stroke-dashoffset: 165; opacity: 0; }
+      20% { opacity: 1; }
+      80% { opacity: 1; }
+      100% { stroke-dashoffset: 0; opacity: 0; }
+    }
+
+    .delay-1 { animation-delay: 0.2s; }
+    .delay-2 { animation-delay: 1.1s; }
+    .delay-3 { animation-delay: 0.7s; }
+    .delay-4 { animation-delay: 1.8s; }
+  </style>
+
+  <defs>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="3" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+    <linearGradient id="top-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1e2d50"/>
+      <stop offset="100%" stop-color="#0f1933"/>
+    </linearGradient>
+    <linearGradient id="left-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#0a1224"/>
+      <stop offset="100%" stop-color="#050a15"/>
+    </linearGradient>
+    <linearGradient id="right-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#121e3d"/>
+      <stop offset="100%" stop-color="#091024"/>
+    </linearGradient>
+  </defs>
+
+  <g transform="translate(180, -20)">
+    
+    <g stroke="rgba(77, 140, 255, 0.1)" stroke-width="1.5">
+      <path d="M 140,400 L 620,640" />
+      <path d="M 260,340 L 740,580" />
+      <path d="M 380,280 L 860,520" />
+      <path d="M 500,220 L 980,460" />
+      <path d="M 860,400 L 380,640" />
+      <path d="M 740,340 L 260,580" />
+      <path d="M 620,280 L 140,520" />
+      <path d="M 500,220 L 20,460" />
+    </g>
+
+    <g fill="none" stroke="#00f2fe" stroke-width="2" filter="url(#glow)">
+      <path class="floor-stream delay-1" d="M 740, 340 L 260, 580" /> 
+      <path class="floor-stream delay-2" d="M 260, 340 L 740, 580" /> 
+      <path class="floor-stream delay-3" d="M 380, 280 L 860, 520" />
+      <path class="floor-stream delay-4" d="M 620, 280 L 140, 520" />
+    </g>
+
+    <ellipse cx="500" cy="460" rx="90" ry="45" fill="none" stroke="#4d8cff" stroke-width="1.5" class="ring-pulse" />
+
+    <g transform="translate(380, 180)">
+      <polygon points="0,0 -60,30 0,60 60,30" fill="url(#top-grad)" stroke="#4d8cff" stroke-width="1"/>
+      <polygon points="-60,30 0,60 0,220 -60,190" fill="url(#left-grad)" stroke="#4d8cff" stroke-width="1"/>
+      <polygon points="0,60 60,30 60,190 0,220" fill="url(#right-grad)" stroke="#4d8cff" stroke-width="1"/>
+      <line x1="0" y1="60" x2="0" y2="220" stroke="#00f2fe" stroke-width="1.5" opacity="0.6"/>
+      <g stroke="#00f2fe" stroke-width="1.5">
+        <path d="M-50,45 L-10,65" class="blink-fast" />
+        <path d="M-50,85 L-10,105" class="blink-slow" />
+        <path d="M-50,145 L-10,165" class="blink-random" />
+      </g>
+      <line x1="-30" y1="200" x2="-30" y2="50" stroke="#00f2fe" stroke-width="2" filter="url(#glow)" class="data-up delay-2" />
+    </g>
+
+    <g transform="translate(620, 180)">
+      <polygon points="0,0 -60,30 0,60 60,30" fill="url(#top-grad)" stroke="#4d8cff" stroke-width="1"/>
+      <polygon points="-60,30 0,60 0,220 -60,190" fill="url(#left-grad)" stroke="#4d8cff" stroke-width="1"/>
+      <polygon points="0,60 60,30 60,190 0,220" fill="url(#right-grad)" stroke="#4d8cff" stroke-width="1"/>
+      <line x1="0" y1="60" x2="0" y2="220" stroke="#00f2fe" stroke-width="1.5" opacity="0.6"/>
+      <g stroke="#00f2fe" stroke-width="1.5">
+        <path d="M-50,65 L-10,85" class="blink-slow" />
+        <path d="M-50,125 L-10,145" class="blink-fast" />
+        <path d="M-50,165 L-10,185" opacity="0.3" />
+      </g>
+      <line x1="-40" y1="190" x2="-40" y2="40" stroke="#00f2fe" stroke-width="2.5" filter="url(#glow)" class="data-up delay-1" />
+    </g>
+
+    <g transform="translate(500, 240)">
+      <polygon points="0,0 -60,30 0,60 60,30" fill="#253866" stroke="#00f2fe" stroke-width="1.5"/>
+      <polygon points="-60,30 0,60 0,220 -60,190" fill="url(#left-grad)" stroke="#00f2fe" stroke-width="1"/>
+      <polygon points="0,60 60,30 60,190 0,220" fill="url(#right-grad)" stroke="#4d8cff" stroke-width="1"/>
+      <line x1="0" y1="60" x2="0" y2="220" stroke="#00f2fe" stroke-width="2" filter="url(#glow)"/>
+      <g stroke="#00f2fe" stroke-width="1.5">
+        <path d="M-50,45 L-10,65" class="blink-fast" />
+        <path d="M-50,65 L-10,85" class="blink-random" />
+        <path d="M-50,105 L-10,125" class="blink-fast" />
+        <path d="M-50,125 L-10,145" class="blink-slow" />
+        <path d="M-50,165 L-10,185" class="blink-random" />
+      </g>
+      <g stroke="#4d8cff" stroke-width="1.5" opacity="0.5">
+         <path d="M10,75 L50,55" />
+         <path d="M10,125 L50,105" />
+         <path d="M10,175 L50,155" />
+      </g>
+      <line x1="-30" y1="200" x2="-30" y2="50" stroke="#00f2fe" stroke-width="3" filter="url(#glow)" class="data-up" />
+    </g>
+
+    <g transform="translate(380, 300)">
+      <polygon points="0,0 -60,30 0,60 60,30" fill="url(#top-grad)" stroke="#4d8cff" stroke-width="1"/>
+      <polygon points="-60,30 0,60 0,220 -60,190" fill="url(#left-grad)" stroke="#4d8cff" stroke-width="1"/>
+      <polygon points="0,60 60,30 60,190 0,220" fill="url(#right-grad)" stroke="#4d8cff" stroke-width="1"/>
+      <line x1="0" y1="60" x2="0" y2="220" stroke="#00f2fe" stroke-width="1.5" opacity="0.6"/>
+      <g stroke="#00f2fe" stroke-width="1.5">
+        <path d="M-50,85 L-10,105" class="blink-random" />
+        <path d="M-50,145 L-10,165" class="blink-fast" />
+      </g>
+      <line x1="-20" y1="210" x2="-20" y2="60" stroke="#00f2fe" stroke-width="2" filter="url(#glow)" class="data-up delay-3" />
+    </g>
+
+    <g transform="translate(620, 300)">
+      <polygon points="0,0 -60,30 0,60 60,30" fill="url(#top-grad)" stroke="#4d8cff" stroke-width="1"/>
+      <polygon points="-60,30 0,60 0,220 -60,190" fill="url(#left-grad)" stroke="#4d8cff" stroke-width="1"/>
+      <polygon points="0,60 60,30 60,190 0,220" fill="url(#right-grad)" stroke="#4d8cff" stroke-width="1"/>
+      <line x1="0" y1="60" x2="0" y2="220" stroke="#00f2fe" stroke-width="1.5" opacity="0.6"/>
+      <g stroke="#00f2fe" stroke-width="1.5">
+        <path d="M-50,45 L-10,65" opacity="0.3" />
+        <path d="M-50,105 L-10,125" class="blink-slow" />
+        <path d="M-50,165 L-10,185" class="blink-random" />
+      </g>
+      <line x1="-40" y1="190" x2="-40" y2="40" stroke="#00f2fe" stroke-width="2" filter="url(#glow)" class="data-up delay-4" />
+    </g>
+
+  </g>
+</svg>

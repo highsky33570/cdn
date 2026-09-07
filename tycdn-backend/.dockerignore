@@ -1,0 +1,15 @@
+node_modules
+vendor
+.env
+.env.*.bak
+storage/logs/*
+storage/framework/cache/*
+storage/framework/sessions/*
+storage/framework/views/*
+public/build
+public/hot
+docker
+!docker/entrypoint.sh
+.phpunit.result.cache
+codex-service-logs
+tests

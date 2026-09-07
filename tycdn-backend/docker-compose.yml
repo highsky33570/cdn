@@ -1,0 +1,136 @@
+services:
+  # --- Laravel PHP-FPM ---
+  app:
+    build:
+      context: .
+      dockerfile: docker/app.Dockerfile
+    restart: unless-stopped
+    env_file: .env
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - app-storage:/var/www/html/storage
+    networks:
+      - tycdn
+
+  # --- Queue worker ---
+  queue:
+    build:
+      context: .
+      dockerfile: docker/app.Dockerfile
+    restart: unless-stopped
+    env_file: .env
+    command: php artisan queue:work --sleep=3 --tries=3 --max-time=3600
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - app-storage:/var/www/html/storage
+    networks:
+      - tycdn
+
+  # --- Scheduler ---
+  scheduler:
+    build:
+      context: .
+      dockerfile: docker/app.Dockerfile
+    restart: unless-stopped
+    env_file: .env
+    command: sh -c "while true; do php artisan schedule:run --verbose --no-interaction; sleep 60; done"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    volumes:
+      - app-storage:/var/www/html/storage
+    networks:
+      - tycdn
+
+  # --- Nginx (Laravel + portal) ---
+  nginx:
+    image: nginx:alpine
+    restart: unless-stopped
+    ports:
+      - "${APP_PORT:-9000}:80"
+      - "${PORTAL_PORT:-8080}:8080"
+    volumes:
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./public:/var/www/html/public:ro
+      - portal-dist:/var/www/portal/dist:ro
+    depends_on:
+      - app
+    networks:
+      - tycdn
+
+  # --- Vue portal build (one-shot, copies dist to shared volume) ---
+  portal-build:
+    build:
+      context: ../frontend
+      dockerfile: ../tycdn-backend/docker/portal.Dockerfile
+    volumes:
+      - portal-dist:/output
+    entrypoint: ["sh", "-c", "cp -r /var/www/portal/dist/* /output/ && echo 'Portal dist copied.'"]
+
+  # --- MySQL ---
+  mysql:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE:-tycdn_portal}
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-secret}
+      MYSQL_CHARSET: utf8mb4
+      MYSQL_COLLATION: utf8mb4_unicode_ci
+    volumes:
+      - mysql-data:/var/lib/mysql
+    ports:
+      - "${DB_FORWARD_PORT:-3306}:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - tycdn
+
+  # --- Redis ---
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    volumes:
+      - redis-data:/data
+    networks:
+      - tycdn
+
+  # --- EPUSDT payment service（官方镜像，不依赖本地二进制）---
+  # 2026-05 改造：原配置挂载 ../epusdt-binary 本地二进制；现已切换为官方镜像
+  # 接手人首次启动会跑 Web 安装向导，详见 HANDOVER.md §8.9
+  # 官方文档：https://epusdt.com/guide/installation/docker
+  epusdt:
+    image: gmwallet/epusdt:latest
+    restart: unless-stopped
+    volumes:
+      - epusdt-data:/app/runtime           # SQLite 运行时数据库（钱包/商户配置/订单）
+    ports:
+      - "${EPUSDT_PORT:-8001}:8000"        # 宿主 8001 → 容器 8000（EPUSDT 官方默认端口）
+    networks:
+      - tycdn
+
+volumes:
+  app-storage:
+  mysql-data:
+  redis-data:
+  portal-dist:
+  epusdt-data:
+
+networks:
+  tycdn:
+    driver: bridge
