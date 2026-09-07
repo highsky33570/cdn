@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\User;
+use App\Services\CdnflyAccountService;
 use App\Services\CdnflyApiService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
@@ -12,6 +13,51 @@ use Tests\TestCase;
 class CdnflyAccountRecoveryTest extends TestCase
 {
     use RefreshDatabase;
+
+    /**
+     * CDNfly ships its own `admin` account, so a portal user of the same name is
+     * rejected. The retry must use a name CDNfly actually accepts: it allows only
+     * Chinese characters, Latin letters and digits, so no separator is permitted
+     * ("用户名只允许中文、英文字母及数字").
+     */
+    public function test_username_collision_retries_with_an_alphanumeric_name(): void
+    {
+        $user = User::factory()->create([
+            'name' => 'admin',
+            'cdnfly_user_id' => null,
+            'cdnfly_api_key' => null,
+            'cdnfly_api_secret' => null,
+        ]);
+
+        $attempted = [];
+
+        $cdnfly = $this->mock(CdnflyApiService::class);
+        $cdnfly->shouldReceive('createCdnflyUser')
+            ->twice()
+            ->andReturnUsing(function (string $name) use (&$attempted) {
+                $attempted[] = $name;
+
+                if (count($attempted) === 1) {
+                    throw new \RuntimeException('CDNfly create user failed: 用户名只允许中文、英文字母及数字.');
+                }
+
+                return ['cdnfly_user_id' => 42, 'raw' => []];
+            });
+        $cdnfly->shouldReceive('getUserApiKey')->once()->with(42)->andReturn(null);
+        $cdnfly->shouldReceive('enableUserApiKey')->once()->with(42)
+            ->andReturn(['api_key' => 'k', 'api_secret' => 's']);
+
+        app(CdnflyAccountService::class)->ensureAccount($user);
+
+        $this->assertSame('admin', $attempted[0]);
+        $this->assertMatchesRegularExpression(
+            '/^[A-Za-z0-9\x{4e00}-\x{9fff}]+$/u',
+            $attempted[1],
+            'the retry name must contain no separators, or CDNfly rejects it'
+        );
+        $this->assertSame('adminty'.$user->id, $attempted[1]);
+        $this->assertSame(42, (int) $user->fresh()->cdnfly_user_id);
+    }
 
     /**
      * If CDNfly was unreachable when the user verified their email, the Verified

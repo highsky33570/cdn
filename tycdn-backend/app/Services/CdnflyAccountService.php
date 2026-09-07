@@ -75,7 +75,7 @@ class CdnflyAccountService
                 $this->generatePassword(),
             );
         } catch (\RuntimeException $e) {
-            $scopedName = $user->name.'-ty'.$user->id;
+            $scopedName = $this->scopedUsername($user);
 
             Log::warning('CDNfly rejected the username; retrying with a portal-scoped name', [
                 'user_id' => $user->id,
@@ -90,6 +90,21 @@ class CdnflyAccountService
                 $this->generatePassword(),
             );
         }
+    }
+
+    /**
+     * Collision-free username for the retry.
+     *
+     * CDNfly rejects anything outside Chinese characters, Latin letters and digits
+     * ("用户名只允许中文、英文字母及数字"), so no separator can be used — the id is
+     * appended directly. Portal usernames are already restricted to the same set,
+     * but the filter keeps this correct if that validation ever loosens.
+     */
+    private function scopedUsername(User $user): string
+    {
+        $base = (string) preg_replace('/[^A-Za-z0-9\x{4e00}-\x{9fff}]/u', '', (string) $user->name);
+
+        return ($base !== '' ? $base : 'user').'ty'.$user->id;
     }
 
     /**

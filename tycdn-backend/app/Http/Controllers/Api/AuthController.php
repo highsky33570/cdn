@@ -418,11 +418,32 @@ class AuthController extends Controller
      */
     private function makeBridgeUrl(User $user, ?string $redirect = null): string
     {
-        $redirect = is_string($redirect) && str_starts_with(trim($redirect), '/') ? trim($redirect) : '/console';
+        $requested = is_string($redirect) ? trim($redirect) : '';
+
+        $redirect = str_starts_with($requested, '/')
+            ? $requested
+            : $this->defaultHomeFor($user);
 
         return URL::temporarySignedRoute('auth.bridge', now()->addMinutes(2), [
             'user' => $user->id,
             'redirect' => $redirect,
         ]);
+    }
+
+    /**
+     * Landing page for a fresh login, mirroring CDNfly's own split between
+     * admin-home and home.
+     *
+     * /console is the *customer* overview: it proxies /v1/user/overview and so
+     * needs the caller's own CDNfly key. An operator account has no reason to hold
+     * one, so sending admins there greeted them with "CDNfly API 密钥尚未开通".
+     * Operators belong on the admin console, which authenticates with the admin
+     * key from config instead.
+     *
+     * An explicit ?redirect= (a checkout deep-link, say) always wins over this.
+     */
+    private function defaultHomeFor(User $user): string
+    {
+        return $user->isAdmin() ? '/console/admin' : '/console';
     }
 }
