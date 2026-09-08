@@ -117,8 +117,7 @@ class CdnflyDoctor extends Command
 
         try {
             $result = $api->listUsers(['limit' => 1]);
-            $total = $result['data']['total'] ?? ($result['total'] ?? 'unknown');
-            $this->components->twoColumnDetail('GET /v1/users', '<fg=green>ok</> (total: '.$total.')');
+            $this->components->twoColumnDetail('GET /v1/users', '<fg=green>ok</> ('.$this->describeCount($result).')');
         } catch (\Throwable $e) {
             $this->components->twoColumnDetail('GET /v1/users', '<fg=red>failed</>');
             $this->problem('Admin call rejected: '.$e->getMessage());
@@ -146,10 +145,23 @@ class CdnflyDoctor extends Command
             return;
         }
 
+        // Checked first because it gates the whole /api/cdn/* route group: a
+        // linked account with an unverified email still sees 未连接.
+        $this->components->twoColumnDetail(
+            'email verified',
+            $user->hasVerifiedEmail() ? 'yes' : '<fg=red>no — /api/cdn/* is blocked by the `verified` middleware</>',
+        );
         $this->components->twoColumnDetail('cdnfly_user_id', $user->cdnfly_user_id ? (string) $user->cdnfly_user_id : '<fg=red>not linked</>');
 
+        if (! $user->hasVerifiedEmail()) {
+            $this->problem(
+                'This account cannot reach CDNfly until its email is verified. With MAIL_MAILER=log no mail is delivered, '
+                ."so configure a real mailer or run: php artisan cdnfly:sync-account {$email} --verify",
+            );
+        }
+
         if (! $user->cdnfly_user_id) {
-            $this->problem('This account has no upstream CDNfly user. One is created on first provisioning, or by CdnflyAccountService::ensureAccount().');
+            $this->problem("This account has no upstream CDNfly user. Create one with: php artisan cdnfly:sync-account {$email}");
 
             return;
         }
@@ -162,7 +174,10 @@ class CdnflyDoctor extends Command
         );
 
         if (! $user->cdnfly_api_key || ! $user->cdnfly_api_secret) {
-            $this->problem('Credentials missing. If they were written before CDNFLY_ENCRYPTION_KEY changed, run: php artisan cdnfly:rekey');
+            $this->problem(
+                "Credentials missing. Issue them with: php artisan cdnfly:sync-account {$email} "
+                .'— or, if they were written before CDNFLY_ENCRYPTION_KEY changed: php artisan cdnfly:rekey',
+            );
 
             return;
         }
@@ -196,6 +211,34 @@ class CdnflyDoctor extends Command
         $this->components->info('CDNfly integration looks healthy.');
 
         return self::SUCCESS;
+    }
+
+    /**
+     * CDNfly is not consistent about where a list puts its size: some endpoints
+     * answer {data: {rows, total}}, others {data: [...]}, others put total at the
+     * top level. Report whichever is actually there instead of "unknown".
+     *
+     * @param  array<string, mixed>  $result
+     */
+    private function describeCount(array $result): string
+    {
+        foreach (['data.total', 'total', 'data.count', 'count'] as $path) {
+            $value = data_get($result, $path);
+
+            if (is_numeric($value)) {
+                return 'total: '.(int) $value;
+            }
+        }
+
+        foreach (['data.rows', 'data.list', 'data'] as $path) {
+            $value = data_get($result, $path);
+
+            if (is_array($value) && array_is_list($value)) {
+                return count($value).' row(s) returned';
+            }
+        }
+
+        return 'authenticated, size not reported';
     }
 
     private function mask(string $value): string
