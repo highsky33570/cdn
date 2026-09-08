@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Exceptions\CdnflyAccountExistsException;
 use App\Models\User;
 use App\Services\CdnflyAccountService;
 use Illuminate\Console\Command;
@@ -25,7 +26,8 @@ class CdnflySyncAccount extends Command
 {
     protected $signature = 'cdnfly:sync-account
         {email : Email of the portal account to link}
-        {--verify : Also mark the email verified, for accounts that cannot receive mail}';
+        {--verify : Also mark the email verified, for accounts that cannot receive mail}
+        {--adopt : Link to the CDNfly account that already holds this email instead of creating one}';
 
     protected $description = 'Create or repair a portal account\'s CDNfly user and API credentials';
 
@@ -46,7 +48,24 @@ class CdnflySyncAccount extends Command
         }
 
         try {
-            $outcome = $accounts->ensureAccount($user);
+            $outcome = $accounts->ensureAccount($user, (bool) $this->option('adopt'));
+        } catch (CdnflyAccountExistsException $e) {
+            // Not an error to retry blindly: taking over an account hands this
+            // portal user whatever that upstream account can do. Show what was
+            // found so the operator can check it is the orphan they think it is —
+            // a panel administrator's account would be a very different thing to
+            // adopt.
+            $this->components->error($e->getMessage());
+            $this->newLine();
+            $this->line('  CDNfly allows one account per email, so no new one can be created.');
+            $this->line('  If that account belongs to this portal user, link to it with:');
+            $this->newLine();
+            $this->line("  <options=bold>php artisan cdnfly:sync-account {$email} --adopt</>");
+            $this->newLine();
+            $this->line('  Check it first at '.rtrim((string) config('services.cdnfly.base_url'), '/').'/dashboard — adopting');
+            $this->line('  hands this portal user that account\'s API credentials.');
+
+            return self::FAILURE;
         } catch (\Throwable $e) {
             $this->components->error('CDNfly refused the request: '.$e->getMessage());
 
@@ -57,6 +76,7 @@ class CdnflySyncAccount extends Command
 
         $this->components->twoColumnDetail('outcome', match ($outcome) {
             'already_ready' => 'already linked, nothing to do',
+            'adopted' => 'adopted the CDNfly account that already held this email',
             'synced' => 'adopted the API key CDNfly already held',
             default => 'created a CDNfly user and API key',
         });

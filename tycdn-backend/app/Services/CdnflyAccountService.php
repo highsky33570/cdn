@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Exceptions\CdnflyAccountExistsException;
 use App\Models\User;
 use Illuminate\Support\Facades\Log;
 
@@ -24,11 +25,16 @@ class CdnflyAccountService
      * Bring the user up to "has CDNfly account and API credentials", from any
      * starting point: no account at all, account but no key, or fully ready.
      *
-     * @return string one of already_ready|synced|created
+     * @param  bool  $adopt  take over an existing upstream account holding this
+     *                       user's email instead of refusing. Off by default —
+     *                       see CdnflyAccountExistsException for why that is a
+     *                       decision an operator makes, not a silent fallback.
+     * @return string one of already_ready|synced|created|adopted
      *
+     * @throws CdnflyAccountExistsException when the email is taken upstream and $adopt is false
      * @throws \Throwable when CDNfly is unreachable or rejects the request
      */
-    public function ensureAccount(User $user): string
+    public function ensureAccount(User $user, bool $adopt = false): string
     {
         // Both halves, not just the credentials. A row can carry an api key with
         // no cdnfly_user_id — credentials pasted in by hand, or a create that
@@ -40,8 +46,11 @@ class CdnflyAccountService
             return 'already_ready';
         }
 
+        $adopted = false;
+
         if (! $user->cdnfly_user_id) {
-            $created = $this->createUpstreamUser($user);
+            $created = $this->createUpstreamUser($user, $adopt);
+            $adopted = $created['adopted'];
 
             $user->cdnfly_user_id = $created['cdnfly_user_id'];
             $user->save();
@@ -61,6 +70,10 @@ class CdnflyAccountService
             'cdnfly_synced_at' => now(),
         ]);
 
+        if ($adopted) {
+            return 'adopted';
+        }
+
         return $existing ? 'synced' : 'created';
     }
 
@@ -73,17 +86,51 @@ class CdnflyAccountService
      * upstream account — adopting would hand this user someone else's API
      * credentials, which is privilege escalation, not a convenience.
      *
-     * @return array{cdnfly_user_id: int, raw: array}
+     * An email collision is a different failure, and the retry cannot clear it:
+     * CDNfly holds one account per email, and the retry changes only the name. So
+     * both attempts fail identically and the account stays unlinked. Look up who
+     * owns the address instead and report it, letting the caller decide whether
+     * to take it over.
+     *
+     * @return array{cdnfly_user_id: int, adopted: bool, raw: array}
+     *
+     * @throws CdnflyAccountExistsException when the email is taken and $adopt is false
      */
-    private function createUpstreamUser(User $user): array
+    private function createUpstreamUser(User $user, bool $adopt = false): array
     {
         try {
             return $this->cdnfly->createCdnflyUser(
                 $user->name,
                 $user->email,
                 $this->generatePassword(),
-            );
+            ) + ['adopted' => false];
         } catch (\RuntimeException $e) {
+            // Decided on the facts rather than by matching CDNfly's Chinese error
+            // text, which differs between versions.
+            $existing = $this->cdnfly->findUserByEmail((string) $user->email);
+
+            if ($existing !== null) {
+                if (! $adopt) {
+                    throw new CdnflyAccountExistsException(
+                        $existing['id'],
+                        $existing['username'],
+                        $existing['email'],
+                    );
+                }
+
+                Log::warning('Adopting an existing CDNfly account by email', [
+                    'user_id' => $user->id,
+                    'cdnfly_user_id' => $existing['id'],
+                    'cdnfly_username' => $existing['username'],
+                ]);
+
+                return [
+                    'cdnfly_user_id' => $existing['id'],
+                    'adopted' => true,
+                    'raw' => $existing,
+                ];
+            }
+
             $scopedName = $this->scopedUsername($user);
 
             Log::warning('CDNfly rejected the username; retrying with a portal-scoped name', [
@@ -97,7 +144,7 @@ class CdnflyAccountService
                 $scopedName,
                 $user->email,
                 $this->generatePassword(),
-            );
+            ) + ['adopted' => false];
         }
     }
 

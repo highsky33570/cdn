@@ -182,6 +182,72 @@ class CdnflyApiService
     }
 
     /**
+     * Find the upstream account holding an email, or null.
+     *
+     * CDNfly enforces one account per email, so a create that fails with
+     * "email ...已存在" means the account exists and its id is the only thing we
+     * are missing. /v1/users takes no email filter, so page through and match
+     * exactly — the page cap keeps a large panel from turning this into a scan
+     * that never ends.
+     *
+     * @return array{id: int, username: string, email: string}|null
+     */
+    public function findUserByEmail(string $email): ?array
+    {
+        if (! $this->outboundEnabled()) {
+            return null;
+        }
+
+        $needle = strtolower(trim($email));
+
+        for ($page = 1; $page <= 50; $page++) {
+            $payload = $this->listUsers(['page' => $page, 'limit' => 100]);
+            $rows = $this->extractRows($payload);
+
+            if ($rows === []) {
+                return null;
+            }
+
+            foreach ($rows as $row) {
+                if (strtolower(trim((string) ($row['email'] ?? ''))) !== $needle) {
+                    continue;
+                }
+
+                $id = (int) ($row['id'] ?? ($row['uid'] ?? 0));
+
+                if ($id > 0) {
+                    return [
+                        'id' => $id,
+                        'username' => (string) ($row['name'] ?? ($row['username'] ?? '')),
+                        'email' => (string) ($row['email'] ?? ''),
+                    ];
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * CDNfly is not consistent about where a list puts its rows.
+     *
+     * @param  array<string, mixed>  $payload
+     * @return array<int, array<string, mixed>>
+     */
+    private function extractRows(array $payload): array
+    {
+        foreach (['data.rows', 'data.list', 'data.items', 'data', 'rows', 'list'] as $path) {
+            $value = data_get($payload, $path);
+
+            if (is_array($value) && array_is_list($value)) {
+                return array_values(array_filter($value, 'is_array'));
+            }
+        }
+
+        return [];
+    }
+
+    /**
      * @return array{api_key: string, api_secret: string}
      */
     public function enableUserApiKey(int $cdnflyUserId): array

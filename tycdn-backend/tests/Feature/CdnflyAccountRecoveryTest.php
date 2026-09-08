@@ -43,6 +43,9 @@ class CdnflyAccountRecoveryTest extends TestCase
 
                 return ['cdnfly_user_id' => 42, 'raw' => []];
             });
+        // No upstream account holds this email, so the failure really is the
+        // username and the scoped-name retry is the right move.
+        $cdnfly->shouldReceive('findUserByEmail')->once()->andReturn(null);
         $cdnfly->shouldReceive('getUserApiKey')->once()->with(42)->andReturn(null);
         $cdnfly->shouldReceive('enableUserApiKey')->once()->with(42)
             ->andReturn(['api_key' => 'k', 'api_secret' => 's']);

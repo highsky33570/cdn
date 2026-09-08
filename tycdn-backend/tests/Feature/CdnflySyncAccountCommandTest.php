@@ -118,6 +118,7 @@ class CdnflySyncAccountCommandTest extends TestCase
         $cdnfly = $this->mock(CdnflyApiService::class);
         $cdnfly->shouldReceive('createCdnflyUser')
             ->andThrow(new \RuntimeException('CDNfly create user failed: 用户名已存在'));
+        $cdnfly->shouldReceive('findUserByEmail')->andReturn(null);
 
         $this->artisan('cdnfly:sync-account', ['email' => $user->email])
             ->expectsOutputToContain('用户名已存在')
@@ -187,6 +188,102 @@ class CdnflySyncAccountCommandTest extends TestCase
         $this->artisan('cdnfly:sync-account', ['email' => $user->email])
             ->expectsOutputToContain('still incomplete')
             ->assertFailed();
+    }
+
+    /**
+     * The wall a real deployment hits: CDNfly already holds an account for this
+     * email, usually one an earlier partial run created and lost track of.
+     *
+     * The username retry cannot clear it — CDNfly allows one account per email,
+     * and the retry changes only the name, so both attempts fail identically and
+     * the account stays unlinked forever.
+     */
+    public function test_an_email_already_taken_upstream_reports_the_account_instead_of_retrying(): void
+    {
+        $user = User::factory()->create([
+            'name' => 'admin',
+            'cdnfly_user_id' => null,
+            'cdnfly_api_key' => null,
+            'cdnfly_api_secret' => null,
+        ]);
+
+        $cdnfly = $this->mock(CdnflyApiService::class);
+        $cdnfly->shouldReceive('createCdnflyUser')
+            ->once()
+            ->andThrow(new \RuntimeException('CDNfly create user failed: email '.$user->email.'已存在'));
+        $cdnfly->shouldReceive('findUserByEmail')->once()->with($user->email)
+            ->andReturn(['id' => 34, 'username' => 'adminuser', 'email' => $user->email]);
+
+        $this->artisan('cdnfly:sync-account', ['email' => $user->email])
+            ->expectsOutputToContain('#34')
+            ->expectsOutputToContain('--adopt')
+            ->assertFailed();
+
+        $this->assertNull(
+            $user->fresh()->cdnfly_user_id,
+            'taking over an account is an operator decision, not an automatic fallback',
+        );
+    }
+
+    public function test_the_adopt_flag_links_to_the_existing_upstream_account(): void
+    {
+        $user = User::factory()->create([
+            'cdnfly_user_id' => null,
+            'cdnfly_api_key' => null,
+            'cdnfly_api_secret' => null,
+        ]);
+
+        $cdnfly = $this->mock(CdnflyApiService::class);
+        $cdnfly->shouldReceive('createCdnflyUser')->once()
+            ->andThrow(new \RuntimeException('CDNfly create user failed: email 已存在'));
+        $cdnfly->shouldReceive('findUserByEmail')->once()->with($user->email)
+            ->andReturn(['id' => 34, 'username' => 'adminuser', 'email' => $user->email]);
+        $cdnfly->shouldReceive('getUserApiKey')->once()->with(34)->andReturn(null);
+        $cdnfly->shouldReceive('enableUserApiKey')->once()->with(34)
+            ->andReturn(['api_key' => 'key-34', 'api_secret' => 'secret-34']);
+
+        $this->artisan('cdnfly:sync-account', ['email' => $user->email, '--adopt' => true])
+            ->assertSuccessful();
+
+        $user->refresh();
+        $this->assertSame(34, (int) $user->cdnfly_user_id);
+        $this->assertSame('key-34', $user->cdnfly_api_key);
+    }
+
+    /**
+     * A username collision with no matching email is still the old case, and must
+     * still retry under a portal-scoped name rather than reporting a conflict.
+     */
+    public function test_a_username_collision_without_an_email_match_still_retries(): void
+    {
+        $user = User::factory()->create([
+            'name' => 'admin',
+            'cdnfly_user_id' => null,
+            'cdnfly_api_key' => null,
+            'cdnfly_api_secret' => null,
+        ]);
+
+        $cdnfly = $this->mock(CdnflyApiService::class);
+        $attempts = 0;
+        $cdnfly->shouldReceive('createCdnflyUser')->twice()
+            ->andReturnUsing(function () use (&$attempts) {
+                $attempts++;
+
+                if ($attempts === 1) {
+                    throw new \RuntimeException('CDNfly create user failed: 用户名已存在');
+                }
+
+                return ['cdnfly_user_id' => 88, 'raw' => []];
+            });
+        $cdnfly->shouldReceive('findUserByEmail')->once()->andReturn(null);
+        $cdnfly->shouldReceive('getUserApiKey')->once()->with(88)->andReturn(null);
+        $cdnfly->shouldReceive('enableUserApiKey')->once()->with(88)
+            ->andReturn(['api_key' => 'key-88', 'api_secret' => 'secret-88']);
+
+        $this->artisan('cdnfly:sync-account', ['email' => $user->email])
+            ->assertSuccessful();
+
+        $this->assertSame(88, (int) $user->fresh()->cdnfly_user_id);
     }
 
     private function fakeCdnfly(): void
