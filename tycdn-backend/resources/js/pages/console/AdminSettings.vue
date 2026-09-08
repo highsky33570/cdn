@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import {
     AlertCircle,
-    Code2,
     Pencil,
     RefreshCw,
     Save,
@@ -29,20 +28,19 @@ import { Spinner } from '@/components/ui/spinner';
 import {
     getAdminConfigs,
     getAdminRegisterInfo,
-    updateAdminConfig,
-    updateAdminConfigs,
+    upsertAdminConfig,
 } from '@/lib/adminModulesApi';
-import type { CdnflyRecord } from '@/lib/adminModulesApi';
 
 /**
  * One row of /v1/configs. CDNfly returns a *list* of settings, each carrying its
  * own scope and type — not a flat key/value object.
  */
 type ConfigRow = {
-    /** CDNfly's row id — what PUT /v1/configs/{id} addresses. */
-    id: number;
     /** name alone is not unique — the same setting exists per scope. */
     key: string;
+    /** CDNfly keys a config on scope + type + name. There is no row id. */
+    scopeName: string;
+    scopeId: number;
     name: string;
     value: string;
     type: string;
@@ -67,10 +65,7 @@ const FIELD_LABELS: Record<string, string> = {
 };
 
 const loading = ref(false);
-const saving = ref(false);
 const errorMessage = ref('');
-const showJson = ref(false);
-const configJson = ref('');
 const rawConfigs = ref<unknown>(null);
 const rawRegister = ref<unknown>(null);
 
@@ -108,19 +103,17 @@ async function saveOne(): Promise<void> {
         return;
     }
 
-    if (row.id <= 0) {
-        editError.value = '该配置项没有 ID，无法单独保存。';
-
-        return;
-    }
-
     editSaving.value = true;
     editError.value = '';
 
     try {
-        await updateAdminConfig(row.id, {
+        await upsertAdminConfig({
             name: row.name,
+            type: row.type,
+            scope_name: row.scopeName || undefined,
+            scope_id: row.scopeId,
             value: editValue.value,
+            enable: row.enabled ? 1 : 0,
         });
         toast.success(`${row.name} 已保存`);
         editing.value = null;
@@ -157,12 +150,13 @@ const configRows = computed<ConfigRow[]>(() => {
     }
 
     return data.filter(isRecord).map((row) => ({
-        id: Number(row.id) || 0,
         key: `${text(row.name)}@${text(row.scope_name)}@${text(row.scope_id)}`,
         name: text(row.name),
         value: text(row.value),
         type: text(row.type),
         scope: text(row.scope_name) || text(row.entity_name) || '-',
+        scopeName: text(row.scope_name),
+        scopeId: Number(row.scope_id) || 0,
         // enable is 1/0 upstream, not a boolean
         enabled: row.enable === 1 || row.enable === '1' || row.enable === true,
         updatedAt: text(row.update_at) || text(row.create_at),
@@ -216,36 +210,11 @@ async function loadSettings(): Promise<void> {
 
         rawConfigs.value = configData;
         rawRegister.value = registerData;
-        configJson.value = JSON.stringify(configData, null, 2);
     } catch (error) {
         errorMessage.value =
             error instanceof Error ? error.message : '请求失败';
     } finally {
         loading.value = false;
-    }
-}
-
-async function saveConfigs(): Promise<void> {
-    saving.value = true;
-    errorMessage.value = '';
-
-    try {
-        const payload = JSON.parse(configJson.value) as CdnflyRecord;
-        const result = await updateAdminConfigs(payload);
-
-        rawConfigs.value = result;
-        configJson.value = JSON.stringify(result, null, 2);
-        toast.success('配置已保存');
-    } catch (error) {
-        errorMessage.value =
-            error instanceof SyntaxError
-                ? '配置 JSON 格式无效'
-                : error instanceof Error
-                  ? error.message
-                  : '请求失败';
-        toast.error(errorMessage.value);
-    } finally {
-        saving.value = false;
     }
 }
 
@@ -365,15 +334,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
                             <Button
                                 variant="outline"
                                 size="sm"
-                                @click="showJson = !showJson"
-                            >
-                                <Code2 data-icon="inline-start" />
-                                {{ showJson ? '隐藏 JSON' : '编辑 JSON' }}
-                            </Button>
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                :disabled="loading || saving"
+                                :disabled="loading"
                                 @click="loadSettings"
                             >
                                 <Spinner
@@ -507,12 +468,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
                                         <Button
                                             variant="ghost"
                                             size="icon-sm"
-                                            :disabled="row.id <= 0"
-                                            :title="
-                                                row.id > 0
-                                                    ? '编辑'
-                                                    : '该配置项没有 ID'
-                                            "
+                                            title="编辑"
                                             @click="openEdit(row)"
                                         >
                                             <Pencil class="size-3.5" />
@@ -534,39 +490,6 @@ function isRecord(value: unknown): value is Record<string, unknown> {
                             </tbody>
                         </table>
                     </div>
-                </CardContent>
-            </Card>
-
-            <!--
-                The JSON editor stays, because CDNfly's config list is open-ended
-                and a typed form would silently drop anything it did not know
-                about. It is collapsed by default so the page reads as settings
-                rather than as a payload dump.
-            -->
-            <Card v-if="showJson" class="gap-4">
-                <CardHeader
-                    class="flex flex-row items-center justify-between gap-3"
-                >
-                    <CardTitle class="text-base">配置 JSON</CardTitle>
-                    <Button
-                        size="sm"
-                        :disabled="loading || saving"
-                        @click="saveConfigs"
-                    >
-                        <Spinner v-if="saving" data-icon="inline-start" />
-                        <Save v-else data-icon="inline-start" />
-                        保存配置
-                    </Button>
-                </CardHeader>
-                <CardContent>
-                    <p class="mb-2 text-xs text-muted-foreground">
-                        直接编辑将整体覆盖 CDNfly 全局配置，请谨慎操作。
-                    </p>
-                    <textarea
-                        v-model="configJson"
-                        class="min-h-96 w-full resize-y rounded-md border bg-background px-3 py-2 font-mono text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
-                        spellcheck="false"
-                    />
                 </CardContent>
             </Card>
         </template>

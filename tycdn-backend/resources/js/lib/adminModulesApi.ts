@@ -651,22 +651,32 @@ export async function listAdminOpLogs(
 }
 
 /**
- * Realtime monitoring.
+ * Live site and stream rankings.
  *
- * Routed through the proxy because CDNfly v6 places
- * /v1/monitor/site/realtime and /v1/monitor/stream/realtime under the *user*
- * scope; the admin routes sent the master api-key and came back 502, which is
- * what the 加载失败 banners on this page were.
+ * These panels used to call /v1/monitor/site|stream/realtime, which failed two
+ * ways at once. It is a *time series* endpoint — it answers [[ts, value], …]
+ * for a single metric, not a list of sites — and it requires `type`, `start`
+ * and `end`. ConsoleDataTable sends only page/limit/search, so CDNfly rejected
+ * every call and the page showed 请求失败 (502).
  *
- * Known limit: v6 has no panel-wide equivalent — its admin monitor endpoints
- * cover nodes and user packages, not every customer's sites. So this shows the
- * signed-in operator's own sites and streams, not the whole platform's.
+ * .../top is the endpoint that returns rows, which is what a table wants. The
+ * `type` and `recent_time` values used here are the ones the user console
+ * already calls these same endpoints with successfully.
+ *
+ * Known limit: v6 exposes both at user scope only, so the proxy sends the
+ * signed-in operator's credentials and the figures are their own sites and
+ * streams. CDNfly has no panel-wide equivalent — its admin monitor endpoints
+ * cover nodes and user packages instead.
  */
 export async function getAdminSiteRealtime(
     params: Record<string, string | number> = {},
 ): Promise<CdnflyListData> {
     return apiRequest<CdnflyListData>(
-        buildUrl('/api/cdn/proxy/v1/monitor/site/realtime', params),
+        buildUrl('/api/cdn/proxy/v1/monitor/site/top', {
+            type: 'top-domain',
+            recent_time: '30m',
+            ...params,
+        }),
     );
 }
 
@@ -674,7 +684,11 @@ export async function getAdminStreamRealtime(
     params: Record<string, string | number> = {},
 ): Promise<CdnflyListData> {
     return apiRequest<CdnflyListData>(
-        buildUrl('/api/cdn/proxy/v1/monitor/stream/realtime', params),
+        buildUrl('/api/cdn/proxy/v1/monitor/stream/top', {
+            type: 'top-ports',
+            recent_time: '30m',
+            ...params,
+        }),
     );
 }
 
@@ -818,27 +832,27 @@ export async function getAdminConfigs(): Promise<CdnflyRecord> {
     return apiRequest<CdnflyRecord>('/api/admin/configs');
 }
 
-export async function updateAdminConfigs(
-    payload: Record<string, unknown>,
-): Promise<CdnflyRecord> {
-    return apiRequest<CdnflyRecord>('/api/admin/configs', {
-        method: 'PUT',
-        body: JSON.stringify(payload),
-    });
-}
+export type AdminConfigUpsert = {
+    /** CDNfly keys a config on scope + type + name; rows carry no id. */
+    name: string;
+    type: string;
+    scope_name?: string;
+    scope_id?: number;
+    value: string;
+    enable?: number;
+};
 
 /**
- * Update one config row.
+ * Add or update one system config.
  *
- * The bulk PUT filters against a list of key names that do not exist in
- * CDNfly, so it always answered "所有字段均被过滤". Editing by id is both the
- * documented shape and the only one that actually works.
+ * Replaces the old bulk PUT, which sent a key/value map filtered against a
+ * list of key names that do not exist in CDNfly — so it always answered
+ * "所有字段均被过滤" and nothing could be saved.
  */
-export async function updateAdminConfig(
-    id: number,
-    payload: { name: string; value: string },
+export async function upsertAdminConfig(
+    payload: AdminConfigUpsert,
 ): Promise<CdnflyRecord> {
-    return apiRequest<CdnflyRecord>(`/api/admin/configs/${id}`, {
+    return apiRequest<CdnflyRecord>('/api/admin/configs', {
         method: 'PUT',
         body: JSON.stringify(payload),
     });

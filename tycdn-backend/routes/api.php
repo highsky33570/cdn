@@ -180,9 +180,8 @@ Route::middleware(['auth:sanctum', 'verified', 'admin', 'throttle:60,1'])->prefi
 
     // 系统配置
     Route::get('/configs', [AdminConfigController::class, 'index']);
-    Route::put('/configs', [AdminConfigController::class, 'update'])->middleware('throttle:10,1');
-    // 单项修改：CDNfly 的配置是一张按 id 索引的表，逐行改才是它文档里的用法。
-    Route::put('/configs/{id}', [AdminConfigController::class, 'updateOne'])->middleware('throttle:20,1');
+    // 单项 upsert：CDNfly 用 作用域+类型+名称 定位一条配置，行里没有 id。
+    Route::put('/configs', [AdminConfigController::class, 'update'])->middleware('throttle:20,1');
     Route::get('/register-info', [AdminConfigController::class, 'registerInfo']);
 
     // 通用管理端代理

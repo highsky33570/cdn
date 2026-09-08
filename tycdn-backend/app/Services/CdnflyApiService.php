@@ -1087,33 +1087,24 @@ class CdnflyApiService
     }
 
     /**
-     * Update one config row.
+     * Add or update one system config.
      *
-     * CDNfly's config list is a table of rows, each with its own id, scope and
-     * type — so a single setting is changed by id. PUT /v1/configs (no id) is a
-     * bulk replace, which is the wrong tool for "turn WAF on": it round-trips
-     * every other row, including the ones whose values are entire HTML
-     * documents.
+     * CDNfly keys a config on scope + type + name; its rows carry no id, so
+     * there is no /v1/configs/{id} to address from the config list. Per the v6
+     * admin reference: 「按配置作用域、类型和名称新增或更新一条系统配置。目标
+     * 配置已存在时更新其值和启用状态，不存在时创建。」
      *
      * @param  array<string, mixed>  $data
      * @return array<string, mixed>
      */
-    public function updateConfig(int $id, array $data): array
+    public function upsertConfig(array $data): array
     {
-        $this->ensureOutboundEnabled('update config');
-        $response = $this->adminHttp()->put("/v1/configs/{$id}", $data);
-
-        return $this->parseResponse($response, 'update config');
-    }
-
-    public function updateConfigs(array $data): array
-    {
+        $this->ensureOutboundEnabled('upsert config');
         $response = $this->adminHttp()->put('/v1/configs', $data);
 
-        return $this->parseResponse($response, 'update configs');
+        return $this->parseResponse($response, 'upsert config');
     }
 
-    // ─── Admin: Register Info ─────────────────────────────────
     public function getRegisterInfo(): array
     {
         if (! $this->outboundEnabled()) {

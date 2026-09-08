@@ -8,71 +8,111 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 /**
- * Why the settings page behaved as read-only.
+ * Why the settings page behaved as read-only, and how a config is actually
+ * addressed.
  *
- * The bulk PUT /api/admin/configs filters its payload against a whitelist of key
- * names — site_name, cache_time, default_node_group and so on — that were
- * invented rather than read off CDNfly. The real rows are called
+ * Two separate mistakes were stacked here. The save path filtered its payload
+ * against a whitelist of key names — site_name, cache_time, default_node_group
+ * — that were invented rather than read off CDNfly, whose rows are called
  * nginx-config-file, related-config-min-limit, block_page_num_limit… so every
- * field was dropped and the save answered "所有字段均被过滤", every time.
+ * field was dropped and the save always answered 「所有字段均被过滤」.
  *
- * Editing by id is the documented shape (PUT /v1/configs/{id}) and the one that
- * actually reaches CDNfly.
+ * Then the first fix addressed rows as PUT /v1/configs/{id}. CDNfly's config
+ * rows carry no id at all, so every edit button was disabled. Per the v6 admin
+ * reference, PUT /v1/configs keys on 作用域 + 类型 + 名称 and upserts one row.
  */
 class AdminConfigEditTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_a_real_config_row_can_be_edited_by_id(): void
+    public function test_a_config_is_addressed_by_scope_type_and_name(): void
     {
         $cdnfly = $this->mock(CdnflyApiService::class);
-        $cdnfly->shouldReceive('updateConfig')
+        $cdnfly->shouldReceive('upsertConfig')
             ->once()
-            ->with(12, ['value' => '2000'])
+            ->with([
+                'name' => 'related-config-min-limit',
+                'type' => 'site',
+                'scope_name' => 'global',
+                'scope_id' => 0,
+                'value' => '2000',
+                'enable' => 1,
+            ])
             ->andReturn(['code' => 0]);
 
         $this->actingAs($this->admin())
-            ->putJson('/api/admin/configs/12', [
+            ->putJson('/api/admin/configs', [
                 'name' => 'related-config-min-limit',
+                'type' => 'site',
+                'scope_name' => 'global',
+                'scope_id' => 0,
                 'value' => '2000',
+                'enable' => 1,
             ])
             ->assertOk()
             ->assertJsonPath('ok', true);
     }
 
     /**
-     * The defect, pinned: the bulk endpoint rejects CDNfly's own field names.
-     * If this ever starts passing, the whitelist has been fixed and the per-row
-     * path is no longer the only way to save.
+     * The identifying fields are what make the upsert land on the right row, so
+     * a request without them must not reach CDNfly and quietly create a new one.
      */
-    public function test_the_bulk_endpoint_rejects_cdnflys_real_field_names(): void
+    public function test_name_and_type_are_required(): void
     {
         $cdnfly = $this->mock(CdnflyApiService::class);
-        $cdnfly->shouldNotReceive('updateConfigs');
+        $cdnfly->shouldNotReceive('upsertConfig');
+
+        $this->actingAs($this->admin())
+            ->putJson('/api/admin/configs', ['value' => '2000'])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['name', 'type']);
+    }
+
+    /**
+     * CDNfly's real field names must survive — this is the regression that made
+     * the page look read-only.
+     */
+    public function test_cdnflys_own_field_names_are_not_filtered_out(): void
+    {
+        $received = null;
+
+        $cdnfly = $this->mock(CdnflyApiService::class);
+        $cdnfly->shouldReceive('upsertConfig')
+            ->once()
+            ->andReturnUsing(function (array $payload) use (&$received) {
+                $received = $payload;
+
+                return ['code' => 0];
+            });
 
         $this->actingAs($this->admin())
             ->putJson('/api/admin/configs', [
-                'related-config-min-limit' => '2000',
-                'block_page_num_limit' => '200',
-                'nginx-config-file' => '{}',
+                'name' => 'nginx-config-file',
+                'type' => 'site',
+                'value' => '{"worker_processes":"auto"}',
             ])
-            ->assertStatus(422);
+            ->assertOk();
+
+        $this->assertSame('nginx-config-file', $received['name']);
+        $this->assertSame('{"worker_processes":"auto"}', $received['value']);
     }
 
     /**
      * Values are legitimately huge — the CAPTCHA templates are whole HTML
-     * documents — so a large body must not be rejected out of hand.
+     * documents and nginx-config-file is a full config — so a large body must
+     * not be rejected out of hand.
      */
     public function test_a_very_large_value_is_accepted(): void
     {
         $html = str_repeat('<div>x</div>', 5000);
 
         $cdnfly = $this->mock(CdnflyApiService::class);
-        $cdnfly->shouldReceive('updateConfig')->once()->andReturn(['code' => 0]);
+        $cdnfly->shouldReceive('upsertConfig')->once()->andReturn(['code' => 0]);
 
         $this->actingAs($this->admin())
-            ->putJson('/api/admin/configs/9', [
+            ->putJson('/api/admin/configs', [
                 'name' => 'easy_click_html',
+                'type' => 'site',
                 'value' => $html,
             ])
             ->assertOk();
@@ -84,11 +124,12 @@ class AdminConfigEditTest extends TestCase
     public function test_credential_rows_stay_blocked(): void
     {
         $cdnfly = $this->mock(CdnflyApiService::class);
-        $cdnfly->shouldNotReceive('updateConfig');
+        $cdnfly->shouldNotReceive('upsertConfig');
 
         $this->actingAs($this->admin())
-            ->putJson('/api/admin/configs/3', [
+            ->putJson('/api/admin/configs', [
                 'name' => 'smtp_password',
+                'type' => 'site',
                 'value' => 'hunter2',
             ])
             ->assertStatus(422)
@@ -100,7 +141,11 @@ class AdminConfigEditTest extends TestCase
         $user = User::factory()->create(['role' => 'user']);
 
         $this->actingAs($user)
-            ->putJson('/api/admin/configs/12', ['name' => 'x', 'value' => 'y'])
+            ->putJson('/api/admin/configs', [
+                'name' => 'x',
+                'type' => 'site',
+                'value' => 'y',
+            ])
             ->assertForbidden();
     }
 
