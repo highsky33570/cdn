@@ -60,7 +60,23 @@ class CdnflySyncAccount extends Command
             'synced' => 'adopted the API key CDNfly already held',
             default => 'created a CDNfly user and API key',
         });
-        $this->components->twoColumnDetail('cdnfly_user_id', (string) $user->cdnfly_user_id);
+        $this->components->twoColumnDetail(
+            'cdnfly_user_id',
+            $user->cdnfly_user_id ? (string) $user->cdnfly_user_id : '<fg=red>not linked</>',
+        );
+
+        // Never report success on a half-linked row. Printing 'already linked'
+        // beside an empty cdnfly_user_id is how this went unnoticed the first
+        // time: the operator is told the work is done while the account is still
+        // unusable.
+        if (! $user->cdnfly_user_id || ! $user->hasCdnflyApiKey()) {
+            $this->newLine();
+            $this->components->error(
+                'The account is still incomplete: it needs both a cdnfly_user_id and stored credentials',
+            );
+
+            return self::FAILURE;
+        }
 
         // The credentials alone are not enough: /api/cdn/* also sits behind the
         // `verified` middleware, so an unverified account still sees 未连接.

@@ -64,7 +64,7 @@ class CdnflyDoctor extends Command
         }
 
         if ($adminKey === '' || $adminSecret === '') {
-            $this->problem('CDNFLY_ADMIN_API_KEY / CDNFLY_ADMIN_API_SECRET are empty. Copy them from the panel: 系统设置 -> API Key.');
+            $this->problem('CDNFLY_ADMIN_API_KEY / CDNFLY_ADMIN_API_SECRET are empty. Copy them from the panel under 系统设置 -> API Key');
 
             return false;
         }
@@ -102,7 +102,10 @@ class CdnflyDoctor extends Command
         // unauthenticated call. 502/504 means the web server is up but the
         // cdnfly-go process behind it is not.
         if (in_array($response->status(), [502, 503, 504], true)) {
-            $this->problem('The panel host answered '.$response->status().'. The CDNfly service behind it is down — check: systemctl status cdnfly');
+            $this->problem(
+                'The panel host answered '.$response->status().', so the CDNfly service behind it is down',
+                'systemctl status cdnfly',
+            );
 
             return false;
         }
@@ -155,13 +158,16 @@ class CdnflyDoctor extends Command
 
         if (! $user->hasVerifiedEmail()) {
             $this->problem(
-                'This account cannot reach CDNfly until its email is verified. With MAIL_MAILER=log no mail is delivered, '
-                ."so configure a real mailer or run: php artisan cdnfly:sync-account {$email} --verify",
+                'This account cannot reach CDNfly until its email is verified, and with MAIL_MAILER=log no mail is delivered',
+                "php artisan cdnfly:sync-account {$email} --verify",
             );
         }
 
         if (! $user->cdnfly_user_id) {
-            $this->problem("This account has no upstream CDNfly user. Create one with: php artisan cdnfly:sync-account {$email}");
+            $this->problem(
+                'This account has no upstream CDNfly user',
+                "php artisan cdnfly:sync-account {$email}",
+            );
 
             return;
         }
@@ -175,8 +181,8 @@ class CdnflyDoctor extends Command
 
         if (! $user->cdnfly_api_key || ! $user->cdnfly_api_secret) {
             $this->problem(
-                "Credentials missing. Issue them with: php artisan cdnfly:sync-account {$email} "
-                .'— or, if they were written before CDNFLY_ENCRYPTION_KEY changed: php artisan cdnfly:rekey',
+                'Credentials missing. If they were written before CDNFLY_ENCRYPTION_KEY changed, run cdnfly:rekey instead',
+                "php artisan cdnfly:sync-account {$email}",
             );
 
             return;
@@ -191,11 +197,20 @@ class CdnflyDoctor extends Command
         }
     }
 
-    private function problem(string $message): void
+    /**
+     * The error component appends a full stop to whatever it is given, which
+     * silently corrupts a command the operator is meant to copy. Print the fix
+     * on its own untouched line instead.
+     */
+    private function problem(string $message, ?string $fix = null): void
     {
         $this->failed = true;
         $this->newLine();
         $this->components->error($message);
+
+        if ($fix !== null) {
+            $this->line('  <options=bold>Run:</> '.$fix);
+        }
     }
 
     private function verdict(): int

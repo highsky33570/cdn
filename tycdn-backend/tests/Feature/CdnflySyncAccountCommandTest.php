@@ -134,6 +134,61 @@ class CdnflySyncAccountCommandTest extends TestCase
         $this->assertSame(0, User::where('email', 'nobody@example.test')->count());
     }
 
+    /**
+     * The state that made this command report success while doing nothing.
+     *
+     * A row can hold an api key with no cdnfly_user_id — credentials pasted in by
+     * hand, or a create that stored the key before the id was saved. ensureAccount
+     * short-circuited on the key alone, answered 'already_ready', and left the
+     * account permanently unusable: every user-scoped call needs the id, and
+     * nothing else in the app creates one.
+     */
+    public function test_credentials_without_an_upstream_id_are_repaired_not_reported_as_ready(): void
+    {
+        $user = User::factory()->create([
+            'cdnfly_user_id' => null,
+            'cdnfly_api_key' => 'pasted-admin-key',
+            'cdnfly_api_secret' => 'pasted-admin-secret',
+        ]);
+
+        $this->fakeCdnfly();
+
+        $this->artisan('cdnfly:sync-account', ['email' => $user->email])
+            ->assertSuccessful();
+
+        $user->refresh();
+        $this->assertSame(77, (int) $user->cdnfly_user_id);
+        $this->assertSame(
+            'key-77',
+            $user->cdnfly_api_key,
+            'a key belonging to another account is worse than none: calls made with it act as that account',
+        );
+    }
+
+    /**
+     * The command must not tell the operator the work is done while the row is
+     * still half-linked — that is how the broken state survived a run.
+     */
+    public function test_it_fails_when_the_account_is_still_incomplete_afterwards(): void
+    {
+        $user = User::factory()->create([
+            'cdnfly_user_id' => 91,
+            'cdnfly_api_key' => null,
+            'cdnfly_api_secret' => null,
+        ]);
+
+        $cdnfly = $this->mock(CdnflyApiService::class);
+        $cdnfly->shouldReceive('getUserApiKey')->once()->with(91)->andReturn(null);
+        // CDNfly answering with blank credentials leaves the row unusable even
+        // though nothing threw.
+        $cdnfly->shouldReceive('enableUserApiKey')->once()->with(91)
+            ->andReturn(['api_key' => null, 'api_secret' => null]);
+
+        $this->artisan('cdnfly:sync-account', ['email' => $user->email])
+            ->expectsOutputToContain('still incomplete')
+            ->assertFailed();
+    }
+
     private function fakeCdnfly(): void
     {
         $cdnfly = $this->mock(CdnflyApiService::class);

@@ -30,7 +30,13 @@ class CdnflyAccountService
      */
     public function ensureAccount(User $user): string
     {
-        if ($user->hasCdnflyApiKey()) {
+        // Both halves, not just the credentials. A row can carry an api key with
+        // no cdnfly_user_id — credentials pasted in by hand, or a create that
+        // stored the key before the id was saved — and checking the key alone made
+        // this return 'already_ready' for an account that was never linked. Every
+        // caller trusted that answer, so the account stayed broken permanently:
+        // user-scoped calls need the id, and nothing else creates one.
+        if ($user->cdnfly_user_id && $user->hasCdnflyApiKey()) {
             return 'already_ready';
         }
 
@@ -43,6 +49,9 @@ class CdnflyAccountService
 
         // An earlier partial run may already have enabled a key upstream; reuse it
         // rather than issuing a second one and desynchronising the stored copy.
+        // Whatever was stored before is replaced: a key that does not belong to
+        // this cdnfly_user_id is worse than none, because calls made with it act
+        // as whichever account it does belong to.
         $existing = $this->cdnfly->getUserApiKey($user->cdnfly_user_id);
         $credentials = $existing ?: $this->cdnfly->enableUserApiKey($user->cdnfly_user_id);
 
