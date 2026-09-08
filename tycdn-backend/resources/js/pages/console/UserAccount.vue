@@ -466,19 +466,77 @@ const accountBalance = computed(() => {
     return raw === null || raw === undefined ? '-' : String(raw);
 });
 
+/**
+ * Pick the first field that actually carries a value.
+ *
+ * CDNfly's field naming is not consistent between endpoints (the IP whitelist
+ * arrives as api_ip on one payload and ip on another), so a designed view must
+ * probe several names rather than assume one.
+ */
+function pickField(record: CdnflyRecord | null, keys: string[]): string {
+    if (!record) {
+        return '';
+    }
+
+    for (const key of keys) {
+        const value = textValue(record[key]);
+
+        if (value !== '' && value !== '-') {
+            return value;
+        }
+    }
+
+    return '';
+}
+
 /** The api-key page needs the credential pair, not a field dump. */
 const apiKeyPair = computed(() => {
     const record = apiKey.value;
 
     return {
-        key: record ? textValue(record.api_key) : '',
-        secret: record ? textValue(record.api_secret) : '',
+        key: pickField(record, ['api_key', 'apiKey', 'key', 'access_key']),
+        secret: pickField(record, [
+            'api_secret',
+            'apiSecret',
+            'secret',
+            'access_secret',
+        ]),
         createdAt: record
             ? formatDate(record.create_at2 ?? record.create_at)
             : '-',
-        whiteIp: record ? textValue(record.white_ip) : '',
+        whiteIp: pickField(record, ['white_ip', 'api_ip', 'ip', 'whiteIp']),
     };
 });
+
+/**
+ * Anything the designed layout above did not account for.
+ *
+ * Without this the redesign could show *less* than the raw table it replaced:
+ * if CDNfly renames a field, the credential block goes blank and the data
+ * silently disappears. These rows guarantee that never happens.
+ */
+const RENDERED_API_KEY_FIELDS = new Set([
+    'api_key',
+    'apiKey',
+    'key',
+    'access_key',
+    'api_secret',
+    'apiSecret',
+    'secret',
+    'access_secret',
+    'create_at',
+    'create_at2',
+    'white_ip',
+    'api_ip',
+    'ip',
+    'whiteIp',
+]);
+
+const apiKeyExtraRows = computed(() =>
+    objectRows(apiKey.value).filter(
+        (row) => !RENDERED_API_KEY_FIELDS.has(row.key),
+    ),
+);
 
 const secretRevealed = ref(false);
 
@@ -611,9 +669,12 @@ function loginSuccess(record: CdnflyRecord): string {
                     <Spinner class="mx-auto" />
                 </div>
 
-                <div v-else-if="apiKeyPair.key !== ''" class="space-y-4">
+                <div v-else-if="apiKey !== null" class="space-y-4">
                     <!-- API Key: safe to display, needed for every API call -->
-                    <div class="rounded-lg border p-4">
+                    <div
+                        v-if="apiKeyPair.key !== ''"
+                        class="rounded-lg border p-4"
+                    >
                         <div class="flex items-center justify-between gap-3">
                             <Label class="text-xs text-muted-foreground"
                                 >API Key</Label
@@ -633,7 +694,10 @@ function loginSuccess(record: CdnflyRecord): string {
                     </div>
 
                     <!-- API Secret: masked by default, revealed on request -->
-                    <div class="rounded-lg border p-4">
+                    <div
+                        v-if="apiKeyPair.secret !== ''"
+                        class="rounded-lg border p-4"
+                    >
                         <div class="flex items-center justify-between gap-3">
                             <Label class="text-xs text-muted-foreground">
                                 API Secret
@@ -691,6 +755,14 @@ function loginSuccess(record: CdnflyRecord): string {
                             <dd class="text-sm break-all">
                                 {{ apiKeyPair.whiteIp || '未限制' }}
                             </dd>
+                        </div>
+                        <!-- Any field the layout above did not account for, so a
+                             renamed key upstream can never hide data. -->
+                        <div v-for="row in apiKeyExtraRows" :key="row.key">
+                            <dt class="text-xs text-muted-foreground">
+                                {{ row.key }}
+                            </dt>
+                            <dd class="text-sm break-all">{{ row.value }}</dd>
                         </div>
                     </dl>
                 </div>
