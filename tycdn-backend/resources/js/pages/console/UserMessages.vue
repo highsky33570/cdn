@@ -9,7 +9,7 @@ import {
     Search,
 } from 'lucide-vue-next';
 import { computed, onMounted, reactive, ref } from 'vue';
-import { toast } from 'vue-sonner'
+import { toast } from 'vue-sonner';
 import ConsolePageHeader from '@/components/console/ConsolePageHeader.vue';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
@@ -273,7 +273,7 @@ function subscriptionType(record: CdnflyRecord): string {
             </CardHeader>
             <CardContent class="space-y-5">
                 <form
-                    class="grid gap-4 lg:grid-cols-[180px_160px_160px_auto]"
+                    class="flex flex-wrap items-end gap-4"
                     @submit.prevent="submitSubscription"
                 >
                     <div class="grid gap-2">
@@ -416,7 +416,7 @@ function subscriptionType(record: CdnflyRecord): string {
                     </div>
                 </div>
                 <form
-                    class="grid gap-3 lg:grid-cols-[180px_120px_auto]"
+                    class="flex flex-wrap items-center gap-2"
                     @submit.prevent="submitSearch"
                 >
                     <Select v-model="filters.type">
@@ -594,9 +594,7 @@ function subscriptionType(record: CdnflyRecord): string {
             <DialogScrollContent class="sm:max-w-2xl">
                 <DialogHeader>
                     <DialogTitle>消息详情</DialogTitle>
-                    <DialogDescription>
-                        消息详情内容。
-                    </DialogDescription>
+                    <DialogDescription> 消息详情内容。 </DialogDescription>
                 </DialogHeader>
                 <pre
                     class="max-h-[520px] overflow-auto rounded-md border bg-muted/30 p-3 text-xs"

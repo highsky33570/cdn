@@ -28,6 +28,8 @@ import type { CdnflyRecord } from '@/lib/adminModulesApi';
  * own scope and type — not a flat key/value object.
  */
 type ConfigRow = {
+    /** name alone is not unique — the same setting exists per scope. */
+    key: string;
     name: string;
     value: string;
     type: string;
@@ -60,6 +62,20 @@ const rawConfigs = ref<unknown>(null);
 const rawRegister = ref<unknown>(null);
 
 const filters = reactive({ search: '' });
+const expanded = ref(new Set<string>());
+
+function toggleExpanded(key: string): void {
+    // reassigned rather than mutated: Vue does not track Set mutations
+    const next = new Set(expanded.value);
+
+    if (next.has(key)) {
+        next.delete(key);
+    } else {
+        next.add(key);
+    }
+
+    expanded.value = next;
+}
 
 onMounted(() => {
     void loadSettings();
@@ -86,6 +102,7 @@ const configRows = computed<ConfigRow[]>(() => {
     }
 
     return data.filter(isRecord).map((row) => ({
+        key: `${text(row.name)}@${text(row.scope_name)}@${text(row.scope_id)}`,
         name: text(row.name),
         value: text(row.value),
         type: text(row.type),
@@ -261,9 +278,10 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
             <!-- 全局配置：CDNfly 返回的是一组配置项，每项各有作用域和类型 -->
             <Card class="gap-0 overflow-hidden">
-                <CardHeader class="space-y-4">
+                <CardHeader>
+                    <!-- one row, matching every other table in the console -->
                     <div
-                        class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between"
+                        class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between"
                     >
                         <div class="flex items-center gap-3">
                             <CardTitle class="text-base">
@@ -274,43 +292,65 @@ function isRecord(value: unknown): value is Record<string, unknown> {
                                 {{ configRows.length }} 项
                             </Badge>
                         </div>
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            :disabled="loading || saving"
-                            @click="loadSettings"
-                        >
-                            <Spinner v-if="loading" data-icon="inline-start" />
-                            <RefreshCw v-else data-icon="inline-start" />
-                            刷新
-                        </Button>
-                    </div>
 
-                    <div class="flex flex-wrap items-center gap-2">
-                        <div class="relative w-full sm:w-72">
-                            <Search
-                                class="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
-                            />
-                            <Input
-                                v-model="filters.search"
-                                class="pl-9"
-                                placeholder="搜索配置项"
-                            />
-                        </div>
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            @click="showJson = !showJson"
+                        <div
+                            class="flex flex-wrap items-center gap-2 lg:justify-end"
                         >
-                            <Code2 data-icon="inline-start" />
-                            {{ showJson ? '隐藏 JSON' : '编辑 JSON' }}
-                        </Button>
+                            <div class="relative w-full sm:w-72">
+                                <Search
+                                    class="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
+                                />
+                                <Input
+                                    v-model="filters.search"
+                                    class="pl-9"
+                                    placeholder="搜索配置项"
+                                />
+                            </div>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                @click="showJson = !showJson"
+                            >
+                                <Code2 data-icon="inline-start" />
+                                {{ showJson ? '隐藏 JSON' : '编辑 JSON' }}
+                            </Button>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                :disabled="loading || saving"
+                                @click="loadSettings"
+                            >
+                                <Spinner
+                                    v-if="loading"
+                                    data-icon="inline-start"
+                                />
+                                <RefreshCw v-else data-icon="inline-start" />
+                                刷新
+                            </Button>
+                        </div>
                     </div>
                 </CardHeader>
 
                 <CardContent class="p-0">
                     <div class="overflow-x-auto">
-                        <table class="w-full min-w-[720px] text-sm">
+                        <!--
+                            table-fixed with an explicit colgroup, because some
+                            values are enormous: nginx-config-file is a whole
+                            JSON config and the CAPTCHA templates are entire HTML
+                            documents. With auto layout one of those took over
+                            the row, squeezing 配置项 down until "allow" wrapped to
+                            one letter per line and a single setting filled the
+                            screen. Fixed columns keep every row one line high.
+                        -->
+                        <table class="w-full min-w-[860px] table-fixed text-sm">
+                            <colgroup>
+                                <col style="width: 22%" />
+                                <col style="width: 38%" />
+                                <col style="width: 12%" />
+                                <col style="width: 10%" />
+                                <col style="width: 8%" />
+                                <col style="width: 10%" />
+                            </colgroup>
                             <thead>
                                 <tr
                                     class="border-t bg-muted/40 text-left text-xs text-muted-foreground"
@@ -332,14 +372,54 @@ function isRecord(value: unknown): value is Record<string, unknown> {
                             <tbody>
                                 <tr
                                     v-for="row in visibleConfigRows"
-                                    :key="row.name + row.scope"
+                                    :key="row.key"
                                     class="border-t"
                                 >
-                                    <td class="px-6 py-3 font-medium break-all">
+                                    <td
+                                        class="truncate px-6 py-3 font-medium"
+                                        :title="row.name"
+                                    >
                                         {{ row.name }}
                                     </td>
-                                    <td class="px-4 py-3 tabular-nums">
-                                        {{ row.value || '-' }}
+                                    <!--
+                                        Click to expand: a short value is the
+                                        whole point of the column, but a 40 KB
+                                        HTML template must not be pasted into it.
+                                    -->
+                                    <td class="px-4 py-3">
+                                        <button
+                                            v-if="row.value.length > 80"
+                                            type="button"
+                                            class="w-full text-left"
+                                            :title="
+                                                expanded.has(row.key)
+                                                    ? '收起'
+                                                    : '展开完整值'
+                                            "
+                                            @click="toggleExpanded(row.key)"
+                                        >
+                                            <span
+                                                :class="
+                                                    expanded.has(row.key)
+                                                        ? 'block max-h-64 overflow-y-auto font-mono text-xs break-all whitespace-pre-wrap'
+                                                        : 'block truncate text-muted-foreground'
+                                                "
+                                            >
+                                                {{ row.value }}
+                                            </span>
+                                            <span
+                                                class="mt-1 block text-xs text-primary"
+                                            >
+                                                {{
+                                                    expanded.has(row.key)
+                                                        ? '收起'
+                                                        : `展开（${row.value.length} 字符）`
+                                                }}
+                                            </span>
+                                        </button>
+                                        <span v-else class="tabular-nums">
+                                            {{ row.value || '-' }}
+                                        </span>
                                     </td>
                                     <td class="px-4 py-3 text-muted-foreground">
                                         {{ row.scope }}

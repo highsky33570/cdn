@@ -11,7 +11,7 @@ import {
     Trash2,
 } from 'lucide-vue-next';
 import { computed, onMounted, reactive, ref } from 'vue';
-import { toast } from 'vue-sonner'
+import { toast } from 'vue-sonner';
 import { router } from '@inertiajs/vue3';
 import ConsolePageHeader from '@/components/console/ConsolePageHeader.vue';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -209,12 +209,16 @@ async function loadRealtime(): Promise<void> {
     errorMessage.value = '';
 
     try {
-        const start = rtMode.value === 'custom'
-            ? rtStart.value
-            : formatInputDate(new Date(Date.now() - rtMinutes.value * 60 * 1000));
-        const end = rtMode.value === 'custom'
-            ? rtEnd.value
-            : formatInputDate(new Date());
+        const start =
+            rtMode.value === 'custom'
+                ? rtStart.value
+                : formatInputDate(
+                      new Date(Date.now() - rtMinutes.value * 60 * 1000),
+                  );
+        const end =
+            rtMode.value === 'custom'
+                ? rtEnd.value
+                : formatInputDate(new Date());
         const params: Record<string, string | number> = {
             type: rtType.value,
             start,
@@ -255,11 +259,16 @@ async function renderRtChart(): Promise<void> {
     await ensureChartJs();
     const Chart = (window as unknown as Record<string, unknown>)['Chart'] as {
         new (canvas: HTMLCanvasElement, config: unknown): unknown;
-        getChart: (canvas: HTMLCanvasElement) => { destroy(): void } | undefined;
+        getChart: (
+            canvas: HTMLCanvasElement,
+        ) => { destroy(): void } | undefined;
     };
     const canvas = rtCanvasRef.value;
     if (!canvas) return;
-    if (rtChart) { rtChart.destroy(); rtChart = null; }
+    if (rtChart) {
+        rtChart.destroy();
+        rtChart = null;
+    }
     const existing = Chart.getChart(canvas);
     if (existing) existing.destroy();
 
@@ -275,27 +284,42 @@ async function renderRtChart(): Promise<void> {
         type: 'line',
         data: {
             labels,
-            datasets: [{
-                label, data,
-                borderColor: '#6366f1', backgroundColor: '#6366f118',
-                borderWidth: 2, pointRadius: data.length > 60 ? 0 : 2,
-                pointHoverRadius: 4, fill: true, tension: 0.3,
-            }],
+            datasets: [
+                {
+                    label,
+                    data,
+                    borderColor: '#6366f1',
+                    backgroundColor: '#6366f118',
+                    borderWidth: 2,
+                    pointRadius: data.length > 60 ? 0 : 2,
+                    pointHoverRadius: 4,
+                    fill: true,
+                    tension: 0.3,
+                },
+            ],
         },
         options: {
-            responsive: true, maintainAspectRatio: false,
+            responsive: true,
+            maintainAspectRatio: false,
             interaction: { mode: 'index', intersect: false },
             plugins: { legend: { display: false } },
             scales: {
                 x: {
-                    ticks: { maxTicksLimit: 6, maxRotation: 0, color: '#94a3b8', font: { size: 10 } },
+                    ticks: {
+                        maxTicksLimit: 6,
+                        maxRotation: 0,
+                        color: '#94a3b8',
+                        font: { size: 10 },
+                    },
                     grid: { color: '#f1f5f9' },
                 },
                 y: {
                     beginAtZero: true,
                     ticks: {
-                        color: '#94a3b8', font: { size: 10 },
-                        callback: (val: number) => `${val.toFixed(val < 1 ? 2 : 1)} MB${rtType.value === 'stream-bandwidth' ? '/s' : ''}`,
+                        color: '#94a3b8',
+                        font: { size: 10 },
+                        callback: (val: number) =>
+                            `${val.toFixed(val < 1 ? 2 : 1)} MB${rtType.value === 'stream-bandwidth' ? '/s' : ''}`,
                     },
                     grid: { color: '#f1f5f9' },
                 },
@@ -330,10 +354,16 @@ function setTopRecentTime(t: string): void {
 // ── Chart.js lazy load ────────────────────────────────
 let chartJsLoaded = false;
 async function ensureChartJs(): Promise<void> {
-    if (chartJsLoaded || (window as unknown as Record<string, unknown>)['Chart']) {
-        chartJsLoaded = true; return;
+    if (
+        chartJsLoaded ||
+        (window as unknown as Record<string, unknown>)['Chart']
+    ) {
+        chartJsLoaded = true;
+        return;
     }
-    await loadScript('https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js');
+    await loadScript(
+        'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js',
+    );
     chartJsLoaded = true;
 }
 function loadScript(src: string): Promise<void> {
@@ -350,12 +380,12 @@ function loadScript(src: string): Promise<void> {
 function formatMetric(value: number, unit: 'bytes' | 'count'): string {
     if (unit === 'bytes') {
         if (value >= 1073741824) return `${(value / 1073741824).toFixed(2)} GB`;
-        if (value >= 1048576)    return `${(value / 1048576).toFixed(2)} MB`;
-        if (value >= 1024)       return `${(value / 1024).toFixed(1)} KB`;
+        if (value >= 1048576) return `${(value / 1048576).toFixed(2)} MB`;
+        if (value >= 1024) return `${(value / 1024).toFixed(1)} KB`;
         return `${value} B`;
     }
     if (value >= 100000000) return `${(value / 100000000).toFixed(2)} 亿`;
-    if (value >= 10000)     return `${(value / 10000).toFixed(1)} 万`;
+    if (value >= 10000) return `${(value / 10000).toFixed(1)} 万`;
     return String(value);
 }
 
@@ -408,10 +438,19 @@ async function submitStream(): Promise<void> {
     try {
         const result = await createUserStream({
             user_package: userPackage,
-            listen: [{ protocol: form.listen_protocol, port: form.listen_port.trim() }],
+            listen: [
+                {
+                    protocol: form.listen_protocol,
+                    port: form.listen_port.trim(),
+                },
+            ],
             backend_port: backendPort,
-            backend: [{ addr: form.backend_addr.trim(), weight: 1, state: 'up' }],
-            ...(form.groups && form.groups !== '__none__' ? { groups: form.groups } : {}),
+            backend: [
+                { addr: form.backend_addr.trim(), weight: 1, state: 'up' },
+            ],
+            ...(form.groups && form.groups !== '__none__'
+                ? { groups: form.groups }
+                : {}),
             ...(form.des.trim() ? { des: form.des.trim() } : {}),
         });
         dialogOpen.value = false;
@@ -438,7 +477,7 @@ async function removeStream(record: CdnflyRecord): Promise<void> {
         return;
     }
 
-        deletingId.value = id;
+    deletingId.value = id;
     errorMessage.value = '';
 
     try {
@@ -545,11 +584,15 @@ function formatInputDate(date: Date): string {
         </Alert>
         <template v-if="props.view === 'analytics'">
             <!-- Tab 切换 -->
-            <div class="flex gap-1 rounded-md border p-0.5 w-fit">
+            <div class="flex w-fit gap-1 rounded-md border p-0.5">
                 <button
                     type="button"
                     class="rounded px-4 py-1.5 text-sm font-medium transition-colors"
-                    :class="analyticsTab === 'realtime' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'"
+                    :class="
+                        analyticsTab === 'realtime'
+                            ? 'bg-primary text-primary-foreground'
+                            : 'text-muted-foreground hover:text-foreground'
+                    "
                     @click="analyticsTab = 'realtime'"
                 >
                     实时曲线
@@ -557,8 +600,15 @@ function formatInputDate(date: Date): string {
                 <button
                     type="button"
                     class="rounded px-4 py-1.5 text-sm font-medium transition-colors"
-                    :class="analyticsTab === 'top' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'"
-                    @click="analyticsTab = 'top'; loadTop()"
+                    :class="
+                        analyticsTab === 'top'
+                            ? 'bg-primary text-primary-foreground'
+                            : 'text-muted-foreground hover:text-foreground'
+                    "
+                    @click="
+                        analyticsTab = 'top';
+                        loadTop();
+                    "
                 >
                     排行统计
                 </button>
@@ -568,24 +618,41 @@ function formatInputDate(date: Date): string {
             <Card v-if="analyticsTab === 'realtime'">
                 <CardHeader class="pb-4">
                     <div class="flex flex-wrap items-center gap-3">
-                        <Select v-model="rtType" @update:model-value="loadRealtime()">
+                        <Select
+                            v-model="rtType"
+                            @update:model-value="loadRealtime()"
+                        >
                             <SelectTrigger class="w-40">
                                 <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
                                 <SelectGroup>
-                                    <SelectItem value="stream-bandwidth">带宽</SelectItem>
-                                    <SelectItem value="stream-traffic">流量</SelectItem>
+                                    <SelectItem value="stream-bandwidth"
+                                        >带宽</SelectItem
+                                    >
+                                    <SelectItem value="stream-traffic"
+                                        >流量</SelectItem
+                                    >
                                 </SelectGroup>
                             </SelectContent>
                         </Select>
                         <div class="flex gap-1 rounded-md border p-0.5">
                             <button
-                                v-for="t in [{ m: 10, label: '10m' }, { m: 30, label: '30m' }, { m: 60, label: '1h' }, { m: 360, label: '6h' }, { m: 1440, label: '24h' }]"
+                                v-for="t in [
+                                    { m: 10, label: '10m' },
+                                    { m: 30, label: '30m' },
+                                    { m: 60, label: '1h' },
+                                    { m: 360, label: '6h' },
+                                    { m: 1440, label: '24h' },
+                                ]"
                                 :key="t.m"
                                 type="button"
                                 class="rounded px-3 py-1 text-xs font-medium transition-colors"
-                                :class="rtMode === 'preset' && rtMinutes === t.m ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'"
+                                :class="
+                                    rtMode === 'preset' && rtMinutes === t.m
+                                        ? 'bg-primary text-primary-foreground'
+                                        : 'text-muted-foreground hover:text-foreground'
+                                "
                                 @click="setRtMinutes(t.m)"
                             >
                                 {{ t.label }}
@@ -593,7 +660,11 @@ function formatInputDate(date: Date): string {
                             <button
                                 type="button"
                                 class="rounded px-3 py-1 text-xs font-medium transition-colors"
-                                :class="rtMode === 'custom' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'"
+                                :class="
+                                    rtMode === 'custom'
+                                        ? 'bg-primary text-primary-foreground'
+                                        : 'text-muted-foreground hover:text-foreground'
+                                "
                                 @click="setRtCustom()"
                             >
                                 自定义
@@ -606,13 +677,24 @@ function formatInputDate(date: Date): string {
                                 @update:start="rtStart = $event"
                                 @update:end="rtEnd = $event"
                             />
-                            <Button variant="default" size="sm" :disabled="rtLoading" @click="confirmRtCustom">
-                                <Search data-icon="inline-start" class="size-3.5" />
+                            <Button
+                                variant="default"
+                                size="sm"
+                                :disabled="rtLoading"
+                                @click="confirmRtCustom"
+                            >
+                                <Search
+                                    data-icon="inline-start"
+                                    class="size-3.5"
+                                />
                                 查询
                             </Button>
                         </template>
                         <div class="flex items-center gap-1.5">
-                            <Label class="text-xs text-muted-foreground whitespace-nowrap">端口</Label>
+                            <Label
+                                class="text-xs whitespace-nowrap text-muted-foreground"
+                                >端口</Label
+                            >
                             <Input
                                 v-model="rtPort"
                                 class="h-8 w-24 text-xs"
@@ -620,21 +702,39 @@ function formatInputDate(date: Date): string {
                                 @keyup.enter="loadRealtime()"
                             />
                         </div>
-                        <Button variant="outline" size="sm" :disabled="rtLoading" @click="loadRealtime()">
-                            <Spinner v-if="rtLoading" data-icon="inline-start" />
-                            <RefreshCw v-else data-icon="inline-start" class="size-3.5" />
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            :disabled="rtLoading"
+                            @click="loadRealtime()"
+                        >
+                            <Spinner
+                                v-if="rtLoading"
+                                data-icon="inline-start"
+                            />
+                            <RefreshCw
+                                v-else
+                                data-icon="inline-start"
+                                class="size-3.5"
+                            />
                             刷新
                         </Button>
                     </div>
                 </CardHeader>
                 <CardContent>
-                    <div v-if="rtLoading && rtPoints.length === 0" class="flex justify-center py-16">
+                    <div
+                        v-if="rtLoading && rtPoints.length === 0"
+                        class="flex justify-center py-16"
+                    >
                         <Spinner />
                     </div>
-                    <div v-else-if="rtPoints.length === 0" class="py-16 text-center text-muted-foreground text-sm">
+                    <div
+                        v-else-if="rtPoints.length === 0"
+                        class="py-16 text-center text-sm text-muted-foreground"
+                    >
                         暂无数据
                     </div>
-                    <div v-else class="relative" style="height: 320px;">
+                    <div v-else class="relative" style="height: 320px">
                         <canvas ref="rtCanvasRef" />
                     </div>
                 </CardContent>
@@ -646,38 +746,80 @@ function formatInputDate(date: Date): string {
                     <div class="flex flex-wrap items-center gap-3">
                         <div class="flex gap-1 rounded-md border p-0.5">
                             <button
-                                v-for="t in [{ v: '10m', label: '10m' }, { v: '30m', label: '30m' }, { v: '60m', label: '1h' }]"
+                                v-for="t in [
+                                    { v: '10m', label: '10m' },
+                                    { v: '30m', label: '30m' },
+                                    { v: '60m', label: '1h' },
+                                ]"
                                 :key="t.v"
                                 type="button"
                                 class="rounded px-3 py-1 text-xs font-medium transition-colors"
-                                :class="topRecentTime === t.v ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'"
+                                :class="
+                                    topRecentTime === t.v
+                                        ? 'bg-primary text-primary-foreground'
+                                        : 'text-muted-foreground hover:text-foreground'
+                                "
                                 @click="setTopRecentTime(t.v)"
                             >
                                 {{ t.label }}
                             </button>
                         </div>
-                        <Button variant="outline" size="sm" :disabled="topLoading" @click="loadTop()">
-                            <Spinner v-if="topLoading" data-icon="inline-start" />
-                            <RefreshCw v-else data-icon="inline-start" class="size-3.5" />
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            :disabled="topLoading"
+                            @click="loadTop()"
+                        >
+                            <Spinner
+                                v-if="topLoading"
+                                data-icon="inline-start"
+                            />
+                            <RefreshCw
+                                v-else
+                                data-icon="inline-start"
+                                class="size-3.5"
+                            />
                             刷新
                         </Button>
                     </div>
                 </CardHeader>
                 <CardContent>
-                    <div v-if="topLoading && topRows.length === 0" class="flex justify-center py-12">
+                    <div
+                        v-if="topLoading && topRows.length === 0"
+                        class="flex justify-center py-12"
+                    >
                         <Spinner />
                     </div>
-                    <div v-else-if="topRows.length === 0" class="py-12 text-center text-muted-foreground text-sm">
+                    <div
+                        v-else-if="topRows.length === 0"
+                        class="py-12 text-center text-sm text-muted-foreground"
+                    >
                         暂无排行数据
                     </div>
                     <div v-else class="overflow-x-auto border-y">
                         <table class="w-full text-sm">
                             <thead class="border-b text-muted-foreground">
                                 <tr>
-                                    <th class="px-4 py-2.5 text-left font-medium w-16">排名</th>
-                                    <th class="px-4 py-2.5 text-left font-medium">端口</th>
-                                    <th class="px-4 py-2.5 text-right font-medium w-36">数值</th>
-                                    <th class="px-4 py-2.5 text-right font-medium w-32">时间</th>
+                                    <th
+                                        class="w-16 px-4 py-2.5 text-left font-medium"
+                                    >
+                                        排名
+                                    </th>
+                                    <th
+                                        class="px-4 py-2.5 text-left font-medium"
+                                    >
+                                        端口
+                                    </th>
+                                    <th
+                                        class="w-36 px-4 py-2.5 text-right font-medium"
+                                    >
+                                        数值
+                                    </th>
+                                    <th
+                                        class="w-32 px-4 py-2.5 text-right font-medium"
+                                    >
+                                        时间
+                                    </th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -686,13 +828,46 @@ function formatInputDate(date: Date): string {
                                     :key="i"
                                     class="border-b last:border-b-0"
                                 >
-                                    <td class="px-4 py-2.5 text-muted-foreground">{{ i + 1 }}</td>
-                                    <td class="px-4 py-2.5 font-medium">{{ textValue(row.port) || textValue(row.key) || textValue(row.name) || '-' }}</td>
-                                    <td class="px-4 py-2.5 text-right tabular-nums">
-                                        {{ formatMetric(Number(textValue(row['value']) || textValue(row.count) || textValue(row.traffic) || 0), rtType === 'stream-traffic' ? 'bytes' : 'count') }}
+                                    <td
+                                        class="px-4 py-2.5 text-muted-foreground"
+                                    >
+                                        {{ i + 1 }}
                                     </td>
-                                    <td class="px-4 py-2.5 text-right text-muted-foreground">
-                                        {{ formatDate(row.time ?? row.timestamp) }}
+                                    <td class="px-4 py-2.5 font-medium">
+                                        {{
+                                            textValue(row.port) ||
+                                            textValue(row.key) ||
+                                            textValue(row.name) ||
+                                            '-'
+                                        }}
+                                    </td>
+                                    <td
+                                        class="px-4 py-2.5 text-right tabular-nums"
+                                    >
+                                        {{
+                                            formatMetric(
+                                                Number(
+                                                    textValue(row['value']) ||
+                                                        textValue(row.count) ||
+                                                        textValue(
+                                                            row.traffic,
+                                                        ) ||
+                                                        0,
+                                                ),
+                                                rtType === 'stream-traffic'
+                                                    ? 'bytes'
+                                                    : 'count',
+                                            )
+                                        }}
+                                    </td>
+                                    <td
+                                        class="px-4 py-2.5 text-right text-muted-foreground"
+                                    >
+                                        {{
+                                            formatDate(
+                                                row.time ?? row.timestamp,
+                                            )
+                                        }}
                                     </td>
                                 </tr>
                             </tbody>
@@ -719,17 +894,27 @@ function formatInputDate(date: Date): string {
                     </Button>
                 </div>
                 <form
-                    class="grid gap-2 lg:grid-cols-[120px_120px_120px_120px_120px_auto]"
+                    class="flex flex-wrap items-center gap-2"
                     @submit.prevent="loadStreams(1)"
                 >
                     <Input
                         v-model="filters.listen_port"
+                        class="w-32"
                         placeholder="监听端口"
                     />
-                    <Input v-model="filters.group" placeholder="转发组" />
-                    <Input v-model="filters.id" placeholder="转发 ID" />
+                    <Input
+                        v-model="filters.group"
+                        class="w-32"
+                        placeholder="转发组"
+                    />
+                    <Input
+                        v-model="filters.id"
+                        class="w-32"
+                        placeholder="转发 ID"
+                    />
                     <Input
                         v-model="filters.user_package"
+                        class="w-32"
                         placeholder="套餐 ID"
                     />
                     <Select v-model="filters.enable">
@@ -819,11 +1004,15 @@ function formatInputDate(date: Date): string {
                                         v-if="streamCname(stream)"
                                         class="flex items-center gap-1"
                                     >
-                                        <span class="truncate font-mono text-xs">
+                                        <span
+                                            class="truncate font-mono text-xs"
+                                        >
                                             {{ streamCname(stream) }}
                                         </span>
                                     </div>
-                                    <span v-else class="text-muted-foreground">-</span>
+                                    <span v-else class="text-muted-foreground"
+                                        >-</span
+                                    >
                                 </td>
                                 <td class="px-4 py-3">
                                     {{ textValue(stream.user_package) || '-' }}
@@ -848,7 +1037,9 @@ function formatInputDate(date: Date): string {
                                             size="sm"
                                             @click="goToDetail(stream)"
                                         >
-                                            <ExternalLink data-icon="inline-start" />
+                                            <ExternalLink
+                                                data-icon="inline-start"
+                                            />
                                             详情
                                         </Button>
                                         <Button
@@ -941,8 +1132,13 @@ function formatInputDate(date: Date): string {
                                         :key="textValue(pkg.id)"
                                         :value="textValue(pkg.id)"
                                     >
-                                        {{ textValue(pkg.user_package_name) || textValue(pkg.name) }}
-                                        <span class="ml-1 text-xs text-muted-foreground">
+                                        {{
+                                            textValue(pkg.user_package_name) ||
+                                            textValue(pkg.name)
+                                        }}
+                                        <span
+                                            class="ml-1 text-xs text-muted-foreground"
+                                        >
                                             · 到期 {{ formatDate(pkg.end_at2) }}
                                         </span>
                                     </SelectItem>
@@ -961,7 +1157,10 @@ function formatInputDate(date: Date): string {
                     <div class="grid gap-2">
                         <Label>监听</Label>
                         <div class="flex gap-2">
-                            <Select v-model="form.listen_protocol" class="w-28 shrink-0">
+                            <Select
+                                v-model="form.listen_protocol"
+                                class="w-28 shrink-0"
+                            >
                                 <SelectTrigger><SelectValue /></SelectTrigger>
                                 <SelectContent>
                                     <SelectGroup>
@@ -1018,14 +1217,18 @@ function formatInputDate(date: Date): string {
                                     </SelectTrigger>
                                     <SelectContent>
                                         <SelectGroup>
-                                            <SelectItem value="__none__">不分组</SelectItem>
+                                            <SelectItem value="__none__"
+                                                >不分组</SelectItem
+                                            >
                                             <SelectItem
                                                 v-for="group in streamGroups"
                                                 :key="textValue(group.id)"
                                                 :value="textValue(group.id)"
                                             >
                                                 {{ textValue(group.name) }}
-                                                <span class="ml-1 text-xs text-muted-foreground">
+                                                <span
+                                                    class="ml-1 text-xs text-muted-foreground"
+                                                >
                                                     #{{ textValue(group.id) }}
                                                 </span>
                                             </SelectItem>

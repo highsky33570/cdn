@@ -212,12 +212,12 @@ function colStyle(col: ColumnDef): Record<string, string> {
 
 function colAlign(col: ColumnDef): string {
     if (col.align === 'center') {
-return 'text-center';
-}
+        return 'text-center';
+    }
 
     if (col.align === 'right') {
-return 'text-right';
-}
+        return 'text-right';
+    }
 
     return 'text-left';
 }
@@ -292,9 +292,17 @@ defineExpose({
     </Alert>
 
     <Card class="gap-0 overflow-hidden">
-        <CardHeader class="space-y-4">
+        <CardHeader>
+            <!--
+                One row, not two. Search and the page's own actions used to sit on
+                a second line under the title while 刷新 sat alone on the first,
+                which read as a stray strip of controls and wasted a whole row of
+                height on every table in the console. Everything now shares the
+                title row and packs to the right, wrapping under it only when the
+                viewport is too narrow to hold it.
+            -->
             <div
-                class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between"
+                class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between"
             >
                 <div class="flex items-center gap-3">
                     <div
@@ -308,83 +316,87 @@ defineExpose({
                         {{ paginationText }}
                     </Badge>
                 </div>
-                <slot name="toolbar-end" :loading="loading" :refresh="refresh">
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        :disabled="loading"
-                        @click="refresh"
-                    >
-                        <Spinner v-if="loading" data-icon="inline-start" />
-                        <RefreshCw v-else data-icon="inline-start" />
-                        刷新
-                    </Button>
-                </slot>
-            </div>
-
-            <!--
-                CardHeader is a single-column grid, so anything dropped straight
-                into the toolbar slot stretched to the full width of the card — a
-                lone 新增 button came out as a button the width of the screen.
-                Wrapping the slot in a flex row gives every child its natural
-                width and packs them to the left, whatever a page puts in here.
-            -->
-            <div class="flex flex-wrap items-center gap-2">
-                <slot
-                    name="toolbar"
-                    :loading="loading"
-                    :submit-search="submitSearch"
-                >
+                <!--
+                    CardHeader is a single-column grid, so anything dropped
+                    straight into the toolbar slot became a grid item and
+                    stretched to the full width of the card — a lone 新增 button
+                    came out as wide as the screen. This flex row gives every
+                    child its natural width instead.
+                -->
+                <div class="flex flex-wrap items-center gap-2 lg:justify-end">
                     <slot
-                        name="search-fields"
+                        name="toolbar"
                         :loading="loading"
                         :submit-search="submitSearch"
                     >
-                        <!--
+                        <slot
+                            name="search-fields"
+                            :loading="loading"
+                            :submit-search="submitSearch"
+                        >
+                            <!--
                             Capped rather than 1fr: on a wide monitor a full-width
                             search box left the 搜索 button stranded at the far
                             edge, far from the field it acts on.
                         -->
-                        <div class="relative w-full sm:w-72">
-                            <Search
-                                class="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
-                            />
-                            <Input
-                                v-model="searchText"
-                                class="pl-9"
-                                :placeholder="searchPlaceholder"
-                                @keyup.enter="submitSearch"
-                            />
-                        </div>
+                            <div class="relative w-full sm:w-72">
+                                <Search
+                                    class="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
+                                />
+                                <Input
+                                    v-model="searchText"
+                                    class="pl-9"
+                                    :placeholder="searchPlaceholder"
+                                    @keyup.enter="submitSearch"
+                                />
+                            </div>
+                        </slot>
+                        <Button :disabled="loading" @click="submitSearch">
+                            <Spinner v-if="loading" data-icon="inline-start" />
+                            <Search v-else data-icon="inline-start" />
+                            搜索
+                        </Button>
+                        <Select v-model="perPage">
+                            <SelectTrigger class="w-28">
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectGroup>
+                                    <SelectItem
+                                        v-for="size in pageSizeOptions"
+                                        :key="size"
+                                        :value="String(size)"
+                                    >
+                                        {{ size }} 条
+                                    </SelectItem>
+                                </SelectGroup>
+                            </SelectContent>
+                        </Select>
+                        <slot
+                            name="toolbar-actions"
+                            :loading="loading"
+                            :selected-ids="selectedIds"
+                            :refresh="refresh"
+                        />
                     </slot>
-                    <Button :disabled="loading" @click="submitSearch">
-                        <Spinner v-if="loading" data-icon="inline-start" />
-                        <Search v-else data-icon="inline-start" />
-                        搜索
-                    </Button>
-                    <Select v-model="perPage">
-                        <SelectTrigger class="w-28">
-                            <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectGroup>
-                                <SelectItem
-                                    v-for="size in pageSizeOptions"
-                                    :key="size"
-                                    :value="String(size)"
-                                >
-                                    {{ size }} 条
-                                </SelectItem>
-                            </SelectGroup>
-                        </SelectContent>
-                    </Select>
+
                     <slot
-                        name="toolbar-actions"
+                        name="toolbar-end"
                         :loading="loading"
-                        :selected-ids="selectedIds"
                         :refresh="refresh"
-                    />
-                </slot>
+                    >
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            :disabled="loading"
+                            @click="refresh"
+                        >
+                            <Spinner v-if="loading" data-icon="inline-start" />
+                            <RefreshCw v-else data-icon="inline-start" />
+                            刷新
+                        </Button>
+                    </slot>
+                </div>
             </div>
         </CardHeader>
 

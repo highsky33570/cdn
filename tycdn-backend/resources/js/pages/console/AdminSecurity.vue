@@ -186,6 +186,23 @@ const form = reactive({
     user_id: '',
 });
 
+/**
+ * The CDNfly user that owns a rule.
+ *
+ * /v1/waf-rules is a user-scope endpoint, so writing to a rule means acting as
+ * its owner. Built-in rules (已知漏洞防护 and friends) belong to the panel rather
+ * than to any user and come back with no user_id — there is no one to act as, so
+ * say that plainly instead of sending NaN and surfacing a validation error the
+ * operator cannot act on.
+ */
+function ownerId(row: CdnflyRecord | null): number | null {
+    const raw = Number(row?.user_id);
+
+    return Number.isFinite(raw) && raw > 0 ? raw : null;
+}
+
+const OWNERLESS = '这是系统内置规则，没有归属用户，只能在 CDNfly 面板中修改。';
+
 const dialogTitle = computed(() =>
     editingRecord.value ? '编辑 ACL' : '新增 ACL',
 );
@@ -196,12 +213,21 @@ async function toggleAclEnabled(
 ): Promise<void> {
     const id = Number(row.id);
     if (!id) return;
+
+    const owner = ownerId(row);
+
+    if (owner === null) {
+        toast.error(OWNERLESS);
+
+        return;
+    }
+
     togglingId.value = id;
     try {
         await updateAdminAcl(id, {
             enable: checked ? 1 : 0,
-            // /v1/waf-rules is user-scope: the server needs the owner to act as
-            user_id: Number(row.user_id),
+            // user-scope endpoint: the server acts as this owner
+            user_id: owner,
         });
         toast.success(checked ? 'ACL 已启用' : 'ACL 已停用');
         aclTableRef.value?.refresh();
@@ -294,10 +320,15 @@ async function confirmDelete(): Promise<void> {
     if (!deleteTarget.value) return;
     deletingId.value = Number(deleteTarget.value.id);
     try {
-        await deleteAdminAcl(
-            Number(deleteTarget.value.id),
-            Number(deleteTarget.value.user_id),
-        );
+        const owner = ownerId(deleteTarget.value);
+
+        if (owner === null) {
+            formError.value = OWNERLESS;
+
+            return;
+        }
+
+        await deleteAdminAcl(Number(deleteTarget.value.id), owner);
         deleteOpen.value = false;
         toast.success('ACL 已删除');
         aclTableRef.value?.refresh();
