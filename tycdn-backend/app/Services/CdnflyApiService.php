@@ -1086,6 +1086,26 @@ class CdnflyApiService
         return $this->parseResponse($response, 'get configs');
     }
 
+    /**
+     * Update one config row.
+     *
+     * CDNfly's config list is a table of rows, each with its own id, scope and
+     * type — so a single setting is changed by id. PUT /v1/configs (no id) is a
+     * bulk replace, which is the wrong tool for "turn WAF on": it round-trips
+     * every other row, including the ones whose values are entire HTML
+     * documents.
+     *
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
+    public function updateConfig(int $id, array $data): array
+    {
+        $this->ensureOutboundEnabled('update config');
+        $response = $this->adminHttp()->put("/v1/configs/{$id}", $data);
+
+        return $this->parseResponse($response, 'update config');
+    }
+
     public function updateConfigs(array $data): array
     {
         $response = $this->adminHttp()->put('/v1/configs', $data);

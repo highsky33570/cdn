@@ -827,6 +827,23 @@ export async function updateAdminConfigs(
     });
 }
 
+/**
+ * Update one config row.
+ *
+ * The bulk PUT filters against a list of key names that do not exist in
+ * CDNfly, so it always answered "所有字段均被过滤". Editing by id is both the
+ * documented shape and the only one that actually works.
+ */
+export async function updateAdminConfig(
+    id: number,
+    payload: { name: string; value: string },
+): Promise<CdnflyRecord> {
+    return apiRequest<CdnflyRecord>(`/api/admin/configs/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(payload),
+    });
+}
+
 export async function getAdminRegisterInfo(): Promise<CdnflyRecord> {
     return apiRequest<CdnflyRecord>('/api/admin/register-info');
 }

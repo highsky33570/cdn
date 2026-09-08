@@ -59,31 +59,31 @@ class AdminConfigController extends Controller
      */
     private const CONFIG_VALUE_RULES = [
         // 数值类
-        'default_node_group'      => ['type' => 'int', 'min' => 0],
-        'default_region'          => ['type' => 'int', 'min' => 0],
-        'default_line'            => ['type' => 'int', 'min' => 0],
-        'bandwidth_limit'         => ['type' => 'int', 'min' => 0],
-        'traffic_limit'           => ['type' => 'int', 'min' => 0],
-        'traffic_reset_day'       => ['type' => 'int', 'min' => 1, 'max_int' => 31],
-        'cache_time'              => ['type' => 'int', 'min' => 0],
-        'cache_size'              => ['type' => 'int', 'min' => 0],
-        'cc_rate'                 => ['type' => 'int', 'min' => 0],
-        'cc_qps'                  => ['type' => 'int', 'min' => 0],
+        'default_node_group' => ['type' => 'int', 'min' => 0],
+        'default_region' => ['type' => 'int', 'min' => 0],
+        'default_line' => ['type' => 'int', 'min' => 0],
+        'bandwidth_limit' => ['type' => 'int', 'min' => 0],
+        'traffic_limit' => ['type' => 'int', 'min' => 0],
+        'traffic_reset_day' => ['type' => 'int', 'min' => 1, 'max_int' => 31],
+        'cache_time' => ['type' => 'int', 'min' => 0],
+        'cache_size' => ['type' => 'int', 'min' => 0],
+        'cc_rate' => ['type' => 'int', 'min' => 0],
+        'cc_qps' => ['type' => 'int', 'min' => 0],
         'register_default_package' => ['type' => 'int', 'min' => 0],
         // 布尔类
-        'waf_enable'              => ['type' => 'bool'],
-        'cc_enable'               => ['type' => 'bool'],
-        'register_enable'         => ['type' => 'bool'],
-        'register_verify'         => ['type' => 'bool'],
+        'waf_enable' => ['type' => 'bool'],
+        'cc_enable' => ['type' => 'bool'],
+        'register_enable' => ['type' => 'bool'],
+        'register_verify' => ['type' => 'bool'],
         // 纯文本（strip_tags 防 XSS）
-        'site_name'               => ['type' => 'string', 'max' => 100, 'strip' => true],
-        'notify_email'            => ['type' => 'string', 'max' => 255, 'pattern' => '/^[^<>]*$/'],
-        'notify_wechat'           => ['type' => 'string', 'max' => 255, 'strip' => true],
-        'site_footer'             => ['type' => 'string', 'max' => 2000, 'strip' => true],
-        'site_announcement'       => ['type' => 'string', 'max' => 5000, 'strip' => true],
+        'site_name' => ['type' => 'string', 'max' => 100, 'strip' => true],
+        'notify_email' => ['type' => 'string', 'max' => 255, 'pattern' => '/^[^<>]*$/'],
+        'notify_wechat' => ['type' => 'string', 'max' => 255, 'strip' => true],
+        'site_footer' => ['type' => 'string', 'max' => 2000, 'strip' => true],
+        'site_announcement' => ['type' => 'string', 'max' => 5000, 'strip' => true],
         // URL 类（只允许 http/https）
-        'site_logo'               => ['type' => 'url', 'max' => 500],
-        'site_favicon'            => ['type' => 'url', 'max' => 500],
+        'site_logo' => ['type' => 'url', 'max' => 500],
+        'site_favicon' => ['type' => 'url', 'max' => 500],
     ];
 
     /**
@@ -150,6 +150,55 @@ class AdminConfigController extends Controller
         }
     }
 
+    /**
+     * Update a single config row by id.
+     *
+     * The bulk update() below filters against ALLOWED_CONFIG_KEYS, a list of
+     * invented names — `site_name`, `cache_time`, `default_node_group` and so on.
+     * None of them exist in CDNfly, whose rows are named `nginx-config-file`,
+     * `related-config-min-limit`, `block_page_num_limit`… So every field was
+     * silently dropped and the save always answered "所有字段均被过滤". The page
+     * looked read-only because in practice it was.
+     *
+     * Editing by id fixes that, and is the shape CDNfly actually documents
+     * (PUT /v1/configs/{id}). The credential blocklist still applies — that one
+     * guards something real — but there is no name allowlist: the operator owns
+     * this panel and can already edit every one of these rows in CDNfly itself,
+     * so a list of guessed names only broke the feature without protecting it.
+     */
+    public function updateOne(Request $request, int $id): JsonResponse
+    {
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:190'],
+            // Values legitimately run to entire HTML documents (the CAPTCHA
+            // templates), so the cap is generous rather than absent.
+            'value' => ['present', 'string', 'max:200000'],
+        ]);
+
+        if ($this->isBlockedConfigKey($validated['name'])) {
+            Log::warning('AdminConfigController: blocked sensitive config key', [
+                'key' => $validated['name'],
+                'admin_user_id' => $request->user()?->id,
+                'ip' => $request->ip(),
+            ]);
+
+            throw ValidationException::withMessages([
+                'name' => '不允许通过管理面板修改此配置项',
+            ]);
+        }
+
+        try {
+            $data = $this->cdnfly->updateConfig($id, ['value' => $validated['value']]);
+
+            return response()->json(['ok' => true, 'data' => $data]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'ok' => false,
+                'message' => 'CDNfly 通讯失败：'.$e->getMessage(),
+            ], 502);
+        }
+    }
+
     public function registerInfo(): JsonResponse
     {
         try {
@@ -213,10 +262,10 @@ class AdminConfigController extends Controller
         $type = $rule['type'] ?? 'string';
 
         return match ($type) {
-            'int'    => $this->validateInt($key, $value, $rule),
-            'bool'   => $this->validateBool($key, $value),
-            'url'    => $this->validateUrl($key, $value, $rule),
-            default  => $this->validateString($key, $value, $rule),
+            'int' => $this->validateInt($key, $value, $rule),
+            'bool' => $this->validateBool($key, $value),
+            'url' => $this->validateUrl($key, $value, $rule),
+            default => $this->validateString($key, $value, $rule),
         };
     }
 

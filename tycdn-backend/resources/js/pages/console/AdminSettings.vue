@@ -2,6 +2,7 @@
 import {
     AlertCircle,
     Code2,
+    Pencil,
     RefreshCw,
     Save,
     Search,
@@ -14,11 +15,21 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
 import {
     getAdminConfigs,
     getAdminRegisterInfo,
+    updateAdminConfig,
     updateAdminConfigs,
 } from '@/lib/adminModulesApi';
 import type { CdnflyRecord } from '@/lib/adminModulesApi';
@@ -28,6 +39,8 @@ import type { CdnflyRecord } from '@/lib/adminModulesApi';
  * own scope and type — not a flat key/value object.
  */
 type ConfigRow = {
+    /** CDNfly's row id — what PUT /v1/configs/{id} addresses. */
+    id: number;
     /** name alone is not unique — the same setting exists per scope. */
     key: string;
     name: string;
@@ -77,6 +90,48 @@ function toggleExpanded(key: string): void {
     expanded.value = next;
 }
 
+const editing = ref<ConfigRow | null>(null);
+const editValue = ref('');
+const editSaving = ref(false);
+const editError = ref('');
+
+function openEdit(row: ConfigRow): void {
+    editing.value = row;
+    editValue.value = row.value;
+    editError.value = '';
+}
+
+async function saveOne(): Promise<void> {
+    const row = editing.value;
+
+    if (!row) {
+        return;
+    }
+
+    if (row.id <= 0) {
+        editError.value = '该配置项没有 ID，无法单独保存。';
+
+        return;
+    }
+
+    editSaving.value = true;
+    editError.value = '';
+
+    try {
+        await updateAdminConfig(row.id, {
+            name: row.name,
+            value: editValue.value,
+        });
+        toast.success(`${row.name} 已保存`);
+        editing.value = null;
+        await loadSettings();
+    } catch (error) {
+        editError.value = error instanceof Error ? error.message : '请求失败';
+    } finally {
+        editSaving.value = false;
+    }
+}
+
 onMounted(() => {
     void loadSettings();
 });
@@ -102,6 +157,7 @@ const configRows = computed<ConfigRow[]>(() => {
     }
 
     return data.filter(isRecord).map((row) => ({
+        id: Number(row.id) || 0,
         key: `${text(row.name)}@${text(row.scope_name)}@${text(row.scope_id)}`,
         name: text(row.name),
         value: text(row.value),
@@ -350,6 +406,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
                                 <col style="width: 10%" />
                                 <col style="width: 8%" />
                                 <col style="width: 10%" />
+                                <col style="width: 72px" />
                             </colgroup>
                             <thead>
                                 <tr
@@ -366,6 +423,11 @@ function isRecord(value: unknown): value is Record<string, unknown> {
                                     <th class="px-4 py-2 font-medium">状态</th>
                                     <th class="px-4 py-2 font-medium">
                                         更新时间
+                                    </th>
+                                    <th
+                                        class="px-4 py-2 text-right font-medium"
+                                    >
+                                        操作
                                     </th>
                                 </tr>
                             </thead>
@@ -441,10 +503,25 @@ function isRecord(value: unknown): value is Record<string, unknown> {
                                     <td class="px-4 py-3 text-muted-foreground">
                                         {{ row.updatedAt || '-' }}
                                     </td>
+                                    <td class="px-4 py-3 text-right">
+                                        <Button
+                                            variant="ghost"
+                                            size="icon-sm"
+                                            :disabled="row.id <= 0"
+                                            :title="
+                                                row.id > 0
+                                                    ? '编辑'
+                                                    : '该配置项没有 ID'
+                                            "
+                                            @click="openEdit(row)"
+                                        >
+                                            <Pencil class="size-3.5" />
+                                        </Button>
+                                    </td>
                                 </tr>
                                 <tr v-if="visibleConfigRows.length === 0">
                                     <td
-                                        colspan="6"
+                                        colspan="7"
                                         class="px-6 py-10 text-center text-muted-foreground"
                                     >
                                         {{
@@ -493,5 +570,53 @@ function isRecord(value: unknown): value is Record<string, unknown> {
                 </CardContent>
             </Card>
         </template>
+
+        <Dialog
+            :open="editing !== null"
+            @update:open="(open) => (editing = open ? editing : null)"
+        >
+            <DialogContent class="max-w-2xl">
+                <DialogHeader>
+                    <DialogTitle>编辑配置项</DialogTitle>
+                    <DialogDescription>
+                        {{ editing?.name }} · 作用域 {{ editing?.scope }}
+                    </DialogDescription>
+                </DialogHeader>
+
+                <Alert v-if="editError" variant="destructive">
+                    <AlertCircle data-icon="alert" />
+                    <AlertTitle>保存失败</AlertTitle>
+                    <AlertDescription>{{ editError }}</AlertDescription>
+                </Alert>
+
+                <div class="grid gap-2">
+                    <Label for="config-value">值</Label>
+                    <textarea
+                        id="config-value"
+                        v-model="editValue"
+                        class="min-h-40 w-full resize-y rounded-md border bg-background px-3 py-2 font-mono text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                        spellcheck="false"
+                    />
+                    <p class="text-xs text-muted-foreground">
+                        只会提交这一项，其它配置保持不变。
+                    </p>
+                </div>
+
+                <DialogFooter>
+                    <Button
+                        variant="outline"
+                        :disabled="editSaving"
+                        @click="editing = null"
+                    >
+                        取消
+                    </Button>
+                    <Button :disabled="editSaving" @click="saveOne">
+                        <Spinner v-if="editSaving" data-icon="inline-start" />
+                        <Save v-else data-icon="inline-start" />
+                        保存
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
     </div>
 </template>
