@@ -924,26 +924,55 @@ class CdnflyApiService
     }
 
     // ─── Admin: ACLs ──────────────────────────────────────────
-    public function adminCreateAcl(array $data): array
+    //
+    // CDNfly v6 documents /v1/waf-rules under the *user* scope only — the sole
+    // admin-scope WAF route is waf-rules/update-subscription. Sending the master
+    // api-key here is refused, which is why the console's 新增 ACL button failed.
+    //
+    // The console's form is nonetheless an admin one: it names the customer the
+    // rule is for. So act as that customer rather than as the panel: mint an SSO
+    // token for their CDNfly user and call the user endpoint as them. That keeps
+    // the operator's intent intact instead of quietly filing the rule under the
+    // operator's own account.
+
+    /**
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
+    public function adminCreateAcl(int $cdnflyUserId, array $data): array
     {
         $this->ensureOutboundEnabled('admin create acl');
-        $response = $this->adminHttp()->post('/v1/waf-rules', $data);
+        $token = $this->getSsoToken($cdnflyUserId);
+        // user_id is implied by the token; leaving it in the body would be an
+        // attempt to set ownership on an endpoint that does not accept it.
+        unset($data['user_id']);
+        $response = $this->bearerHttp($token)->post('/v1/waf-rules', $data);
 
         return $this->parseResponse($response, 'admin create acl');
     }
 
-    public function adminUpdateAcl(int $id, array $data): array
+    /**
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
+    public function adminUpdateAcl(int $cdnflyUserId, int $id, array $data): array
     {
         $this->ensureOutboundEnabled('admin update acl');
-        $response = $this->adminHttp()->put("/v1/waf-rules/{$id}", $data);
+        $token = $this->getSsoToken($cdnflyUserId);
+        unset($data['user_id']);
+        $response = $this->bearerHttp($token)->put("/v1/waf-rules/{$id}", $data);
 
         return $this->parseResponse($response, 'admin update acl');
     }
 
-    public function adminDeleteAcl(int $id): array
+    /**
+     * @return array<string, mixed>
+     */
+    public function adminDeleteAcl(int $cdnflyUserId, int $id): array
     {
         $this->ensureOutboundEnabled('admin delete acl');
-        $response = $this->adminHttp()->delete("/v1/waf-rules/{$id}");
+        $token = $this->getSsoToken($cdnflyUserId);
+        $response = $this->bearerHttp($token)->delete("/v1/waf-rules/{$id}");
 
         return $this->parseResponse($response, 'admin delete acl');
     }

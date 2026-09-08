@@ -1,8 +1,16 @@
 import { apiRequest } from '@/lib/apiRequest';
 import { buildUrl } from '@/lib/urlHelpers';
 
-export type { CdnflyRecord, CdnflyListData, Paginated } from '@/lib/sharedTypes';
-import type { CdnflyRecord, CdnflyListData, Paginated } from '@/lib/sharedTypes';
+export type {
+    CdnflyRecord,
+    CdnflyListData,
+    Paginated,
+} from '@/lib/sharedTypes';
+import type {
+    CdnflyRecord,
+    CdnflyListData,
+    Paginated,
+} from '@/lib/sharedTypes';
 export type AdminNodePayload = {
     name: string;
     ip: string;
@@ -362,11 +370,17 @@ export async function listAdminAllCerts(
 }
 
 export function createAdminCert(data: AdminCertPayload) {
-    return apiRequest('/api/admin/all-certs', { method: 'POST', body: JSON.stringify(data) });
+    return apiRequest('/api/admin/all-certs', {
+        method: 'POST',
+        body: JSON.stringify(data),
+    });
 }
 
 export function updateAdminCert(id: number, data: Partial<AdminCertPayload>) {
-    return apiRequest(`/api/admin/all-certs/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+    return apiRequest(`/api/admin/all-certs/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+    });
 }
 
 export function deleteAdminCert(id: number) {
@@ -399,11 +413,20 @@ export async function listAdminStreams(
 }
 
 export function createAdminStream(data: AdminStreamPayload) {
-    return apiRequest('/api/admin/streams', { method: 'POST', body: JSON.stringify(data) });
+    return apiRequest('/api/admin/streams', {
+        method: 'POST',
+        body: JSON.stringify(data),
+    });
 }
 
-export function updateAdminStream(id: number, data: Partial<AdminStreamPayload>) {
-    return apiRequest(`/api/admin/streams/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+export function updateAdminStream(
+    id: number,
+    data: Partial<AdminStreamPayload>,
+) {
+    return apiRequest(`/api/admin/streams/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+    });
 }
 
 // ─── Stream Groups ────────────────────────────────────
@@ -421,11 +444,20 @@ export async function listAdminStreamGroups(
 }
 
 export function createAdminStreamGroup(data: AdminStreamGroupPayload) {
-    return apiRequest('/api/admin/stream-groups', { method: 'POST', body: JSON.stringify(data) });
+    return apiRequest('/api/admin/stream-groups', {
+        method: 'POST',
+        body: JSON.stringify(data),
+    });
 }
 
-export function updateAdminStreamGroup(id: number, data: Partial<AdminStreamGroupPayload>) {
-    return apiRequest(`/api/admin/stream-groups/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+export function updateAdminStreamGroup(
+    id: number,
+    data: Partial<AdminStreamGroupPayload>,
+) {
+    return apiRequest(`/api/admin/stream-groups/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+    });
 }
 
 export function deleteAdminStreamGroup(id: number) {
@@ -433,10 +465,22 @@ export function deleteAdminStreamGroup(id: number) {
 }
 
 // ─── DNS ───────────────────────────────────────────────
+/**
+ * DNS provider credentials.
+ *
+ * Routed through the proxy, not /api/admin/dns-apis: CDNfly v6 documents
+ * /v1/dnsapis under the *user* scope only, and the admin routes sent the master
+ * api-key, which the endpoint refuses — the 新增 button failed with a 502 that
+ * looked like a connectivity problem. The proxy sends the caller's own CDNfly
+ * credentials, which is what these endpoints expect, and it is the reseller's
+ * own DNS credential either way.
+ */
+const DNS_APIS = '/api/cdn/proxy/v1/dnsapis';
+
 export async function listAdminDnsApis(
     params: Record<string, string | number> = {},
 ): Promise<CdnflyListData> {
-    return apiRequest<CdnflyListData>(buildUrl('/api/admin/dns-apis', params));
+    return apiRequest<CdnflyListData>(buildUrl(DNS_APIS, params));
 }
 
 export async function listAdminDnsLines(
@@ -486,22 +530,35 @@ export type AdminUserPackagePayload = {
 };
 
 export function createAdminUserPackage(data: AdminUserPackagePayload) {
-    return apiRequest('/api/admin/cdnfly-user-packages', { method: 'POST', body: JSON.stringify(data) });
+    return apiRequest('/api/admin/cdnfly-user-packages', {
+        method: 'POST',
+        body: JSON.stringify(data),
+    });
 }
 
-export function updateAdminUserPackage(id: number, data: Record<string, unknown>) {
-    return apiRequest(`/api/admin/cdnfly-user-packages/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+export function updateAdminUserPackage(
+    id: number,
+    data: Record<string, unknown>,
+) {
+    return apiRequest(`/api/admin/cdnfly-user-packages/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+    });
 }
 
 export function deleteAdminUserPackage(id: number) {
-    return apiRequest(`/api/admin/cdnfly-user-packages/${id}`, { method: 'DELETE' });
+    return apiRequest(`/api/admin/cdnfly-user-packages/${id}`, {
+        method: 'DELETE',
+    });
 }
 
 export async function listAdminUserPackageUpgrades(
     id: number,
     params: Record<string, string | number> = {},
 ): Promise<CdnflyListData> {
-    return apiRequest<CdnflyListData>(buildUrl(`/api/admin/cdnfly-user-packages/${id}/upgrades`, params));
+    return apiRequest<CdnflyListData>(
+        buildUrl(`/api/admin/cdnfly-user-packages/${id}/upgrades`, params),
+    );
 }
 
 export function addAdminUserPackageUpgrade(id: number, packageUpId: number) {
@@ -512,22 +569,36 @@ export function addAdminUserPackageUpgrade(id: number, packageUpId: number) {
 }
 
 export function removeAdminUserPackageUpgrade(id: number, upgradeId: number) {
-    return apiRequest(`/api/admin/cdnfly-user-packages/${id}/upgrades/${upgradeId}`, { method: 'DELETE' });
+    return apiRequest(
+        `/api/admin/cdnfly-user-packages/${id}/upgrades/${upgradeId}`,
+        { method: 'DELETE' },
+    );
 }
 
 // ─── Package Groups ──────────────────────────────────
 export async function listAdminPackageGroups(
     params: Record<string, string | number> = {},
 ): Promise<CdnflyListData> {
-    return apiRequest<CdnflyListData>(buildUrl('/api/admin/package-groups', params));
+    return apiRequest<CdnflyListData>(
+        buildUrl('/api/admin/package-groups', params),
+    );
 }
 
 export function createAdminPackageGroup(data: Record<string, unknown>) {
-    return apiRequest('/api/admin/package-groups', { method: 'POST', body: JSON.stringify(data) });
+    return apiRequest('/api/admin/package-groups', {
+        method: 'POST',
+        body: JSON.stringify(data),
+    });
 }
 
-export function updateAdminPackageGroup(id: number, data: Record<string, unknown>) {
-    return apiRequest(`/api/admin/package-groups/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+export function updateAdminPackageGroup(
+    id: number,
+    data: Record<string, unknown>,
+) {
+    return apiRequest(`/api/admin/package-groups/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+    });
 }
 
 export function deleteAdminPackageGroup(id: number) {
@@ -538,15 +609,26 @@ export function deleteAdminPackageGroup(id: number) {
 export async function listAdminPackageUps(
     params: Record<string, string | number> = {},
 ): Promise<CdnflyListData> {
-    return apiRequest<CdnflyListData>(buildUrl('/api/admin/package-ups', params));
+    return apiRequest<CdnflyListData>(
+        buildUrl('/api/admin/package-ups', params),
+    );
 }
 
 export function createAdminPackageUp(data: Record<string, unknown>) {
-    return apiRequest('/api/admin/package-ups', { method: 'POST', body: JSON.stringify(data) });
+    return apiRequest('/api/admin/package-ups', {
+        method: 'POST',
+        body: JSON.stringify(data),
+    });
 }
 
-export function updateAdminPackageUp(id: number, data: Record<string, unknown>) {
-    return apiRequest(`/api/admin/package-ups/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+export function updateAdminPackageUp(
+    id: number,
+    data: Record<string, unknown>,
+) {
+    return apiRequest(`/api/admin/package-ups/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+    });
 }
 
 export function deleteAdminPackageUp(id: number) {
@@ -568,11 +650,23 @@ export async function listAdminOpLogs(
     return apiRequest<CdnflyListData>(buildUrl('/api/admin/logs/op', params));
 }
 
+/**
+ * Realtime monitoring.
+ *
+ * Routed through the proxy because CDNfly v6 places
+ * /v1/monitor/site/realtime and /v1/monitor/stream/realtime under the *user*
+ * scope; the admin routes sent the master api-key and came back 502, which is
+ * what the 加载失败 banners on this page were.
+ *
+ * Known limit: v6 has no panel-wide equivalent — its admin monitor endpoints
+ * cover nodes and user packages, not every customer's sites. So this shows the
+ * signed-in operator's own sites and streams, not the whole platform's.
+ */
 export async function getAdminSiteRealtime(
     params: Record<string, string | number> = {},
 ): Promise<CdnflyListData> {
     return apiRequest<CdnflyListData>(
-        buildUrl('/api/admin/monitor/site-realtime', params),
+        buildUrl('/api/cdn/proxy/v1/monitor/site/realtime', params),
     );
 }
 
@@ -580,25 +674,29 @@ export async function getAdminStreamRealtime(
     params: Record<string, string | number> = {},
 ): Promise<CdnflyListData> {
     return apiRequest<CdnflyListData>(
-        buildUrl('/api/admin/monitor/stream-realtime', params),
+        buildUrl('/api/cdn/proxy/v1/monitor/stream/realtime', params),
     );
 }
 
 // ─── Admin DNS API CRUD ──────────────────────────────
 export function createAdminDnsApi(data: Record<string, unknown>) {
-    return apiRequest('/api/admin/dns-apis', { method: 'POST', body: JSON.stringify(data) });
+    return apiRequest(DNS_APIS, { method: 'POST', body: JSON.stringify(data) });
 }
 export function updateAdminDnsApi(id: number, data: Record<string, unknown>) {
-    return apiRequest(`/api/admin/dns-apis/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+    return apiRequest(`${DNS_APIS}/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+    });
 }
 export function deleteAdminDnsApi(id: number) {
-    return apiRequest(`/api/admin/dns-apis/${id}`, { method: 'DELETE' });
+    return apiRequest(`${DNS_APIS}/${id}`, { method: 'DELETE' });
 }
 
 // ─── Admin Stream enable/delete ──────────────────────
 export function setAdminStreamEnabled(id: number, enable: number) {
     return apiRequest(`/api/admin/streams/${id}/enable`, {
-        method: 'PUT', body: JSON.stringify({ enable }),
+        method: 'PUT',
+        body: JSON.stringify({ enable }),
     });
 }
 export function deleteAdminStream(id: number) {
@@ -607,59 +705,112 @@ export function deleteAdminStream(id: number) {
 
 // ─── Admin ACL CRUD ──────────────────────────────────
 export function createAdminAcl(data: Record<string, unknown>) {
-    return apiRequest('/api/admin/acls', { method: 'POST', body: JSON.stringify(data) });
+    return apiRequest('/api/admin/acls', {
+        method: 'POST',
+        body: JSON.stringify(data),
+    });
 }
 export function updateAdminAcl(id: number, data: Record<string, unknown>) {
-    return apiRequest(`/api/admin/acls/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+    return apiRequest(`/api/admin/acls/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+    });
 }
-export function deleteAdminAcl(id: number) {
-    return apiRequest(`/api/admin/acls/${id}`, { method: 'DELETE' });
+/**
+ * Deleting needs the owner's CDNfly user id, because /v1/waf-rules is a
+ * user-scope endpoint and the server acts as that user via an SSO token. Read it
+ * off the row's `user_id`.
+ */
+export function deleteAdminAcl(id: number, userId: number) {
+    return apiRequest(`/api/admin/acls/${id}`, {
+        method: 'DELETE',
+        body: JSON.stringify({ user_id: userId }),
+    });
 }
 
-// ─── Admin CC CRUD ──────────────────────────────────
+/**
+ * CC protection: matchers, filters and rules.
+ *
+ * These go through /api/cdn/proxy rather than /api/admin/*, for two reasons the
+ * old /api/admin/cc-* paths got wrong — they had no routes at all, so the page
+ * failed with "请求的接口不存在".
+ *
+ * 1. CDNfly v6 documents cc-matchs / cc-filters / cc-rules under the *user*
+ *    scope, not the admin scope. The proxy sends the caller's own CDNfly
+ *    credentials, which is the scope these endpoints expect.
+ * 2. Upstream the resource is "cc-matchs", not "cc-matchers". The old client
+ *    invented the English plural and would have 404'd against CDNfly even with
+ *    a route in place.
+ *
+ * The proxy allowlist already grants all methods on these three paths.
+ */
+const CC = {
+    matcher: '/api/cdn/proxy/v1/cc-matchs',
+    filter: '/api/cdn/proxy/v1/cc-filters',
+    rule: '/api/cdn/proxy/v1/cc-rules',
+} as const;
+
 export async function listAdminCcMatchers(
     params: Record<string, string | number> = {},
 ): Promise<CdnflyListData> {
-    return apiRequest<CdnflyListData>(buildUrl('/api/admin/cc-matchers', params));
+    return apiRequest<CdnflyListData>(buildUrl(CC.matcher, params));
 }
 export function createAdminCcMatcher(data: Record<string, unknown>) {
-    return apiRequest('/api/admin/cc-matchers', { method: 'POST', body: JSON.stringify(data) });
+    return apiRequest(CC.matcher, {
+        method: 'POST',
+        body: JSON.stringify(data),
+    });
 }
-export function updateAdminCcMatcher(id: number, data: Record<string, unknown>) {
-    return apiRequest(`/api/admin/cc-matchers/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+export function updateAdminCcMatcher(
+    id: number,
+    data: Record<string, unknown>,
+) {
+    return apiRequest(`${CC.matcher}/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+    });
 }
 export function deleteAdminCcMatcher(id: number) {
-    return apiRequest(`/api/admin/cc-matchers/${id}`, { method: 'DELETE' });
+    return apiRequest(`${CC.matcher}/${id}`, { method: 'DELETE' });
 }
 
 export async function listAdminCcFilters(
     params: Record<string, string | number> = {},
 ): Promise<CdnflyListData> {
-    return apiRequest<CdnflyListData>(buildUrl('/api/admin/cc-filters', params));
+    return apiRequest<CdnflyListData>(buildUrl(CC.filter, params));
 }
 export function createAdminCcFilter(data: Record<string, unknown>) {
-    return apiRequest('/api/admin/cc-filters', { method: 'POST', body: JSON.stringify(data) });
+    return apiRequest(CC.filter, {
+        method: 'POST',
+        body: JSON.stringify(data),
+    });
 }
 export function updateAdminCcFilter(id: number, data: Record<string, unknown>) {
-    return apiRequest(`/api/admin/cc-filters/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+    return apiRequest(`${CC.filter}/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+    });
 }
 export function deleteAdminCcFilter(id: number) {
-    return apiRequest(`/api/admin/cc-filters/${id}`, { method: 'DELETE' });
+    return apiRequest(`${CC.filter}/${id}`, { method: 'DELETE' });
 }
 
 export async function listAdminCcRules(
     params: Record<string, string | number> = {},
 ): Promise<CdnflyListData> {
-    return apiRequest<CdnflyListData>(buildUrl('/api/admin/cc-rules', params));
+    return apiRequest<CdnflyListData>(buildUrl(CC.rule, params));
 }
 export function createAdminCcRule(data: Record<string, unknown>) {
-    return apiRequest('/api/admin/cc-rules', { method: 'POST', body: JSON.stringify(data) });
+    return apiRequest(CC.rule, { method: 'POST', body: JSON.stringify(data) });
 }
 export function updateAdminCcRule(id: number, data: Record<string, unknown>) {
-    return apiRequest(`/api/admin/cc-rules/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+    return apiRequest(`${CC.rule}/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+    });
 }
 export function deleteAdminCcRule(id: number) {
-    return apiRequest(`/api/admin/cc-rules/${id}`, { method: 'DELETE' });
+    return apiRequest(`${CC.rule}/${id}`, { method: 'DELETE' });
 }
 
 // ─── Config ────────────────────────────────────────────
@@ -679,4 +830,3 @@ export async function updateAdminConfigs(
 export async function getAdminRegisterInfo(): Promise<CdnflyRecord> {
     return apiRequest<CdnflyRecord>('/api/admin/register-info');
 }
-

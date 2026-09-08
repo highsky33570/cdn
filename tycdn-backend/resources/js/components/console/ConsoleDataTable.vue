@@ -111,6 +111,7 @@ async function loadData(targetPage = currentPage.value): Promise<void> {
         };
 
         const search = searchText.value.trim();
+
         if (search !== '') {
             params.search = search;
         }
@@ -160,6 +161,7 @@ function toggleSelectAll(checked: boolean): void {
 
 function toggleRow(row: CdnflyRecord): void {
     const key = rowKey(row);
+
     if (selectedIds.value.has(key)) {
         selectedIds.value.delete(key);
     } else {
@@ -175,17 +177,21 @@ function rowKey(row: CdnflyRecord): string | number {
     if (typeof row.id === 'number' || typeof row.id === 'string') {
         return row.id;
     }
+
     return JSON.stringify(row);
 }
 
 function cellValue(row: CdnflyRecord, col: ColumnDef): string {
     const raw = row[col.key];
+
     if (col.format) {
         return col.format(raw, row);
     }
+
     if (raw === null || raw === undefined) {
         return '-';
     }
+
     return String(raw);
 }
 
@@ -196,6 +202,7 @@ function cellBadgeVariant(
     if (col.badgeVariant) {
         return col.badgeVariant(row[col.key], row);
     }
+
     return 'secondary';
 }
 
@@ -204,8 +211,14 @@ function colStyle(col: ColumnDef): Record<string, string> {
 }
 
 function colAlign(col: ColumnDef): string {
-    if (col.align === 'center') return 'text-center';
-    if (col.align === 'right') return 'text-right';
+    if (col.align === 'center') {
+return 'text-center';
+}
+
+    if (col.align === 'right') {
+return 'text-right';
+}
+
     return 'text-left';
 }
 
@@ -213,21 +226,27 @@ function extractRows(result: unknown): CdnflyRecord[] {
     if (Array.isArray(result)) {
         return result.filter(isRecord);
     }
+
     if (!isRecord(result)) {
         return [];
     }
+
     for (const key of ['data', 'items', 'list', 'rows', 'records']) {
         const value = result[key];
+
         if (Array.isArray(value)) {
             return value.filter(isRecord);
         }
+
         if (isRecord(value)) {
             const nested = extractRows(value);
+
             if (nested.length > 0) {
                 return nested;
             }
         }
     }
+
     return [];
 }
 
@@ -235,15 +254,19 @@ function extractTotal(result: unknown, fallback: number): number {
     if (!isRecord(result)) {
         return fallback;
     }
+
     if (typeof result.total === 'number') {
         return result.total;
     }
+
     if (isRecord(result.meta) && typeof result.meta.total === 'number') {
         return result.meta.total;
     }
+
     if (isRecord(result.data) && typeof result.data.total === 'number') {
         return result.data.total;
     }
+
     return fallback;
 }
 
@@ -299,14 +322,30 @@ defineExpose({
                 </slot>
             </div>
 
-            <slot name="toolbar" :loading="loading" :submit-search="submitSearch">
-                <div class="grid gap-3 xl:grid-cols-[1fr_120px_auto]">
+            <!--
+                CardHeader is a single-column grid, so anything dropped straight
+                into the toolbar slot stretched to the full width of the card — a
+                lone 新增 button came out as a button the width of the screen.
+                Wrapping the slot in a flex row gives every child its natural
+                width and packs them to the left, whatever a page puts in here.
+            -->
+            <div class="flex flex-wrap items-center gap-2">
+                <slot
+                    name="toolbar"
+                    :loading="loading"
+                    :submit-search="submitSearch"
+                >
                     <slot
                         name="search-fields"
                         :loading="loading"
                         :submit-search="submitSearch"
                     >
-                        <div class="relative">
+                        <!--
+                            Capped rather than 1fr: on a wide monitor a full-width
+                            search box left the 搜索 button stranded at the far
+                            edge, far from the field it acts on.
+                        -->
+                        <div class="relative w-full sm:w-72">
                             <Search
                                 class="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
                             />
@@ -318,8 +357,13 @@ defineExpose({
                             />
                         </div>
                     </slot>
+                    <Button :disabled="loading" @click="submitSearch">
+                        <Spinner v-if="loading" data-icon="inline-start" />
+                        <Search v-else data-icon="inline-start" />
+                        搜索
+                    </Button>
                     <Select v-model="perPage">
-                        <SelectTrigger class="w-full">
+                        <SelectTrigger class="w-28">
                             <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -334,21 +378,14 @@ defineExpose({
                             </SelectGroup>
                         </SelectContent>
                     </Select>
-                    <div class="flex flex-wrap gap-2">
-                        <Button :disabled="loading" @click="submitSearch">
-                            <Spinner v-if="loading" data-icon="inline-start" />
-                            <Search v-else data-icon="inline-start" />
-                            搜索
-                        </Button>
-                        <slot
-                            name="toolbar-actions"
-                            :loading="loading"
-                            :selected-ids="selectedIds"
-                            :refresh="refresh"
-                        />
-                    </div>
-                </div>
-            </slot>
+                    <slot
+                        name="toolbar-actions"
+                        :loading="loading"
+                        :selected-ids="selectedIds"
+                        :refresh="refresh"
+                    />
+                </slot>
+            </div>
         </CardHeader>
 
         <CardContent class="p-0">
@@ -393,9 +430,7 @@ defineExpose({
                             <td
                                 class="px-6 py-16 text-center"
                                 :colspan="
-                                    columns.length +
-                                    (selectable ? 1 : 0) +
-                                    1
+                                    columns.length + (selectable ? 1 : 0) + 1
                                 "
                             >
                                 <Spinner />
@@ -404,7 +439,7 @@ defineExpose({
                         <tr
                             v-for="(row, idx) in rows"
                             :key="rowKey(row) ?? idx"
-                            class="border-b last:border-b-0 cursor-pointer hover:bg-muted/30"
+                            class="cursor-pointer border-b last:border-b-0 hover:bg-muted/30"
                             @click="emit('row-click', row)"
                         >
                             <td
@@ -450,9 +485,7 @@ defineExpose({
                             <td
                                 class="px-6 py-16 text-center text-muted-foreground"
                                 :colspan="
-                                    columns.length +
-                                    (selectable ? 1 : 0) +
-                                    1
+                                    columns.length + (selectable ? 1 : 0) + 1
                                 "
                             >
                                 {{ emptyText }}
