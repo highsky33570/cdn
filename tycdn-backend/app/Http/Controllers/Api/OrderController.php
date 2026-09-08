@@ -59,6 +59,32 @@ class OrderController extends Controller
         ], 201);
     }
 
+    /**
+     * POST /api/orders/recharge
+     *
+     * Buying credit rather than a package: the amount is the customer's choice,
+     * so there is no product and no billing cycle. Settlement credits the CDNfly
+     * balance instead of provisioning.
+     */
+    public function recharge(Request $request, EpusdtCheckoutService $checkoutService): JsonResponse
+    {
+        $validated = $request->validate([
+            'amount' => ['required', 'numeric', 'min:0.01'],
+            'fiat_currency' => ['nullable', 'string', 'max:10', 'regex:/^[A-Za-z]{3,10}$/'],
+        ]);
+
+        $checkout = $checkoutService->createRechargeForUser(
+            $request->user(),
+            (float) $validated['amount'],
+            $validated['fiat_currency'] ?? null,
+        );
+
+        return response()->json([
+            'ok' => true,
+            'data' => $checkoutService->checkoutResponse($checkout),
+        ], 201);
+    }
+
     public function show(string $orderNo): JsonResponse
     {
         $order = $this->findOrderForRequest($orderNo);

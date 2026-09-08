@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Link, usePage } from '@inertiajs/vue3';
+import { Link, router, usePage } from '@inertiajs/vue3';
 import {
     AlertCircle,
     Copy,
@@ -12,6 +12,7 @@ import {
     Search,
     ShieldCheck,
     Trash2,
+    Wallet,
     UserRound,
 } from 'lucide-vue-next';
 import { computed, onMounted, reactive, ref } from 'vue';
@@ -21,6 +22,14 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -52,6 +61,7 @@ import {
     updateUserApiKey,
 } from '@/lib/cdnUserApi';
 import type { CdnflyRecord } from '@/lib/cdnUserApi';
+import { createRechargeOrder } from '@/lib/localBillingApi';
 import type { User } from '@/types';
 
 type AccountView = 'profile' | 'certification' | 'api-key' | 'login-logs';
@@ -464,12 +474,20 @@ const identityRows = computed(() => {
     ];
 });
 
+type SecurityBadge = {
+    label: string;
+    ok: boolean;
+    text: string;
+    href?: string;
+    action?: string;
+};
+
 /** Security state, drawn from whichever side actually owns each fact. */
 const securityBadges = computed(() => {
     const u = portalUser.value;
     const record = overview.value;
 
-    const badges: Array<{ label: string; ok: boolean; text: string }> = [
+    const badges: SecurityBadge[] = [
         {
             label: '邮箱验证',
             ok: Boolean(u?.email_verified_at),
@@ -479,6 +497,10 @@ const securityBadges = computed(() => {
             label: '两步验证',
             ok: Boolean(u?.two_factor_confirmed_at),
             text: u?.two_factor_confirmed_at ? '已开启' : '未开启',
+            // the raw auth2_enable flag used to render here as a bare "0";
+            // link to the page that can actually turn it on instead
+            href: '/settings/security',
+            action: u?.two_factor_confirmed_at ? '管理' : '去开启',
         },
     ];
 
@@ -502,6 +524,54 @@ const securityBadges = computed(() => {
 
     return badges;
 });
+
+// ── balance top-up ────────────────────────────────────────────────────────
+// The second way to pay: buying credit rather than a package. Lives on the
+// balance tile because that is where a customer notices they are low.
+const RECHARGE_PRESETS = [10, 25, 50, 100, 200] as const;
+
+const rechargeOpen = ref(false);
+const rechargeAmount = ref<string>('25');
+const rechargeSubmitting = ref(false);
+
+const rechargeValue = computed(() => Number(rechargeAmount.value));
+const rechargeValid = computed(
+    () => Number.isFinite(rechargeValue.value) && rechargeValue.value > 0,
+);
+
+async function submitRecharge(): Promise<void> {
+    if (!rechargeValid.value) {
+        return;
+    }
+
+    rechargeSubmitting.value = true;
+    errorMessage.value = '';
+
+    try {
+        const checkout = await createRechargeOrder({
+            amount: rechargeValue.value,
+        });
+        const paymentUrl = checkout.payment_url?.trim();
+
+        if (paymentUrl) {
+            toast.success(`充值订单 ${checkout.order_no} 已创建，正在跳转支付`);
+            window.location.href = paymentUrl;
+
+            return;
+        }
+
+        // Order exists but the gateway returned no checkout link; send the user to
+        // their orders rather than leaving them on a dialog with nothing to do.
+        toast.success(`充值订单 ${checkout.order_no} 已创建`);
+        rechargeOpen.value = false;
+        router.visit('/console/billing/orders');
+    } catch (error) {
+        errorMessage.value = getErrorMessage(error);
+        toast.error(errorMessage.value);
+    } finally {
+        rechargeSubmitting.value = false;
+    }
+}
 
 /** Anything the tiles and badges above did not already show. */
 const RENDERED_OVERVIEW_FIELDS = new Set([
@@ -1130,6 +1200,13 @@ function loginSuccess(record: CdnflyRecord): string {
                                 >
                                     {{ badge.text }}
                                 </Badge>
+                                <Link
+                                    v-if="badge.href"
+                                    :href="badge.href"
+                                    class="text-xs text-primary underline-offset-4 hover:underline"
+                                >
+                                    {{ badge.action }}
+                                </Link>
                             </div>
                         </div>
                     </section>
@@ -1147,6 +1224,14 @@ function loginSuccess(record: CdnflyRecord): string {
                                 >
                                     {{ accountBalance }}
                                 </div>
+                                <Button
+                                    class="mt-3 w-full"
+                                    size="sm"
+                                    @click="rechargeOpen = true"
+                                >
+                                    <Wallet data-icon="inline-start" />
+                                    充值
+                                </Button>
                             </div>
                             <div
                                 v-for="counter in profileCounters"
@@ -1217,5 +1302,72 @@ function loginSuccess(record: CdnflyRecord): string {
                 下一页
             </Button>
         </div>
+
+        <!-- balance top-up -->
+        <Dialog v-model:open="rechargeOpen">
+            <DialogContent class="max-w-md">
+                <DialogHeader>
+                    <DialogTitle>账户充值</DialogTitle>
+                    <DialogDescription>
+                        使用 USDT 为 CDNfly 账户余额充值，余额可用于续费和升级。
+                    </DialogDescription>
+                </DialogHeader>
+
+                <div class="space-y-4">
+                    <div class="grid grid-cols-5 gap-2">
+                        <Button
+                            v-for="preset in RECHARGE_PRESETS"
+                            :key="preset"
+                            type="button"
+                            :variant="
+                                rechargeAmount === String(preset)
+                                    ? 'default'
+                                    : 'outline'
+                            "
+                            size="sm"
+                            @click="rechargeAmount = String(preset)"
+                        >
+                            {{ preset }}
+                        </Button>
+                    </div>
+
+                    <div class="grid gap-2">
+                        <Label for="recharge-amount">充值金额 (USD)</Label>
+                        <Input
+                            id="recharge-amount"
+                            v-model="rechargeAmount"
+                            type="number"
+                            min="1"
+                            step="0.01"
+                            inputmode="decimal"
+                        />
+                        <p class="text-xs text-muted-foreground">
+                            确认后将跳转至支付页面，到账后余额自动增加。
+                        </p>
+                    </div>
+                </div>
+
+                <DialogFooter>
+                    <Button
+                        variant="outline"
+                        :disabled="rechargeSubmitting"
+                        @click="rechargeOpen = false"
+                    >
+                        取消
+                    </Button>
+                    <Button
+                        :disabled="!rechargeValid || rechargeSubmitting"
+                        @click="submitRecharge"
+                    >
+                        <Spinner
+                            v-if="rechargeSubmitting"
+                            data-icon="inline-start"
+                        />
+                        <Wallet v-else data-icon="inline-start" />
+                        去支付
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
     </div>
 </template>

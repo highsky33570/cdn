@@ -6,6 +6,7 @@ use App\Models\Order;
 use App\Models\ProductCdnflyMapping;
 use App\Models\ServiceInstance;
 use App\Support\OrderStatus;
+use App\Support\OrderType;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
@@ -59,6 +60,14 @@ class CdnflyProvisionService
                 'configuration',
                 'missing_order_user'
             );
+        }
+
+        // A recharge settles by crediting the CDNfly balance; there is no product,
+        // no package and no service instance. Handled here rather than at each
+        // caller so the notify callback, the reconcile sweep and the user-triggered
+        // endpoint all settle it the same way — including the retry cap.
+        if (OrderType::isRecharge($freshOrder->order_type)) {
+            return $this->creditBalance($freshOrder);
         }
 
         $mapping = ProductCdnflyMapping::query()
@@ -614,6 +623,98 @@ class CdnflyProvisionService
         }
 
         return null;
+    }
+
+    /**
+     * Settle a paid recharge by crediting the customer's CDNfly balance.
+     *
+     * The amount credited is what the customer actually paid, not what they were
+     * quoted — an underpaid order must not top up the full figure.
+     *
+     * @return array<string, mixed>
+     */
+    private function creditBalance(Order $order): array
+    {
+        $cdnflyUserId = (int) ($order->user?->cdnfly_user_id ?? 0);
+
+        if ($cdnflyUserId <= 0) {
+            return $this->queueProvisioning(
+                $order,
+                null,
+                'User has no CDNfly account to credit.',
+                null,
+                ['order_type' => OrderType::RECHARGE],
+                'configuration',
+                'missing_cdnfly_user'
+            );
+        }
+
+        $amount = (float) ($order->actual_paid_amount ?? $order->fiat_amount ?? 0);
+
+        if ($amount <= 0) {
+            return $this->failProvisioning(
+                $order,
+                null,
+                'Recharge order has no positive amount to credit.',
+                null,
+                ['order_type' => OrderType::RECHARGE],
+                'configuration',
+                'invalid_recharge_amount'
+            );
+        }
+
+        if (! (bool) config('services.cdnfly.outbound_enabled', true)) {
+            return $this->queueProvisioning(
+                $order,
+                null,
+                'CDNfly outbound is disabled.',
+                null,
+                ['order_type' => OrderType::RECHARGE, 'amount' => $amount],
+                'configuration',
+                'cdnfly_outbound_disabled'
+            );
+        }
+
+        try {
+            $response = $this->cdnflyApiService->rechargeUser($cdnflyUserId, $amount);
+        } catch (\Throwable $e) {
+            Log::warning('cdnfly balance recharge failed', [
+                'order_no' => $order->order_no,
+                'cdnfly_user_id' => $cdnflyUserId,
+                'amount' => $amount,
+                'error' => $e->getMessage(),
+            ]);
+
+            return $this->failProvisioning(
+                $order,
+                null,
+                'CDNfly balance recharge failed: '.$e->getMessage(),
+                null,
+                ['order_type' => OrderType::RECHARGE, 'amount' => $amount],
+                'cdnfly',
+                'recharge_failed'
+            );
+        }
+
+        // provisioned_at is what stops the reconcile sweep retrying this order, so
+        // it must be set in the same step that credits the balance.
+        $order->update([
+            'status' => OrderStatus::ACTIVE,
+            'provisioned_at' => now(),
+        ]);
+
+        Log::info('cdnfly balance recharged', [
+            'order_no' => $order->order_no,
+            'cdnfly_user_id' => $cdnflyUserId,
+            'amount' => $amount,
+        ]);
+
+        return [
+            'status' => 'success',
+            'provision_action' => OrderType::RECHARGE,
+            'amount' => $amount,
+            'response' => $response,
+        ];
     }
 
     private function failProvisioning(

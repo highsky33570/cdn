@@ -179,6 +179,7 @@ Route::middleware(['auth:sanctum', 'verified', 'admin', 'throttle:60,1'])->prefi
 Route::middleware(['auth:sanctum', 'verified'])->group(function () {
     Route::get('/orders', [OrderController::class, 'index']);
     Route::post('/orders', [OrderController::class, 'store'])->middleware('throttle:10,1');
+    Route::post('/orders/recharge', [OrderController::class, 'recharge'])->middleware('throttle:10,1');
     Route::get('/orders/{orderNo}', [OrderController::class, 'show']);
     Route::post('/orders/{orderNo}/provision', [OrderController::class, 'provision'])->middleware('throttle:10,1');
     Route::get('/service-instances', [ServiceInstanceController::class, 'index']);

@@ -7,6 +7,7 @@ use App\Models\Product;
 use App\Models\ServiceInstance;
 use App\Models\User;
 use App\Support\OrderStatus;
+use App\Support\OrderType;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -79,11 +80,88 @@ class EpusdtCheckoutService
             'gateway_status' => 'pending',
         ]);
 
-        // The order row must exist first (the gateway is given its order_no), but a
-        // gateway failure used to leave it stranded as `pending` with no payment URL:
-        // undismissable in the UI and polled by reconciliation forever. Cancel it and
-        // surface a 502 instead. Reconciliation still covers the case where the
-        // gateway created the transaction but the response never reached us.
+        return $this->openGatewayTransaction($order, $user, $fiatAmount, $fiatCurrency, $token, $network);
+    }
+
+    /**
+     * Top up the customer's CDNfly balance.
+     *
+     * Distinct from a package purchase: no product, no billing cycle, and the
+     * amount is chosen by the customer rather than derived from a price list.
+     * Settlement is handled by CdnflyProvisionService, which credits the balance
+     * instead of provisioning.
+     *
+     * @return array{order: Order, gateway: array<string, mixed>}
+     */
+    public function createRechargeForUser(User $user, float $amount, ?string $currency = null): array
+    {
+        $min = (float) config('services.epusdt.recharge_min', 1);
+        $max = (float) config('services.epusdt.recharge_max', 10000);
+
+        if ($amount < $min || $amount > $max) {
+            throw ValidationException::withMessages([
+                'amount' => "充值金额需在 {$min} 至 {$max} 之间。",
+            ]);
+        }
+
+        // A recharge can only land somewhere if the account exists upstream.
+        if (! $user->cdnfly_user_id) {
+            throw ValidationException::withMessages([
+                'amount' => 'CDNfly 账号尚未开通，无法充值，请先完成账号同步。',
+            ]);
+        }
+
+        $fiatAmount = round($amount, 2);
+        $fiatCurrency = strtoupper((string) ($currency ?: config('services.epusdt.default_currency', 'USD')));
+        $token = strtolower((string) config('services.epusdt.default_token', 'usdt'));
+        $network = strtoupper((string) config('services.epusdt.default_network', 'TRON'));
+
+        $order = Order::create([
+            'order_no' => 'TY'.Str::ulid(),
+            'user_id' => $user->id,
+            'product_id' => null,
+            'order_type' => OrderType::RECHARGE,
+            'billing_cycle' => null,
+            'quantity' => 1,
+            'target_service_instance_id' => null,
+            'fiat_amount' => $fiatAmount,
+            'fiat_currency' => $fiatCurrency,
+            'fx_rate_snapshot' => null,
+            'amount_usdt' => 0,
+            'pay_address' => '',
+            'pay_currency' => strtoupper($token),
+            'status' => OrderStatus::PENDING,
+            'expire_at' => now()->addMinutes(max(1, (int) config('services.epusdt.order_ttl_minutes', 30))),
+            'gateway_provider' => 'epusdt',
+            'gateway_amount' => $fiatAmount,
+            'gateway_currency' => strtolower($fiatCurrency),
+            'gateway_status' => 'pending',
+        ]);
+
+        return $this->openGatewayTransaction($order, $user, $fiatAmount, $fiatCurrency, $token, $network);
+    }
+
+    /**
+     * Ask EPUSDT for a payment address and record what it returns.
+     *
+     * Shared by both order kinds so they cannot drift apart — in particular the
+     * failure path: the order row must exist first (the gateway is given its
+     * order_no), but a gateway failure used to leave it stranded as `pending`
+     * with no payment URL, undismissable in the UI and polled by reconciliation
+     * forever. Cancel it and surface a 503 instead. Reconciliation still covers
+     * the case where the gateway created the transaction but the response never
+     * reached us.
+     *
+     * @return array{order: Order, gateway: array<string, mixed>}
+     */
+    private function openGatewayTransaction(
+        Order $order,
+        User $user,
+        float $fiatAmount,
+        string $fiatCurrency,
+        string $token,
+        string $network,
+    ): array {
         try {
             $gateway = app(EpusdtService::class)->createTransaction([
                 'order_id' => $order->order_no,
@@ -103,6 +181,7 @@ class EpusdtCheckoutService
 
             Log::warning('epusdt checkout creation failed; order cancelled', [
                 'order_no' => $order->order_no,
+                'order_type' => $order->order_type,
                 'user_id' => $user->id,
                 'error' => $e->getMessage(),
             ]);

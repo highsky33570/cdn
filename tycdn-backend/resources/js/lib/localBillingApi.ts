@@ -126,6 +126,23 @@ export async function createBillingOrder(
     });
 }
 
+/**
+ * Top up the CDNfly balance.
+ *
+ * The other payment path: an amount the customer chooses rather than a product
+ * they pick. Returns the same checkout shape, so the caller redirects to
+ * payment_url exactly as it does for a package purchase.
+ */
+export async function createRechargeOrder(payload: {
+    amount: number;
+    fiat_currency?: string;
+}): Promise<LocalBillingCheckout> {
+    return apiRequest<LocalBillingCheckout>('/api/orders/recharge', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+    });
+}
+
 export async function provisionBillingOrder(
     orderNo: string,
 ): Promise<Record<string, unknown>> {
@@ -144,4 +161,3 @@ export async function listBillingServiceInstances(
         buildUrl('/api/service-instances', params),
     );
 }
-

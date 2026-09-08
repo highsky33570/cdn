@@ -75,17 +75,22 @@ export function parseJsonArray(value: string): unknown[] {
 }
 
 /**
- * Render a timestamp in the viewer's own timezone.
+ * Render a timestamp as ISO 8601 in the viewer's own timezone.
  *
  * Two very different shapes arrive here:
  *
  *   Laravel  "2026-09-08T00:01:08.000000Z"  — ISO, explicitly UTC
  *   CDNfly   "2026-09-04 18:23:03"          — no zone at all, server local time
  *
- * The first is converted to local time. The second is returned untouched: with
- * no offset there is nothing to convert from, and guessing would silently shift
- * the value by hours. Anything unparseable also passes through unchanged, so a
- * surprising format degrades to the raw string rather than "Invalid Date".
+ * The first is converted to the browser's zone and stamped with that zone's
+ * offset, so "2026-09-08T08:01:08+08:00" says both when it happened and which
+ * clock it is being read on.
+ *
+ * The second gets the ISO shape but no offset. With no zone on the input there
+ * is nothing to convert from, and appending the viewer's offset would assert a
+ * moment the payload never claimed, shifting the value by hours for anyone
+ * outside the panel's own zone. Anything unparseable passes through unchanged,
+ * so a surprising format degrades to the raw string rather than "Invalid Date".
  */
 export function formatDate(value: unknown): string {
     const text = textValue(value);
@@ -94,9 +99,13 @@ export function formatDate(value: unknown): string {
         return '-';
     }
 
-    // zone-less "YYYY-MM-DD HH:mm:ss" — display as given
+    const pad = (n: number) => String(n).padStart(2, '0');
+
+    // zone-less "YYYY-MM-DD HH:mm:ss" — normalise the separator, add no offset
     if (/^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}(:\d{2})?$/.test(text)) {
-        return text.replace('T', ' ');
+        const iso = text.replace(' ', 'T');
+
+        return iso.length === 16 ? `${iso}:00` : iso;
     }
 
     const parsed = new Date(text);
@@ -105,11 +114,16 @@ export function formatDate(value: unknown): string {
         return text;
     }
 
-    const pad = (n: number) => String(n).padStart(2, '0');
+    // getTimezoneOffset() counts minutes *behind* UTC, so the sign flips.
+    const offset = -parsed.getTimezoneOffset();
+    const zone =
+        offset === 0
+            ? 'Z'
+            : `${offset < 0 ? '-' : '+'}${pad(Math.trunc(Math.abs(offset) / 60))}:${pad(Math.abs(offset) % 60)}`;
 
     return (
-        `${parsed.getFullYear()}-${pad(parsed.getMonth() + 1)}-${pad(parsed.getDate())} ` +
-        `${pad(parsed.getHours())}:${pad(parsed.getMinutes())}:${pad(parsed.getSeconds())}`
+        `${parsed.getFullYear()}-${pad(parsed.getMonth() + 1)}-${pad(parsed.getDate())}` +
+        `T${pad(parsed.getHours())}:${pad(parsed.getMinutes())}:${pad(parsed.getSeconds())}${zone}`
     );
 }
 

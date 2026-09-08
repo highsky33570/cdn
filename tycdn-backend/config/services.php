@@ -64,6 +64,10 @@ return [
         // How far back the reconciliation sweep looks for unsettled orders. Must
         // comfortably exceed order_ttl_minutes so late payments are still caught.
         'reconcile_lookback_minutes' => env('EPUSDT_RECONCILE_LOOKBACK_MINUTES', 1440),
+
+        // Bounds for customer-initiated balance top-ups.
+        'recharge_min' => env('EPUSDT_RECHARGE_MIN', 1),
+        'recharge_max' => env('EPUSDT_RECHARGE_MAX', 10000),
     ],
 
     'cdnfly' => [
