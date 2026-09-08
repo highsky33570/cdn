@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Head } from '@inertiajs/vue3';
+import type { Component } from 'vue';
 import { computed } from 'vue';
 import ConsoleModuleView from '@/components/console/ConsoleModuleView.vue';
 import { consoleModules, fallbackModule } from '@/lib/consoleData';
@@ -39,6 +40,95 @@ defineOptions({
     },
 });
 
+/**
+ * moduleKey -> the component to render, plus any props it needs.
+ *
+ * This replaced a 37-branch v-if / v-else-if chain. Inertia keeps this component
+ * mounted across console navigations and only swaps `moduleKey`, so Vue patched
+ * one branch of that chain into the next *in place*, reusing DOM nodes. Where the
+ * branches did not line up structurally -- several pages have fragment roots,
+ * since <Head> renders nothing into the DOM -- the node bookkeeping desynced and
+ * the renderer threw:
+ *
+ *   NotFoundError: Failed to execute 'insertBefore' on 'Node'
+ *
+ * After that the component tree is inconsistent, so every later patch fails and
+ * navigation is dead until a full reload.
+ *
+ * A lookup plus `:key` on <component> makes each module a clean unmount/mount,
+ * which removes the whole class of problem and is far easier to extend.
+ */
+const MODULES: Record<
+    string,
+    { component: Component; props?: Record<string, string> }
+> = {
+    'admin-overview': { component: AdminOverview },
+    'admin-users': { component: AdminUsers },
+    'admin-packages': { component: AdminPackages },
+    'admin-sites': { component: AdminSites },
+    'admin-nodes': { component: AdminNodes },
+    'admin-dns': { component: AdminDns },
+    'admin-streams': { component: AdminStreams },
+    'admin-finance': { component: AdminFinance },
+    'admin-monitoring': { component: AdminMonitoring },
+    'admin-settings': { component: AdminSettings },
+    'admin-security': { component: AdminSecurity },
+
+    sites: { component: UserSites },
+    certificates: { component: UserCertificates },
+    dnsapis: { component: UserSites, props: { initialTab: 'dnsapi' } },
+
+    cache: { component: UserCache },
+    'cache-jobs': { component: UserCache },
+
+    'security-acls': { component: UserSecurity, props: { view: 'acls' } },
+    'security-cc': { component: UserSecurity, props: { view: 'cc' } },
+    'security-blackip': { component: UserSecurity, props: { view: 'blackip' } },
+
+    'analytics-realtime': {
+        component: UserAnalytics,
+        props: { view: 'realtime' },
+    },
+    'analytics-top': { component: UserAnalytics, props: { view: 'top' } },
+    'analytics-logs': { component: UserAnalytics, props: { view: 'logs' } },
+    'analytics-usage': { component: UserAnalytics, props: { view: 'usage' } },
+
+    streams: { component: UserStreams, props: { view: 'list' } },
+    'streams-analytics': {
+        component: UserStreams,
+        props: { view: 'analytics' },
+    },
+
+    'billing-packages': { component: UserBilling, props: { view: 'packages' } },
+    'billing-subscriptions': {
+        component: UserBilling,
+        props: { view: 'subscriptions' },
+    },
+    'billing-traffic-packs': {
+        component: UserBilling,
+        props: { view: 'traffic-packs' },
+    },
+    'billing-usage': { component: UserBilling, props: { view: 'usage' } },
+    'billing-orders': { component: UserBilling, props: { view: 'orders' } },
+
+    messages: { component: UserMessages, props: { view: 'messages' } },
+    'message-subscriptions': {
+        component: UserMessages,
+        props: { view: 'subscriptions' },
+    },
+
+    'account-profile': { component: UserAccount, props: { view: 'profile' } },
+    'account-certification': {
+        component: UserAccount,
+        props: { view: 'certification' },
+    },
+    'account-api-key': { component: UserAccount, props: { view: 'api-key' } },
+    'account-login-logs': {
+        component: UserAccount,
+        props: { view: 'login-logs' },
+    },
+};
+
 const module = computed(
     () => consoleModules[props.moduleKey] ?? fallbackModule,
 );
@@ -49,93 +139,23 @@ const pageTitle = computed(
             'billing-usage': '用量查询',
         })[props.moduleKey] ?? module.value.title,
 );
+
+const resolved = computed(() => MODULES[props.moduleKey]);
+const activeComponent = computed(
+    () => resolved.value?.component ?? ConsoleModuleView,
+);
+const activeProps = computed(() =>
+    resolved.value
+        ? (resolved.value.props ?? {})
+        : { moduleKey: props.moduleKey },
+);
 </script>
 
 <template>
     <Head :title="pageTitle" />
-    <AdminOverview v-if="props.moduleKey === 'admin-overview'" />
-    <AdminUsers v-else-if="props.moduleKey === 'admin-users'" />
-    <AdminPackages v-else-if="props.moduleKey === 'admin-packages'" />
-    <AdminSites v-else-if="props.moduleKey === 'admin-sites'" />
-    <AdminNodes v-else-if="props.moduleKey === 'admin-nodes'" />
-    <AdminDns v-else-if="props.moduleKey === 'admin-dns'" />
-    <AdminStreams v-else-if="props.moduleKey === 'admin-streams'" />
-    <AdminFinance v-else-if="props.moduleKey === 'admin-finance'" />
-    <AdminMonitoring v-else-if="props.moduleKey === 'admin-monitoring'" />
-    <AdminSettings v-else-if="props.moduleKey === 'admin-settings'" />
-    <AdminSecurity v-else-if="props.moduleKey === 'admin-security'" />
-    <UserSites v-else-if="props.moduleKey === 'sites'" />
-    <UserCertificates v-else-if="props.moduleKey === 'certificates'" />
-    <UserSites v-else-if="props.moduleKey === 'dnsapis'" initial-tab="dnsapi" />
-    <UserCache
-        v-else-if="
-            props.moduleKey === 'cache' || props.moduleKey === 'cache-jobs'
-        "
+    <component
+        :is="activeComponent"
+        :key="props.moduleKey"
+        v-bind="activeProps"
     />
-    <UserSecurity v-else-if="props.moduleKey === 'security-acls'" view="acls" />
-    <UserSecurity v-else-if="props.moduleKey === 'security-cc'" view="cc" />
-    <UserSecurity
-        v-else-if="props.moduleKey === 'security-blackip'"
-        view="blackip"
-    />
-    <UserAnalytics
-        v-else-if="props.moduleKey === 'analytics-realtime'"
-        view="realtime"
-    />
-    <UserAnalytics v-else-if="props.moduleKey === 'analytics-top'" view="top" />
-    <UserAnalytics
-        v-else-if="props.moduleKey === 'analytics-logs'"
-        view="logs"
-    />
-    <UserAnalytics
-        v-else-if="props.moduleKey === 'analytics-usage'"
-        view="usage"
-    />
-    <UserStreams v-else-if="props.moduleKey === 'streams'" view="list" />
-    <UserStreams
-        v-else-if="props.moduleKey === 'streams-analytics'"
-        view="analytics"
-    />
-    <UserBilling
-        v-else-if="props.moduleKey === 'billing-packages'"
-        view="packages"
-    />
-    <UserBilling
-        v-else-if="props.moduleKey === 'billing-subscriptions'"
-        view="subscriptions"
-    />
-    <UserBilling
-        v-else-if="props.moduleKey === 'billing-traffic-packs'"
-        view="traffic-packs"
-    />
-    <UserBilling
-        v-else-if="props.moduleKey === 'billing-usage'"
-        view="usage"
-    />
-    <UserBilling
-        v-else-if="props.moduleKey === 'billing-orders'"
-        view="orders"
-    />
-    <UserMessages v-else-if="props.moduleKey === 'messages'" view="messages" />
-    <UserMessages
-        v-else-if="props.moduleKey === 'message-subscriptions'"
-        view="subscriptions"
-    />
-    <UserAccount
-        v-else-if="props.moduleKey === 'account-profile'"
-        view="profile"
-    />
-    <UserAccount
-        v-else-if="props.moduleKey === 'account-certification'"
-        view="certification"
-    />
-    <UserAccount
-        v-else-if="props.moduleKey === 'account-api-key'"
-        view="api-key"
-    />
-    <UserAccount
-        v-else-if="props.moduleKey === 'account-login-logs'"
-        view="login-logs"
-    />
-    <ConsoleModuleView v-else :module-key="props.moduleKey" />
 </template>

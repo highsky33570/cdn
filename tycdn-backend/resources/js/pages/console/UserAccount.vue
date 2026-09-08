@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import {
     AlertCircle,
+    Copy,
+    Eye,
+    EyeOff,
     KeyRound,
     RefreshCw,
     Save,
@@ -10,7 +13,7 @@ import {
     UserRound,
 } from 'lucide-vue-next';
 import { computed, onMounted, reactive, ref } from 'vue';
-import { toast } from 'vue-sonner'
+import { toast } from 'vue-sonner';
 import ConsolePageHeader from '@/components/console/ConsolePageHeader.vue';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
@@ -121,8 +124,8 @@ const icon = computed(() => {
 
     return UserRound;
 });
-const overviewRows = computed(() => objectRows(overview.value));
-const apiKeyRows = computed(() => objectRows(apiKey.value));
+// profile and api-key now render designed layouts (profileRows / apiKeyPair
+// below); objectRows survives only for the certification view.
 const certifyRows = computed(() => objectRows(certifyStatus.value));
 const hasPreviousPage = computed(() => page.value > 1);
 const hasNextPage = computed(
@@ -287,7 +290,7 @@ async function saveKeyIp(): Promise<void> {
 }
 
 async function removeKey(): Promise<void> {
-        saving.value = true;
+    saving.value = true;
     errorMessage.value = '';
 
     try {
@@ -343,6 +346,163 @@ function objectRows(record: CdnflyRecord | null): Array<{
             key,
             value: maskSensitive(key, value),
         }));
+}
+
+/**
+ * Human labels for the raw CDNfly field names.
+ *
+ * The overview and api-key views previously rendered Object.entries() straight
+ * to a two-column table, so users saw `auth2_enable` and `create_at2` — which
+ * reads as a JSON dump rather than an account page.
+ */
+const FIELD_LABELS: Record<string, string> = {
+    name: '用户名',
+    email: '邮箱',
+    phone: '手机号',
+    qq: 'QQ',
+    balance: '账户余额',
+    id: 'CDNfly 用户 ID',
+    create_at2: '注册时间',
+    create_at: '注册时间',
+    des: '备注',
+    cert_name: '实名姓名',
+    cert_no: '证件号码',
+    company_name: '企业名称',
+    company_credit_code: '统一社会信用代码',
+    white_ip: 'IP 白名单',
+    user_group: '用户组',
+};
+
+/** Fields that are internal plumbing, not worth showing on a profile page. */
+const HIDDEN_FIELDS = new Set([
+    'type',
+    'enable',
+    'freeze',
+    'cert_verified',
+    'company_verified',
+    'auth2_verified',
+    'auth2_enable',
+    'auth2_end_at',
+    'auth2_expire_action',
+    'login_captcha',
+    'cert_id',
+]);
+
+function fieldLabel(key: string): string {
+    return FIELD_LABELS[key] ?? key;
+}
+
+/** Detail rows for the profile page, labelled and with the noise removed. */
+const profileRows = computed(() => {
+    const record = overview.value;
+
+    if (!record) {
+        return [] as Array<{ key: string; label: string; value: string }>;
+    }
+
+    return Object.entries(record)
+        .filter(
+            ([key, value]) =>
+                !HIDDEN_FIELDS.has(key) &&
+                value !== null &&
+                value !== undefined &&
+                value !== '',
+        )
+        .map(([key, value]) => ({
+            key,
+            label: fieldLabel(key),
+            value: key.includes('create_at')
+                ? formatDate(value)
+                : maskSensitive(key, value),
+        }));
+});
+
+/** Yes/no state badges derived from the flag fields hidden above. */
+const profileBadges = computed(() => {
+    const record = overview.value;
+
+    if (!record) {
+        return [] as Array<{
+            label: string;
+            ok: boolean;
+            okText: string;
+            noText: string;
+        }>;
+    }
+
+    const truthy = (v: unknown) => v === 1 || v === '1' || v === true;
+
+    return [
+        {
+            label: '账户状态',
+            ok: truthy(record.enable),
+            okText: '正常',
+            noText: '已停用',
+        },
+        {
+            label: '实名认证',
+            ok: truthy(record.cert_verified),
+            okText: '已认证',
+            noText: '未认证',
+        },
+        {
+            label: '企业认证',
+            ok: truthy(record.company_verified),
+            okText: '已认证',
+            noText: '未认证',
+        },
+        {
+            label: '两步验证',
+            ok: truthy(record.auth2_verified),
+            okText: '已开启',
+            noText: '未开启',
+        },
+    ];
+});
+
+const accountBalance = computed(() => {
+    const raw = overview.value?.balance;
+
+    return raw === null || raw === undefined ? '-' : String(raw);
+});
+
+/** The api-key page needs the credential pair, not a field dump. */
+const apiKeyPair = computed(() => {
+    const record = apiKey.value;
+
+    return {
+        key: record ? textValue(record.api_key) : '',
+        secret: record ? textValue(record.api_secret) : '',
+        createdAt: record
+            ? formatDate(record.create_at2 ?? record.create_at)
+            : '-',
+        whiteIp: record ? textValue(record.white_ip) : '',
+    };
+});
+
+const secretRevealed = ref(false);
+
+function maskValue(value: string): string {
+    if (value === '') {
+        return '-';
+    }
+
+    return value.length <= 8
+        ? '******'
+        : `${value.slice(0, 4)}${'*'.repeat(12)}${value.slice(-4)}`;
+}
+
+async function copyValue(value: string, what: string): Promise<void> {
+    if (value === '') {
+        return;
+    }
+
+    try {
+        await navigator.clipboard.writeText(value);
+        toast.success(`${what}已复制`);
+    } catch {
+        toast.error('复制失败，请手动选择文本');
+    }
 }
 
 function maskSensitive(key: string, value: unknown): string {
@@ -447,51 +607,101 @@ function loginSuccess(record: CdnflyRecord): string {
                         </Button>
                     </div>
                 </form>
-                <div class="overflow-x-auto border-y">
-                    <table class="w-full min-w-[620px] table-fixed text-sm">
-                        <colgroup>
-                            <col style="width: 34%" />
-                            <col style="width: 66%" />
-                        </colgroup>
-                        <thead class="border-b text-muted-foreground">
-                            <tr>
-                                <th class="px-4 py-3 text-left font-medium">
-                                    字段
-                                </th>
-                                <th class="px-4 py-3 text-left font-medium">
-                                    值
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr v-if="loading">
-                                <td class="px-6 py-16 text-center" colspan="2">
-                                    <Spinner class="mx-auto" />
-                                </td>
-                            </tr>
-                            <tr
-                                v-for="row in apiKeyRows"
-                                v-else
-                                :key="row.key"
-                                class="border-b"
+                <div v-if="loading" class="py-16">
+                    <Spinner class="mx-auto" />
+                </div>
+
+                <div v-else-if="apiKeyPair.key !== ''" class="space-y-4">
+                    <!-- API Key: safe to display, needed for every API call -->
+                    <div class="rounded-lg border p-4">
+                        <div class="flex items-center justify-between gap-3">
+                            <Label class="text-xs text-muted-foreground"
+                                >API Key</Label
                             >
-                                <td class="px-4 py-3 font-mono text-xs">
-                                    {{ row.key }}
-                                </td>
-                                <td class="px-4 py-3">
-                                    <div class="truncate">{{ row.value }}</div>
-                                </td>
-                            </tr>
-                            <tr v-if="!loading && apiKeyRows.length === 0">
-                                <td
-                                    class="px-6 py-16 text-center text-muted-foreground"
-                                    colspan="2"
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                @click="copyValue(apiKeyPair.key, 'API Key')"
+                            >
+                                <Copy data-icon="inline-start" />
+                                复制
+                            </Button>
+                        </div>
+                        <code class="mt-1 block font-mono text-sm break-all">
+                            {{ apiKeyPair.key }}
+                        </code>
+                    </div>
+
+                    <!-- API Secret: masked by default, revealed on request -->
+                    <div class="rounded-lg border p-4">
+                        <div class="flex items-center justify-between gap-3">
+                            <Label class="text-xs text-muted-foreground">
+                                API Secret
+                            </Label>
+                            <div class="flex gap-1">
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    @click="secretRevealed = !secretRevealed"
                                 >
-                                    暂无 API Key
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
+                                    <component
+                                        :is="secretRevealed ? EyeOff : Eye"
+                                        data-icon="inline-start"
+                                    />
+                                    {{ secretRevealed ? '隐藏' : '显示' }}
+                                </Button>
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    @click="
+                                        copyValue(
+                                            apiKeyPair.secret,
+                                            'API Secret',
+                                        )
+                                    "
+                                >
+                                    <Copy data-icon="inline-start" />
+                                    复制
+                                </Button>
+                            </div>
+                        </div>
+                        <code class="mt-1 block font-mono text-sm break-all">
+                            {{
+                                secretRevealed
+                                    ? apiKeyPair.secret
+                                    : maskValue(apiKeyPair.secret)
+                            }}
+                        </code>
+                        <p class="mt-2 text-xs text-muted-foreground">
+                            Secret 等同于账户密码，请勿分享或提交到代码仓库。
+                        </p>
+                    </div>
+
+                    <dl class="grid gap-4 sm:grid-cols-2">
+                        <div>
+                            <dt class="text-xs text-muted-foreground">
+                                创建时间
+                            </dt>
+                            <dd class="text-sm">{{ apiKeyPair.createdAt }}</dd>
+                        </div>
+                        <div>
+                            <dt class="text-xs text-muted-foreground">
+                                IP 白名单
+                            </dt>
+                            <dd class="text-sm break-all">
+                                {{ apiKeyPair.whiteIp || '未限制' }}
+                            </dd>
+                        </div>
+                    </dl>
+                </div>
+
+                <div v-else class="py-16 text-center">
+                    <p class="text-sm text-muted-foreground">
+                        尚未创建 API Key
+                    </p>
+                    <p class="mt-1 text-xs text-muted-foreground">
+                        点击右上角「创建 Key」生成一对凭证。
+                    </p>
                 </div>
             </CardContent>
         </Card>
@@ -733,53 +943,62 @@ function loginSuccess(record: CdnflyRecord): string {
                     刷新
                 </Button>
             </CardHeader>
-            <CardContent>
-                <div class="overflow-x-auto border-y">
-                    <table class="w-full min-w-[620px] table-fixed text-sm">
-                        <colgroup>
-                            <col style="width: 34%" />
-                            <col style="width: 66%" />
-                        </colgroup>
-                        <thead class="border-b text-muted-foreground">
-                            <tr>
-                                <th class="px-4 py-3 text-left font-medium">
-                                    字段
-                                </th>
-                                <th class="px-4 py-3 text-left font-medium">
-                                    值
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr v-if="loading">
-                                <td class="px-6 py-16 text-center" colspan="2">
-                                    <Spinner class="mx-auto" />
-                                </td>
-                            </tr>
-                            <tr
-                                v-for="row in overviewRows"
-                                v-else
-                                :key="row.key"
-                                class="border-b"
-                            >
-                                <td class="px-4 py-3 font-mono text-xs">
-                                    {{ row.key }}
-                                </td>
-                                <td class="px-4 py-3">
-                                    <div class="truncate">{{ row.value }}</div>
-                                </td>
-                            </tr>
-                            <tr v-if="!loading && overviewRows.length === 0">
-                                <td
-                                    class="px-6 py-16 text-center text-muted-foreground"
-                                    colspan="2"
-                                >
-                                    暂无账户概览
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
+            <CardContent class="space-y-6">
+                <div v-if="loading" class="py-16">
+                    <Spinner class="mx-auto" />
                 </div>
+
+                <template v-else-if="profileRows.length > 0">
+                    <!-- balance + verification state, the things worth seeing first -->
+                    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                        <div class="rounded-lg border p-4">
+                            <div class="text-xs text-muted-foreground">
+                                账户余额
+                            </div>
+                            <div
+                                class="mt-1 text-2xl font-semibold tabular-nums"
+                            >
+                                {{ accountBalance }}
+                            </div>
+                        </div>
+                        <div
+                            v-for="badge in profileBadges"
+                            :key="badge.label"
+                            class="rounded-lg border p-4"
+                        >
+                            <div class="text-xs text-muted-foreground">
+                                {{ badge.label }}
+                            </div>
+                            <Badge
+                                class="mt-2"
+                                :variant="badge.ok ? 'default' : 'secondary'"
+                            >
+                                {{ badge.ok ? badge.okText : badge.noText }}
+                            </Badge>
+                        </div>
+                    </div>
+
+                    <!-- labelled detail list, not raw field names -->
+                    <dl class="grid gap-x-8 gap-y-4 sm:grid-cols-2">
+                        <div
+                            v-for="row in profileRows"
+                            :key="row.key"
+                            class="flex flex-col gap-1 border-b pb-3"
+                        >
+                            <dt class="text-xs text-muted-foreground">
+                                {{ row.label }}
+                            </dt>
+                            <dd class="text-sm break-all">{{ row.value }}</dd>
+                        </div>
+                    </dl>
+                </template>
+
+                <p
+                    v-else
+                    class="py-16 text-center text-sm text-muted-foreground"
+                >
+                    暂无账户概览
+                </p>
             </CardContent>
         </Card>
 
