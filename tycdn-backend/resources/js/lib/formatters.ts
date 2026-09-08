@@ -74,10 +74,43 @@ export function parseJsonArray(value: string): unknown[] {
     return parsed;
 }
 
+/**
+ * Render a timestamp in the viewer's own timezone.
+ *
+ * Two very different shapes arrive here:
+ *
+ *   Laravel  "2026-09-08T00:01:08.000000Z"  — ISO, explicitly UTC
+ *   CDNfly   "2026-09-04 18:23:03"          — no zone at all, server local time
+ *
+ * The first is converted to local time. The second is returned untouched: with
+ * no offset there is nothing to convert from, and guessing would silently shift
+ * the value by hours. Anything unparseable also passes through unchanged, so a
+ * surprising format degrades to the raw string rather than "Invalid Date".
+ */
 export function formatDate(value: unknown): string {
     const text = textValue(value);
 
-    return text === '' ? '-' : text;
+    if (text === '') {
+        return '-';
+    }
+
+    // zone-less "YYYY-MM-DD HH:mm:ss" — display as given
+    if (/^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}(:\d{2})?$/.test(text)) {
+        return text.replace('T', ' ');
+    }
+
+    const parsed = new Date(text);
+
+    if (Number.isNaN(parsed.getTime())) {
+        return text;
+    }
+
+    const pad = (n: number) => String(n).padStart(2, '0');
+
+    return (
+        `${parsed.getFullYear()}-${pad(parsed.getMonth() + 1)}-${pad(parsed.getDate())} ` +
+        `${pad(parsed.getHours())}:${pad(parsed.getMinutes())}:${pad(parsed.getSeconds())}`
+    );
 }
 
 export function formatMoney(

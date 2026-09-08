@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { usePage } from '@inertiajs/vue3';
+import { Link, usePage } from '@inertiajs/vue3';
 import {
     AlertCircle,
     Copy,
     Eye,
     EyeOff,
     KeyRound,
+    Pencil,
     RefreshCw,
     Save,
     Search,
@@ -512,6 +513,8 @@ const RENDERED_OVERVIEW_FIELDS = new Set([
     'stream_port_count',
     'cert_verified',
     'auth2_verified',
+    // shown as the 两步验证 badge; the raw enable flag beside it is noise
+    'auth2_enable',
     'renew',
 ]);
 
@@ -1079,7 +1082,17 @@ function loginSuccess(record: CdnflyRecord): string {
                     <!-- 1. who you are — from the portal, since CDNfly's
                          overview endpoint returns counters only -->
                     <section class="space-y-3">
-                        <h3 class="text-sm font-medium">账户信息</h3>
+                        <div class="flex items-center justify-between gap-3">
+                            <h3 class="text-sm font-medium">账户信息</h3>
+                            <!-- editing lives in settings, which already owns the
+                                 validation and password-confirmation flow -->
+                            <Button as-child variant="outline" size="sm">
+                                <Link href="/settings/profile">
+                                    <Pencil data-icon="inline-start" />
+                                    编辑资料
+                                </Link>
+                            </Button>
+                        </div>
                         <dl
                             class="grid gap-x-8 gap-y-4 sm:grid-cols-2 lg:grid-cols-3"
                         >
