@@ -161,6 +161,47 @@ class AdminNodeController extends Controller
         }
     }
 
+    public function storeNodeGroup(Request $request): JsonResponse
+    {
+        $payload = $this->validatedNodeGroupPayload($request, true);
+
+        try {
+            $data = $this->cdnfly->createNodeGroup($payload);
+
+            return response()->json(['ok' => true, 'data' => $data], 201);
+        } catch (\Throwable $e) {
+            return $this->upstreamFailure($e);
+        }
+    }
+
+    public function updateNodeGroup(Request $request, int $id): JsonResponse
+    {
+        $payload = $this->validatedNodeGroupPayload($request, false);
+
+        if ($payload === []) {
+            return response()->json(['ok' => false, 'message' => '没有可更新的字段'], 422);
+        }
+
+        try {
+            $data = $this->cdnfly->updateNodeGroup($id, $payload);
+
+            return response()->json(['ok' => true, 'data' => $data]);
+        } catch (\Throwable $e) {
+            return $this->upstreamFailure($e);
+        }
+    }
+
+    public function destroyNodeGroup(int $id): JsonResponse
+    {
+        try {
+            $data = $this->cdnfly->deleteNodeGroup($id);
+
+            return response()->json(['ok' => true, 'data' => $data]);
+        } catch (\Throwable $e) {
+            return $this->upstreamFailure($e);
+        }
+    }
+
     public function regions(Request $request): JsonResponse
     {
         try {
@@ -169,6 +210,88 @@ class AdminNodeController extends Controller
             return response()->json(['ok' => true, 'data' => $data]);
         } catch (\Throwable) {
             return response()->json(['ok' => false, 'message' => 'CDNfly 通讯失败'], 502);
+        }
+    }
+
+    public function storeRegion(Request $request): JsonResponse
+    {
+        $payload = $this->validatedRegionPayload($request, true);
+
+        try {
+            $data = $this->cdnfly->createRegion($payload);
+
+            return response()->json(['ok' => true, 'data' => $data], 201);
+        } catch (\Throwable $e) {
+            return $this->upstreamFailure($e);
+        }
+    }
+
+    public function updateRegion(Request $request, int $id): JsonResponse
+    {
+        $payload = $this->validatedRegionPayload($request, false);
+
+        if ($payload === []) {
+            return response()->json(['ok' => false, 'message' => '没有可更新的字段'], 422);
+        }
+
+        try {
+            $data = $this->cdnfly->updateRegion($id, $payload);
+
+            return response()->json(['ok' => true, 'data' => $data]);
+        } catch (\Throwable $e) {
+            return $this->upstreamFailure($e);
+        }
+    }
+
+    public function destroyRegion(int $id): JsonResponse
+    {
+        try {
+            $data = $this->cdnfly->deleteRegion($id);
+
+            return response()->json(['ok' => true, 'data' => $data]);
+        } catch (\Throwable $e) {
+            return $this->upstreamFailure($e);
+        }
+    }
+
+    public function storeLine(Request $request): JsonResponse
+    {
+        $payload = $this->validatedLinePayload($request, true);
+
+        try {
+            $data = $this->cdnfly->createLine($payload);
+
+            return response()->json(['ok' => true, 'data' => $data], 201);
+        } catch (\Throwable $e) {
+            return $this->upstreamFailure($e);
+        }
+    }
+
+    public function updateLine(Request $request, int $id): JsonResponse
+    {
+        $payload = $this->validatedLinePayload($request, false);
+
+        if ($payload === []) {
+            return response()->json(['ok' => false, 'message' => '没有可更新的字段'], 422);
+        }
+
+        try {
+            $data = $this->cdnfly->updateLine($id, $payload);
+
+            return response()->json(['ok' => true, 'data' => $data]);
+        } catch (\Throwable $e) {
+            return $this->upstreamFailure($e);
+        }
+    }
+
+    public function destroyLine(int $id): JsonResponse
+    {
+        try {
+            $data = $this->cdnfly->deleteLine($id);
+
+            return response()->json(['ok' => true, 'data' => $data]);
+        } catch (\Throwable $e) {
+            return $this->upstreamFailure($e);
         }
     }
 
@@ -186,6 +309,107 @@ class AdminNodeController extends Controller
     /**
      * @return array<string, bool|int|string|null>
      */
+    /**
+     * Report why CDNfly refused, not merely that it did.
+     *
+     * The rest of this controller answers a flat "CDNfly 通讯失败", which is
+     * fine for endpoints whose paths have been exercised for months. These
+     * writes are new, and the one thing that could be wrong about them is the
+     * upstream path or a field name — exactly what a generic message hides.
+     * The exception already carries CDNfly's own short message, and these
+     * routes are admin-only, so showing it leaks nothing a panel operator
+     * cannot already read in the panel.
+     */
+    private function upstreamFailure(\Throwable $e): JsonResponse
+    {
+        return response()->json([
+            'ok' => false,
+            'message' => 'CDNfly 通讯失败：'.$e->getMessage(),
+        ], 502);
+    }
+
+    /**
+     * Mirrors AdminRegionPayload in resources/js/lib/adminModulesApi.ts.
+     *
+     * @return array<string, mixed>
+     */
+    private function validatedRegionPayload(Request $request, bool $creating): array
+    {
+        $validated = $request->validate([
+            'name' => [$creating ? 'required' : 'sometimes', 'string', 'max:255'],
+            'des' => ['sometimes', 'nullable', 'string', 'max:1000'],
+            'sort' => ['sometimes', 'nullable', 'integer', 'min:0'],
+            'l2_check_port' => ['sometimes', 'nullable', 'integer', 'min:1', 'max:65535'],
+        ]);
+
+        return collect($validated)
+            ->reject(fn ($value): bool => $value === '' || $value === null)
+            ->all();
+    }
+
+    /**
+     * Mirrors AdminLinePayload in resources/js/lib/adminModulesApi.ts.
+     *
+     * @return array<string, mixed>
+     */
+    private function validatedLinePayload(Request $request, bool $creating): array
+    {
+        $requiredWhenCreating = $creating ? 'required' : 'sometimes';
+
+        $validated = $request->validate([
+            'name' => [$requiredWhenCreating, 'string', 'max:255'],
+            // The v6 docs say a line is added *to a node group* and needs an L1
+            // master node ("创建时需提供节点组和 L1 主节点"), while the console form
+            // sends region_id. Rather than pick a winner and reject the other,
+            // both pass through and CDNfly decides — its rejection now reaches the
+            // operator verbatim instead of being hidden behind a generic 502.
+            'region_id' => ['sometimes', 'integer', 'min:1'],
+            'node_group_id' => ['sometimes', 'integer', 'min:1'],
+            'cname_hostname' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'des' => ['sometimes', 'nullable', 'string', 'max:1000'],
+            'sort' => ['sometimes', 'nullable', 'integer', 'min:0'],
+            'backup_switch_type' => ['sometimes', 'nullable', 'string', Rule::in(['master_down', 'interval'])],
+            'backup_switch_policy' => ['sometimes', 'nullable', 'string', 'max:2000'],
+            'l2_config_id' => ['sometimes', 'nullable', 'string', 'max:64'],
+        ]);
+
+        return collect($validated)
+            ->reject(fn ($value): bool => $value === '' || $value === null)
+            ->all();
+    }
+
+    /**
+     * Mirrors AdminNodeGroupPayload in resources/js/lib/adminModulesApi.ts.
+     *
+     * validate() returns only the keys it was given rules for, so any field
+     * missing here is silently dropped before it reaches CDNfly — the group would
+     * be created without its failover policy and nothing would report why.
+     *
+     * @return array<string, mixed>
+     */
+    private function validatedNodeGroupPayload(Request $request, bool $creating): array
+    {
+        $requiredWhenCreating = $creating ? 'required' : 'sometimes';
+
+        $validated = $request->validate([
+            'name' => [$requiredWhenCreating, 'string', 'max:255'],
+            'region_id' => [$requiredWhenCreating, 'integer', 'min:1'],
+            'des' => ['sometimes', 'nullable', 'string', 'max:1000'],
+            // Documented as optional on POST /v1/node-groups: "未传 CNAME 主机名时
+            // 服务端自动生成", and an L2 config that must match the region.
+            'cname_hostname' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'l2_config_id' => ['sometimes', 'nullable', 'string', 'max:64'],
+            'backup_switch_type' => ['sometimes', 'nullable', 'string', Rule::in(['master_down', 'interval'])],
+            // A JSON string built by the client ({ip_num, interval, switch_order}),
+            // passed through as CDNfly expects it rather than re-encoded here.
+            'backup_switch_policy' => ['sometimes', 'nullable', 'string', 'max:2000'],
+        ]);
+
+        return collect($validated)
+            ->reject(fn ($value): bool => $value === '' || $value === null)
+            ->all();
+    }
+
     private function validatedNodePayload(Request $request, bool $creating): array
     {
         $requiredWhenCreating = $creating ? 'required' : 'sometimes';

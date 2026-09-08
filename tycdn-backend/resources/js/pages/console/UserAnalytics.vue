@@ -319,8 +319,14 @@ const topMaxReq = computed(() => {
 
 // ── 生命周期 ──────────────────────────────────────────
 onMounted(() => {
-    if (props.view === 'realtime') void loadGroup();
-    else if (props.view === 'top') void loadTop();
+    if (props.view === 'realtime') {
+        watchThemeForCharts();
+        void loadGroup();
+
+        return;
+    }
+
+    if (props.view === 'top') void loadTop();
     else if (props.view === 'logs') void loadLogs(1);
     else { resetOtherType(); void loadOtherData(1); }
 });
@@ -328,6 +334,8 @@ onMounted(() => {
 onUnmounted(() => {
     stopAutoRefresh();
     destroyAllCharts();
+    themeObserver?.disconnect();
+    themeObserver = null;
 });
 
 watch(activeGroup, () => { destroyAllCharts(); void loadGroup(); });
@@ -451,6 +459,65 @@ function rowDimension(row: CdnflyRecord, tabKey: string): string {
 }
 
 // ── Chart.js ──────────────────────────────────────────
+
+/**
+ * Axis and gridline colours, taken from the active theme.
+ *
+ * These used to be hardcoded light-mode slate values (#f1f5f9 gridlines,
+ * #94a3b8 ticks). #f1f5f9 is very nearly white, so in dark mode every gridline
+ * — the 1.0 MB/s rule and the rest — was drawn brighter than the data it sat
+ * behind, and the chart read as a white grid with a faint line on it.
+ *
+ * Reading --border and --muted-foreground keeps the chart consistent with every
+ * other divider in the console and makes it follow the theme for free. Both are
+ * plain hsl() strings, which canvas accepts directly.
+ */
+function chartColors(): { grid: string; tick: string } {
+    if (typeof window === 'undefined') {
+        return { grid: 'hsl(0 0% 92.8%)', tick: 'hsl(0 0% 45.1%)' };
+    }
+
+    const styles = getComputedStyle(document.documentElement);
+    const read = (name: string, fallback: string): string => {
+        const value = styles.getPropertyValue(name).trim();
+
+        return value !== '' ? value : fallback;
+    };
+
+    return {
+        grid: read('--border', 'hsl(0 0% 92.8%)'),
+        tick: read('--muted-foreground', 'hsl(0 0% 45.1%)'),
+    };
+}
+
+/**
+ * A theme switch repaints the DOM but not a canvas, so charts already on screen
+ * keep the palette they were drawn with. Redraw them from the points they are
+ * already holding.
+ */
+let themeObserver: MutationObserver | null = null;
+
+function watchThemeForCharts(): void {
+    if (typeof window === 'undefined' || themeObserver) {
+        return;
+    }
+
+    themeObserver = new MutationObserver(() => {
+        for (const m of activeGroupDef.value.metrics as readonly MetricDef[]) {
+            const points = metricPoints.value[m.key];
+
+            if (points && points.length > 0) {
+                void renderChart(m, points);
+            }
+        }
+    });
+
+    themeObserver.observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ['class'],
+    });
+}
+
 let chartJsLoaded = false;
 async function ensureChartJs(): Promise<void> {
     if (chartJsLoaded || (window as unknown as Record<string, unknown>)['Chart']) {
@@ -474,6 +541,7 @@ async function renderChart(m: MetricDef, points: [number, number][]): Promise<vo
         return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
     });
     const data = points.map(([, v]) => toChartValue(v, m.unit));
+    const theme = chartColors();
     chartInstances[m.key] = new Chart(canvas, {
         type: 'line',
         data: {
@@ -500,11 +568,16 @@ async function renderChart(m: MetricDef, points: [number, number][]): Promise<vo
                 },
             },
             scales: {
-                x: { ticks: { maxTicksLimit: 8, maxRotation: 0, color: '#94a3b8', font: { size: 10 } }, grid: { color: '#f1f5f9' } },
+                x: {
+                    ticks: { maxTicksLimit: 8, maxRotation: 0, color: theme.tick, font: { size: 10 } },
+                    grid: { color: theme.grid },
+                    border: { color: theme.grid },
+                },
                 y: {
                     beginAtZero: true,
-                    ticks: { color: '#94a3b8', font: { size: 10 }, callback: (val: number) => `${val.toFixed(val < 1 ? 2 : 1)} ${yAxisLabel(m.unit)}` },
-                    grid: { color: '#f1f5f9' },
+                    ticks: { color: theme.tick, font: { size: 10 }, callback: (val: number) => `${val.toFixed(val < 1 ? 2 : 1)} ${yAxisLabel(m.unit)}` },
+                    grid: { color: theme.grid },
+                    border: { color: theme.grid },
                 },
             },
         },

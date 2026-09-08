@@ -389,6 +389,89 @@ class CdnflyApiService
         return $this->parseResponse($response, 'list node groups');
     }
 
+    // ─── Admin: Regions CRUD ─────────────────────────────────
+    // A region is the first link in the chain a sellable package needs:
+    // region -> node group -> package. Read-only regions meant the chain could
+    // never be started from the console.
+    public function createRegion(array $data): array
+    {
+        $this->ensureOutboundEnabled('create region');
+        $response = $this->adminHttp()->post('/v1/regions', $data);
+
+        return $this->parseResponse($response, 'create region');
+    }
+
+    public function updateRegion(int $id, array $data): array
+    {
+        $this->ensureOutboundEnabled('update region');
+        $response = $this->adminHttp()->put("/v1/regions/{$id}", $data);
+
+        return $this->parseResponse($response, 'update region');
+    }
+
+    public function deleteRegion(int $id): array
+    {
+        $this->ensureOutboundEnabled('delete region');
+        $response = $this->adminHttp()->delete("/v1/regions/{$id}");
+
+        return $this->parseResponse($response, 'delete region');
+    }
+
+    // ─── Admin: Lines CRUD ───────────────────────────────────
+    public function createLine(array $data): array
+    {
+        $this->ensureOutboundEnabled('create line');
+        $response = $this->adminHttp()->post('/v1/lines', $data);
+
+        return $this->parseResponse($response, 'create line');
+    }
+
+    public function updateLine(int $id, array $data): array
+    {
+        $this->ensureOutboundEnabled('update line');
+        $response = $this->adminHttp()->put("/v1/lines/{$id}", $data);
+
+        return $this->parseResponse($response, 'update line');
+    }
+
+    public function deleteLine(int $id): array
+    {
+        $this->ensureOutboundEnabled('delete line');
+        $response = $this->adminHttp()->delete("/v1/lines/{$id}");
+
+        return $this->parseResponse($response, 'delete line');
+    }
+
+    /**
+     * A node group is the unit a package is sold against: customers on a package
+     * share every node in its group. Without create/update/delete here, a
+     * reseller could list groups but never make one, so packages could only ever
+     * point at groups built in the CDNfly panel itself.
+     */
+    public function createNodeGroup(array $data): array
+    {
+        $this->ensureOutboundEnabled('create node group');
+        $response = $this->adminHttp()->post('/v1/node-groups', $data);
+
+        return $this->parseResponse($response, 'create node group');
+    }
+
+    public function updateNodeGroup(int $id, array $data): array
+    {
+        $this->ensureOutboundEnabled('update node group');
+        $response = $this->adminHttp()->put("/v1/node-groups/{$id}", $data);
+
+        return $this->parseResponse($response, 'update node group');
+    }
+
+    public function deleteNodeGroup(int $id): array
+    {
+        $this->ensureOutboundEnabled('delete node group');
+        $response = $this->adminHttp()->delete("/v1/node-groups/{$id}");
+
+        return $this->parseResponse($response, 'delete node group');
+    }
+
     public function listPackageGroups(array $params = []): array
     {
         if (! $this->outboundEnabled()) {

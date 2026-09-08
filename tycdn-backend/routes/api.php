@@ -96,9 +96,21 @@ Route::middleware(['auth:sanctum', 'verified', 'admin', 'throttle:60,1'])->prefi
     Route::put('/nodes/{id}/enable', [AdminNodeController::class, 'setEnabled'])->middleware('throttle:20,1');
     Route::put('/nodes/{id}', [AdminNodeController::class, 'update'])->middleware('throttle:20,1');
     Route::delete('/nodes/{id}', [AdminNodeController::class, 'destroy'])->middleware('throttle:10,1');
+    // 节点组（线路）：套餐必须挂在某个节点组上，所以这里必须可写，
+    // 否则只能在 CDNfly 面板里建组，控制台就无法独立完成套餐配置。
     Route::get('/node-groups', [AdminNodeController::class, 'nodeGroups']);
+    Route::post('/node-groups', [AdminNodeController::class, 'storeNodeGroup'])->middleware('throttle:20,1');
+    Route::put('/node-groups/{id}', [AdminNodeController::class, 'updateNodeGroup'])->middleware('throttle:20,1');
+    Route::delete('/node-groups/{id}', [AdminNodeController::class, 'destroyNodeGroup'])->middleware('throttle:10,1');
+    // 区域和线路同理：区域 → 节点组 → 套餐，缺任何一环都无法在控制台里配出可售套餐。
     Route::get('/regions', [AdminNodeController::class, 'regions']);
+    Route::post('/regions', [AdminNodeController::class, 'storeRegion'])->middleware('throttle:20,1');
+    Route::put('/regions/{id}', [AdminNodeController::class, 'updateRegion'])->middleware('throttle:20,1');
+    Route::delete('/regions/{id}', [AdminNodeController::class, 'destroyRegion'])->middleware('throttle:10,1');
     Route::get('/lines', [AdminNodeController::class, 'lines']);
+    Route::post('/lines', [AdminNodeController::class, 'storeLine'])->middleware('throttle:20,1');
+    Route::put('/lines/{id}', [AdminNodeController::class, 'updateLine'])->middleware('throttle:20,1');
+    Route::delete('/lines/{id}', [AdminNodeController::class, 'destroyLine'])->middleware('throttle:10,1');
 
     // 全部网站（管理端）
     Route::get('/sites', [AdminSiteController::class, 'index']);
