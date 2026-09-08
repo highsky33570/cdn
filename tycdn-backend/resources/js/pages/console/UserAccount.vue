@@ -452,6 +452,7 @@ const cdnflyUid = computed(() => {
  */
 const inertiaPage = usePage();
 const portalUser = computed(() => inertiaPage.props.auth.user as User);
+const portalUrl = computed(() => inertiaPage.props.portal_url ?? '');
 
 const identityRows = computed(() => {
     const u = portalUser.value;
@@ -478,8 +479,13 @@ type SecurityBadge = {
     label: string;
     ok: boolean;
     text: string;
+    /** Where the user goes to change this. Absent when there is nowhere useful. */
     href?: string;
     action?: string;
+    /** Portal-hosted target: needs a real <a>, not an Inertia visit. */
+    external?: boolean;
+    /** Shown instead of a link when the action is currently blocked. */
+    hint?: string;
 };
 
 /** Security state, drawn from whichever side actually owns each fact. */
@@ -487,20 +493,28 @@ const securityBadges = computed(() => {
     const u = portalUser.value;
     const record = overview.value;
 
+    const emailVerified = Boolean(u?.email_verified_at);
+
     const badges: SecurityBadge[] = [
         {
             label: '邮箱验证',
-            ok: Boolean(u?.email_verified_at),
-            text: u?.email_verified_at ? '已验证' : '未验证',
+            ok: emailVerified,
+            text: emailVerified ? '已验证' : '未验证',
+            href: emailVerified ? undefined : `${portalUrl.value}/verify-email`,
+            action: '去验证',
+            external: true,
         },
         {
             label: '两步验证',
             ok: Boolean(u?.two_factor_confirmed_at),
             text: u?.two_factor_confirmed_at ? '已开启' : '未开启',
-            // the raw auth2_enable flag used to render here as a bare "0";
-            // link to the page that can actually turn it on instead
-            href: '/settings/security',
+            // The raw auth2_enable flag used to render here as a bare "0".
+            // /settings/security sits behind the `verified` middleware, so
+            // offering the link to an unverified account only bounces them to
+            // the portal's verify-email screen. Say why instead.
+            href: emailVerified ? '/settings/security' : undefined,
             action: u?.two_factor_confirmed_at ? '管理' : '去开启',
+            hint: emailVerified ? undefined : '需先验证邮箱',
         },
     ];
 
@@ -1200,13 +1214,26 @@ function loginSuccess(record: CdnflyRecord): string {
                                 >
                                     {{ badge.text }}
                                 </Badge>
+                                <a
+                                    v-if="badge.href && badge.external"
+                                    :href="badge.href"
+                                    class="text-xs text-primary underline-offset-4 hover:underline"
+                                >
+                                    {{ badge.action }}
+                                </a>
                                 <Link
-                                    v-if="badge.href"
+                                    v-else-if="badge.href"
                                     :href="badge.href"
                                     class="text-xs text-primary underline-offset-4 hover:underline"
                                 >
                                     {{ badge.action }}
                                 </Link>
+                                <span
+                                    v-else-if="badge.hint"
+                                    class="text-xs text-muted-foreground"
+                                >
+                                    {{ badge.hint }}
+                                </span>
                             </div>
                         </div>
                     </section>

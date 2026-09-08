@@ -83,22 +83,30 @@ class FortifyServiceProvider extends ServiceProvider
         // routes only exist because Fortify registers them, so send visitors to the
         // portal instead of rendering the superseded starter-kit pages, which would
         // otherwise be a second login UI that bypasses the API captcha flow.
-        Fortify::loginView(fn () => redirect()->away($this->portalUrl('/login')));
+        //
+        // Inertia::location, not redirect()->away: the portal is a different origin
+        // (tycdn.org vs console.tycdn.org). A plain 302 to another origin is fine for
+        // a browser navigation but fatal for an Inertia XHR — the browser blocks the
+        // redirected request on CORS and the visit dies as a network error instead of
+        // navigating. Inertia::location answers a 409 with X-Inertia-Location for XHR
+        // visits, which the client turns into a full page load, and still falls back
+        // to a normal away() redirect for ordinary requests.
+        Fortify::loginView(fn () => Inertia::location($this->portalUrl('/login')));
 
-        Fortify::registerView(fn () => redirect()->away($this->portalUrl('/register')));
+        Fortify::registerView(fn () => Inertia::location($this->portalUrl('/register')));
 
-        Fortify::requestPasswordResetLinkView(fn () => redirect()->away($this->portalUrl('/forgot-password')));
+        Fortify::requestPasswordResetLinkView(fn () => Inertia::location($this->portalUrl('/forgot-password')));
 
         Fortify::resetPasswordView(function (Request $request) {
             $email = (string) $request->query('email', '');
             $url = $this->portalUrl('/reset-password/'.$request->route('token'));
 
-            return redirect()->away($email === '' ? $url : $url.'?'.http_build_query(['email' => $email]));
+            return Inertia::location($email === '' ? $url : $url.'?'.http_build_query(['email' => $email]));
         });
 
-        Fortify::verifyEmailView(fn () => redirect()->away($this->portalUrl('/verify-email')));
+        Fortify::verifyEmailView(fn () => Inertia::location($this->portalUrl('/verify-email')));
 
-        Fortify::twoFactorChallengeView(fn () => redirect()->away($this->portalUrl('/two-factor-challenge')));
+        Fortify::twoFactorChallengeView(fn () => Inertia::location($this->portalUrl('/two-factor-challenge')));
 
         // Kept in-console: the user is already logged in, so bouncing them to the
         // portal login would be wrong. Guards /settings/security via password.confirm.

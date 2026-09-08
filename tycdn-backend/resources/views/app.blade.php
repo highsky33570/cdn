@@ -1,8 +1,26 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}"  @class(['dark' => ($appearance ?? 'system') == 'dark'])>
+{{--
+    translate="no": the console UI is written in Chinese while the document
+    locale is English, so Chrome offers to auto-translate it. Google Translate
+    rewrites text nodes into <font> wrappers, which destroys the comment anchors
+    Vue uses to position v-if/v-for content. The next patch then dies with
+
+        NotFoundError: Failed to execute 'insertBefore' on 'Node'
+
+    and the page freezes mid-render — a stuck loading spinner and no way to
+    recover short of a reload. See vuejs/core#11141. Marking the document
+    notranslate is the only reliable fix from inside the app; proper English
+    copy would need real i18n rather than a machine translation layer.
+--}}
+<html
+    lang="{{ str_replace('_', '-', app()->getLocale()) }}"
+    translate="no"
+    @class(['dark' => ($appearance ?? 'system') == 'dark'])
+>
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="google" content="notranslate">
 
         {{-- Inline script to detect system dark mode preference and apply it immediately --}}
         <script>

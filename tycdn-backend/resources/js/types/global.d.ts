@@ -18,6 +18,8 @@ declare module '@inertiajs/core' {
         sharedPageProps: {
             name: string;
             auth: Auth;
+            /** Origin of the Vue portal, which owns the public auth screens. */
+            portal_url: string;
             cdnfly: {
                 outbound_enabled: boolean;
                 docs_url: string;

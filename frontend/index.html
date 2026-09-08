@@ -1,8 +1,17 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="zh-CN" translate="no">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <!--
+      Chrome offers to translate this page for anyone whose browser prefers a
+      language other than Chinese. Google Translate rewrites text nodes into
+      <font> wrappers, which destroys the comment anchors Vue uses to position
+      v-if/v-for content; the next patch then dies with "NotFoundError: Failed
+      to execute 'insertBefore' on 'Node'" and the page freezes mid-render.
+      See vuejs/core#11141.
+    -->
+    <meta name="google" content="notranslate" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>TyCDN</title>
   </head>

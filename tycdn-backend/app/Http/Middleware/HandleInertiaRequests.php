@@ -46,6 +46,11 @@ class HandleInertiaRequests extends Middleware
                     'is_admin' => $user->isAdmin(),
                 ] : null,
             ],
+            // The public auth screens (login, verify-email, password reset) live
+            // on the Vue portal, a different origin. The console needs the origin
+            // to link to them with a real <a>: an Inertia visit to another origin
+            // dies on CORS rather than navigating.
+            'portal_url' => rtrim((string) config('app.frontend_url', ''), '/'),
             'cdnfly' => [
                 'outbound_enabled' => (bool) config('services.cdnfly.outbound_enabled', true),
                 'docs_url' => 'https://doc.cdnfly.com',
