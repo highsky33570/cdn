@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { usePage } from '@inertiajs/vue3';
 import {
     AlertCircle,
     Copy,
@@ -39,6 +40,7 @@ import {
 import {
     createUserApiKey,
     deleteUserApiKey,
+    extractCdnflyRecord,
     extractCdnflyRows,
     extractCdnflyTotal,
     getUserApiKey,
@@ -49,6 +51,7 @@ import {
     updateUserApiKey,
 } from '@/lib/cdnUserApi';
 import type { CdnflyRecord } from '@/lib/cdnUserApi';
+import type { User } from '@/types';
 
 type AccountView = 'profile' | 'certification' | 'api-key' | 'login-logs';
 
@@ -163,7 +166,10 @@ async function loadOverview(): Promise<void> {
     errorMessage.value = '';
 
     try {
-        overview.value = await getUserOverview();
+        // CDNfly answers {data, msg, code}; without unwrapping, every field read
+        // lands on the envelope and the page renders `data`/`code` as if they
+        // were account fields.
+        overview.value = extractCdnflyRecord(await getUserOverview());
     } catch (error) {
         errorMessage.value = getErrorMessage(error);
     } finally {
@@ -176,7 +182,7 @@ async function loadCertification(): Promise<void> {
     errorMessage.value = '';
 
     try {
-        certifyStatus.value = await getUserCertify();
+        certifyStatus.value = extractCdnflyRecord(await getUserCertify());
     } catch (error) {
         errorMessage.value = getErrorMessage(error);
     } finally {
@@ -189,8 +195,8 @@ async function loadApiKey(): Promise<void> {
     errorMessage.value = '';
 
     try {
-        apiKey.value = await getUserApiKey();
-        apiForm.ip = textValue(apiKey.value.api_ip ?? apiKey.value.ip);
+        apiKey.value = extractCdnflyRecord(await getUserApiKey());
+        apiForm.ip = textValue(apiKey.value?.api_ip ?? apiKey.value?.ip);
     } catch (error) {
         errorMessage.value = getErrorMessage(error);
     } finally {
@@ -246,10 +252,12 @@ async function submitCertification(): Promise<void> {
     errorMessage.value = '';
 
     try {
-        certifyStatus.value = await submitUserCertify({
-            cert_name: certificationForm.cert_name.trim(),
-            cert_no: certificationForm.cert_no.trim(),
-        });
+        certifyStatus.value = extractCdnflyRecord(
+            await submitUserCertify({
+                cert_name: certificationForm.cert_name.trim(),
+                cert_no: certificationForm.cert_no.trim(),
+            }),
+        );
         toast.success('实名认证请求已提交');
     } catch (error) {
         errorMessage.value = getErrorMessage(error);
@@ -263,9 +271,9 @@ async function createKey(): Promise<void> {
     errorMessage.value = '';
 
     try {
-        apiKey.value = await createUserApiKey();
-        toast.success('API Key 创建请求已提交');
-        apiForm.ip = textValue(apiKey.value.api_ip ?? apiKey.value.ip);
+        apiKey.value = extractCdnflyRecord(await createUserApiKey());
+        toast.success('API Key 创建成功');
+        apiForm.ip = textValue(apiKey.value?.api_ip ?? apiKey.value?.ip);
     } catch (error) {
         errorMessage.value = getErrorMessage(error);
     } finally {
@@ -278,9 +286,11 @@ async function saveKeyIp(): Promise<void> {
     errorMessage.value = '';
 
     try {
-        apiKey.value = await updateUserApiKey({
-            ip: apiForm.ip.trim() === '' ? null : apiForm.ip.trim(),
-        });
+        apiKey.value = extractCdnflyRecord(
+            await updateUserApiKey({
+                ip: apiForm.ip.trim() === '' ? null : apiForm.ip.trim(),
+            }),
+        );
         toast.success('API Key 白名单更新请求已提交');
     } catch (error) {
         errorMessage.value = getErrorMessage(error);
@@ -356,108 +366,58 @@ function objectRows(record: CdnflyRecord | null): Array<{
  * reads as a JSON dump rather than an account page.
  */
 const FIELD_LABELS: Record<string, string> = {
-    name: '用户名',
-    email: '邮箱',
-    phone: '手机号',
-    qq: 'QQ',
+    uid: 'CDNfly 用户 ID',
     balance: '账户余额',
-    id: 'CDNfly 用户 ID',
-    create_at2: '注册时间',
-    create_at: '注册时间',
-    des: '备注',
-    cert_name: '实名姓名',
-    cert_no: '证件号码',
-    company_name: '企业名称',
-    company_credit_code: '统一社会信用代码',
-    white_ip: 'IP 白名单',
-    user_group: '用户组',
+    user_package_count: '套餐数量',
+    domain_count: '域名数量',
+    cert_count: '证书数量',
+    stream_port_count: '四层端口数',
+    renew: '自动续费',
+    cert_verified: '实名认证',
+    auth2_enable: '两步验证已启用',
+    auth2_verified: '两步验证已绑定',
 };
-
-/** Fields that are internal plumbing, not worth showing on a profile page. */
-const HIDDEN_FIELDS = new Set([
-    'type',
-    'enable',
-    'freeze',
-    'cert_verified',
-    'company_verified',
-    'auth2_verified',
-    'auth2_enable',
-    'auth2_end_at',
-    'auth2_expire_action',
-    'login_captcha',
-    'cert_id',
-]);
 
 function fieldLabel(key: string): string {
     return FIELD_LABELS[key] ?? key;
 }
 
-/** Detail rows for the profile page, labelled and with the noise removed. */
-const profileRows = computed(() => {
+function truthy(value: unknown): boolean {
+    return value === 1 || value === '1' || value === true;
+}
+
+/**
+ * /v1/user/overview returns a usage summary, not a user record:
+ *
+ *   {user_package_count, domain_count, cert_count, stream_port_count,
+ *    balance, renew, cert_verified, auth2_enable, auth2_verified, uid}
+ *
+ * So the page is built around those counters. An earlier version of this view
+ * assumed fields like `name`, `email` and `enable`, which meant it rendered raw
+ * key names and — worse — showed "已停用" for a healthy account, because a
+ * missing field read as false.
+ */
+const COUNTER_FIELDS = [
+    { key: 'user_package_count', label: '套餐数量' },
+    { key: 'domain_count', label: '域名数量' },
+    { key: 'cert_count', label: '证书数量' },
+    { key: 'stream_port_count', label: '四层端口数' },
+] as const;
+
+const profileCounters = computed(() => {
     const record = overview.value;
 
     if (!record) {
         return [] as Array<{ key: string; label: string; value: string }>;
     }
 
-    return Object.entries(record)
-        .filter(
-            ([key, value]) =>
-                !HIDDEN_FIELDS.has(key) &&
-                value !== null &&
-                value !== undefined &&
-                value !== '',
-        )
-        .map(([key, value]) => ({
-            key,
-            label: fieldLabel(key),
-            value: key.includes('create_at')
-                ? formatDate(value)
-                : maskSensitive(key, value),
-        }));
-});
-
-/** Yes/no state badges derived from the flag fields hidden above. */
-const profileBadges = computed(() => {
-    const record = overview.value;
-
-    if (!record) {
-        return [] as Array<{
-            label: string;
-            ok: boolean;
-            okText: string;
-            noText: string;
-        }>;
-    }
-
-    const truthy = (v: unknown) => v === 1 || v === '1' || v === true;
-
-    return [
-        {
-            label: '账户状态',
-            ok: truthy(record.enable),
-            okText: '正常',
-            noText: '已停用',
-        },
-        {
-            label: '实名认证',
-            ok: truthy(record.cert_verified),
-            okText: '已认证',
-            noText: '未认证',
-        },
-        {
-            label: '企业认证',
-            ok: truthy(record.company_verified),
-            okText: '已认证',
-            noText: '未认证',
-        },
-        {
-            label: '两步验证',
-            ok: truthy(record.auth2_verified),
-            okText: '已开启',
-            noText: '未开启',
-        },
-    ];
+    return COUNTER_FIELDS.filter((f) => record[f.key] !== undefined).map(
+        (f) => ({
+            key: f.key,
+            label: f.label,
+            value: String(record[f.key] ?? 0),
+        }),
+    );
 });
 
 const accountBalance = computed(() => {
@@ -465,6 +425,101 @@ const accountBalance = computed(() => {
 
     return raw === null || raw === undefined ? '-' : String(raw);
 });
+
+const cdnflyUid = computed(() => {
+    const raw = overview.value?.uid;
+
+    return raw === null || raw === undefined ? '-' : String(raw);
+});
+
+/**
+ * Identity comes from the portal, not CDNfly.
+ *
+ * /v1/user/overview returns usage counters only — no name, email or signup date.
+ * Inertia already shares the authenticated user on every page, so the profile
+ * page can show who you are without another request.
+ */
+const inertiaPage = usePage();
+const portalUser = computed(() => inertiaPage.props.auth.user as User);
+
+const identityRows = computed(() => {
+    const u = portalUser.value;
+
+    return [
+        { label: '用户名', value: u?.name ?? '-' },
+        { label: '邮箱', value: u?.email ?? '-' },
+        { label: '角色', value: u?.is_admin ? '管理员' : '普通用户' },
+        {
+            label: '注册时间',
+            value: u?.created_at ? formatDate(u.created_at) : '-',
+        },
+        { label: 'CDNfly 用户 ID', value: cdnflyUid.value },
+        {
+            label: 'CDNfly 同步时间',
+            value: u?.cdnfly_synced_at
+                ? formatDate(u.cdnfly_synced_at)
+                : '未同步',
+        },
+    ];
+});
+
+/** Security state, drawn from whichever side actually owns each fact. */
+const securityBadges = computed(() => {
+    const u = portalUser.value;
+    const record = overview.value;
+
+    const badges: Array<{ label: string; ok: boolean; text: string }> = [
+        {
+            label: '邮箱验证',
+            ok: Boolean(u?.email_verified_at),
+            text: u?.email_verified_at ? '已验证' : '未验证',
+        },
+        {
+            label: '两步验证',
+            ok: Boolean(u?.two_factor_confirmed_at),
+            text: u?.two_factor_confirmed_at ? '已开启' : '未开启',
+        },
+    ];
+
+    // Only assert a CDNfly-side flag when CDNfly actually reported it — a missing
+    // field must not be rendered as "off".
+    if (record?.cert_verified !== undefined) {
+        badges.push({
+            label: '实名认证',
+            ok: truthy(record.cert_verified),
+            text: truthy(record.cert_verified) ? '已认证' : '未认证',
+        });
+    }
+
+    if (record?.renew !== undefined) {
+        badges.push({
+            label: '自动续费',
+            ok: truthy(record.renew),
+            text: truthy(record.renew) ? '已开启' : '未开启',
+        });
+    }
+
+    return badges;
+});
+
+/** Anything the tiles and badges above did not already show. */
+const RENDERED_OVERVIEW_FIELDS = new Set([
+    'balance',
+    'uid',
+    'user_package_count',
+    'domain_count',
+    'cert_count',
+    'stream_port_count',
+    'cert_verified',
+    'auth2_verified',
+    'renew',
+]);
+
+const profileRows = computed(() =>
+    objectRows(overview.value)
+        .filter((row) => !RENDERED_OVERVIEW_FIELDS.has(row.key))
+        .map((row) => ({ ...row, label: fieldLabel(row.key) })),
+);
 
 /**
  * Pick the first field that actually carries a value.
@@ -1020,57 +1075,110 @@ function loginSuccess(record: CdnflyRecord): string {
                     <Spinner class="mx-auto" />
                 </div>
 
-                <template v-else-if="profileRows.length > 0">
-                    <!-- balance + verification state, the things worth seeing first -->
-                    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                        <div class="rounded-lg border p-4">
-                            <div class="text-xs text-muted-foreground">
-                                账户余额
+                <template v-else>
+                    <!-- 1. who you are — from the portal, since CDNfly's
+                         overview endpoint returns counters only -->
+                    <section class="space-y-3">
+                        <h3 class="text-sm font-medium">账户信息</h3>
+                        <dl
+                            class="grid gap-x-8 gap-y-4 sm:grid-cols-2 lg:grid-cols-3"
+                        >
+                            <div
+                                v-for="row in identityRows"
+                                :key="row.label"
+                                class="flex flex-col gap-1"
+                            >
+                                <dt class="text-xs text-muted-foreground">
+                                    {{ row.label }}
+                                </dt>
+                                <dd class="text-sm break-all">
+                                    {{ row.value }}
+                                </dd>
+                            </div>
+                        </dl>
+                    </section>
+
+                    <!-- 2. security state, each fact from whichever side owns it -->
+                    <section class="space-y-3 border-t pt-6">
+                        <h3 class="text-sm font-medium">安全状态</h3>
+                        <div class="flex flex-wrap gap-x-8 gap-y-3">
+                            <div
+                                v-for="badge in securityBadges"
+                                :key="badge.label"
+                                class="flex items-center gap-2"
+                            >
+                                <span class="text-xs text-muted-foreground">
+                                    {{ badge.label }}
+                                </span>
+                                <Badge
+                                    :variant="
+                                        badge.ok ? 'default' : 'secondary'
+                                    "
+                                >
+                                    {{ badge.text }}
+                                </Badge>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- 3. what the account holds, from CDNfly -->
+                    <section class="space-y-3 border-t pt-6">
+                        <h3 class="text-sm font-medium">资源用量</h3>
+                        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+                            <div class="rounded-lg border p-4">
+                                <div class="text-xs text-muted-foreground">
+                                    账户余额
+                                </div>
+                                <div
+                                    class="mt-1 text-2xl font-semibold tabular-nums"
+                                >
+                                    {{ accountBalance }}
+                                </div>
                             </div>
                             <div
-                                class="mt-1 text-2xl font-semibold tabular-nums"
+                                v-for="counter in profileCounters"
+                                :key="counter.key"
+                                class="rounded-lg border p-4"
                             >
-                                {{ accountBalance }}
+                                <div class="text-xs text-muted-foreground">
+                                    {{ counter.label }}
+                                </div>
+                                <div
+                                    class="mt-1 text-2xl font-semibold tabular-nums"
+                                >
+                                    {{ counter.value }}
+                                </div>
                             </div>
                         </div>
-                        <div
-                            v-for="badge in profileBadges"
-                            :key="badge.label"
-                            class="rounded-lg border p-4"
-                        >
-                            <div class="text-xs text-muted-foreground">
-                                {{ badge.label }}
-                            </div>
-                            <Badge
-                                class="mt-2"
-                                :variant="badge.ok ? 'default' : 'secondary'"
-                            >
-                                {{ badge.ok ? badge.okText : badge.noText }}
-                            </Badge>
-                        </div>
-                    </div>
 
-                    <!-- labelled detail list, not raw field names -->
-                    <dl class="grid gap-x-8 gap-y-4 sm:grid-cols-2">
-                        <div
-                            v-for="row in profileRows"
-                            :key="row.key"
-                            class="flex flex-col gap-1 border-b pb-3"
+                        <p
+                            v-if="overview === null"
+                            class="text-xs text-muted-foreground"
                         >
-                            <dt class="text-xs text-muted-foreground">
-                                {{ row.label }}
-                            </dt>
-                            <dd class="text-sm break-all">{{ row.value }}</dd>
-                        </div>
-                    </dl>
+                            暂时无法读取 CDNfly 用量数据。
+                        </p>
+
+                        <!-- any field the tiles and badges did not cover, so a new
+                             upstream field surfaces instead of being dropped -->
+                        <dl
+                            v-if="profileRows.length > 0"
+                            class="grid gap-x-8 gap-y-4 pt-2 sm:grid-cols-2"
+                        >
+                            <div
+                                v-for="row in profileRows"
+                                :key="row.key"
+                                class="flex flex-col gap-1"
+                            >
+                                <dt class="text-xs text-muted-foreground">
+                                    {{ row.label }}
+                                </dt>
+                                <dd class="text-sm break-all">
+                                    {{ row.value }}
+                                </dd>
+                            </div>
+                        </dl>
+                    </section>
                 </template>
-
-                <p
-                    v-else
-                    class="py-16 text-center text-sm text-muted-foreground"
-                >
-                    暂无账户概览
-                </p>
             </CardContent>
         </Card>
 

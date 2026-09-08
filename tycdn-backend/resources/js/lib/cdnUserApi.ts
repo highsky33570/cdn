@@ -457,14 +457,21 @@ export async function createAccessLogJob(
     domain?: string,
 ): Promise<CdnflyRecord> {
     const data: Record<string, string> = { start, end };
-    if (domain) data.domain = domain;
+
+    if (domain) {
+data.domain = domain;
+}
+
     return proxyRequest('/v1/jobs', 'POST', {
         type: 'down_http_access_log',
         data,
     });
 }
 
-export function accessLogDownloadUrl(jobId: number | string, baseUrl: string): string {
+export function accessLogDownloadUrl(
+    jobId: number | string,
+    baseUrl: string,
+): string {
     return `${baseUrl}/monitor/site/download-access-log/${jobId}`;
 }
 
@@ -659,6 +666,32 @@ export async function submitUserCertify(
     payload: CdnCertifyPayload,
 ): Promise<CdnflyRecord> {
     return proxyRequest('/v1/user/certify', 'POST', payload);
+}
+
+/**
+ * Unwrap a single-object CDNfly response.
+ *
+ * Every endpoint answers with an envelope — {data, msg, code} — and proxyRequest
+ * returns it whole. extractCdnflyRows() handles the case where `data` is an
+ * array, but there was nothing for the case where it is a single object, so
+ * callers were reading fields off the envelope: `record.api_key` was undefined
+ * while `record.data.api_key` held the value. Symptoms were pages rendering
+ * `data`/`code`/`msg` as if they were fields, and boolean flags reading false
+ * because the field simply was not at that level.
+ */
+export function extractCdnflyRecord(result: unknown): CdnflyRecord | null {
+    if (!isRecord(result)) {
+        return null;
+    }
+
+    const inner = result.data;
+
+    if (isRecord(inner)) {
+        return inner;
+    }
+
+    // already unwrapped, or an envelope with no object payload
+    return result;
 }
 
 export function extractCdnflyRows(result: unknown): CdnflyRecord[] {
