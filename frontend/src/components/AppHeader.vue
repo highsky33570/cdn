@@ -6,8 +6,10 @@
 
         <nav class="desktop-nav">
           <router-link to="/" class="nav-link">首页</router-link>
-          <router-link to="/plans" class="nav-link">套餐</router-link>
-          <a href="/#about" class="nav-link">关于我们</a>
+          <a href="/#why" class="nav-link">为什么选我们</a>
+          <router-link to="/plans" class="nav-link">套餐价格</router-link>
+          <a href="/#compare" class="nav-link">方案对比</a>
+          <a href="/#faq" class="nav-link">常见问题</a>
         </nav>
       </div>
 
