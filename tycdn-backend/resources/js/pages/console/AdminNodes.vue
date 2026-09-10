@@ -858,7 +858,7 @@ const ngFormError = ref('');
  * The page carried five stacked tables with no hierarchy — nodes, pending
  * nodes, node groups, regions, lines — so finding anything meant scrolling
  * past everything. They are now tabs, ordered by the dependency chain an
- * operator actually follows: 区域 -> 线路组 -> 线路 -> 节点.
+ * operator actually follows: 区域 -> 节点组 -> 线路 -> 节点.
  */
 type NodeTab = 'nodes' | 'pending' | 'topology';
 
@@ -874,7 +874,12 @@ const nodeTabs = computed(() => [
         // glance that a freshly installed node is waiting
         count: pendingRows.value.length,
     },
-    { key: 'topology' as const, label: '区域与线路', icon: Share2, count: 0 },
+    {
+        key: 'topology' as const,
+        label: '区域·节点组·线路',
+        icon: Share2,
+        count: 0,
+    },
 ]);
 
 // The install command is a once-per-node action, not something worth a
@@ -956,7 +961,7 @@ function openEditNodeGroup(record: CdnflyRecord): void {
 
 async function submitNodeGroup(): Promise<void> {
     if (ngForm.name.trim() === '') {
-        ngFormError.value = '线路组名称不能为空';
+        ngFormError.value = '节点组名称不能为空';
         return;
     }
     const regionId = asNumber(ngForm.region_id);
@@ -990,14 +995,14 @@ async function submitNodeGroup(): Promise<void> {
         if (editingNodeGroup.value) {
             const id = asNumber(editingNodeGroup.value.id);
             if (!id) {
-                ngFormError.value = '线路组 ID 缺失';
+                ngFormError.value = '节点组 ID 缺失';
                 return;
             }
             await updateAdminNodeGroup(id, payload);
-            toast.success('线路组已更新');
+            toast.success('节点组已更新');
         } else {
             await createAdminNodeGroup(payload);
-            toast.success('线路组已创建');
+            toast.success('节点组已创建');
         }
         ngDialogOpen.value = false;
         await loadNodeGroups();
@@ -1012,18 +1017,18 @@ async function submitNodeGroup(): Promise<void> {
 function openDeleteNodeGroup(record: CdnflyRecord): void {
     const id = asNumber(record.id);
     if (!id) {
-        ngError.value = '线路组 ID 缺失';
+        ngError.value = '节点组 ID 缺失';
         return;
     }
-    deleteConfirmTitle.value = '确认删除线路组';
-    deleteConfirmDesc.value = `确认删除线路组「${textValue(record.name) || '#' + id}」？删除后不可恢复。`;
+    deleteConfirmTitle.value = '确认删除节点组';
+    deleteConfirmDesc.value = `确认删除节点组「${textValue(record.name) || '#' + id}」？删除后不可恢复。`;
     deleteConfirmError.value = '';
     deleteConfirmAction.value = async () => {
         deleteConfirmLoading.value = true;
         try {
             await deleteAdminNodeGroup(id);
             deleteConfirmOpen.value = false;
-            toast.success('线路组已删除');
+            toast.success('节点组已删除');
             await loadNodeGroups();
             await loadReferenceData();
         } catch (error) {
@@ -1578,20 +1583,14 @@ function regionNameById(id: unknown): string {
                     </div>
                     <Button
                         variant="outline"
-                        :disabled="installLoading"
-                        @click="refreshInstallCommand"
+                        :disabled="pendingLoading"
+                        @click="loadPendingNodes()"
                     >
                         <RefreshCw data-icon="inline-start" />
-                        刷新安装命令
+                        刷新列表
                     </Button>
                 </CardHeader>
                 <CardContent class="grid gap-6">
-                    <Alert v-if="installError" variant="destructive">
-                        <AlertCircle data-icon="alert" />
-                        <AlertTitle>安装命令加载失败</AlertTitle>
-                        <AlertDescription>{{ installError }}</AlertDescription>
-                    </Alert>
-
                     <Alert v-if="pendingError" variant="destructive">
                         <AlertCircle data-icon="alert" />
                         <AlertTitle>待初始化节点加载失败</AlertTitle>
@@ -1795,16 +1794,16 @@ function regionNameById(id: unknown): string {
         </template>
 
         <template v-if="activeTab === 'topology'">
-            <!-- ─── 线路组管理 (CRUD) ─── -->
+            <!-- ─── 节点组管理 (CRUD) ─── -->
             <Card>
                 <CardHeader
                     class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between"
                 >
-                    <CardTitle class="text-base">线路组管理</CardTitle>
+                    <CardTitle class="text-base">节点组管理</CardTitle>
                     <div class="flex items-center gap-2">
                         <Button size="sm" @click="openAddNodeGroup">
                             <Plus data-icon="inline-start" />
-                            新增线路组
+                            新增节点组
                         </Button>
                         <Button
                             variant="outline"
@@ -1820,7 +1819,7 @@ function regionNameById(id: unknown): string {
                 <CardContent>
                     <Alert v-if="ngError" variant="destructive" class="mb-4">
                         <AlertCircle data-icon="alert" />
-                        <AlertTitle>线路组请求失败</AlertTitle>
+                        <AlertTitle>节点组请求失败</AlertTitle>
                         <AlertDescription>{{ ngError }}</AlertDescription>
                     </Alert>
                     <div class="overflow-x-auto rounded-md border">
@@ -1932,7 +1931,7 @@ function regionNameById(id: unknown): string {
                                         class="px-4 py-12 text-center text-muted-foreground"
                                         colspan="8"
                                     >
-                                        暂无线路组
+                                        暂无节点组
                                     </td>
                                 </tr>
                             </tbody>
@@ -2623,13 +2622,13 @@ function regionNameById(id: unknown): string {
             <DialogScrollContent class="sm:max-w-lg">
                 <DialogHeader>
                     <DialogTitle>{{
-                        editingNodeGroup ? '编辑线路组' : '新增线路组'
+                        editingNodeGroup ? '编辑节点组' : '新增节点组'
                     }}</DialogTitle>
                     <DialogDescription>
                         {{
                             editingNodeGroup
-                                ? '修改线路组配置，提交后立即生效。'
-                                : '创建新线路组。'
+                                ? '修改节点组配置，提交后立即生效。'
+                                : '创建新节点组。'
                         }}
                     </DialogDescription>
                 </DialogHeader>
@@ -2643,7 +2642,7 @@ function regionNameById(id: unknown): string {
 
                     <div class="grid gap-4 md:grid-cols-2">
                         <div class="grid gap-2">
-                            <Label for="ng-name">线路组名称</Label>
+                            <Label for="ng-name">节点组名称</Label>
                             <Input
                                 id="ng-name"
                                 v-model="ngForm.name"
