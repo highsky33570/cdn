@@ -90,6 +90,30 @@ class NodeInstallCommandTest extends TestCase
     }
 
     /**
+     * Byte-for-byte equality with what the CDNfly panel itself emits.
+     *
+     * The console and the panel generate this string independently — CDNfly has
+     * no "give me the install command" endpoint, only the ingredients — so the
+     * only way to know they agree is to pin the panel's exact output. If CDNfly
+     * changes the installer again, this test fails and names the drift instead
+     * of an operator discovering it on a half-installed node.
+     *
+     * Captured from panel.tycdn.org running master v6.0.11.
+     */
+    public function test_it_matches_the_cdnfly_panels_own_command(): void
+    {
+        $expected = '(curl -fL --connect-timeout 10 --max-time 60 http://dl2.lotcdn.com/cdnfly/agent_v6.sh -o agent_v6.sh'
+            .' || curl -fL --connect-timeout 10 --max-time 60 http://us.lotcdn.com/cdnfly/agent_v6.sh -o agent_v6.sh)'
+            ." && chmod 700 agent_v6.sh && ./agent_v6.sh --ver 'v6.0.3' --master-ip '8.210.246.67'"
+            ." --es-ip '8.210.246.67' --es-pwd 'secret' --master-host 'panel.tycdn.org' --master-port '14718'";
+
+        $this->assertSame($expected, $this->commandFor($this->master([
+            'version_name' => 'v6.0.11',
+            'agent_ver' => '60003',
+        ])));
+    }
+
+    /**
      * @param  array<string, mixed>  $overrides
      * @return array<string, mixed>
      */

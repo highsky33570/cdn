@@ -12,6 +12,8 @@ import {
     Save,
     Search,
     Server,
+    Share2,
+    Terminal,
     Trash2,
 } from 'lucide-vue-next';
 import { computed, onMounted, reactive, ref } from 'vue';
@@ -80,8 +82,6 @@ type NodeOption = {
     id: string;
     label: string;
 };
-
-
 
 const loading = ref(false);
 const installLoading = ref(false);
@@ -199,7 +199,14 @@ const pendingPaginationText = computed(() => {
 });
 
 onMounted(() => {
-    void Promise.all([loadNodes(), loadReferenceData(), loadInstallCommand(), loadRegions(), loadNodeGroups(), loadLines()]);
+    void Promise.all([
+        loadNodes(),
+        loadReferenceData(),
+        loadInstallCommand(),
+        loadRegions(),
+        loadNodeGroups(),
+        loadLines(),
+    ]);
 });
 
 async function loadNodes(targetPage = page.value): Promise<void> {
@@ -416,7 +423,10 @@ async function submitNode(): Promise<void> {
 
 function openDeleteNode(node: CdnflyRecord) {
     const id = asNumber(node.id);
-    if (!id) { errorMessage.value = '节点 ID 缺失'; return; }
+    if (!id) {
+        errorMessage.value = '节点 ID 缺失';
+        return;
+    }
     deleteConfirmTitle.value = '确认删除';
     deleteConfirmDesc.value = `确认删除节点「${nodeName(node)}」？该操作会提交到 CDNfly，删除后不可恢复。`;
     deleteConfirmError.value = '';
@@ -466,7 +476,10 @@ async function setNodeEnabled(
 
 function openDeletePendingNode(node: CdnflyRecord) {
     const id = asNumber(node.id);
-    if (!id) { pendingError.value = '待初始化节点 ID 缺失'; return; }
+    if (!id) {
+        pendingError.value = '待初始化节点 ID 缺失';
+        return;
+    }
     deleteConfirmTitle.value = '确认删除';
     deleteConfirmDesc.value = `确认删除待初始化节点 #${id}？`;
     deleteConfirmError.value = '';
@@ -740,7 +753,8 @@ async function loadRegions(targetPage = regionPage.value): Promise<void> {
         regionTotal.value = extractTotal(result, regionRows.value.length);
         regionPage.value = targetPage;
         // Also refresh the reference data for dropdowns
-        regions.value = regionRows.value.length > 0 ? regionRows.value : regions.value;
+        regions.value =
+            regionRows.value.length > 0 ? regionRows.value : regions.value;
     } catch (error) {
         regionError.value = getErrorMessage(error);
     } finally {
@@ -787,7 +801,10 @@ async function submitRegion(): Promise<void> {
     try {
         if (editingRegion.value) {
             const id = asNumber(editingRegion.value.id);
-            if (!id) { regionFormError.value = '区域 ID 缺失'; return; }
+            if (!id) {
+                regionFormError.value = '区域 ID 缺失';
+                return;
+            }
             await updateAdminRegion(id, payload);
             toast.success('区域已更新');
         } else {
@@ -807,7 +824,10 @@ async function submitRegion(): Promise<void> {
 
 function openDeleteRegion(record: CdnflyRecord): void {
     const id = asNumber(record.id);
-    if (!id) { regionError.value = '区域 ID 缺失'; return; }
+    if (!id) {
+        regionError.value = '区域 ID 缺失';
+        return;
+    }
     deleteConfirmTitle.value = '确认删除区域';
     deleteConfirmDesc.value = `确认删除区域「${textValue(record.name) || '#' + id}」？删除后不可恢复。`;
     deleteConfirmError.value = '';
@@ -834,6 +854,33 @@ const ngError = ref('');
 const ngDialogOpen = ref(false);
 const ngSaving = ref(false);
 const ngFormError = ref('');
+/**
+ * The page carried five stacked tables with no hierarchy — nodes, pending
+ * nodes, node groups, regions, lines — so finding anything meant scrolling
+ * past everything. They are now tabs, ordered by the dependency chain an
+ * operator actually follows: 区域 -> 线路组 -> 线路 -> 节点.
+ */
+type NodeTab = 'nodes' | 'pending' | 'topology';
+
+const activeTab = ref<NodeTab>('nodes');
+
+const nodeTabs = computed(() => [
+    { key: 'nodes' as const, label: '节点', icon: Server, count: total.value },
+    {
+        key: 'pending' as const,
+        label: '待接入',
+        icon: ClipboardList,
+        // the count is the point of this tab — an operator needs to see at a
+        // glance that a freshly installed node is waiting
+        count: pendingRows.value.length,
+    },
+    { key: 'topology' as const, label: '区域与线路', icon: Share2, count: 0 },
+]);
+
+// The install command is a once-per-node action, not something worth a
+// permanent block at the top of every visit.
+const installDialogOpen = ref(false);
+
 const editingNodeGroup = ref<CdnflyRecord | null>(null);
 const ngPage = ref(1);
 const ngTotal = ref<number | null>(null);
@@ -861,11 +908,15 @@ async function loadNodeGroups(targetPage = ngPage.value): Promise<void> {
     ngLoading.value = true;
     ngError.value = '';
     try {
-        const result = await listAdminNodeGroups({ page: targetPage, limit: 20 });
+        const result = await listAdminNodeGroups({
+            page: targetPage,
+            limit: 20,
+        });
         ngRows.value = extractRows(result);
         ngTotal.value = extractTotal(result, ngRows.value.length);
         ngPage.value = targetPage;
-        nodeGroups.value = ngRows.value.length > 0 ? ngRows.value : nodeGroups.value;
+        nodeGroups.value =
+            ngRows.value.length > 0 ? ngRows.value : nodeGroups.value;
     } catch (error) {
         ngError.value = getErrorMessage(error);
     } finally {
@@ -892,11 +943,13 @@ function openEditNodeGroup(record: CdnflyRecord): void {
     ngForm.name = textValue(record.name);
     ngForm.des = textValue(record.des);
     const switchType = textValue(record.backup_switch_type);
-    ngForm.backup_switch_type = (switchType === 'interval' ? 'interval' : 'master_down');
+    ngForm.backup_switch_type =
+        switchType === 'interval' ? 'interval' : 'master_down';
     const policy = parseSwitchPolicy(record.backup_switch_policy);
     ngForm.backup_policy_ip_num = String(policy.ip_num ?? 2);
     ngForm.backup_policy_interval = String(policy.interval ?? 60);
-    ngForm.backup_policy_switch_order = policy.switch_order === 'seq' ? 'seq' : 'rand';
+    ngForm.backup_policy_switch_order =
+        policy.switch_order === 'seq' ? 'seq' : 'rand';
     ngFormError.value = '';
     ngDialogOpen.value = true;
 }
@@ -913,13 +966,14 @@ async function submitNodeGroup(): Promise<void> {
     }
 
     const switchType = ngForm.backup_switch_type || 'master_down';
-    const policyJson = switchType === 'interval'
-        ? JSON.stringify({
-            ip_num: Number(ngForm.backup_policy_ip_num) || 2,
-            interval: Number(ngForm.backup_policy_interval) || 60,
-            switch_order: ngForm.backup_policy_switch_order || 'rand',
-        })
-        : '{}';
+    const policyJson =
+        switchType === 'interval'
+            ? JSON.stringify({
+                  ip_num: Number(ngForm.backup_policy_ip_num) || 2,
+                  interval: Number(ngForm.backup_policy_interval) || 60,
+                  switch_order: ngForm.backup_policy_switch_order || 'rand',
+              })
+            : '{}';
 
     const payload: AdminNodeGroupPayload = {
         region_id: regionId,
@@ -935,7 +989,10 @@ async function submitNodeGroup(): Promise<void> {
     try {
         if (editingNodeGroup.value) {
             const id = asNumber(editingNodeGroup.value.id);
-            if (!id) { ngFormError.value = '线路组 ID 缺失'; return; }
+            if (!id) {
+                ngFormError.value = '线路组 ID 缺失';
+                return;
+            }
             await updateAdminNodeGroup(id, payload);
             toast.success('线路组已更新');
         } else {
@@ -954,7 +1011,10 @@ async function submitNodeGroup(): Promise<void> {
 
 function openDeleteNodeGroup(record: CdnflyRecord): void {
     const id = asNumber(record.id);
-    if (!id) { ngError.value = '线路组 ID 缺失'; return; }
+    if (!id) {
+        ngError.value = '线路组 ID 缺失';
+        return;
+    }
     deleteConfirmTitle.value = '确认删除线路组';
     deleteConfirmDesc.value = `确认删除线路组「${textValue(record.name) || '#' + id}」？删除后不可恢复。`;
     deleteConfirmError.value = '';
@@ -1047,23 +1107,33 @@ function openEditLine(record: CdnflyRecord): void {
     lineForm.des = textValue(record.des);
     lineForm.sort = textValue(record.sort) || '100';
     const switchType = textValue(record.backup_switch_type);
-    lineForm.backup_switch_type = (switchType === 'interval' ? 'interval' : 'master_down');
+    lineForm.backup_switch_type =
+        switchType === 'interval' ? 'interval' : 'master_down';
     // Parse backup_switch_policy JSON
     const policyRaw = record.backup_switch_policy;
     const policy = parseSwitchPolicy(policyRaw);
     lineForm.backup_policy_ip_num = String(policy.ip_num ?? 2);
     lineForm.backup_policy_interval = String(policy.interval ?? 60);
-    lineForm.backup_policy_switch_order = policy.switch_order === 'seq' ? 'seq' : 'rand';
+    lineForm.backup_policy_switch_order =
+        policy.switch_order === 'seq' ? 'seq' : 'rand';
     lineForm.l2_config_id = textValue(record.l2_config_id);
     lineFormError.value = '';
     lineDialogOpen.value = true;
 }
 
-function parseSwitchPolicy(raw: unknown): { ip_num?: number; interval?: number; switch_order?: string } {
+function parseSwitchPolicy(raw: unknown): {
+    ip_num?: number;
+    interval?: number;
+    switch_order?: string;
+} {
     if (!raw) return {};
     if (typeof raw === 'object') return raw as Record<string, unknown>;
     if (typeof raw === 'string') {
-        try { return JSON.parse(raw); } catch { return {}; }
+        try {
+            return JSON.parse(raw);
+        } catch {
+            return {};
+        }
     }
     return {};
 }
@@ -1080,13 +1150,14 @@ async function submitLine(): Promise<void> {
     }
 
     const switchType = lineForm.backup_switch_type || 'master_down';
-    const policyJson = switchType === 'interval'
-        ? JSON.stringify({
-            ip_num: Number(lineForm.backup_policy_ip_num) || 2,
-            interval: Number(lineForm.backup_policy_interval) || 60,
-            switch_order: lineForm.backup_policy_switch_order || 'rand',
-        })
-        : '{}';
+    const policyJson =
+        switchType === 'interval'
+            ? JSON.stringify({
+                  ip_num: Number(lineForm.backup_policy_ip_num) || 2,
+                  interval: Number(lineForm.backup_policy_interval) || 60,
+                  switch_order: lineForm.backup_policy_switch_order || 'rand',
+              })
+            : '{}';
 
     const payload: AdminLinePayload = {
         region_id: regionId,
@@ -1105,7 +1176,10 @@ async function submitLine(): Promise<void> {
     try {
         if (editingLine.value) {
             const id = asNumber(editingLine.value.id);
-            if (!id) { lineFormError.value = '线路 ID 缺失'; return; }
+            if (!id) {
+                lineFormError.value = '线路 ID 缺失';
+                return;
+            }
             await updateAdminLine(id, payload);
             toast.success('线路已更新');
         } else {
@@ -1124,7 +1198,10 @@ async function submitLine(): Promise<void> {
 
 function openDeleteLine(record: CdnflyRecord): void {
     const id = asNumber(record.id);
-    if (!id) { lineError.value = '线路 ID 缺失'; return; }
+    if (!id) {
+        lineError.value = '线路 ID 缺失';
+        return;
+    }
     deleteConfirmTitle.value = '确认删除线路';
     deleteConfirmDesc.value = `确认删除线路「${textValue(record.name) || '#' + id}」？删除后不可恢复。`;
     deleteConfirmError.value = '';
@@ -1161,200 +1238,591 @@ function regionNameById(id: unknown): string {
             :show-api-badge="false"
         />
 
-        <Card class="gap-4">
-            <CardContent class="pt-6">
-                <div class="grid gap-3 xl:grid-cols-[1fr_160px_120px_auto]">
-                    <div class="relative">
-                        <Search
-                            class="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
-                        />
-                        <Input
-                            v-model="filters.search"
-                            class="pl-9"
-                            placeholder="搜索节点名称、IP、ID"
-                            @keyup.enter="submitSearch"
-                        />
+        <!-- top bar: tabs on the left, the once-per-node action on the right -->
+        <div
+            class="flex flex-col gap-3 border-b pb-3 md:flex-row md:items-center md:justify-between"
+        >
+            <div class="flex flex-wrap gap-1">
+                <button
+                    v-for="tab in nodeTabs"
+                    :key="tab.key"
+                    type="button"
+                    class="flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors"
+                    :class="
+                        activeTab === tab.key
+                            ? 'bg-primary/10 text-primary'
+                            : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+                    "
+                    @click="activeTab = tab.key"
+                >
+                    <component :is="tab.icon" class="size-4" />
+                    {{ tab.label }}
+                    <Badge
+                        v-if="tab.count"
+                        variant="secondary"
+                        class="ml-1 px-1.5 py-0 text-xs"
+                    >
+                        {{ tab.count }}
+                    </Badge>
+                </button>
+            </div>
+
+            <Button variant="outline" @click="installDialogOpen = true">
+                <Terminal data-icon="inline-start" />
+                执行命令
+            </Button>
+        </div>
+
+        <template v-if="activeTab === 'nodes'">
+            <Card class="gap-4">
+                <CardContent class="pt-6">
+                    <div class="flex flex-wrap items-center gap-2">
+                        <div class="relative w-full sm:w-72">
+                            <Search
+                                class="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
+                            />
+                            <Input
+                                v-model="filters.search"
+                                class="pl-9"
+                                placeholder="搜索节点名称、IP、ID"
+                                @keyup.enter="submitSearch"
+                            />
+                        </div>
+                        <Select v-model="filters.status">
+                            <SelectTrigger class="w-32">
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectGroup>
+                                    <SelectItem :value="NODE_STATUS_ALL">
+                                        全部状态
+                                    </SelectItem>
+                                    <SelectItem value="1">启用</SelectItem>
+                                    <SelectItem value="0">禁用</SelectItem>
+                                </SelectGroup>
+                            </SelectContent>
+                        </Select>
+                        <Select v-model="filters.per_page">
+                            <SelectTrigger class="w-28">
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectGroup>
+                                    <SelectItem value="20">20 条</SelectItem>
+                                    <SelectItem value="50">50 条</SelectItem>
+                                    <SelectItem value="100">100 条</SelectItem>
+                                </SelectGroup>
+                            </SelectContent>
+                        </Select>
+                        <div class="flex flex-wrap gap-2">
+                            <Button :disabled="loading" @click="submitSearch">
+                                <Spinner
+                                    v-if="loading"
+                                    data-icon="inline-start"
+                                />
+                                <Search v-else data-icon="inline-start" />
+                                搜索
+                            </Button>
+                            <Button
+                                variant="outline"
+                                :disabled="loading"
+                                @click="loadNodes()"
+                            >
+                                <RefreshCw data-icon="inline-start" />
+                                刷新
+                            </Button>
+                        </div>
                     </div>
-                    <Select v-model="filters.status">
-                        <SelectTrigger class="w-full">
-                            <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectGroup>
-                                <SelectItem :value="NODE_STATUS_ALL">
-                                    全部状态
-                                </SelectItem>
-                                <SelectItem value="1">启用</SelectItem>
-                                <SelectItem value="0">禁用</SelectItem>
-                            </SelectGroup>
-                        </SelectContent>
-                    </Select>
-                    <Select v-model="filters.per_page">
-                        <SelectTrigger class="w-full">
-                            <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectGroup>
-                                <SelectItem value="20">20 条</SelectItem>
-                                <SelectItem value="50">50 条</SelectItem>
-                                <SelectItem value="100">100 条</SelectItem>
-                            </SelectGroup>
-                        </SelectContent>
-                    </Select>
-                    <div class="flex flex-wrap gap-2">
-                        <Button :disabled="loading" @click="submitSearch">
-                            <Spinner v-if="loading" data-icon="inline-start" />
-                            <Search v-else data-icon="inline-start" />
-                            搜索
+                </CardContent>
+            </Card>
+
+            <Alert v-if="errorMessage" variant="destructive">
+                <AlertCircle data-icon="alert" />
+                <AlertTitle>节点管理请求失败</AlertTitle>
+                <AlertDescription>{{ errorMessage }}</AlertDescription>
+            </Alert>
+
+            <Alert v-if="referenceError" variant="destructive">
+                <AlertCircle data-icon="alert" />
+                <AlertTitle>节点引用数据加载失败</AlertTitle>
+                <AlertDescription>{{ referenceError }}</AlertDescription>
+            </Alert>
+
+            <Card>
+                <CardHeader
+                    class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between"
+                >
+                    <CardTitle class="text-base">节点列表</CardTitle>
+                    <span class="text-sm text-muted-foreground">
+                        {{ paginationText }}
+                    </span>
+                </CardHeader>
+                <CardContent>
+                    <div class="overflow-x-auto rounded-md border">
+                        <table class="w-full min-w-[1040px] text-sm">
+                            <thead
+                                class="border-y bg-muted/50 text-muted-foreground"
+                            >
+                                <tr>
+                                    <th class="px-6 py-3 text-left font-medium">
+                                        节点
+                                    </th>
+                                    <th class="px-4 py-3 text-left font-medium">
+                                        状态
+                                    </th>
+                                    <th class="px-4 py-3 text-left font-medium">
+                                        节点组
+                                    </th>
+                                    <th class="px-4 py-3 text-left font-medium">
+                                        区域
+                                    </th>
+                                    <th class="px-4 py-3 text-left font-medium">
+                                        线路
+                                    </th>
+                                    <th class="px-4 py-3 text-left font-medium">
+                                        权重
+                                    </th>
+                                    <th class="px-4 py-3 text-left font-medium">
+                                        带宽
+                                    </th>
+                                    <th class="px-4 py-3 text-left font-medium">
+                                        创建时间
+                                    </th>
+                                    <th
+                                        class="w-72 px-6 py-3 text-right font-medium"
+                                    >
+                                        操作
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-if="loading && rows.length === 0">
+                                    <td
+                                        class="px-6 py-16 text-center"
+                                        colspan="9"
+                                    >
+                                        <Spinner />
+                                    </td>
+                                </tr>
+                                <tr
+                                    v-for="node in rows"
+                                    :key="textValue(node.id) || nodeName(node)"
+                                    class="border-b last:border-b-0"
+                                >
+                                    <td class="px-6 py-4">
+                                        <div class="font-medium">
+                                            {{ nodeName(node) }}
+                                        </div>
+                                        <div
+                                            class="text-xs text-muted-foreground"
+                                        >
+                                            ID {{ textValue(node.id) || '-' }} /
+                                            {{ textValue(node.ip) || '-' }}
+                                        </div>
+                                    </td>
+                                    <td class="px-4 py-4">
+                                        <Badge
+                                            :variant="nodeStatusVariant(node)"
+                                        >
+                                            {{ nodeStatusLabel(node) }}
+                                        </Badge>
+                                    </td>
+                                    <td class="px-4 py-4 text-muted-foreground">
+                                        {{
+                                            textValue(
+                                                node.node_group_id ??
+                                                    node.group_id,
+                                            ) || '-'
+                                        }}
+                                    </td>
+                                    <td class="px-4 py-4 text-muted-foreground">
+                                        {{ textValue(node.region_id) || '-' }}
+                                    </td>
+                                    <td class="px-4 py-4 text-muted-foreground">
+                                        {{ textValue(node.line_id) || '-' }}
+                                    </td>
+                                    <td class="px-4 py-4">
+                                        {{ textValue(node.weight) || '-' }}
+                                    </td>
+                                    <td class="px-4 py-4">
+                                        {{ textValue(node.bandwidth) || '-' }}
+                                    </td>
+                                    <td class="px-4 py-4 text-muted-foreground">
+                                        {{
+                                            formatDate(
+                                                node.created_at ??
+                                                    node.create_at,
+                                            )
+                                        }}
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <div class="flex justify-end gap-2">
+                                            <Button
+                                                :variant="
+                                                    nodeEnabled(node)
+                                                        ? 'outline'
+                                                        : 'default'
+                                                "
+                                                size="sm"
+                                                :disabled="
+                                                    togglingNodeId ===
+                                                    asNumber(node.id)
+                                                "
+                                                @click="
+                                                    setNodeEnabled(
+                                                        node,
+                                                        !nodeEnabled(node),
+                                                    )
+                                                "
+                                            >
+                                                <Spinner
+                                                    v-if="
+                                                        togglingNodeId ===
+                                                        asNumber(node.id)
+                                                    "
+                                                    data-icon="inline-start"
+                                                />
+                                                <PowerOff
+                                                    v-else-if="
+                                                        nodeEnabled(node)
+                                                    "
+                                                    data-icon="inline-start"
+                                                />
+                                                <Power
+                                                    v-else
+                                                    data-icon="inline-start"
+                                                />
+                                                {{
+                                                    nodeEnabled(node)
+                                                        ? '禁用'
+                                                        : '启用'
+                                                }}
+                                            </Button>
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                @click="openEditDialog(node)"
+                                            >
+                                                <Pencil
+                                                    data-icon="inline-start"
+                                                />
+                                                编辑
+                                            </Button>
+                                            <Button
+                                                variant="destructive"
+                                                size="sm"
+                                                @click="openDeleteNode(node)"
+                                            >
+                                                <Trash2
+                                                    data-icon="inline-start"
+                                                />
+                                                删除
+                                            </Button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr v-if="!loading && rows.length === 0">
+                                    <td
+                                        class="px-6 py-16 text-center text-muted-foreground"
+                                        colspan="9"
+                                    >
+                                        暂无节点
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </CardContent>
+            </Card>
+
+            <div class="flex items-center justify-end gap-2">
+                <Button
+                    variant="outline"
+                    size="sm"
+                    :disabled="!hasPreviousPage || loading"
+                    @click="prevPage"
+                >
+                    上一页
+                </Button>
+                <span class="text-sm text-muted-foreground">
+                    第 {{ page }} 页
+                </span>
+                <Button
+                    variant="outline"
+                    size="sm"
+                    :disabled="!hasNextPage || loading"
+                    @click="nextPage"
+                >
+                    下一页
+                </Button>
+            </div>
+        </template>
+
+        <template v-if="activeTab === 'pending'">
+            <Card>
+                <CardHeader
+                    class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between"
+                >
+                    <div class="flex items-start gap-3">
+                        <div
+                            class="flex size-10 shrink-0 items-center justify-center rounded-md border bg-card"
+                        >
+                            <ClipboardList class="size-5" />
+                        </div>
+                        <div>
+                            <CardTitle class="text-base">节点接入</CardTitle>
+                            <p class="mt-1 text-sm text-muted-foreground">
+                                节点回传后在此填写名称、备注、区域和类型完成接入。
+                            </p>
+                        </div>
+                    </div>
+                    <Button
+                        variant="outline"
+                        :disabled="installLoading"
+                        @click="refreshInstallCommand"
+                    >
+                        <RefreshCw data-icon="inline-start" />
+                        刷新安装命令
+                    </Button>
+                </CardHeader>
+                <CardContent class="grid gap-6">
+                    <Alert v-if="installError" variant="destructive">
+                        <AlertCircle data-icon="alert" />
+                        <AlertTitle>安装命令加载失败</AlertTitle>
+                        <AlertDescription>{{ installError }}</AlertDescription>
+                    </Alert>
+
+                    <Alert v-if="pendingError" variant="destructive">
+                        <AlertCircle data-icon="alert" />
+                        <AlertTitle>待初始化节点加载失败</AlertTitle>
+                        <AlertDescription>{{ pendingError }}</AlertDescription>
+                    </Alert>
+
+                    <div class="grid gap-3">
+                        <div
+                            class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between"
+                        >
+                            <div>
+                                <div class="font-medium">待初始化节点</div>
+                                <div class="text-sm text-muted-foreground">
+                                    在节点机执行「执行命令」中的安装命令，节点回传后点击刷新。
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <Select v-model="pendingFilters.per_page">
+                                    <SelectTrigger class="w-28">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectGroup>
+                                            <SelectItem value="10"
+                                                >10 条</SelectItem
+                                            >
+                                            <SelectItem value="20"
+                                                >20 条</SelectItem
+                                            >
+                                            <SelectItem value="50"
+                                                >50 条</SelectItem
+                                            >
+                                            <SelectItem value="100"
+                                                >100 条</SelectItem
+                                            >
+                                        </SelectGroup>
+                                    </SelectContent>
+                                </Select>
+                                <Button
+                                    variant="default"
+                                    :disabled="pendingLoading"
+                                    @click="loadPendingNodes(1)"
+                                >
+                                    <RefreshCw data-icon="inline-start" />
+                                    已执行安装命令，刷新待初始化列表
+                                </Button>
+                            </div>
+                        </div>
+
+                        <div class="overflow-x-auto rounded-md border">
+                            <table class="w-full min-w-[720px] text-sm">
+                                <thead
+                                    class="border-b bg-muted/40 text-muted-foreground"
+                                >
+                                    <tr>
+                                        <th
+                                            class="w-28 px-4 py-3 text-left font-medium"
+                                        >
+                                            ID
+                                        </th>
+                                        <th
+                                            class="px-4 py-3 text-left font-medium"
+                                        >
+                                            IP
+                                        </th>
+                                        <th
+                                            class="px-4 py-3 text-left font-medium"
+                                        >
+                                            回传时间
+                                        </th>
+                                        <th
+                                            class="w-52 px-4 py-3 text-right font-medium"
+                                        >
+                                            操作
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr
+                                        v-if="
+                                            pendingListRequested &&
+                                            pendingLoading &&
+                                            pendingRows.length === 0
+                                        "
+                                    >
+                                        <td
+                                            class="px-4 py-12 text-center"
+                                            colspan="4"
+                                        >
+                                            <Spinner />
+                                        </td>
+                                    </tr>
+                                    <tr
+                                        v-for="node in pendingRows"
+                                        :key="textValue(node.id)"
+                                        class="border-b last:border-b-0"
+                                    >
+                                        <td class="px-4 py-3">
+                                            #{{ textValue(node.id) || '-' }}
+                                        </td>
+                                        <td class="px-4 py-3 font-mono">
+                                            {{ pendingNodeIp(node) }}
+                                        </td>
+                                        <td
+                                            class="px-4 py-3 text-muted-foreground"
+                                        >
+                                            {{
+                                                formatDate(
+                                                    node.create_at ??
+                                                        node.created_at,
+                                                )
+                                            }}
+                                        </td>
+                                        <td class="px-4 py-3">
+                                            <div class="flex justify-end gap-2">
+                                                <Button
+                                                    size="sm"
+                                                    @click="
+                                                        openInitDialog(node)
+                                                    "
+                                                >
+                                                    <Plus
+                                                        data-icon="inline-start"
+                                                    />
+                                                    初始化
+                                                </Button>
+                                                <Button
+                                                    size="sm"
+                                                    variant="outline"
+                                                    @click="
+                                                        openDeletePendingNode(
+                                                            node,
+                                                        )
+                                                    "
+                                                >
+                                                    <Trash2
+                                                        data-icon="inline-start"
+                                                    />
+                                                    删除
+                                                </Button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr
+                                        v-if="
+                                            pendingListRequested &&
+                                            !pendingLoading &&
+                                            pendingRows.length === 0
+                                        "
+                                    >
+                                        <td
+                                            class="px-4 py-12 text-center text-muted-foreground"
+                                            colspan="4"
+                                        >
+                                            暂无待初始化节点
+                                        </td>
+                                    </tr>
+                                    <tr v-if="!pendingListRequested">
+                                        <td
+                                            class="px-4 py-12 text-center text-muted-foreground"
+                                            colspan="4"
+                                        >
+                                            先在节点机执行安装命令，然后刷新待初始化列表。
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div
+                            v-if="pendingListRequested"
+                            class="flex items-center justify-end gap-2"
+                        >
+                            <span class="text-sm text-muted-foreground">
+                                {{ pendingPaginationText }}
+                            </span>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                :disabled="
+                                    !hasPreviousPendingPage || pendingLoading
+                                "
+                                @click="prevPendingPage"
+                            >
+                                上一页
+                            </Button>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                :disabled="
+                                    !hasNextPendingPage || pendingLoading
+                                "
+                                @click="nextPendingPage"
+                            >
+                                下一页
+                            </Button>
+                        </div>
+                    </div>
+                </CardContent>
+            </Card>
+        </template>
+
+        <template v-if="activeTab === 'topology'">
+            <!-- ─── 线路组管理 (CRUD) ─── -->
+            <Card>
+                <CardHeader
+                    class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between"
+                >
+                    <CardTitle class="text-base">线路组管理</CardTitle>
+                    <div class="flex items-center gap-2">
+                        <Button size="sm" @click="openAddNodeGroup">
+                            <Plus data-icon="inline-start" />
+                            新增线路组
                         </Button>
                         <Button
                             variant="outline"
-                            :disabled="loading"
-                            @click="loadNodes()"
+                            size="sm"
+                            :disabled="ngLoading"
+                            @click="loadNodeGroups(1)"
                         >
                             <RefreshCw data-icon="inline-start" />
                             刷新
                         </Button>
                     </div>
-                </div>
-            </CardContent>
-        </Card>
-
-        <Alert v-if="errorMessage" variant="destructive">
-            <AlertCircle data-icon="alert" />
-            <AlertTitle>节点管理请求失败</AlertTitle>
-            <AlertDescription>{{ errorMessage }}</AlertDescription>
-        </Alert>
-
-        <Alert v-if="referenceError" variant="destructive">
-            <AlertCircle data-icon="alert" />
-            <AlertTitle>节点引用数据加载失败</AlertTitle>
-            <AlertDescription>{{ referenceError }}</AlertDescription>
-        </Alert>
-        <Card>
-            <CardHeader
-                class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between"
-            >
-                <div class="flex items-start gap-3">
-                    <div
-                        class="flex size-10 shrink-0 items-center justify-center rounded-md border bg-card"
-                    >
-                        <ClipboardList class="size-5" />
-                    </div>
-                    <div>
-                        <CardTitle class="text-base">节点接入</CardTitle>
-                        <p class="mt-1 text-sm text-muted-foreground">
-                            先复制安装命令到节点机执行，节点回传后再刷新待初始化列表并填写名称、备注、区域和类型。
-                        </p>
-                    </div>
-                </div>
-                <Button
-                    variant="outline"
-                    :disabled="installLoading"
-                    @click="refreshInstallCommand"
-                >
-                    <RefreshCw data-icon="inline-start" />
-                    刷新安装命令
-                </Button>
-            </CardHeader>
-            <CardContent class="grid gap-6">
-                <Alert v-if="installError" variant="destructive">
-                    <AlertCircle data-icon="alert" />
-                    <AlertTitle>安装命令加载失败</AlertTitle>
-                    <AlertDescription>{{ installError }}</AlertDescription>
-                </Alert>
-
-                <Alert v-if="pendingError" variant="destructive">
-                    <AlertCircle data-icon="alert" />
-                    <AlertTitle>待初始化节点加载失败</AlertTitle>
-                    <AlertDescription>{{ pendingError }}</AlertDescription>
-                </Alert>
-
-                <div class="grid gap-4">
-                    <div class="grid gap-3">
-                        <div class="flex items-center justify-between gap-3">
-                            <div>
-                                <div class="font-medium">1. 执行命令</div>
-                                <div class="text-sm text-muted-foreground">
-                                    复制命令并登录节点机执行，执行完成后再进入下一步。
-                                </div>
-                            </div>
-                            <Button
-                                size="sm"
-                                variant="outline"
-                                :disabled="
-                                    installLoading || !installCommandAvailable
-                                "
-                                @click="copyInstallCommand"
-                            >
-                                <Check
-                                    v-if="commandCopied"
-                                    data-icon="inline-start"
-                                />
-                                <Copy v-else data-icon="inline-start" />
-                                {{ commandCopied ? '已复制' : '复制命令' }}
-                            </Button>
-                        </div>
-
-                        <div
-                            class="min-h-32 overflow-x-auto rounded-md border bg-muted/30 p-4 font-mono text-sm leading-7"
-                        >
-                            <Spinner v-if="installLoading" />
-                            <pre
-                                v-else-if="installCommandAvailable"
-                                class="break-all whitespace-pre-wrap"
-                                >{{ installCommand }}</pre
-                            >
-                            <div v-else class="text-muted-foreground">
-                                暂无可用安装命令，请稍后重试。
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="grid gap-3">
-                    <div
-                        class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between"
-                    >
-                        <div>
-                            <div class="font-medium">2. 待初始化节点</div>
-                            <div class="text-sm text-muted-foreground">
-                                节点机执行安装命令并回传后，点击右侧按钮刷新列表。
-                            </div>
-                        </div>
-                        <div class="flex items-center gap-2">
-                            <Select v-model="pendingFilters.per_page">
-                                <SelectTrigger class="w-28">
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectGroup>
-                                        <SelectItem value="10"
-                                            >10 条</SelectItem
-                                        >
-                                        <SelectItem value="20"
-                                            >20 条</SelectItem
-                                        >
-                                        <SelectItem value="50"
-                                            >50 条</SelectItem
-                                        >
-                                        <SelectItem value="100"
-                                            >100 条</SelectItem
-                                        >
-                                    </SelectGroup>
-                                </SelectContent>
-                            </Select>
-                            <Button
-                                variant="default"
-                                :disabled="pendingLoading"
-                                @click="loadPendingNodes(1)"
-                            >
-                                <RefreshCw data-icon="inline-start" />
-                                已执行安装命令，刷新待初始化列表
-                            </Button>
-                        </div>
-                    </div>
-
+                </CardHeader>
+                <CardContent>
+                    <Alert v-if="ngError" variant="destructive" class="mb-4">
+                        <AlertCircle data-icon="alert" />
+                        <AlertTitle>线路组请求失败</AlertTitle>
+                        <AlertDescription>{{ ngError }}</AlertDescription>
+                    </Alert>
                     <div class="overflow-x-auto rounded-md border">
                         <table class="w-full min-w-[720px] text-sm">
                             <thead
@@ -1362,18 +1830,197 @@ function regionNameById(id: unknown): string {
                             >
                                 <tr>
                                     <th
-                                        class="w-28 px-4 py-3 text-left font-medium"
+                                        class="w-16 px-4 py-3 text-left font-medium"
                                     >
                                         ID
                                     </th>
                                     <th class="px-4 py-3 text-left font-medium">
-                                        IP
+                                        名称
                                     </th>
                                     <th class="px-4 py-3 text-left font-medium">
-                                        回传时间
+                                        所属区域
+                                    </th>
+                                    <th class="px-4 py-3 text-left font-medium">
+                                        CNAME
+                                    </th>
+                                    <th class="px-4 py-3 text-left font-medium">
+                                        备注
+                                    </th>
+                                    <th class="px-4 py-3 text-left font-medium">
+                                        切换策略
                                     </th>
                                     <th
-                                        class="w-52 px-4 py-3 text-right font-medium"
+                                        class="w-20 px-4 py-3 text-left font-medium"
+                                    >
+                                        节点数
+                                    </th>
+                                    <th
+                                        class="w-44 px-4 py-3 text-right font-medium"
+                                    >
+                                        操作
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-if="ngLoading && ngRows.length === 0">
+                                    <td
+                                        class="px-4 py-12 text-center"
+                                        colspan="8"
+                                    >
+                                        <Spinner />
+                                    </td>
+                                </tr>
+                                <tr
+                                    v-for="g in ngRows"
+                                    :key="textValue(g.id)"
+                                    class="border-b last:border-b-0"
+                                >
+                                    <td class="px-4 py-3 text-muted-foreground">
+                                        {{ textValue(g.id) }}
+                                    </td>
+                                    <td class="px-4 py-3 font-medium">
+                                        {{ textValue(g.name) || '-' }}
+                                    </td>
+                                    <td class="px-4 py-3 text-muted-foreground">
+                                        {{
+                                            textValue(g.region_name) ||
+                                            regionNameById(g.region_id)
+                                        }}
+                                    </td>
+                                    <td class="px-4 py-3 font-mono text-xs">
+                                        {{ textValue(g.cname_hostname) || '-' }}
+                                    </td>
+                                    <td class="px-4 py-3 text-muted-foreground">
+                                        {{ textValue(g.des) || '-' }}
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        {{
+                                            textValue(g.backup_switch_type) ||
+                                            'master_down'
+                                        }}
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        {{ textValue(g.node_count) || '0' }}
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <div class="flex justify-end gap-2">
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                @click="openEditNodeGroup(g)"
+                                            >
+                                                <Pencil
+                                                    data-icon="inline-start"
+                                                />
+                                                编辑
+                                            </Button>
+                                            <Button
+                                                variant="destructive"
+                                                size="sm"
+                                                @click="openDeleteNodeGroup(g)"
+                                            >
+                                                <Trash2
+                                                    data-icon="inline-start"
+                                                />
+                                                删除
+                                            </Button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr v-if="!ngLoading && ngRows.length === 0">
+                                    <td
+                                        class="px-4 py-12 text-center text-muted-foreground"
+                                        colspan="8"
+                                    >
+                                        暂无线路组
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="mt-3 flex items-center justify-end gap-2">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            :disabled="!hasNgPrevPage || ngLoading"
+                            @click="loadNodeGroups(ngPage - 1)"
+                            >上一页</Button
+                        >
+                        <span class="text-sm text-muted-foreground"
+                            >第 {{ ngPage }} 页</span
+                        >
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            :disabled="!hasNgNextPage || ngLoading"
+                            @click="loadNodeGroups(ngPage + 1)"
+                            >下一页</Button
+                        >
+                    </div>
+                </CardContent>
+            </Card>
+
+            <!-- ─── 区域管理 (CRUD) ─── -->
+            <Card>
+                <CardHeader
+                    class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between"
+                >
+                    <CardTitle class="text-base">区域管理</CardTitle>
+                    <div class="flex items-center gap-2">
+                        <Button size="sm" @click="openAddRegion">
+                            <Plus data-icon="inline-start" />
+                            新增区域
+                        </Button>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            :disabled="regionLoading"
+                            @click="loadRegions(1)"
+                        >
+                            <RefreshCw data-icon="inline-start" />
+                            刷新
+                        </Button>
+                    </div>
+                </CardHeader>
+                <CardContent>
+                    <Alert
+                        v-if="regionError"
+                        variant="destructive"
+                        class="mb-4"
+                    >
+                        <AlertCircle data-icon="alert" />
+                        <AlertTitle>区域请求失败</AlertTitle>
+                        <AlertDescription>{{ regionError }}</AlertDescription>
+                    </Alert>
+                    <div class="overflow-x-auto rounded-md border">
+                        <table class="w-full min-w-[640px] text-sm">
+                            <thead
+                                class="border-b bg-muted/40 text-muted-foreground"
+                            >
+                                <tr>
+                                    <th
+                                        class="w-20 px-4 py-3 text-left font-medium"
+                                    >
+                                        ID
+                                    </th>
+                                    <th class="px-4 py-3 text-left font-medium">
+                                        名称
+                                    </th>
+                                    <th class="px-4 py-3 text-left font-medium">
+                                        备注
+                                    </th>
+                                    <th
+                                        class="w-24 px-4 py-3 text-left font-medium"
+                                    >
+                                        排序
+                                    </th>
+                                    <th
+                                        class="w-32 px-4 py-3 text-left font-medium"
+                                    >
+                                        L2检测端口
+                                    </th>
+                                    <th
+                                        class="w-44 px-4 py-3 text-right font-medium"
                                     >
                                         操作
                                     </th>
@@ -1382,54 +2029,56 @@ function regionNameById(id: unknown): string {
                             <tbody>
                                 <tr
                                     v-if="
-                                        pendingListRequested &&
-                                        pendingLoading &&
-                                        pendingRows.length === 0
+                                        regionLoading && regionRows.length === 0
                                     "
                                 >
                                     <td
                                         class="px-4 py-12 text-center"
-                                        colspan="4"
+                                        colspan="6"
                                     >
                                         <Spinner />
                                     </td>
                                 </tr>
                                 <tr
-                                    v-for="node in pendingRows"
-                                    :key="textValue(node.id)"
+                                    v-for="r in regionRows"
+                                    :key="textValue(r.id)"
                                     class="border-b last:border-b-0"
                                 >
-                                    <td class="px-4 py-3">
-                                        #{{ textValue(node.id) || '-' }}
+                                    <td class="px-4 py-3 text-muted-foreground">
+                                        {{ textValue(r.id) }}
                                     </td>
-                                    <td class="px-4 py-3 font-mono">
-                                        {{ pendingNodeIp(node) }}
+                                    <td class="px-4 py-3 font-medium">
+                                        {{ textValue(r.name) || '-' }}
                                     </td>
                                     <td class="px-4 py-3 text-muted-foreground">
-                                        {{
-                                            formatDate(
-                                                node.create_at ??
-                                                    node.created_at,
-                                            )
-                                        }}
+                                        {{ textValue(r.des) || '-' }}
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        {{ textValue(r.sort) || '-' }}
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        {{ textValue(r.l2_check_port) || '-' }}
                                     </td>
                                     <td class="px-4 py-3">
                                         <div class="flex justify-end gap-2">
                                             <Button
+                                                variant="outline"
                                                 size="sm"
-                                                @click="openInitDialog(node)"
+                                                @click="openEditRegion(r)"
                                             >
-                                                <Plus
+                                                <Pencil
                                                     data-icon="inline-start"
                                                 />
-                                                初始化
+                                                编辑
                                             </Button>
                                             <Button
+                                                variant="destructive"
                                                 size="sm"
-                                                variant="outline"
-                                                @click="openDeletePendingNode(node)"
+                                                @click="openDeleteRegion(r)"
                                             >
-                                                <Trash2 data-icon="inline-start" />
+                                                <Trash2
+                                                    data-icon="inline-start"
+                                                />
                                                 删除
                                             </Button>
                                         </div>
@@ -1437,471 +2086,269 @@ function regionNameById(id: unknown): string {
                                 </tr>
                                 <tr
                                     v-if="
-                                        pendingListRequested &&
-                                        !pendingLoading &&
-                                        pendingRows.length === 0
+                                        !regionLoading &&
+                                        regionRows.length === 0
                                     "
                                 >
                                     <td
                                         class="px-4 py-12 text-center text-muted-foreground"
-                                        colspan="4"
+                                        colspan="6"
                                     >
-                                        暂无待初始化节点
-                                    </td>
-                                </tr>
-                                <tr v-if="!pendingListRequested">
-                                    <td
-                                        class="px-4 py-12 text-center text-muted-foreground"
-                                        colspan="4"
-                                    >
-                                        先在节点机执行安装命令，然后刷新待初始化列表。
+                                        暂无区域
                                     </td>
                                 </tr>
                             </tbody>
                         </table>
                     </div>
-
-                    <div
-                        v-if="pendingListRequested"
-                        class="flex items-center justify-end gap-2"
-                    >
-                        <span class="text-sm text-muted-foreground">
-                            {{ pendingPaginationText }}
-                        </span>
+                    <div class="mt-3 flex items-center justify-end gap-2">
                         <Button
                             variant="outline"
                             size="sm"
-                            :disabled="
-                                !hasPreviousPendingPage || pendingLoading
-                            "
-                            @click="prevPendingPage"
+                            :disabled="!hasRegionPrevPage || regionLoading"
+                            @click="loadRegions(regionPage - 1)"
+                            >上一页</Button
                         >
-                            上一页
+                        <span class="text-sm text-muted-foreground"
+                            >第 {{ regionPage }} 页</span
+                        >
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            :disabled="!hasRegionNextPage || regionLoading"
+                            @click="loadRegions(regionPage + 1)"
+                            >下一页</Button
+                        >
+                    </div>
+                </CardContent>
+            </Card>
+
+            <!-- ─── 线路管理 (CRUD) ─── -->
+            <Card>
+                <CardHeader
+                    class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between"
+                >
+                    <CardTitle class="text-base">线路管理</CardTitle>
+                    <div class="flex items-center gap-2">
+                        <Button size="sm" @click="openAddLine">
+                            <Plus data-icon="inline-start" />
+                            新增线路
                         </Button>
                         <Button
                             variant="outline"
                             size="sm"
-                            :disabled="!hasNextPendingPage || pendingLoading"
-                            @click="nextPendingPage"
+                            :disabled="lineLoading"
+                            @click="loadLines(1)"
                         >
-                            下一页
+                            <RefreshCw data-icon="inline-start" />
+                            刷新
                         </Button>
                     </div>
-                </div>
-            </CardContent>
-        </Card>
-
-        <Card>
-            <CardHeader
-                class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between"
-            >
-                <CardTitle class="text-base">节点列表</CardTitle>
-                <span class="text-sm text-muted-foreground">
-                    {{ paginationText }}
-                </span>
-            </CardHeader>
-            <CardContent>
-                <div class="overflow-x-auto rounded-md border">
-                    <table class="w-full min-w-[1040px] text-sm">
-                        <thead
-                            class="border-y bg-muted/50 text-muted-foreground"
-                        >
-                            <tr>
-                                <th class="px-6 py-3 text-left font-medium">
-                                    节点
-                                </th>
-                                <th class="px-4 py-3 text-left font-medium">
-                                    状态
-                                </th>
-                                <th class="px-4 py-3 text-left font-medium">
-                                    节点组
-                                </th>
-                                <th class="px-4 py-3 text-left font-medium">
-                                    区域
-                                </th>
-                                <th class="px-4 py-3 text-left font-medium">
-                                    线路
-                                </th>
-                                <th class="px-4 py-3 text-left font-medium">
-                                    权重
-                                </th>
-                                <th class="px-4 py-3 text-left font-medium">
-                                    带宽
-                                </th>
-                                <th class="px-4 py-3 text-left font-medium">
-                                    创建时间
-                                </th>
-                                <th
-                                    class="w-72 px-6 py-3 text-right font-medium"
-                                >
-                                    操作
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr v-if="loading && rows.length === 0">
-                                <td class="px-6 py-16 text-center" colspan="9">
-                                    <Spinner />
-                                </td>
-                            </tr>
-                            <tr
-                                v-for="node in rows"
-                                :key="textValue(node.id) || nodeName(node)"
-                                class="border-b last:border-b-0"
+                </CardHeader>
+                <CardContent>
+                    <Alert v-if="lineError" variant="destructive" class="mb-4">
+                        <AlertCircle data-icon="alert" />
+                        <AlertTitle>线路请求失败</AlertTitle>
+                        <AlertDescription>{{ lineError }}</AlertDescription>
+                    </Alert>
+                    <div class="overflow-x-auto rounded-md border">
+                        <table class="w-full min-w-[800px] text-sm">
+                            <thead
+                                class="border-b bg-muted/40 text-muted-foreground"
                             >
-                                <td class="px-6 py-4">
-                                    <div class="font-medium">
-                                        {{ nodeName(node) }}
-                                    </div>
-                                    <div class="text-xs text-muted-foreground">
-                                        ID {{ textValue(node.id) || '-' }} /
-                                        {{ textValue(node.ip) || '-' }}
-                                    </div>
-                                </td>
-                                <td class="px-4 py-4">
-                                    <Badge :variant="nodeStatusVariant(node)">
-                                        {{ nodeStatusLabel(node) }}
-                                    </Badge>
-                                </td>
-                                <td class="px-4 py-4 text-muted-foreground">
-                                    {{
-                                        textValue(
-                                            node.node_group_id ?? node.group_id,
-                                        ) || '-'
-                                    }}
-                                </td>
-                                <td class="px-4 py-4 text-muted-foreground">
-                                    {{ textValue(node.region_id) || '-' }}
-                                </td>
-                                <td class="px-4 py-4 text-muted-foreground">
-                                    {{ textValue(node.line_id) || '-' }}
-                                </td>
-                                <td class="px-4 py-4">
-                                    {{ textValue(node.weight) || '-' }}
-                                </td>
-                                <td class="px-4 py-4">
-                                    {{ textValue(node.bandwidth) || '-' }}
-                                </td>
-                                <td class="px-4 py-4 text-muted-foreground">
-                                    {{
-                                        formatDate(
-                                            node.created_at ?? node.create_at,
-                                        )
-                                    }}
-                                </td>
-                                <td class="px-6 py-4">
-                                    <div class="flex justify-end gap-2">
-                                        <Button
-                                            :variant="
-                                                nodeEnabled(node)
-                                                    ? 'outline'
-                                                    : 'default'
-                                            "
-                                            size="sm"
-                                            :disabled="
-                                                togglingNodeId ===
-                                                asNumber(node.id)
-                                            "
-                                            @click="
-                                                setNodeEnabled(
-                                                    node,
-                                                    !nodeEnabled(node),
-                                                )
-                                            "
-                                        >
-                                            <Spinner
-                                                v-if="
-                                                    togglingNodeId ===
-                                                    asNumber(node.id)
-                                                "
-                                                data-icon="inline-start"
-                                            />
-                                            <PowerOff
-                                                v-else-if="nodeEnabled(node)"
-                                                data-icon="inline-start"
-                                            />
-                                            <Power
-                                                v-else
-                                                data-icon="inline-start"
-                                            />
-                                            {{
-                                                nodeEnabled(node)
-                                                    ? '禁用'
-                                                    : '启用'
-                                            }}
-                                        </Button>
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            @click="openEditDialog(node)"
-                                        >
-                                            <Pencil data-icon="inline-start" />
-                                            编辑
-                                        </Button>
-                                        <Button
-                                            variant="destructive"
-                                            size="sm"
-                                            @click="openDeleteNode(node)"
-                                        >
-                                            <Trash2 data-icon="inline-start" />
-                                            删除
-                                        </Button>
-                                    </div>
-                                </td>
-                            </tr>
-                            <tr v-if="!loading && rows.length === 0">
-                                <td
-                                    class="px-6 py-16 text-center text-muted-foreground"
-                                    colspan="9"
+                                <tr>
+                                    <th
+                                        class="w-16 px-4 py-3 text-left font-medium"
+                                    >
+                                        ID
+                                    </th>
+                                    <th class="px-4 py-3 text-left font-medium">
+                                        名称
+                                    </th>
+                                    <th class="px-4 py-3 text-left font-medium">
+                                        所属区域
+                                    </th>
+                                    <th class="px-4 py-3 text-left font-medium">
+                                        CNAME
+                                    </th>
+                                    <th class="px-4 py-3 text-left font-medium">
+                                        备注
+                                    </th>
+                                    <th
+                                        class="w-24 px-4 py-3 text-left font-medium"
+                                    >
+                                        排序
+                                    </th>
+                                    <th class="px-4 py-3 text-left font-medium">
+                                        切换类型
+                                    </th>
+                                    <th
+                                        class="w-44 px-4 py-3 text-right font-medium"
+                                    >
+                                        操作
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-if="lineLoading && lineRows.length === 0">
+                                    <td
+                                        class="px-4 py-12 text-center"
+                                        colspan="8"
+                                    >
+                                        <Spinner />
+                                    </td>
+                                </tr>
+                                <tr
+                                    v-for="l in lineRows"
+                                    :key="textValue(l.id)"
+                                    class="border-b last:border-b-0"
                                 >
-                                    暂无节点
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
+                                    <td class="px-4 py-3 text-muted-foreground">
+                                        {{ textValue(l.id) }}
+                                    </td>
+                                    <td class="px-4 py-3 font-medium">
+                                        {{ textValue(l.name) || '-' }}
+                                    </td>
+                                    <td class="px-4 py-3 text-muted-foreground">
+                                        {{ regionNameById(l.region_id) }}
+                                    </td>
+                                    <td class="px-4 py-3 font-mono text-xs">
+                                        {{
+                                            textValue(l.cname_hostname) ||
+                                            '(随机)'
+                                        }}
+                                    </td>
+                                    <td class="px-4 py-3 text-muted-foreground">
+                                        {{ textValue(l.des) || '-' }}
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        {{ textValue(l.sort) || '-' }}
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        {{
+                                            textValue(l.backup_switch_type) ||
+                                            '-'
+                                        }}
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <div class="flex justify-end gap-2">
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                @click="openEditLine(l)"
+                                            >
+                                                <Pencil
+                                                    data-icon="inline-start"
+                                                />
+                                                编辑
+                                            </Button>
+                                            <Button
+                                                variant="destructive"
+                                                size="sm"
+                                                @click="openDeleteLine(l)"
+                                            >
+                                                <Trash2
+                                                    data-icon="inline-start"
+                                                />
+                                                删除
+                                            </Button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr
+                                    v-if="!lineLoading && lineRows.length === 0"
+                                >
+                                    <td
+                                        class="px-4 py-12 text-center text-muted-foreground"
+                                        colspan="8"
+                                    >
+                                        暂无线路
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="mt-3 flex items-center justify-end gap-2">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            :disabled="!hasLinePrevPage || lineLoading"
+                            @click="loadLines(linePage - 1)"
+                            >上一页</Button
+                        >
+                        <span class="text-sm text-muted-foreground"
+                            >第 {{ linePage }} 页</span
+                        >
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            :disabled="!hasLineNextPage || lineLoading"
+                            @click="loadLines(linePage + 1)"
+                            >下一页</Button
+                        >
+                    </div>
+                </CardContent>
+            </Card>
+        </template>
+
+        <!--
+            Installing a node happens once per machine, so the command does not
+            earn permanent space at the top of a page visited daily for other
+            reasons. It lives behind 执行命令 in the top bar instead.
+        -->
+        <Dialog v-model:open="installDialogOpen">
+            <DialogContent class="max-w-3xl">
+                <DialogHeader>
+                    <DialogTitle>节点安装命令</DialogTitle>
+                    <DialogDescription>
+                        以 root
+                        登录新节点机执行。执行完成后节点会自动回传，到「待接入」完成初始化。
+                    </DialogDescription>
+                </DialogHeader>
+
+                <Alert v-if="installError" variant="destructive">
+                    <AlertCircle data-icon="alert" />
+                    <AlertTitle>安装命令加载失败</AlertTitle>
+                    <AlertDescription>{{ installError }}</AlertDescription>
+                </Alert>
+
+                <div
+                    class="max-h-72 min-h-32 overflow-auto rounded-md border bg-muted/30 p-4 font-mono text-sm leading-7"
+                >
+                    <Spinner v-if="installLoading" />
+                    <pre
+                        v-else-if="installCommandAvailable"
+                        class="break-all whitespace-pre-wrap"
+                        >{{ installCommand }}</pre
+                    >
+                    <div v-else class="text-muted-foreground">
+                        暂无可用安装命令，请稍后重试。
+                    </div>
                 </div>
-            </CardContent>
-        </Card>
 
-        <div class="flex items-center justify-end gap-2">
-            <Button
-                variant="outline"
-                size="sm"
-                :disabled="!hasPreviousPage || loading"
-                @click="prevPage"
-            >
-                上一页
-            </Button>
-            <span class="text-sm text-muted-foreground">
-                第 {{ page }} 页
-            </span>
-            <Button
-                variant="outline"
-                size="sm"
-                :disabled="!hasNextPage || loading"
-                @click="nextPage"
-            >
-                下一页
-            </Button>
-        </div>
+                <p class="text-xs text-muted-foreground">
+                    命令中包含 Elasticsearch 密码，请勿转发或截图外发。
+                </p>
 
-        <!-- ─── 线路组管理 (CRUD) ─── -->
-        <Card>
-            <CardHeader class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                <CardTitle class="text-base">线路组管理</CardTitle>
-                <div class="flex items-center gap-2">
-                    <Button size="sm" @click="openAddNodeGroup">
-                        <Plus data-icon="inline-start" />
-                        新增线路组
-                    </Button>
-                    <Button variant="outline" size="sm" :disabled="ngLoading" @click="loadNodeGroups(1)">
+                <DialogFooter>
+                    <Button
+                        variant="outline"
+                        :disabled="installLoading"
+                        @click="refreshInstallCommand"
+                    >
                         <RefreshCw data-icon="inline-start" />
                         刷新
                     </Button>
-                </div>
-            </CardHeader>
-            <CardContent>
-                <Alert v-if="ngError" variant="destructive" class="mb-4">
-                    <AlertCircle data-icon="alert" />
-                    <AlertTitle>线路组请求失败</AlertTitle>
-                    <AlertDescription>{{ ngError }}</AlertDescription>
-                </Alert>
-                <div class="overflow-x-auto rounded-md border">
-                    <table class="w-full min-w-[720px] text-sm">
-                        <thead class="border-b bg-muted/40 text-muted-foreground">
-                            <tr>
-                                <th class="w-16 px-4 py-3 text-left font-medium">ID</th>
-                                <th class="px-4 py-3 text-left font-medium">名称</th>
-                                <th class="px-4 py-3 text-left font-medium">所属区域</th>
-                                <th class="px-4 py-3 text-left font-medium">CNAME</th>
-                                <th class="px-4 py-3 text-left font-medium">备注</th>
-                                <th class="px-4 py-3 text-left font-medium">切换策略</th>
-                                <th class="w-20 px-4 py-3 text-left font-medium">节点数</th>
-                                <th class="w-44 px-4 py-3 text-right font-medium">操作</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr v-if="ngLoading && ngRows.length === 0">
-                                <td class="px-4 py-12 text-center" colspan="8"><Spinner /></td>
-                            </tr>
-                            <tr v-for="g in ngRows" :key="textValue(g.id)" class="border-b last:border-b-0">
-                                <td class="px-4 py-3 text-muted-foreground">{{ textValue(g.id) }}</td>
-                                <td class="px-4 py-3 font-medium">{{ textValue(g.name) || '-' }}</td>
-                                <td class="px-4 py-3 text-muted-foreground">{{ textValue(g.region_name) || regionNameById(g.region_id) }}</td>
-                                <td class="px-4 py-3 font-mono text-xs">{{ textValue(g.cname_hostname) || '-' }}</td>
-                                <td class="px-4 py-3 text-muted-foreground">{{ textValue(g.des) || '-' }}</td>
-                                <td class="px-4 py-3">{{ textValue(g.backup_switch_type) || 'master_down' }}</td>
-                                <td class="px-4 py-3">{{ textValue(g.node_count) || '0' }}</td>
-                                <td class="px-4 py-3">
-                                    <div class="flex justify-end gap-2">
-                                        <Button variant="outline" size="sm" @click="openEditNodeGroup(g)">
-                                            <Pencil data-icon="inline-start" />
-                                            编辑
-                                        </Button>
-                                        <Button variant="destructive" size="sm" @click="openDeleteNodeGroup(g)">
-                                            <Trash2 data-icon="inline-start" />
-                                            删除
-                                        </Button>
-                                    </div>
-                                </td>
-                            </tr>
-                            <tr v-if="!ngLoading && ngRows.length === 0">
-                                <td class="px-4 py-12 text-center text-muted-foreground" colspan="8">暂无线路组</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-                <div class="mt-3 flex items-center justify-end gap-2">
-                    <Button variant="outline" size="sm" :disabled="!hasNgPrevPage || ngLoading" @click="loadNodeGroups(ngPage - 1)">上一页</Button>
-                    <span class="text-sm text-muted-foreground">第 {{ ngPage }} 页</span>
-                    <Button variant="outline" size="sm" :disabled="!hasNgNextPage || ngLoading" @click="loadNodeGroups(ngPage + 1)">下一页</Button>
-                </div>
-            </CardContent>
-        </Card>
-
-        <!-- ─── 区域管理 (CRUD) ─── -->
-        <Card>
-            <CardHeader class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                <CardTitle class="text-base">区域管理</CardTitle>
-                <div class="flex items-center gap-2">
-                    <Button size="sm" @click="openAddRegion">
-                        <Plus data-icon="inline-start" />
-                        新增区域
+                    <Button
+                        :disabled="installLoading || !installCommandAvailable"
+                        @click="copyInstallCommand"
+                    >
+                        <Check v-if="commandCopied" data-icon="inline-start" />
+                        <Copy v-else data-icon="inline-start" />
+                        {{ commandCopied ? '已复制' : '复制命令' }}
                     </Button>
-                    <Button variant="outline" size="sm" :disabled="regionLoading" @click="loadRegions(1)">
-                        <RefreshCw data-icon="inline-start" />
-                        刷新
-                    </Button>
-                </div>
-            </CardHeader>
-            <CardContent>
-                <Alert v-if="regionError" variant="destructive" class="mb-4">
-                    <AlertCircle data-icon="alert" />
-                    <AlertTitle>区域请求失败</AlertTitle>
-                    <AlertDescription>{{ regionError }}</AlertDescription>
-                </Alert>
-                <div class="overflow-x-auto rounded-md border">
-                    <table class="w-full min-w-[640px] text-sm">
-                        <thead class="border-b bg-muted/40 text-muted-foreground">
-                            <tr>
-                                <th class="w-20 px-4 py-3 text-left font-medium">ID</th>
-                                <th class="px-4 py-3 text-left font-medium">名称</th>
-                                <th class="px-4 py-3 text-left font-medium">备注</th>
-                                <th class="w-24 px-4 py-3 text-left font-medium">排序</th>
-                                <th class="w-32 px-4 py-3 text-left font-medium">L2检测端口</th>
-                                <th class="w-44 px-4 py-3 text-right font-medium">操作</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr v-if="regionLoading && regionRows.length === 0">
-                                <td class="px-4 py-12 text-center" colspan="6"><Spinner /></td>
-                            </tr>
-                            <tr v-for="r in regionRows" :key="textValue(r.id)" class="border-b last:border-b-0">
-                                <td class="px-4 py-3 text-muted-foreground">{{ textValue(r.id) }}</td>
-                                <td class="px-4 py-3 font-medium">{{ textValue(r.name) || '-' }}</td>
-                                <td class="px-4 py-3 text-muted-foreground">{{ textValue(r.des) || '-' }}</td>
-                                <td class="px-4 py-3">{{ textValue(r.sort) || '-' }}</td>
-                                <td class="px-4 py-3">{{ textValue(r.l2_check_port) || '-' }}</td>
-                                <td class="px-4 py-3">
-                                    <div class="flex justify-end gap-2">
-                                        <Button variant="outline" size="sm" @click="openEditRegion(r)">
-                                            <Pencil data-icon="inline-start" />
-                                            编辑
-                                        </Button>
-                                        <Button variant="destructive" size="sm" @click="openDeleteRegion(r)">
-                                            <Trash2 data-icon="inline-start" />
-                                            删除
-                                        </Button>
-                                    </div>
-                                </td>
-                            </tr>
-                            <tr v-if="!regionLoading && regionRows.length === 0">
-                                <td class="px-4 py-12 text-center text-muted-foreground" colspan="6">暂无区域</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-                <div class="mt-3 flex items-center justify-end gap-2">
-                    <Button variant="outline" size="sm" :disabled="!hasRegionPrevPage || regionLoading" @click="loadRegions(regionPage - 1)">上一页</Button>
-                    <span class="text-sm text-muted-foreground">第 {{ regionPage }} 页</span>
-                    <Button variant="outline" size="sm" :disabled="!hasRegionNextPage || regionLoading" @click="loadRegions(regionPage + 1)">下一页</Button>
-                </div>
-            </CardContent>
-        </Card>
-
-        <!-- ─── 线路管理 (CRUD) ─── -->
-        <Card>
-            <CardHeader class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                <CardTitle class="text-base">线路管理</CardTitle>
-                <div class="flex items-center gap-2">
-                    <Button size="sm" @click="openAddLine">
-                        <Plus data-icon="inline-start" />
-                        新增线路
-                    </Button>
-                    <Button variant="outline" size="sm" :disabled="lineLoading" @click="loadLines(1)">
-                        <RefreshCw data-icon="inline-start" />
-                        刷新
-                    </Button>
-                </div>
-            </CardHeader>
-            <CardContent>
-                <Alert v-if="lineError" variant="destructive" class="mb-4">
-                    <AlertCircle data-icon="alert" />
-                    <AlertTitle>线路请求失败</AlertTitle>
-                    <AlertDescription>{{ lineError }}</AlertDescription>
-                </Alert>
-                <div class="overflow-x-auto rounded-md border">
-                    <table class="w-full min-w-[800px] text-sm">
-                        <thead class="border-b bg-muted/40 text-muted-foreground">
-                            <tr>
-                                <th class="w-16 px-4 py-3 text-left font-medium">ID</th>
-                                <th class="px-4 py-3 text-left font-medium">名称</th>
-                                <th class="px-4 py-3 text-left font-medium">所属区域</th>
-                                <th class="px-4 py-3 text-left font-medium">CNAME</th>
-                                <th class="px-4 py-3 text-left font-medium">备注</th>
-                                <th class="w-24 px-4 py-3 text-left font-medium">排序</th>
-                                <th class="px-4 py-3 text-left font-medium">切换类型</th>
-                                <th class="w-44 px-4 py-3 text-right font-medium">操作</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr v-if="lineLoading && lineRows.length === 0">
-                                <td class="px-4 py-12 text-center" colspan="8"><Spinner /></td>
-                            </tr>
-                            <tr v-for="l in lineRows" :key="textValue(l.id)" class="border-b last:border-b-0">
-                                <td class="px-4 py-3 text-muted-foreground">{{ textValue(l.id) }}</td>
-                                <td class="px-4 py-3 font-medium">{{ textValue(l.name) || '-' }}</td>
-                                <td class="px-4 py-3 text-muted-foreground">{{ regionNameById(l.region_id) }}</td>
-                                <td class="px-4 py-3 font-mono text-xs">{{ textValue(l.cname_hostname) || '(随机)' }}</td>
-                                <td class="px-4 py-3 text-muted-foreground">{{ textValue(l.des) || '-' }}</td>
-                                <td class="px-4 py-3">{{ textValue(l.sort) || '-' }}</td>
-                                <td class="px-4 py-3">{{ textValue(l.backup_switch_type) || '-' }}</td>
-                                <td class="px-4 py-3">
-                                    <div class="flex justify-end gap-2">
-                                        <Button variant="outline" size="sm" @click="openEditLine(l)">
-                                            <Pencil data-icon="inline-start" />
-                                            编辑
-                                        </Button>
-                                        <Button variant="destructive" size="sm" @click="openDeleteLine(l)">
-                                            <Trash2 data-icon="inline-start" />
-                                            删除
-                                        </Button>
-                                    </div>
-                                </td>
-                            </tr>
-                            <tr v-if="!lineLoading && lineRows.length === 0">
-                                <td class="px-4 py-12 text-center text-muted-foreground" colspan="8">暂无线路</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-                <div class="mt-3 flex items-center justify-end gap-2">
-                    <Button variant="outline" size="sm" :disabled="!hasLinePrevPage || lineLoading" @click="loadLines(linePage - 1)">上一页</Button>
-                    <span class="text-sm text-muted-foreground">第 {{ linePage }} 页</span>
-                    <Button variant="outline" size="sm" :disabled="!hasLineNextPage || lineLoading" @click="loadLines(linePage + 1)">下一页</Button>
-                </div>
-            </CardContent>
-        </Card>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
 
         <Dialog v-model:open="initDialogOpen">
             <DialogScrollContent class="sm:max-w-2xl">
@@ -2175,9 +2622,15 @@ function regionNameById(id: unknown): string {
         <Dialog v-model:open="ngDialogOpen">
             <DialogScrollContent class="sm:max-w-lg">
                 <DialogHeader>
-                    <DialogTitle>{{ editingNodeGroup ? '编辑线路组' : '新增线路组' }}</DialogTitle>
+                    <DialogTitle>{{
+                        editingNodeGroup ? '编辑线路组' : '新增线路组'
+                    }}</DialogTitle>
                     <DialogDescription>
-                        {{ editingNodeGroup ? '修改线路组配置，提交后立即生效。' : '创建新线路组。' }}
+                        {{
+                            editingNodeGroup
+                                ? '修改线路组配置，提交后立即生效。'
+                                : '创建新线路组。'
+                        }}
                     </DialogDescription>
                 </DialogHeader>
 
@@ -2191,7 +2644,12 @@ function regionNameById(id: unknown): string {
                     <div class="grid gap-4 md:grid-cols-2">
                         <div class="grid gap-2">
                             <Label for="ng-name">线路组名称</Label>
-                            <Input id="ng-name" v-model="ngForm.name" autocomplete="off" required />
+                            <Input
+                                id="ng-name"
+                                v-model="ngForm.name"
+                                autocomplete="off"
+                                required
+                            />
                         </div>
                         <div class="grid gap-2">
                             <Label>所属区域</Label>
@@ -2201,7 +2659,11 @@ function regionNameById(id: unknown): string {
                                 </SelectTrigger>
                                 <SelectContent>
                                     <SelectGroup>
-                                        <SelectItem v-for="option in regionOptions" :key="option.id" :value="option.id">
+                                        <SelectItem
+                                            v-for="option in regionOptions"
+                                            :key="option.id"
+                                            :value="option.id"
+                                        >
                                             {{ option.label }}
                                         </SelectItem>
                                     </SelectGroup>
@@ -2216,22 +2678,43 @@ function regionNameById(id: unknown): string {
                                 </SelectTrigger>
                                 <SelectContent>
                                     <SelectGroup>
-                                        <SelectItem value="master_down">master_down（主IP不可用时切换）</SelectItem>
-                                        <SelectItem value="interval">interval（间隔时间切换）</SelectItem>
+                                        <SelectItem value="master_down"
+                                            >master_down（主IP不可用时切换）</SelectItem
+                                        >
+                                        <SelectItem value="interval"
+                                            >interval（间隔时间切换）</SelectItem
+                                        >
                                     </SelectGroup>
                                 </SelectContent>
                             </Select>
                         </div>
                     </div>
 
-                    <div v-if="ngForm.backup_switch_type === 'interval'" class="grid gap-4 md:grid-cols-3">
+                    <div
+                        v-if="ngForm.backup_switch_type === 'interval'"
+                        class="grid gap-4 md:grid-cols-3"
+                    >
                         <div class="grid gap-2">
-                            <Label for="ng-policy-ip-num">同时启用备用IP数</Label>
-                            <Input id="ng-policy-ip-num" v-model="ngForm.backup_policy_ip_num" type="number" min="1" />
+                            <Label for="ng-policy-ip-num"
+                                >同时启用备用IP数</Label
+                            >
+                            <Input
+                                id="ng-policy-ip-num"
+                                v-model="ngForm.backup_policy_ip_num"
+                                type="number"
+                                min="1"
+                            />
                         </div>
                         <div class="grid gap-2">
-                            <Label for="ng-policy-interval">切换间隔（秒）</Label>
-                            <Input id="ng-policy-interval" v-model="ngForm.backup_policy_interval" type="number" min="1" />
+                            <Label for="ng-policy-interval"
+                                >切换间隔（秒）</Label
+                            >
+                            <Input
+                                id="ng-policy-interval"
+                                v-model="ngForm.backup_policy_interval"
+                                type="number"
+                                min="1"
+                            />
                         </div>
                         <div class="grid gap-2">
                             <Label>切换顺序</Label>
@@ -2241,8 +2724,12 @@ function regionNameById(id: unknown): string {
                                 </SelectTrigger>
                                 <SelectContent>
                                     <SelectGroup>
-                                        <SelectItem value="rand">rand（随机）</SelectItem>
-                                        <SelectItem value="seq">seq（顺序）</SelectItem>
+                                        <SelectItem value="rand"
+                                            >rand（随机）</SelectItem
+                                        >
+                                        <SelectItem value="seq"
+                                            >seq（顺序）</SelectItem
+                                        >
                                     </SelectGroup>
                                 </SelectContent>
                             </Select>
@@ -2259,7 +2746,12 @@ function regionNameById(id: unknown): string {
                     </div>
 
                     <DialogFooter>
-                        <Button variant="outline" type="button" @click="ngDialogOpen = false">取消</Button>
+                        <Button
+                            variant="outline"
+                            type="button"
+                            @click="ngDialogOpen = false"
+                            >取消</Button
+                        >
                         <Button :disabled="ngSaving" type="submit">
                             <Spinner v-if="ngSaving" data-icon="inline-start" />
                             <Save v-else data-icon="inline-start" />
@@ -2274,9 +2766,15 @@ function regionNameById(id: unknown): string {
         <Dialog v-model:open="regionDialogOpen">
             <DialogScrollContent class="sm:max-w-lg">
                 <DialogHeader>
-                    <DialogTitle>{{ editingRegion ? '编辑区域' : '新增区域' }}</DialogTitle>
+                    <DialogTitle>{{
+                        editingRegion ? '编辑区域' : '新增区域'
+                    }}</DialogTitle>
                     <DialogDescription>
-                        {{ editingRegion ? '修改区域配置，提交后立即生效。' : '创建新区域。' }}
+                        {{
+                            editingRegion
+                                ? '修改区域配置，提交后立即生效。'
+                                : '创建新区域。'
+                        }}
                     </DialogDescription>
                 </DialogHeader>
 
@@ -2284,21 +2782,39 @@ function regionNameById(id: unknown): string {
                     <Alert v-if="regionFormError" variant="destructive">
                         <AlertCircle data-icon="alert" />
                         <AlertTitle>提交失败</AlertTitle>
-                        <AlertDescription>{{ regionFormError }}</AlertDescription>
+                        <AlertDescription>{{
+                            regionFormError
+                        }}</AlertDescription>
                     </Alert>
 
                     <div class="grid gap-4 md:grid-cols-2">
                         <div class="grid gap-2">
                             <Label for="region-name">区域名称</Label>
-                            <Input id="region-name" v-model="regionForm.name" autocomplete="off" required />
+                            <Input
+                                id="region-name"
+                                v-model="regionForm.name"
+                                autocomplete="off"
+                                required
+                            />
                         </div>
                         <div class="grid gap-2">
                             <Label for="region-sort">排序</Label>
-                            <Input id="region-sort" v-model="regionForm.sort" type="number" min="0" />
+                            <Input
+                                id="region-sort"
+                                v-model="regionForm.sort"
+                                type="number"
+                                min="0"
+                            />
                         </div>
                         <div class="grid gap-2">
                             <Label for="region-l2-port">L2 检测端口</Label>
-                            <Input id="region-l2-port" v-model="regionForm.l2_check_port" type="number" min="1" max="65535" />
+                            <Input
+                                id="region-l2-port"
+                                v-model="regionForm.l2_check_port"
+                                type="number"
+                                min="1"
+                                max="65535"
+                            />
                         </div>
                     </div>
 
@@ -2312,9 +2828,17 @@ function regionNameById(id: unknown): string {
                     </div>
 
                     <DialogFooter>
-                        <Button variant="outline" type="button" @click="regionDialogOpen = false">取消</Button>
+                        <Button
+                            variant="outline"
+                            type="button"
+                            @click="regionDialogOpen = false"
+                            >取消</Button
+                        >
                         <Button :disabled="regionSaving" type="submit">
-                            <Spinner v-if="regionSaving" data-icon="inline-start" />
+                            <Spinner
+                                v-if="regionSaving"
+                                data-icon="inline-start"
+                            />
                             <Save v-else data-icon="inline-start" />
                             {{ editingRegion ? '保存' : '创建' }}
                         </Button>
@@ -2327,9 +2851,15 @@ function regionNameById(id: unknown): string {
         <Dialog v-model:open="lineDialogOpen">
             <DialogScrollContent class="sm:max-w-lg">
                 <DialogHeader>
-                    <DialogTitle>{{ editingLine ? '编辑线路' : '新增线路' }}</DialogTitle>
+                    <DialogTitle>{{
+                        editingLine ? '编辑线路' : '新增线路'
+                    }}</DialogTitle>
                     <DialogDescription>
-                        {{ editingLine ? '修改线路配置，提交后立即生效。' : '创建新线路。cname_hostname 留空则随机生成。' }}
+                        {{
+                            editingLine
+                                ? '修改线路配置，提交后立即生效。'
+                                : '创建新线路。cname_hostname 留空则随机生成。'
+                        }}
                     </DialogDescription>
                 </DialogHeader>
 
@@ -2343,7 +2873,12 @@ function regionNameById(id: unknown): string {
                     <div class="grid gap-4 md:grid-cols-2">
                         <div class="grid gap-2">
                             <Label for="line-name">线路名称</Label>
-                            <Input id="line-name" v-model="lineForm.name" autocomplete="off" required />
+                            <Input
+                                id="line-name"
+                                v-model="lineForm.name"
+                                autocomplete="off"
+                                required
+                            />
                         </div>
                         <div class="grid gap-2">
                             <Label>所属区域</Label>
@@ -2353,7 +2888,11 @@ function regionNameById(id: unknown): string {
                                 </SelectTrigger>
                                 <SelectContent>
                                     <SelectGroup>
-                                        <SelectItem v-for="option in regionOptions" :key="option.id" :value="option.id">
+                                        <SelectItem
+                                            v-for="option in regionOptions"
+                                            :key="option.id"
+                                            :value="option.id"
+                                        >
                                             {{ option.label }}
                                         </SelectItem>
                                     </SelectGroup>
@@ -2362,11 +2901,21 @@ function regionNameById(id: unknown): string {
                         </div>
                         <div class="grid gap-2">
                             <Label for="line-cname">CNAME 主机名</Label>
-                            <Input id="line-cname" v-model="lineForm.cname_hostname" placeholder="留空则随机生成" autocomplete="off" />
+                            <Input
+                                id="line-cname"
+                                v-model="lineForm.cname_hostname"
+                                placeholder="留空则随机生成"
+                                autocomplete="off"
+                            />
                         </div>
                         <div class="grid gap-2">
                             <Label for="line-sort">排序</Label>
-                            <Input id="line-sort" v-model="lineForm.sort" type="number" min="0" />
+                            <Input
+                                id="line-sort"
+                                v-model="lineForm.sort"
+                                type="number"
+                                min="0"
+                            />
                         </div>
                         <div class="grid gap-2">
                             <Label>备用IP切换策略</Label>
@@ -2376,37 +2925,69 @@ function regionNameById(id: unknown): string {
                                 </SelectTrigger>
                                 <SelectContent>
                                     <SelectGroup>
-                                        <SelectItem value="master_down">master_down（主IP不可用时切换）</SelectItem>
-                                        <SelectItem value="interval">interval（间隔时间切换）</SelectItem>
+                                        <SelectItem value="master_down"
+                                            >master_down（主IP不可用时切换）</SelectItem
+                                        >
+                                        <SelectItem value="interval"
+                                            >interval（间隔时间切换）</SelectItem
+                                        >
                                     </SelectGroup>
                                 </SelectContent>
                             </Select>
                         </div>
                         <div class="grid gap-2">
                             <Label for="line-l2-config">L2 配置 ID</Label>
-                            <Input id="line-l2-config" v-model="lineForm.l2_config_id" placeholder="可选" autocomplete="off" />
+                            <Input
+                                id="line-l2-config"
+                                v-model="lineForm.l2_config_id"
+                                placeholder="可选"
+                                autocomplete="off"
+                            />
                         </div>
                     </div>
 
-                    <div v-if="lineForm.backup_switch_type === 'interval'" class="grid gap-4 md:grid-cols-3">
+                    <div
+                        v-if="lineForm.backup_switch_type === 'interval'"
+                        class="grid gap-4 md:grid-cols-3"
+                    >
                         <div class="grid gap-2">
-                            <Label for="line-policy-ip-num">同时启用备用IP数</Label>
-                            <Input id="line-policy-ip-num" v-model="lineForm.backup_policy_ip_num" type="number" min="1" />
+                            <Label for="line-policy-ip-num"
+                                >同时启用备用IP数</Label
+                            >
+                            <Input
+                                id="line-policy-ip-num"
+                                v-model="lineForm.backup_policy_ip_num"
+                                type="number"
+                                min="1"
+                            />
                         </div>
                         <div class="grid gap-2">
-                            <Label for="line-policy-interval">切换间隔（秒）</Label>
-                            <Input id="line-policy-interval" v-model="lineForm.backup_policy_interval" type="number" min="1" />
+                            <Label for="line-policy-interval"
+                                >切换间隔（秒）</Label
+                            >
+                            <Input
+                                id="line-policy-interval"
+                                v-model="lineForm.backup_policy_interval"
+                                type="number"
+                                min="1"
+                            />
                         </div>
                         <div class="grid gap-2">
                             <Label>切换顺序</Label>
-                            <Select v-model="lineForm.backup_policy_switch_order">
+                            <Select
+                                v-model="lineForm.backup_policy_switch_order"
+                            >
                                 <SelectTrigger>
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
                                     <SelectGroup>
-                                        <SelectItem value="rand">rand（随机）</SelectItem>
-                                        <SelectItem value="seq">seq（顺序）</SelectItem>
+                                        <SelectItem value="rand"
+                                            >rand（随机）</SelectItem
+                                        >
+                                        <SelectItem value="seq"
+                                            >seq（顺序）</SelectItem
+                                        >
                                     </SelectGroup>
                                 </SelectContent>
                             </Select>
@@ -2423,9 +3004,17 @@ function regionNameById(id: unknown): string {
                     </div>
 
                     <DialogFooter>
-                        <Button variant="outline" type="button" @click="lineDialogOpen = false">取消</Button>
+                        <Button
+                            variant="outline"
+                            type="button"
+                            @click="lineDialogOpen = false"
+                            >取消</Button
+                        >
                         <Button :disabled="lineSaving" type="submit">
-                            <Spinner v-if="lineSaving" data-icon="inline-start" />
+                            <Spinner
+                                v-if="lineSaving"
+                                data-icon="inline-start"
+                            />
                             <Save v-else data-icon="inline-start" />
                             {{ editingLine ? '保存' : '创建' }}
                         </Button>
