@@ -514,11 +514,11 @@ class AdminConsoleManagementTest extends TestCase
                 'des' => '',
                 'type' => 'L1',
             ])
-            ->assertStatus(502);
+            ->assertStatus(500);
 
         $this->actingAs($admin)
             ->postJson('/api/admin/proxy/v1/packages', ['name' => 'blocked'])
-            ->assertStatus(502);
+            ->assertStatus(500);
 
         Http::assertNothingSent();
     }

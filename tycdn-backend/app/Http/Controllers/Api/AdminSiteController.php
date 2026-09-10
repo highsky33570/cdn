@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\Controllers\Concerns\ReportsCdnflyFailures;
 use App\Http\Controllers\Controller;
 use App\Services\CdnflyApiService;
 use Illuminate\Http\JsonResponse;
@@ -9,6 +10,8 @@ use Illuminate\Http\Request;
 
 class AdminSiteController extends Controller
 {
+    use ReportsCdnflyFailures;
+
     public function __construct(
         private readonly CdnflyApiService $cdnfly,
     ) {}
@@ -19,8 +22,8 @@ class AdminSiteController extends Controller
             $data = $this->cdnfly->listAllSites($request->query());
 
             return response()->json(['ok' => true, 'data' => $data]);
-        } catch (\Throwable) {
-            return response()->json(['ok' => false, 'message' => 'CDNfly 通讯失败'], 502);
+        } catch (\Throwable $e) {
+            return $this->cdnflyFailure($e, __FUNCTION__);
         }
     }
 
@@ -30,8 +33,8 @@ class AdminSiteController extends Controller
             $data = $this->cdnfly->getAdminSite($id);
 
             return response()->json(['ok' => true, 'data' => $data]);
-        } catch (\Throwable) {
-            return response()->json(['ok' => false, 'message' => 'CDNfly 通讯失败'], 502);
+        } catch (\Throwable $e) {
+            return $this->cdnflyFailure($e, __FUNCTION__);
         }
     }
 
@@ -51,8 +54,8 @@ class AdminSiteController extends Controller
             $data = $this->cdnfly->createAdminSite($validated);
 
             return response()->json(['ok' => true, 'data' => $data], 201);
-        } catch (\Throwable) {
-            return response()->json(['ok' => false, 'message' => 'CDNfly 通讯失败'], 502);
+        } catch (\Throwable $e) {
+            return $this->cdnflyFailure($e, __FUNCTION__);
         }
     }
 
@@ -76,8 +79,8 @@ class AdminSiteController extends Controller
             $data = $this->cdnfly->updateAdminSite($id, $validated);
 
             return response()->json(['ok' => true, 'data' => $data]);
-        } catch (\Throwable) {
-            return response()->json(['ok' => false, 'message' => 'CDNfly 通讯失败'], 502);
+        } catch (\Throwable $e) {
+            return $this->cdnflyFailure($e, __FUNCTION__);
         }
     }
 
@@ -87,8 +90,8 @@ class AdminSiteController extends Controller
             $data = $this->cdnfly->deleteAdminSite((string) $id);
 
             return response()->json(['ok' => true, 'data' => $data]);
-        } catch (\Throwable) {
-            return response()->json(['ok' => false, 'message' => 'CDNfly 通讯失败'], 502);
+        } catch (\Throwable $e) {
+            return $this->cdnflyFailure($e, __FUNCTION__);
         }
     }
 
@@ -104,8 +107,8 @@ class AdminSiteController extends Controller
             ]);
 
             return response()->json(['ok' => true, 'data' => $data]);
-        } catch (\Throwable) {
-            return response()->json(['ok' => false, 'message' => 'CDNfly 通讯失败'], 502);
+        } catch (\Throwable $e) {
+            return $this->cdnflyFailure($e, __FUNCTION__);
         }
     }
 
@@ -115,8 +118,8 @@ class AdminSiteController extends Controller
             $data = $this->cdnfly->listAllCerts($request->query());
 
             return response()->json(['ok' => true, 'data' => $data]);
-        } catch (\Throwable) {
-            return response()->json(['ok' => false, 'message' => 'CDNfly 通讯失败'], 502);
+        } catch (\Throwable $e) {
+            return $this->cdnflyFailure($e, __FUNCTION__);
         }
     }
 
@@ -126,8 +129,8 @@ class AdminSiteController extends Controller
             $result = $this->cdnfly->adminCreateCert($request->all());
 
             return response()->json(['ok' => true, 'data' => $result], 201);
-        } catch (\Throwable) {
-            return response()->json(['ok' => false, 'message' => 'CDNfly 通讯失败'], 502);
+        } catch (\Throwable $e) {
+            return $this->cdnflyFailure($e, __FUNCTION__);
         }
     }
 
@@ -137,8 +140,8 @@ class AdminSiteController extends Controller
             $result = $this->cdnfly->adminUpdateCert($id, $request->all());
 
             return response()->json(['ok' => true, 'data' => $result]);
-        } catch (\Throwable) {
-            return response()->json(['ok' => false, 'message' => 'CDNfly 通讯失败'], 502);
+        } catch (\Throwable $e) {
+            return $this->cdnflyFailure($e, __FUNCTION__);
         }
     }
 
@@ -148,8 +151,8 @@ class AdminSiteController extends Controller
             $this->cdnfly->adminDeleteCert($id);
 
             return response()->json(['ok' => true]);
-        } catch (\Throwable) {
-            return response()->json(['ok' => false, 'message' => 'CDNfly 通讯失败'], 502);
+        } catch (\Throwable $e) {
+            return $this->cdnflyFailure($e, __FUNCTION__);
         }
     }
 
@@ -159,8 +162,8 @@ class AdminSiteController extends Controller
             $data = $this->cdnfly->listAllAcls($request->query());
 
             return response()->json(['ok' => true, 'data' => $data]);
-        } catch (\Throwable) {
-            return response()->json(['ok' => false, 'message' => 'CDNfly 通讯失败'], 502);
+        } catch (\Throwable $e) {
+            return $this->cdnflyFailure($e, __FUNCTION__);
         }
     }
 
@@ -186,7 +189,7 @@ class AdminSiteController extends Controller
 
             return response()->json(['ok' => true, 'data' => $result], 201);
         } catch (\Throwable $e) {
-            return $this->aclFailure($e);
+            return $this->cdnflyFailure($e, __FUNCTION__);
         }
     }
 
@@ -206,7 +209,7 @@ class AdminSiteController extends Controller
 
             return response()->json(['ok' => true, 'data' => $result]);
         } catch (\Throwable $e) {
-            return $this->aclFailure($e);
+            return $this->cdnflyFailure($e, __FUNCTION__);
         }
     }
 
@@ -221,20 +224,7 @@ class AdminSiteController extends Controller
 
             return response()->json(['ok' => true]);
         } catch (\Throwable $e) {
-            return $this->aclFailure($e);
+            return $this->cdnflyFailure($e, __FUNCTION__);
         }
-    }
-
-    /**
-     * Carry CDNfly's own message: these calls hinge on an SSO token for a
-     * specific user, so "no such user" and "rule rejected" are very different
-     * failures and a flat 通讯失败 cannot tell them apart.
-     */
-    private function aclFailure(\Throwable $e): JsonResponse
-    {
-        return response()->json([
-            'ok' => false,
-            'message' => 'CDNfly 通讯失败：'.$e->getMessage(),
-        ], 502);
     }
 }

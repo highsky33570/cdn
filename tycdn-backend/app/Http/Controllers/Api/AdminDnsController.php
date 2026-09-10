@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\Controllers\Concerns\ReportsCdnflyFailures;
 use App\Http\Controllers\Controller;
 use App\Services\CdnflyApiService;
 use Illuminate\Http\JsonResponse;
@@ -9,6 +10,8 @@ use Illuminate\Http\Request;
 
 class AdminDnsController extends Controller
 {
+    use ReportsCdnflyFailures;
+
     public function __construct(
         private readonly CdnflyApiService $cdnfly,
     ) {}
@@ -19,8 +22,8 @@ class AdminDnsController extends Controller
             $data = $this->cdnfly->listAllDnsApis($request->query());
 
             return response()->json(['ok' => true, 'data' => $data]);
-        } catch (\Throwable) {
-            return response()->json(['ok' => false, 'message' => 'CDNfly 通讯失败'], 502);
+        } catch (\Throwable $e) {
+            return $this->cdnflyFailure($e, __FUNCTION__);
         }
     }
 
@@ -30,14 +33,15 @@ class AdminDnsController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'type' => ['required', 'string'],
             'auth' => ['required', 'array'],
-            'des'  => ['nullable', 'string', 'max:500'],
+            'des' => ['nullable', 'string', 'max:500'],
         ]);
 
         try {
             $result = $this->cdnfly->adminCreateDnsApi($validated);
+
             return response()->json(['ok' => true, 'data' => $result], 201);
-        } catch (\Throwable) {
-            return response()->json(['ok' => false, 'message' => 'CDNfly 通讯失败'], 502);
+        } catch (\Throwable $e) {
+            return $this->cdnflyFailure($e, __FUNCTION__);
         }
     }
 
@@ -47,15 +51,16 @@ class AdminDnsController extends Controller
             'name' => ['sometimes', 'string', 'max:255'],
             'type' => ['sometimes', 'string'],
             'auth' => ['sometimes', 'array'],
-            'des'  => ['nullable', 'string', 'max:500'],
+            'des' => ['nullable', 'string', 'max:500'],
             'enable' => ['sometimes', 'integer', 'in:0,1'],
         ]);
 
         try {
             $result = $this->cdnfly->adminUpdateDnsApi($id, $validated);
+
             return response()->json(['ok' => true, 'data' => $result]);
-        } catch (\Throwable) {
-            return response()->json(['ok' => false, 'message' => 'CDNfly 通讯失败'], 502);
+        } catch (\Throwable $e) {
+            return $this->cdnflyFailure($e, __FUNCTION__);
         }
     }
 
@@ -63,9 +68,10 @@ class AdminDnsController extends Controller
     {
         try {
             $this->cdnfly->adminDeleteDnsApi($id);
+
             return response()->json(['ok' => true]);
-        } catch (\Throwable) {
-            return response()->json(['ok' => false, 'message' => 'CDNfly 通讯失败'], 502);
+        } catch (\Throwable $e) {
+            return $this->cdnflyFailure($e, __FUNCTION__);
         }
     }
 
@@ -75,8 +81,8 @@ class AdminDnsController extends Controller
             $data = $this->cdnfly->listLines($request->query());
 
             return response()->json(['ok' => true, 'data' => $data]);
-        } catch (\Throwable) {
-            return response()->json(['ok' => false, 'message' => 'CDNfly 通讯失败'], 502);
+        } catch (\Throwable $e) {
+            return $this->cdnflyFailure($e, __FUNCTION__);
         }
     }
 }

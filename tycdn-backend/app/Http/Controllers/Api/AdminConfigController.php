@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\Controllers\Concerns\ReportsCdnflyFailures;
 use App\Http\Controllers\Controller;
 use App\Services\CdnflyApiService;
 use Illuminate\Http\JsonResponse;
@@ -11,6 +12,8 @@ use Illuminate\Validation\ValidationException;
 
 class AdminConfigController extends Controller
 {
+    use ReportsCdnflyFailures;
+
     /**
      * 绝对禁止通过此接口修改的配置键。
      *
@@ -59,8 +62,8 @@ class AdminConfigController extends Controller
             $data = $this->cdnfly->getConfigs();
 
             return response()->json(['ok' => true, 'data' => $data]);
-        } catch (\Throwable) {
-            return response()->json(['ok' => false, 'message' => 'CDNfly 通讯失败'], 502);
+        } catch (\Throwable $e) {
+            return $this->cdnflyFailure($e, __FUNCTION__);
         }
     }
 
@@ -111,10 +114,7 @@ class AdminConfigController extends Controller
 
             return response()->json(['ok' => true, 'data' => $data]);
         } catch (\Throwable $e) {
-            return response()->json([
-                'ok' => false,
-                'message' => 'CDNfly 通讯失败：'.$e->getMessage(),
-            ], 502);
+            return $this->cdnflyFailure($e, __FUNCTION__);
         }
     }
 
@@ -124,8 +124,8 @@ class AdminConfigController extends Controller
             $data = $this->cdnfly->getRegisterInfo();
 
             return response()->json(['ok' => true, 'data' => $data]);
-        } catch (\Throwable) {
-            return response()->json(['ok' => false, 'message' => 'CDNfly 通讯失败'], 502);
+        } catch (\Throwable $e) {
+            return $this->cdnflyFailure($e, __FUNCTION__);
         }
     }
 

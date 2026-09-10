@@ -293,8 +293,8 @@ class AuthController extends Controller
 
             return response()->json([
                 'ok' => false,
-                'message' => 'API 密钥开通失败，请稍后重试',
-            ], 502);
+                'message' => 'API 密钥开通失败：'.$e->getMessage(),
+            ], 500);
         }
     }
 

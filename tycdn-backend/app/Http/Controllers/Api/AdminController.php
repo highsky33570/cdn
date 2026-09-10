@@ -1002,6 +1002,6 @@ class AdminController extends Controller
         return response()->json([
             'ok' => false,
             'message' => $message,
-        ], 502);
+        ], 500);
     }
 }

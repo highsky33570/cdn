@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\Controllers\Concerns\ReportsCdnflyFailures;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\ServiceInstance;
@@ -14,6 +15,8 @@ use Illuminate\Validation\Rule;
 
 class AdminFinanceController extends Controller
 {
+    use ReportsCdnflyFailures;
+
     private const FORBIDDEN_FIELDS = [
         'user_id', 'uid', 'owner_id', 'role', 'is_admin',
         'cdnfly_user_id', 'api_key', 'api_secret', 'apikey', 'apisecret',
@@ -41,7 +44,7 @@ class AdminFinanceController extends Controller
                 $escaped = QueryHelper::escapeLike($search);
                 $q->where(function ($q) use ($search, $escaped): void {
                     $q->where('order_no', 'like', "%{$escaped}%")
-                      ->orWhere('id', $search);
+                        ->orWhere('id', $search);
                 });
             })
             ->orderByDesc('id')
@@ -148,8 +151,8 @@ class AdminFinanceController extends Controller
             $data = $this->cdnfly->listUserPackages($request->query());
 
             return response()->json(['ok' => true, 'data' => $data]);
-        } catch (\Throwable) {
-            return response()->json(['ok' => false, 'message' => 'CDNfly 通讯失败'], 502);
+        } catch (\Throwable $e) {
+            return $this->cdnflyFailure($e, __FUNCTION__);
         }
     }
 
@@ -167,8 +170,8 @@ class AdminFinanceController extends Controller
             $data = $this->cdnfly->adminCreateUserPackage($request->only(['uid', 'package', 'duration', 'name', 'coupon_code']));
 
             return response()->json(['ok' => true, 'data' => $data], 201);
-        } catch (\Throwable) {
-            return response()->json(['ok' => false, 'message' => 'CDNfly 通讯失败'], 502);
+        } catch (\Throwable $e) {
+            return $this->cdnflyFailure($e, __FUNCTION__);
         }
     }
 
@@ -178,8 +181,8 @@ class AdminFinanceController extends Controller
             $data = $this->cdnfly->adminUpdateUserPackage($id, $this->sanitizePayload($request->all()));
 
             return response()->json(['ok' => true, 'data' => $data]);
-        } catch (\Throwable) {
-            return response()->json(['ok' => false, 'message' => 'CDNfly 通讯失败'], 502);
+        } catch (\Throwable $e) {
+            return $this->cdnflyFailure($e, __FUNCTION__);
         }
     }
 
@@ -189,8 +192,8 @@ class AdminFinanceController extends Controller
             $data = $this->cdnfly->adminDeleteUserPackage($id);
 
             return response()->json(['ok' => true, 'data' => $data]);
-        } catch (\Throwable) {
-            return response()->json(['ok' => false, 'message' => 'CDNfly 通讯失败'], 502);
+        } catch (\Throwable $e) {
+            return $this->cdnflyFailure($e, __FUNCTION__);
         }
     }
 
@@ -200,8 +203,8 @@ class AdminFinanceController extends Controller
             $data = $this->cdnfly->adminListUserPackageUpgrades($id);
 
             return response()->json(['ok' => true, 'data' => $data]);
-        } catch (\Throwable) {
-            return response()->json(['ok' => false, 'message' => 'CDNfly 通讯失败'], 502);
+        } catch (\Throwable $e) {
+            return $this->cdnflyFailure($e, __FUNCTION__);
         }
     }
 
@@ -215,8 +218,8 @@ class AdminFinanceController extends Controller
             $data = $this->cdnfly->adminAddUserPackageUpgrade($id, $request->only(['package_up_id']));
 
             return response()->json(['ok' => true, 'data' => $data], 201);
-        } catch (\Throwable) {
-            return response()->json(['ok' => false, 'message' => 'CDNfly 通讯失败'], 502);
+        } catch (\Throwable $e) {
+            return $this->cdnflyFailure($e, __FUNCTION__);
         }
     }
 
@@ -226,8 +229,8 @@ class AdminFinanceController extends Controller
             $data = $this->cdnfly->adminDeleteUserPackageUpgrade($id, $upgradeId);
 
             return response()->json(['ok' => true, 'data' => $data]);
-        } catch (\Throwable) {
-            return response()->json(['ok' => false, 'message' => 'CDNfly 通讯失败'], 502);
+        } catch (\Throwable $e) {
+            return $this->cdnflyFailure($e, __FUNCTION__);
         }
     }
 
@@ -237,8 +240,8 @@ class AdminFinanceController extends Controller
             $data = $this->cdnfly->listPackageGroups($request->query());
 
             return response()->json(['ok' => true, 'data' => $data]);
-        } catch (\Throwable) {
-            return response()->json(['ok' => false, 'message' => 'CDNfly 通讯失败'], 502);
+        } catch (\Throwable $e) {
+            return $this->cdnflyFailure($e, __FUNCTION__);
         }
     }
 
@@ -252,8 +255,8 @@ class AdminFinanceController extends Controller
             $data = $this->cdnfly->createPackageGroup($this->sanitizePayload($request->all()));
 
             return response()->json(['ok' => true, 'data' => $data], 201);
-        } catch (\Throwable) {
-            return response()->json(['ok' => false, 'message' => 'CDNfly 通讯失败'], 502);
+        } catch (\Throwable $e) {
+            return $this->cdnflyFailure($e, __FUNCTION__);
         }
     }
 
@@ -263,8 +266,8 @@ class AdminFinanceController extends Controller
             $data = $this->cdnfly->updatePackageGroup($id, $this->sanitizePayload($request->all()));
 
             return response()->json(['ok' => true, 'data' => $data]);
-        } catch (\Throwable) {
-            return response()->json(['ok' => false, 'message' => 'CDNfly 通讯失败'], 502);
+        } catch (\Throwable $e) {
+            return $this->cdnflyFailure($e, __FUNCTION__);
         }
     }
 
@@ -274,8 +277,8 @@ class AdminFinanceController extends Controller
             $data = $this->cdnfly->deletePackageGroup($id);
 
             return response()->json(['ok' => true, 'data' => $data]);
-        } catch (\Throwable) {
-            return response()->json(['ok' => false, 'message' => 'CDNfly 通讯失败'], 502);
+        } catch (\Throwable $e) {
+            return $this->cdnflyFailure($e, __FUNCTION__);
         }
     }
 
@@ -285,8 +288,8 @@ class AdminFinanceController extends Controller
             $data = $this->cdnfly->listPackageUps($request->query());
 
             return response()->json(['ok' => true, 'data' => $data]);
-        } catch (\Throwable) {
-            return response()->json(['ok' => false, 'message' => 'CDNfly 通讯失败'], 502);
+        } catch (\Throwable $e) {
+            return $this->cdnflyFailure($e, __FUNCTION__);
         }
     }
 
@@ -300,8 +303,8 @@ class AdminFinanceController extends Controller
             $data = $this->cdnfly->createPackageUp($this->sanitizePayload($request->all()));
 
             return response()->json(['ok' => true, 'data' => $data], 201);
-        } catch (\Throwable) {
-            return response()->json(['ok' => false, 'message' => 'CDNfly 通讯失败'], 502);
+        } catch (\Throwable $e) {
+            return $this->cdnflyFailure($e, __FUNCTION__);
         }
     }
 
@@ -311,8 +314,8 @@ class AdminFinanceController extends Controller
             $data = $this->cdnfly->updatePackageUp($id, $this->sanitizePayload($request->all()));
 
             return response()->json(['ok' => true, 'data' => $data]);
-        } catch (\Throwable) {
-            return response()->json(['ok' => false, 'message' => 'CDNfly 通讯失败'], 502);
+        } catch (\Throwable $e) {
+            return $this->cdnflyFailure($e, __FUNCTION__);
         }
     }
 
@@ -322,8 +325,8 @@ class AdminFinanceController extends Controller
             $data = $this->cdnfly->deletePackageUp($id);
 
             return response()->json(['ok' => true, 'data' => $data]);
-        } catch (\Throwable) {
-            return response()->json(['ok' => false, 'message' => 'CDNfly 通讯失败'], 502);
+        } catch (\Throwable $e) {
+            return $this->cdnflyFailure($e, __FUNCTION__);
         }
     }
 

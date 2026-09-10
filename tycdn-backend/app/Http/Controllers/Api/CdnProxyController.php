@@ -109,8 +109,8 @@ class CdnProxyController extends Controller
 
             return response()->json([
                 'ok' => false,
-                'message' => 'CDNfly 通讯失败，请稍后重试',
-            ], 502);
+                'message' => 'CDNfly 通讯失败：'.$e->getMessage(),
+            ], 500);
         }
     }
 

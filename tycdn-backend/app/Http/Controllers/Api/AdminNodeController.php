@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\Controllers\Concerns\ReportsCdnflyFailures;
 use App\Http\Controllers\Controller;
 use App\Services\CdnflyApiService;
 use Illuminate\Http\JsonResponse;
@@ -10,6 +11,8 @@ use Illuminate\Validation\Rule;
 
 class AdminNodeController extends Controller
 {
+    use ReportsCdnflyFailures;
+
     public function __construct(
         private readonly CdnflyApiService $cdnfly,
     ) {}
@@ -20,8 +23,8 @@ class AdminNodeController extends Controller
             $data = $this->cdnfly->listNodes($request->query());
 
             return response()->json(['ok' => true, 'data' => $data]);
-        } catch (\Throwable) {
-            return response()->json(['ok' => false, 'message' => 'CDNfly 通讯失败'], 502);
+        } catch (\Throwable $e) {
+            return $this->cdnflyFailure($e, __FUNCTION__);
         }
     }
 
@@ -45,8 +48,8 @@ class AdminNodeController extends Controller
                     'cdnfly_outbound_disabled' => (bool) data_get($data, 'cdnfly_outbound_disabled', false),
                 ],
             ]);
-        } catch (\Throwable) {
-            return response()->json(['ok' => false, 'message' => 'CDNfly 通讯失败'], 502);
+        } catch (\Throwable $e) {
+            return $this->cdnflyFailure($e, __FUNCTION__);
         }
     }
 
@@ -56,8 +59,8 @@ class AdminNodeController extends Controller
             $data = $this->cdnfly->getNode($id);
 
             return response()->json(['ok' => true, 'data' => $data]);
-        } catch (\Throwable) {
-            return response()->json(['ok' => false, 'message' => 'CDNfly 通讯失败'], 502);
+        } catch (\Throwable $e) {
+            return $this->cdnflyFailure($e, __FUNCTION__);
         }
     }
 
@@ -69,8 +72,8 @@ class AdminNodeController extends Controller
             $data = $this->cdnfly->createNode($payload);
 
             return response()->json(['ok' => true, 'data' => $data]);
-        } catch (\Throwable) {
-            return response()->json(['ok' => false, 'message' => 'CDNfly 通讯失败'], 502);
+        } catch (\Throwable $e) {
+            return $this->cdnflyFailure($e, __FUNCTION__);
         }
     }
 
@@ -80,8 +83,8 @@ class AdminNodeController extends Controller
             $data = $this->cdnfly->listPendingNodes($request->query());
 
             return response()->json(['ok' => true, 'data' => $data]);
-        } catch (\Throwable) {
-            return response()->json(['ok' => false, 'message' => 'CDNfly 通讯失败'], 502);
+        } catch (\Throwable $e) {
+            return $this->cdnflyFailure($e, __FUNCTION__);
         }
     }
 
@@ -91,8 +94,8 @@ class AdminNodeController extends Controller
             $data = $this->cdnfly->deletePendingNode($id);
 
             return response()->json(['ok' => true, 'data' => $data]);
-        } catch (\Throwable) {
-            return response()->json(['ok' => false, 'message' => 'CDNfly 通讯失败'], 502);
+        } catch (\Throwable $e) {
+            return $this->cdnflyFailure($e, __FUNCTION__);
         }
     }
 
@@ -108,8 +111,8 @@ class AdminNodeController extends Controller
             $data = $this->cdnfly->updateNode($id, $payload);
 
             return response()->json(['ok' => true, 'data' => $data]);
-        } catch (\Throwable) {
-            return response()->json(['ok' => false, 'message' => 'CDNfly 通讯失败'], 502);
+        } catch (\Throwable $e) {
+            return $this->cdnflyFailure($e, __FUNCTION__);
         }
     }
 
@@ -134,8 +137,8 @@ class AdminNodeController extends Controller
             $data = $this->cdnfly->batchUpdateNodes([$payload]);
 
             return response()->json(['ok' => true, 'data' => $data]);
-        } catch (\Throwable) {
-            return response()->json(['ok' => false, 'message' => 'CDNfly 通讯失败'], 502);
+        } catch (\Throwable $e) {
+            return $this->cdnflyFailure($e, __FUNCTION__);
         }
     }
 
@@ -145,8 +148,8 @@ class AdminNodeController extends Controller
             $data = $this->cdnfly->deleteNode($id);
 
             return response()->json(['ok' => true, 'data' => $data]);
-        } catch (\Throwable) {
-            return response()->json(['ok' => false, 'message' => 'CDNfly 通讯失败'], 502);
+        } catch (\Throwable $e) {
+            return $this->cdnflyFailure($e, __FUNCTION__);
         }
     }
 
@@ -156,8 +159,8 @@ class AdminNodeController extends Controller
             $data = $this->cdnfly->listNodeGroups($request->query());
 
             return response()->json(['ok' => true, 'data' => $data]);
-        } catch (\Throwable) {
-            return response()->json(['ok' => false, 'message' => 'CDNfly 通讯失败'], 502);
+        } catch (\Throwable $e) {
+            return $this->cdnflyFailure($e, __FUNCTION__);
         }
     }
 
@@ -170,7 +173,7 @@ class AdminNodeController extends Controller
 
             return response()->json(['ok' => true, 'data' => $data], 201);
         } catch (\Throwable $e) {
-            return $this->upstreamFailure($e);
+            return $this->cdnflyFailure($e, __FUNCTION__);
         }
     }
 
@@ -187,7 +190,7 @@ class AdminNodeController extends Controller
 
             return response()->json(['ok' => true, 'data' => $data]);
         } catch (\Throwable $e) {
-            return $this->upstreamFailure($e);
+            return $this->cdnflyFailure($e, __FUNCTION__);
         }
     }
 
@@ -198,7 +201,7 @@ class AdminNodeController extends Controller
 
             return response()->json(['ok' => true, 'data' => $data]);
         } catch (\Throwable $e) {
-            return $this->upstreamFailure($e);
+            return $this->cdnflyFailure($e, __FUNCTION__);
         }
     }
 
@@ -208,8 +211,8 @@ class AdminNodeController extends Controller
             $data = $this->cdnfly->listRegions($request->query());
 
             return response()->json(['ok' => true, 'data' => $data]);
-        } catch (\Throwable) {
-            return response()->json(['ok' => false, 'message' => 'CDNfly 通讯失败'], 502);
+        } catch (\Throwable $e) {
+            return $this->cdnflyFailure($e, __FUNCTION__);
         }
     }
 
@@ -222,7 +225,7 @@ class AdminNodeController extends Controller
 
             return response()->json(['ok' => true, 'data' => $data], 201);
         } catch (\Throwable $e) {
-            return $this->upstreamFailure($e);
+            return $this->cdnflyFailure($e, __FUNCTION__);
         }
     }
 
@@ -239,7 +242,7 @@ class AdminNodeController extends Controller
 
             return response()->json(['ok' => true, 'data' => $data]);
         } catch (\Throwable $e) {
-            return $this->upstreamFailure($e);
+            return $this->cdnflyFailure($e, __FUNCTION__);
         }
     }
 
@@ -250,7 +253,7 @@ class AdminNodeController extends Controller
 
             return response()->json(['ok' => true, 'data' => $data]);
         } catch (\Throwable $e) {
-            return $this->upstreamFailure($e);
+            return $this->cdnflyFailure($e, __FUNCTION__);
         }
     }
 
@@ -263,7 +266,7 @@ class AdminNodeController extends Controller
 
             return response()->json(['ok' => true, 'data' => $data], 201);
         } catch (\Throwable $e) {
-            return $this->upstreamFailure($e);
+            return $this->cdnflyFailure($e, __FUNCTION__);
         }
     }
 
@@ -280,7 +283,7 @@ class AdminNodeController extends Controller
 
             return response()->json(['ok' => true, 'data' => $data]);
         } catch (\Throwable $e) {
-            return $this->upstreamFailure($e);
+            return $this->cdnflyFailure($e, __FUNCTION__);
         }
     }
 
@@ -291,7 +294,7 @@ class AdminNodeController extends Controller
 
             return response()->json(['ok' => true, 'data' => $data]);
         } catch (\Throwable $e) {
-            return $this->upstreamFailure($e);
+            return $this->cdnflyFailure($e, __FUNCTION__);
         }
     }
 
@@ -301,33 +304,14 @@ class AdminNodeController extends Controller
             $data = $this->cdnfly->listLines($request->query());
 
             return response()->json(['ok' => true, 'data' => $data]);
-        } catch (\Throwable) {
-            return response()->json(['ok' => false, 'message' => 'CDNfly 通讯失败'], 502);
+        } catch (\Throwable $e) {
+            return $this->cdnflyFailure($e, __FUNCTION__);
         }
     }
 
     /**
      * @return array<string, bool|int|string|null>
      */
-    /**
-     * Report why CDNfly refused, not merely that it did.
-     *
-     * The rest of this controller answers a flat "CDNfly 通讯失败", which is
-     * fine for endpoints whose paths have been exercised for months. These
-     * writes are new, and the one thing that could be wrong about them is the
-     * upstream path or a field name — exactly what a generic message hides.
-     * The exception already carries CDNfly's own short message, and these
-     * routes are admin-only, so showing it leaks nothing a panel operator
-     * cannot already read in the panel.
-     */
-    private function upstreamFailure(\Throwable $e): JsonResponse
-    {
-        return response()->json([
-            'ok' => false,
-            'message' => 'CDNfly 通讯失败：'.$e->getMessage(),
-        ], 502);
-    }
-
     /**
      * Mirrors AdminRegionPayload in resources/js/lib/adminModulesApi.ts.
      *
@@ -467,16 +451,29 @@ class AdminNodeController extends Controller
     /**
      * @param  array<string, mixed>  $master
      */
+    /**
+     * Build the node install command for whichever master generation is running.
+     *
+     * v6 changed both the installer and its arguments, and this method only knew
+     * the v5 form — so against a v6 master the console handed operators a command
+     * that always failed:
+     *
+     *   v5: agent.sh     --master-ver v6.0.11 …   looks up the agent version via
+     *                                             the update API, then fetches
+     *                                             cdnfly-agent-<ver>-<OS>.tar.gz
+     *                                             — a name v6 never publishes,
+     *                                             so it 404s on every OS.
+     *
+     *   v6: agent_v6.sh  --ver v6.0.3 …           the agent version is passed in
+     *                                             directly and it fetches
+     *                                             cdnfly-go-agent-<ver>-linux-amd64.tar.gz
+     *
+     * The agent version for v6 comes from the master's own `agent_ver`, an
+     * integer like 60003 meaning v6.0.3.
+     */
     private function buildInstallCommand(array $master): ?string
     {
-        $required = [
-            'version_name',
-            'ip',
-            'es_ip',
-            'es_pwd',
-            'master_host',
-            'master_port',
-        ];
+        $required = ['version_name', 'ip', 'es_ip', 'es_pwd', 'master_host', 'master_port'];
 
         foreach ($required as $field) {
             if ($this->stringField($master, $field) === '') {
@@ -484,7 +481,66 @@ class AdminNodeController extends Controller
             }
         }
 
-        $command = sprintf(
+        $command = $this->isV6Master($master)
+            ? $this->buildV6InstallCommand($master)
+            : $this->buildLegacyInstallCommand($master);
+
+        if ($command === null) {
+            return null;
+        }
+
+        $ccImgUrl = $this->stringField($master, 'cc_img_url');
+
+        if ($ccImgUrl !== '') {
+            $command .= " --cc-img-url '".$ccImgUrl."'";
+        }
+
+        return $command;
+    }
+
+    /**
+     * @param  array<string, mixed>  $master
+     */
+    private function isV6Master(array $master): bool
+    {
+        $version = ltrim($this->stringField($master, 'version_name'), 'vV');
+
+        return (int) strtok($version, '.') >= 6;
+    }
+
+    /**
+     * @param  array<string, mixed>  $master
+     */
+    private function buildV6InstallCommand(array $master): ?string
+    {
+        $agentVersion = $this->agentVersionName($master);
+
+        // Without the agent version there is nothing for --ver, and guessing it
+        // is what produced the broken command in the first place.
+        if ($agentVersion === null) {
+            return null;
+        }
+
+        return sprintf(
+            '(curl -fL --connect-timeout 10 --max-time 60 http://dl2.lotcdn.com/cdnfly/agent_v6.sh -o agent_v6.sh'
+            .' || curl -fL --connect-timeout 10 --max-time 60 http://us.lotcdn.com/cdnfly/agent_v6.sh -o agent_v6.sh)'
+            ." && chmod 700 agent_v6.sh && ./agent_v6.sh --ver '%s' --master-ip '%s' --es-ip '%s'"
+            ." --es-pwd '%s' --master-host '%s' --master-port '%s'",
+            $agentVersion,
+            $this->stringField($master, 'ip'),
+            $this->stringField($master, 'es_ip'),
+            $this->stringField($master, 'es_pwd'),
+            $this->stringField($master, 'master_host'),
+            $this->stringField($master, 'master_port'),
+        );
+    }
+
+    /**
+     * @param  array<string, mixed>  $master
+     */
+    private function buildLegacyInstallCommand(array $master): string
+    {
+        return sprintf(
             'curl -v -m 5 http://dl2.lotcdn.com/cdnfly/agent.sh -o agent.sh || curl -v -m 5 http://us.lotcdn.com/cdnfly/agent.sh -o agent.sh && chmod +x agent.sh && ./agent.sh --master-ver %s --master-ip %s --es-ip %s --es-pwd %s --master-host %s --master-port %s',
             $this->stringField($master, 'version_name'),
             $this->stringField($master, 'ip'),
@@ -493,14 +549,26 @@ class AdminNodeController extends Controller
             $this->stringField($master, 'master_host'),
             $this->stringField($master, 'master_port'),
         );
+    }
 
-        $ccImgUrl = $this->stringField($master, 'cc_img_url');
+    /**
+     * agent_ver is a packed integer: 60003 -> v6.0.3, 51827 -> v5.18.27.
+     *
+     * @param  array<string, mixed>  $master
+     */
+    private function agentVersionName(array $master): ?string
+    {
+        $raw = $this->stringField($master, 'agent_ver');
 
-        if ($ccImgUrl !== '') {
-            $command .= ' --cc-img-url '.$ccImgUrl;
+        if (! ctype_digit($raw) || strlen($raw) < 5) {
+            return null;
         }
 
-        return $command;
+        $major = (int) substr($raw, 0, strlen($raw) - 4);
+        $minor = (int) substr($raw, -4, 2);
+        $patch = (int) substr($raw, -2);
+
+        return sprintf('v%d.%d.%d', $major, $minor, $patch);
     }
 
     /**

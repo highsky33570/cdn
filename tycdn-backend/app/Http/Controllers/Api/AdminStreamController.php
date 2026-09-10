@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\Controllers\Concerns\ReportsCdnflyFailures;
 use App\Http\Controllers\Controller;
 use App\Services\CdnflyApiService;
 use Illuminate\Http\JsonResponse;
@@ -9,6 +10,8 @@ use Illuminate\Http\Request;
 
 class AdminStreamController extends Controller
 {
+    use ReportsCdnflyFailures;
+
     public function __construct(
         private readonly CdnflyApiService $cdnfly,
     ) {}
@@ -19,8 +22,8 @@ class AdminStreamController extends Controller
             $data = $this->cdnfly->listAllStreams($request->query());
 
             return response()->json(['ok' => true, 'data' => $data]);
-        } catch (\Throwable) {
-            return response()->json(['ok' => false, 'message' => 'CDNfly 通讯失败'], 502);
+        } catch (\Throwable $e) {
+            return $this->cdnflyFailure($e, __FUNCTION__);
         }
     }
 
@@ -32,9 +35,10 @@ class AdminStreamController extends Controller
 
         try {
             $result = $this->cdnfly->adminUpdateStream($id, $validated);
+
             return response()->json(['ok' => true, 'data' => $result]);
-        } catch (\Throwable) {
-            return response()->json(['ok' => false, 'message' => 'CDNfly 通讯失败'], 502);
+        } catch (\Throwable $e) {
+            return $this->cdnflyFailure($e, __FUNCTION__);
         }
     }
 
@@ -43,9 +47,10 @@ class AdminStreamController extends Controller
         try {
             $this->cdnfly->adminUpdateStream($id, ['enable' => 0]);
             $this->cdnfly->adminDeleteStream($id);
+
             return response()->json(['ok' => true]);
-        } catch (\Throwable) {
-            return response()->json(['ok' => false, 'message' => 'CDNfly 通讯失败'], 502);
+        } catch (\Throwable $e) {
+            return $this->cdnflyFailure($e, __FUNCTION__);
         }
     }
 
@@ -53,9 +58,10 @@ class AdminStreamController extends Controller
     {
         try {
             $result = $this->cdnfly->adminCreateStream($request->all());
+
             return response()->json(['ok' => true, 'data' => $result]);
-        } catch (\Throwable) {
-            return response()->json(['ok' => false, 'message' => 'CDNfly 通讯失败'], 502);
+        } catch (\Throwable $e) {
+            return $this->cdnflyFailure($e, __FUNCTION__);
         }
     }
 
@@ -63,9 +69,10 @@ class AdminStreamController extends Controller
     {
         try {
             $result = $this->cdnfly->adminUpdateStream($id, $request->all());
+
             return response()->json(['ok' => true, 'data' => $result]);
-        } catch (\Throwable) {
-            return response()->json(['ok' => false, 'message' => 'CDNfly 通讯失败'], 502);
+        } catch (\Throwable $e) {
+            return $this->cdnflyFailure($e, __FUNCTION__);
         }
     }
 
@@ -75,8 +82,8 @@ class AdminStreamController extends Controller
             $data = $this->cdnfly->listStreamGroups($request->query());
 
             return response()->json(['ok' => true, 'data' => $data]);
-        } catch (\Throwable) {
-            return response()->json(['ok' => false, 'message' => 'CDNfly 通讯失败'], 502);
+        } catch (\Throwable $e) {
+            return $this->cdnflyFailure($e, __FUNCTION__);
         }
     }
 
@@ -84,9 +91,10 @@ class AdminStreamController extends Controller
     {
         try {
             $result = $this->cdnfly->adminCreateStreamGroup($request->all());
+
             return response()->json(['ok' => true, 'data' => $result]);
-        } catch (\Throwable) {
-            return response()->json(['ok' => false, 'message' => 'CDNfly 通讯失败'], 502);
+        } catch (\Throwable $e) {
+            return $this->cdnflyFailure($e, __FUNCTION__);
         }
     }
 
@@ -94,9 +102,10 @@ class AdminStreamController extends Controller
     {
         try {
             $result = $this->cdnfly->adminUpdateStreamGroup($id, $request->all());
+
             return response()->json(['ok' => true, 'data' => $result]);
-        } catch (\Throwable) {
-            return response()->json(['ok' => false, 'message' => 'CDNfly 通讯失败'], 502);
+        } catch (\Throwable $e) {
+            return $this->cdnflyFailure($e, __FUNCTION__);
         }
     }
 
@@ -104,9 +113,10 @@ class AdminStreamController extends Controller
     {
         try {
             $this->cdnfly->adminDeleteStreamGroup($id);
+
             return response()->json(['ok' => true]);
-        } catch (\Throwable) {
-            return response()->json(['ok' => false, 'message' => 'CDNfly 通讯失败'], 502);
+        } catch (\Throwable $e) {
+            return $this->cdnflyFailure($e, __FUNCTION__);
         }
     }
 }
