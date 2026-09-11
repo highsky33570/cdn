@@ -1103,15 +1103,26 @@ const currentLineGroup = computed(() =>
     nodeGroups.value.find((g) => String(g.id) === lineGroupId.value),
 );
 
+const dnsLinesError = ref('');
+
 async function loadDnsLines(): Promise<void> {
+    dnsLinesError.value = '';
+
     try {
         dnsLines.value = await listAdminDnsLines();
 
-        if (dnsLines.value.length > 0 && lineDnsId.value === '') {
+        if (dnsLines.value.length === 0) {
+            dnsLinesError.value =
+                'CDNfly 未返回任何 DNS 线路。请在主控面板「系统设置 → DNS 配置」中确认线路已配置。';
+
+            return;
+        }
+
+        if (lineDnsId.value === '') {
             lineDnsId.value = String(dnsLines.value[0].id);
         }
     } catch (error) {
-        lineError.value = getErrorMessage(error);
+        dnsLinesError.value = getErrorMessage(error);
     }
 }
 
@@ -2209,6 +2220,14 @@ function regionNameById(id: unknown): string {
                 </CardHeader>
 
                 <CardContent class="grid gap-6">
+                    <Alert v-if="dnsLinesError" variant="destructive">
+                        <AlertCircle data-icon="alert" />
+                        <AlertTitle>无法读取 DNS 线路</AlertTitle>
+                        <AlertDescription>
+                            {{ dnsLinesError }}
+                        </AlertDescription>
+                    </Alert>
+
                     <Alert v-if="lineError" variant="destructive">
                         <AlertCircle data-icon="alert" />
                         <AlertTitle>线路请求失败</AlertTitle>
@@ -2306,7 +2325,9 @@ function regionNameById(id: unknown): string {
                                 <Button
                                     size="sm"
                                     :disabled="
-                                        assigning || selectedIpIds.length === 0
+                                        assigning ||
+                                        selectedIpIds.length === 0 ||
+                                        lineDnsId === ''
                                     "
                                     @click="submitLineAssignment"
                                 >

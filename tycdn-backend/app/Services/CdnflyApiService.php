@@ -463,21 +463,42 @@ class CdnflyApiService
         $response = $this->adminHttp()->get('/v1/configs/global-0-system-dns_config');
         $payload = $this->parseResponse($response, 'get dns config');
 
-        $value = data_get($payload, 'data.value');
+        // CDNfly is not consistent about whether a single record comes back as
+        // data.value, data.0.value, or the row itself — so probe rather than
+        // assume, and say so when none of them hold.
+        $value = data_get($payload, 'data.value')
+            ?? data_get($payload, 'data.0.value')
+            ?? data_get($payload, 'value');
 
-        if (! is_string($value)) {
-            return [];
+        if (! is_string($value) || $value === '') {
+            throw new \RuntimeException(
+                'CDNfly returned no value for global-0-system-dns_config; '
+                .'DNS lines cannot be listed. Keys present: '
+                .implode(', ', array_keys((array) data_get($payload, 'data', [])))
+            );
         }
 
         $outer = json_decode($value, true);
-        $lines = is_array($outer) ? ($outer['lines'] ?? null) : null;
+
+        if (! is_array($outer)) {
+            throw new \RuntimeException('dns_config value is not valid JSON.');
+        }
+
+        $lines = $outer['lines'] ?? null;
 
         // The inner value is itself a JSON string, not an array.
         if (is_string($lines)) {
             $lines = json_decode($lines, true);
         }
 
-        return is_array($lines) ? array_values(array_filter($lines, 'is_array')) : [];
+        if (! is_array($lines)) {
+            throw new \RuntimeException(
+                'dns_config has no usable `lines`. Keys present: '
+                .implode(', ', array_keys($outer))
+            );
+        }
+
+        return array_values(array_filter($lines, 'is_array'));
     }
 
     public function updateLine(int $id, array $data): array
