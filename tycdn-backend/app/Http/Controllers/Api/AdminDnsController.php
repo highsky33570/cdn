@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Services\CdnflyApiService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class AdminDnsController extends Controller
 {
@@ -96,7 +97,13 @@ class AdminDnsController extends Controller
     {
         $validated = $request->validate([
             'dns' => ['required', 'string', 'in:aliyun,huaweicloud,dns_la,dnspod_cn,dnspod_com,dnsdotcom,cloudflare'],
-            'id' => ['required', 'string', 'max:255'],
+            // Cloudflare's legacy auth sends this verbatim as X-Auth-Email, so
+            // a non-email here comes back as 「Invalid format for X-Auth-Email
+            // header」 — a Cloudflare-side error that never names the field.
+            'id' => ['required', 'string', 'max:255', Rule::when(
+                $request->input('dns') === 'cloudflare',
+                ['email'],
+            )],
             'token' => ['required', 'string', 'max:500'],
             // The master rejects a TTL below its provider minimum; 60 is the
             // lowest any of the supported providers accepts.

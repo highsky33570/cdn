@@ -65,6 +65,43 @@ class AdminDnsSettingTest extends TestCase
             ->assertJsonValidationErrors('dns');
     }
 
+    /**
+     * Cloudflare sends this field verbatim as X-Auth-Email. Pasting a
+     * credential *name* there (easy to do — the certificate DNS API tab names
+     * its entries) gets rejected by Cloudflare with 「Invalid format for
+     * X-Auth-Email header」, which never says which field is at fault.
+     */
+    public function test_cloudflare_requires_an_email_rather_than_a_credential_name(): void
+    {
+        $this->actingAs($this->admin())
+            ->putJson('/api/admin/dns-setting', [
+                'dns' => 'cloudflare',
+                'id' => 'ty-cloudflare',
+                'token' => 'y',
+                'ttl' => 600,
+                'weight_on' => 1,
+            ])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('id');
+    }
+
+    /** Every other provider uses a key id there, so no email rule applies. */
+    public function test_other_providers_accept_a_non_email_id(): void
+    {
+        $cdnfly = $this->mock(CdnflyApiService::class);
+        $cdnfly->shouldReceive('saveDnsSetting')->once()->andReturn(['code' => 0]);
+
+        $this->actingAs($this->admin())
+            ->putJson('/api/admin/dns-setting', [
+                'dns' => 'aliyun',
+                'id' => 'LTAI5tSomeAccessKeyId',
+                'token' => 'y',
+                'ttl' => 600,
+                'weight_on' => 1,
+            ])
+            ->assertOk();
+    }
+
     public function test_a_ttl_below_the_provider_minimum_is_rejected(): void
     {
         $this->actingAs($this->admin())

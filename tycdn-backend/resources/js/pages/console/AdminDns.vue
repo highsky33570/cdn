@@ -413,6 +413,17 @@ const settingForm = reactive({
     weight_on: 1,
 });
 
+/** Providers whose id field is an email address rather than a key. */
+const EMAIL_ID_PROVIDERS = ['cloudflare'];
+
+const providerHint = computed(() => {
+    if (settingForm.dns === 'cloudflare') {
+        return '账号邮箱是登录 Cloudflare 的邮箱地址，密钥请使用 My Profile → API Tokens 页面底部的 Global API Key（不是 API Token）。';
+    }
+
+    return '';
+});
+
 const providerLabels = computed(
     () =>
         PROVIDER_FIELD_LABELS[settingForm.dns] ?? {
@@ -448,6 +459,15 @@ async function loadDnsSetting(): Promise<void> {
 }
 
 async function submitDnsSetting(): Promise<void> {
+    if (
+        EMAIL_ID_PROVIDERS.includes(settingForm.dns) &&
+        !settingForm.id.includes('@')
+    ) {
+        settingError.value = `${providerLabels.value.id}需要填写邮箱地址，而不是凭据名称。`;
+
+        return;
+    }
+
     settingSaving.value = true;
     settingError.value = '';
 
@@ -582,6 +602,13 @@ onMounted(loadDnsSetting);
                         </p>
                     </div>
 
+                    <p
+                        v-if="providerHint"
+                        class="rounded-md border border-input bg-muted/30 p-3 text-xs text-muted-foreground"
+                    >
+                        {{ providerHint }}
+                    </p>
+
                     <div class="grid gap-2">
                         <Label for="dns-setting-id">
                             {{ providerLabels.id }}
@@ -589,7 +616,11 @@ onMounted(loadDnsSetting);
                         <Input
                             id="dns-setting-id"
                             v-model="settingForm.id"
-                            :placeholder="providerLabels.id"
+                            :placeholder="
+                                settingForm.dns === 'cloudflare'
+                                    ? 'you@example.com'
+                                    : providerLabels.id
+                            "
                         />
                     </div>
 
@@ -715,12 +746,12 @@ onMounted(loadDnsSetting);
                 <AlertCircle data-icon="alert" />
                 <AlertTitle>为什么需要 CNAME 域名</AlertTitle>
                 <AlertDescription>
-                    客户的域名通过 CNAME 指向这里配置的域名，主控再用 DNS API
-                    把解析记录写入该域名所在的区域。请确保该域名的 NS
-                    已托管在「DNS
-                    API」标签页里配置的服务商处，否则记录无法写入。
-                    主控在存在至少一个 CNAME 域名之前不会生成 DNS 线路，
-                    节点也就无法被解析。
+                    客户的域名通过 CNAME 指向这里配置的域名，主控再把解析记录
+                    写入该域名所在的区域（zone）。
+                    这里必须填写服务商侧的区域名本身，也就是可注册的主域名，
+                    例如 <code>example.com</code>；填子域名会被主控拒绝，
+                    提示「找不到此域名」。 主控在存在至少一个 CNAME
+                    域名之前不会生成 DNS 线路， 节点也就无法被解析。
                 </AlertDescription>
             </Alert>
 
@@ -911,10 +942,12 @@ onMounted(loadDnsSetting);
                         <Input
                             id="cname-domain"
                             v-model="cnameForm.domain"
-                            placeholder="例如 cdn.example.com"
+                            placeholder="例如 example.com"
                         />
                         <p class="text-xs text-muted-foreground">
-                            建议使用子域名，主域名的其他解析不受影响。
+                            填写在「DNS
+                            设置」中所选服务商处托管的区域名（可注册的主域名），
+                            不要填子域名。主控会在该区域下为每个客户站点自动创建记录。
                         </p>
                     </div>
                     <div class="grid gap-2">
