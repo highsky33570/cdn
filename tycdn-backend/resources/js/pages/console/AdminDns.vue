@@ -2,14 +2,15 @@
 import {
     AlertCircle,
     Globe,
-    KeyRound,
+    Settings2,
+    ShieldCheck,
     Network,
     Pencil,
     Plus,
     Save,
     Trash2,
 } from 'lucide-vue-next';
-import { computed, reactive, ref } from 'vue';
+import { computed, onMounted, reactive, ref } from 'vue';
 import { toast } from 'vue-sonner';
 import ConsoleDataTable from '@/components/console/ConsoleDataTable.vue';
 import type { ColumnDef } from '@/components/console/ConsoleDataTable.vue';
@@ -17,6 +18,13 @@ import ConsolePageHeader from '@/components/console/ConsolePageHeader.vue';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
+} from '@/components/ui/card';
 import {
     Dialog,
     DialogDescription,
@@ -36,18 +44,20 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
-import Switch from '@/components/ui/switch/Switch.vue';
+import type { AdminDnsSetting } from '@/lib/adminModulesApi';
 import {
     createAdminCnameDomain,
     createAdminDnsApi,
     deleteAdminCnameDomain,
     deleteAdminDnsApi,
+    getAdminDnsSetting,
     listAdminCnameDomains,
     listAdminDnsApis,
+    saveAdminDnsSetting,
     updateAdminCnameDomain,
     updateAdminDnsApi,
 } from '@/lib/adminModulesApi';
-import { formatDate, getErrorMessage } from '@/lib/formatters';
+import { getErrorMessage } from '@/lib/formatters';
 import type { CdnflyRecord } from '@/lib/sharedTypes';
 
 const AUTH_TEMPLATES: Record<string, Record<string, string>> = {
@@ -92,27 +102,12 @@ const AUTH_FIELD_LABELS: Record<string, string> = {
 const dnsApiColumns: ColumnDef[] = [
     { key: 'id', label: 'ID', width: '70px' },
     { key: 'name', label: '名称' },
-    { key: 'type', label: '服务商', width: '120px' },
-    {
-        key: 'enable',
-        label: '状态',
-        width: '90px',
-        badge: true,
-        format: (v) => (v === 1 || v === '1' ? '可用' : '已停用'),
-        badgeVariant: (v) =>
-            v === 1 || v === '1' ? 'secondary' : 'destructive',
-    },
-    {
-        key: 'created_at',
-        label: '创建时间',
-        width: '160px',
-        format: (v) => formatDate(v as string | null | undefined),
-    },
+    { key: 'type', label: '服务商', width: '140px' },
+    { key: 'des', label: '备注' },
 ];
 
 const dnsTableRef = ref<InstanceType<typeof ConsoleDataTable> | null>(null);
 const saving = ref(false);
-const togglingId = ref<number | null>(null);
 const deletingId = ref<number | null>(null);
 const errorMessage = ref('');
 const formError = ref('');
@@ -136,29 +131,6 @@ const dialogTitle = computed(() =>
 const authFieldKeys = computed(() =>
     Object.keys(AUTH_TEMPLATES[form.type] ?? {}),
 );
-
-async function toggleDnsApiEnabled(
-    row: CdnflyRecord,
-    checked: boolean,
-): Promise<void> {
-    const id = Number(row.id);
-
-    if (!id) {
-return;
-}
-
-    togglingId.value = id;
-
-    try {
-        await updateAdminDnsApi(id, { enable: checked ? 1 : 0 });
-        toast.success(checked ? '已启用' : '已停用');
-        dnsTableRef.value?.refresh();
-    } catch (error) {
-        toast.error(getErrorMessage(error));
-    } finally {
-        togglingId.value = null;
-    }
-}
 
 function openCreateDialog(): void {
     editingRecord.value = null;
@@ -244,8 +216,8 @@ function openDeleteConfirm(row: CdnflyRecord): void {
 
 async function confirmDelete(): Promise<void> {
     if (!deleteTarget.value) {
-return;
-}
+        return;
+    }
 
     deletingId.value = Number(deleteTarget.value.id);
     formError.value = '';
@@ -273,13 +245,14 @@ return;
  * The record is only {id, domain, des} — verified against the master panel
  * (chunk-45f4d7f2, component "cnameDomain").
  */
-type DnsTab = 'apis' | 'cnames';
+type DnsTab = 'setting' | 'cnames' | 'apis';
 
-const activeTab = ref<DnsTab>('apis');
+const activeTab = ref<DnsTab>('setting');
 
 const dnsTabs = [
-    { key: 'apis' as const, label: 'DNS API', icon: KeyRound },
+    { key: 'setting' as const, label: 'DNS 设置', icon: Settings2 },
     { key: 'cnames' as const, label: 'CNAME 域名', icon: Globe },
+    { key: 'apis' as const, label: '证书 DNS API', icon: ShieldCheck },
 ];
 
 const cnameColumns: ColumnDef[] = [
@@ -369,8 +342,8 @@ function openCnameDelete(row: CdnflyRecord): void {
 
 async function confirmCnameDelete(): Promise<void> {
     if (!cnameDeleteTarget.value) {
-return;
-}
+        return;
+    }
 
     cnameDeleting.value = true;
     cnameFormError.value = '';
@@ -386,6 +359,117 @@ return;
         cnameDeleting.value = false;
     }
 }
+// ─── 全局 DNS 设置 ────────────────────────────────────
+/**
+ * The master's own DNS resolution settings — what it means by 请先设置DNS.
+ *
+ * This is the prerequisite for everything else on this page: without it the
+ * master refuses to accept a CNAME domain and never generates a DNS line list,
+ * so nodes register successfully but are never resolvable.
+ *
+ * Deliberately NOT the same thing as the 证书 DNS API tab, which holds per-user
+ * ACME credentials for issuing certificates. The two take similar-looking
+ * credentials for the same providers, which is exactly why they are easy to
+ * confuse — the master keeps them on separate pages for that reason.
+ *
+ * Provider list and payload shape copied from the master panel
+ * (chunk-45f4d7f2, component "dns-setting").
+ */
+const DNS_PROVIDERS = [
+    {
+        value: 'aliyun',
+        label: '阿里云',
+        domain: 'aliyun.com / alibabacloud.com',
+    },
+    { value: 'huaweicloud', label: '华为云', domain: 'huaweicloud.com' },
+    { value: 'dns_la', label: 'DNSLA', domain: 'dns.la' },
+    { value: 'dnspod_cn', label: 'DNSPod', domain: 'dnspod.cn' },
+    { value: 'dnspod_com', label: 'DNSPod 国际版', domain: 'dnspod.com' },
+    { value: 'dnsdotcom', label: '帝恩思', domain: '51dns.com' },
+    { value: 'cloudflare', label: 'Cloudflare', domain: 'cloudflare.com' },
+];
+
+/** Each provider labels its two credential fields differently. */
+const PROVIDER_FIELD_LABELS: Record<string, { id: string; token: string }> = {
+    aliyun: { id: 'AccessKey ID', token: 'AccessKey Secret' },
+    huaweicloud: { id: 'Access Key Id', token: 'Secret Access Key' },
+    dns_la: { id: 'APIID', token: 'API 密钥' },
+    dnspod_cn: { id: 'ID', token: 'Token' },
+    dnspod_com: { id: 'ID', token: 'Token' },
+    dnsdotcom: { id: 'API Key', token: 'API Secret' },
+    cloudflare: { id: '账号邮箱', token: 'Global API Key' },
+};
+
+const settingLoading = ref(false);
+const settingSaving = ref(false);
+const settingError = ref('');
+const setting = ref<AdminDnsSetting | null>(null);
+
+const settingForm = reactive({
+    dns: 'cloudflare',
+    id: '',
+    token: '',
+    ttl: 600,
+    weight_on: 1,
+});
+
+const providerLabels = computed(
+    () =>
+        PROVIDER_FIELD_LABELS[settingForm.dns] ?? {
+            id: 'ID',
+            token: 'Token',
+        },
+);
+
+const currentProvider = computed(() =>
+    DNS_PROVIDERS.find((provider) => provider.value === settingForm.dns),
+);
+
+async function loadDnsSetting(): Promise<void> {
+    settingLoading.value = true;
+    settingError.value = '';
+
+    try {
+        const data = await getAdminDnsSetting();
+        setting.value = data;
+
+        if (data.configured) {
+            settingForm.dns = data.dns ?? 'cloudflare';
+            settingForm.id = data.id ?? '';
+            settingForm.token = data.token ?? '';
+            settingForm.ttl = data.ttl ?? 600;
+            settingForm.weight_on = data.weight_on ?? 1;
+        }
+    } catch (error) {
+        settingError.value = getErrorMessage(error);
+    } finally {
+        settingLoading.value = false;
+    }
+}
+
+async function submitDnsSetting(): Promise<void> {
+    settingSaving.value = true;
+    settingError.value = '';
+
+    try {
+        await saveAdminDnsSetting({
+            dns: settingForm.dns,
+            id: settingForm.id.trim(),
+            token: settingForm.token.trim(),
+            ttl: Number(settingForm.ttl),
+            weight_on: settingForm.weight_on,
+        });
+
+        toast.success('DNS 设置已保存');
+        await loadDnsSetting();
+    } catch (error) {
+        settingError.value = getErrorMessage(error);
+    } finally {
+        settingSaving.value = false;
+    }
+}
+
+onMounted(loadDnsSetting);
 </script>
 
 <template>
@@ -421,6 +505,166 @@ return;
             </button>
         </div>
 
+        <template v-if="activeTab === 'setting'">
+            <!--
+                Say plainly what this is and what it is not. The console used to
+                show only the certificate DNS API, which takes credentials for
+                the same providers — filling that in and expecting resolution to
+                work is the obvious mistake, and the master's error for it
+                (请先设置DNS) does not explain the difference.
+            -->
+            <Alert v-if="setting && !setting.configured">
+                <AlertCircle data-icon="alert" />
+                <AlertTitle>尚未设置 DNS</AlertTitle>
+                <AlertDescription>
+                    主控用这里的凭据把解析记录写入你的域名。未设置前，主控会拒绝添加
+                    CNAME 域名（提示「请先设置DNS」），也不会生成任何 DNS
+                    线路，节点即使注册成功也无法被解析。 这与「证书 DNS
+                    API」标签页无关，后者只用于签发 SSL 证书。
+                </AlertDescription>
+            </Alert>
+
+            <Alert v-else-if="setting && !setting.lines_configured">
+                <AlertCircle data-icon="alert" />
+                <AlertTitle>DNS 已设置，但尚未生成线路</AlertTitle>
+                <AlertDescription>
+                    还需要在「CNAME 域名」标签页添加一个域名，主控才会生成 DNS
+                    线路。若已添加仍无线路，请重新保存本页以触发主控重新校验凭据。
+                </AlertDescription>
+            </Alert>
+
+            <Alert v-if="settingError" variant="destructive">
+                <AlertCircle data-icon="alert" />
+                <AlertTitle>请求失败</AlertTitle>
+                <AlertDescription>{{ settingError }}</AlertDescription>
+            </Alert>
+
+            <Card>
+                <CardHeader
+                    class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between"
+                >
+                    <div class="grid gap-1">
+                        <CardTitle class="text-base">全局 DNS 设置</CardTitle>
+                        <CardDescription>
+                            主控用于写入解析记录的 DNS 服务商凭据。
+                        </CardDescription>
+                    </div>
+                    <Badge v-if="setting?.lines_configured" variant="secondary">
+                        线路已生成
+                    </Badge>
+                    <Badge v-else-if="setting?.configured" variant="outline">
+                        待生成线路
+                    </Badge>
+                </CardHeader>
+
+                <CardContent class="grid max-w-xl gap-4">
+                    <div class="grid gap-2">
+                        <Label>DNS 服务商</Label>
+                        <Select v-model="settingForm.dns">
+                            <SelectTrigger><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                                <SelectGroup>
+                                    <SelectItem
+                                        v-for="provider in DNS_PROVIDERS"
+                                        :key="provider.value"
+                                        :value="provider.value"
+                                    >
+                                        {{ provider.label }}
+                                    </SelectItem>
+                                </SelectGroup>
+                            </SelectContent>
+                        </Select>
+                        <p
+                            v-if="currentProvider"
+                            class="text-xs text-muted-foreground"
+                        >
+                            域名需托管在 {{ currentProvider.domain }}
+                        </p>
+                    </div>
+
+                    <div class="grid gap-2">
+                        <Label for="dns-setting-id">
+                            {{ providerLabels.id }}
+                        </Label>
+                        <Input
+                            id="dns-setting-id"
+                            v-model="settingForm.id"
+                            :placeholder="providerLabels.id"
+                        />
+                    </div>
+
+                    <div class="grid gap-2">
+                        <Label for="dns-setting-token">
+                            {{ providerLabels.token }}
+                        </Label>
+                        <Input
+                            id="dns-setting-token"
+                            v-model="settingForm.token"
+                            type="password"
+                            :placeholder="providerLabels.token"
+                        />
+                    </div>
+
+                    <div class="grid gap-2">
+                        <Label for="dns-setting-ttl">TTL（秒）</Label>
+                        <Input
+                            id="dns-setting-ttl"
+                            v-model.number="settingForm.ttl"
+                            type="number"
+                            min="60"
+                            max="86400"
+                        />
+                        <p class="text-xs text-muted-foreground">
+                            解析记录的缓存时间，默认
+                            600。部分服务商对最小值有限制。
+                        </p>
+                    </div>
+
+                    <div class="grid gap-2">
+                        <Label>权重解析</Label>
+                        <Select
+                            :model-value="String(settingForm.weight_on)"
+                            @update:model-value="
+                                settingForm.weight_on = Number($event)
+                            "
+                        >
+                            <SelectTrigger><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                                <SelectGroup>
+                                    <SelectItem value="1">开启</SelectItem>
+                                    <SelectItem value="0">关闭</SelectItem>
+                                </SelectGroup>
+                            </SelectContent>
+                        </Select>
+                        <p class="text-xs text-muted-foreground">
+                            开启后按节点权重分配解析，需服务商支持。
+                        </p>
+                    </div>
+
+                    <div class="flex gap-2">
+                        <Button
+                            :disabled="settingSaving || settingLoading"
+                            @click="submitDnsSetting"
+                        >
+                            <Spinner
+                                v-if="settingSaving"
+                                data-icon="inline-start"
+                            />
+                            <Save v-else data-icon="inline-start" />
+                            保存
+                        </Button>
+                        <Button
+                            variant="outline"
+                            :disabled="settingLoading"
+                            @click="loadDnsSetting"
+                        >
+                            重新加载
+                        </Button>
+                    </div>
+                </CardContent>
+            </Card>
+        </template>
+
         <ConsoleDataTable
             v-if="activeTab === 'apis'"
             ref="dnsTableRef"
@@ -436,12 +680,11 @@ return;
                     新增
                 </Button>
             </template>
-            <template #cell-enable="{ row }">
-                <Switch
-                    :checked="row.enable === 1 || row.enable === '1'"
-                    :disabled="togglingId === Number(row.id)"
-                    @update:checked="toggleDnsApiEnabled(row, $event)"
-                />
+            <template #cell-des="{ row }">
+                <span v-if="row.des" class="text-muted-foreground">
+                    {{ row.des }}
+                </span>
+                <Badge v-else variant="outline">无备注</Badge>
             </template>
             <template #row-actions="{ row }">
                 <Button variant="ghost" size="sm" @click="openEditDialog(row)">

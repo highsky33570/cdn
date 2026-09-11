@@ -719,6 +719,33 @@ export function deleteAdminDnsApi(id: number) {
     return apiRequest(`${DNS_APIS}/${id}`, { method: 'DELETE' });
 }
 
+// ─── 全局 DNS 设置 ───────────────────────────────────
+/**
+ * The master's global DNS resolution settings — what it means by 请先设置DNS.
+ *
+ * Distinct from the DNS API credentials above, which are per-user ACME
+ * credentials for certificate issuance. Nothing resolves until this is set.
+ */
+export interface AdminDnsSetting {
+    configured: boolean;
+    lines_configured: boolean;
+    dns?: string;
+    id?: string;
+    token?: string;
+    ttl?: number;
+    weight_on?: number;
+}
+
+export async function getAdminDnsSetting(): Promise<AdminDnsSetting> {
+    return apiRequest<AdminDnsSetting>('/api/admin/dns-setting');
+}
+
+export function saveAdminDnsSetting(data: Record<string, unknown>) {
+    return apiRequest('/api/admin/dns-setting', {
+        method: 'PUT',
+        body: JSON.stringify(data),
+    });
+}
 // ─── CNAME domains ───────────────────────────────────
 /**
  * The zone customer CNAMEs resolve into. Admin scope (the master keys these

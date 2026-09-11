@@ -144,6 +144,9 @@ Route::middleware(['auth:sanctum', 'verified', 'admin', 'throttle:60,1'])->prefi
     Route::put('/dns-apis/{id}', [AdminDnsController::class, 'update'])->middleware('throttle:20,1');
     Route::delete('/dns-apis/{id}', [AdminDnsController::class, 'destroy'])->middleware('throttle:10,1');
 
+    // 全局 DNS 设置：主控口中的「请先设置DNS」，与上面的 DNS API 凭据无关
+    Route::get('/dns-setting', [AdminDnsController::class, 'dnsSettingShow']);
+    Route::put('/dns-setting', [AdminDnsController::class, 'dnsSettingUpdate'])->middleware('throttle:20,1');
     // CNAME 域名：主控在生成 DNS 线路前要求至少存在一个
     Route::get('/cname-domains', [AdminDnsController::class, 'cnameIndex']);
     Route::post('/cname-domains', [AdminDnsController::class, 'cnameStore'])->middleware('throttle:20,1');

@@ -75,6 +75,43 @@ class AdminDnsController extends Controller
         }
     }
 
+    // ─── 全局 DNS 设置 ────────────────────────────────────────
+    // The master calls this simply "DNS". It is what 请先设置DNS refers to,
+    // and it is NOT the DNS API credential above: that one is a per-user ACME
+    // credential for issuing certificates. Without this the master refuses to
+    // accept a CNAME domain and never generates any DNS lines.
+
+    public function dnsSettingShow(): JsonResponse
+    {
+        try {
+            $data = $this->cdnfly->getDnsSetting();
+
+            return response()->json(['ok' => true, 'data' => $data]);
+        } catch (\Throwable $e) {
+            return $this->cdnflyFailure($e, __FUNCTION__);
+        }
+    }
+
+    public function dnsSettingUpdate(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'dns' => ['required', 'string', 'in:aliyun,huaweicloud,dns_la,dnspod_cn,dnspod_com,dnsdotcom,cloudflare'],
+            'id' => ['required', 'string', 'max:255'],
+            'token' => ['required', 'string', 'max:500'],
+            // The master rejects a TTL below its provider minimum; 60 is the
+            // lowest any of the supported providers accepts.
+            'ttl' => ['required', 'integer', 'min:60', 'max:86400'],
+            'weight_on' => ['required', 'integer', 'in:0,1'],
+        ]);
+
+        try {
+            $data = $this->cdnfly->saveDnsSetting($validated);
+
+            return response()->json(['ok' => true, 'data' => $data]);
+        } catch (\Throwable $e) {
+            return $this->cdnflyFailure($e, __FUNCTION__);
+        }
+    }
     // ─── CNAME domains ───────────────────────────────────────
     // Admin scope, unlike the DNS API credentials above: these live next to
     // /v1/nodes in the master and are keyed with the master api-key, so they

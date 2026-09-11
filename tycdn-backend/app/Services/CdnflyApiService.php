@@ -460,28 +460,10 @@ class CdnflyApiService
             return [];
         }
 
-        $response = $this->adminHttp()->get('/v1/configs/global-0-system-dns_config');
-        $payload = $this->parseResponse($response, 'get dns config');
+        $outer = $this->dnsConfigValue();
 
-        // CDNfly is not consistent about whether a single record comes back as
-        // data.value, data.0.value, or the row itself - so probe rather than
-        // assume.
-        $value = data_get($payload, 'data.value')
-            ?? data_get($payload, 'data.0.value')
-            ?? data_get($payload, 'value');
-
-        // An absent or empty row means DNS has simply never been set up. The
-        // master's own panel treats that as a prompt to go and configure it
-        // (未设置DNS或CNAME域名 -> /node/dns) rather than as an error, so the
-        // caller gets an empty list and shows the same guidance.
-        if (! is_string($value) || trim($value) === '') {
+        if ($outer === null) {
             return [];
-        }
-
-        $outer = json_decode($value, true);
-
-        if (! is_array($outer)) {
-            throw new \RuntimeException('dns_config value is not valid JSON.');
         }
 
         $lines = $outer['lines'] ?? null;
@@ -498,6 +480,113 @@ class CdnflyApiService
         }
 
         return array_values(array_filter($lines, 'is_array'));
+    }
+
+    /**
+     * The decoded global-0-system-dns_config value, or null when DNS has
+     * never been set up.
+     *
+     * The master keeps the resolution settings AND the generated line list in
+     * this one config row, so both readers share this.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function dnsConfigValue(): ?array
+    {
+        $response = $this->adminHttp()->get('/v1/configs/global-0-system-dns_config');
+        $payload = $this->parseResponse($response, 'get dns config');
+
+        // CDNfly is not consistent about whether a single record comes back as
+        // data.value, data.0.value, or the row itself - so probe rather than
+        // assume.
+        $value = data_get($payload, 'data.value')
+            ?? data_get($payload, 'data.0.value')
+            ?? data_get($payload, 'value');
+
+        // An absent or empty row means DNS has never been configured. The
+        // master's own panel treats that as a prompt to go and set it up
+        // rather than as an error, so neither do we.
+        if (! is_string($value) || trim($value) === '') {
+            return null;
+        }
+
+        $outer = json_decode($value, true);
+
+        if (! is_array($outer)) {
+            throw new \RuntimeException('dns_config value is not valid JSON.');
+        }
+
+        return $outer;
+    }
+
+    /**
+     * The global DNS resolution settings.
+     *
+     * Not to be confused with /v1/dnsapis, which is a per-user credential for
+     * ACME DNS-01 certificate issuance and lives on the certificate page. This
+     * is the one the master means by 请先设置DNS: without it the master will
+     * not accept a CNAME domain and will not generate any DNS lines.
+     *
+     * @return array<string, mixed>
+     */
+    public function getDnsSetting(): array
+    {
+        if (! $this->outboundEnabled()) {
+            return ['configured' => false, 'lines_configured' => false];
+        }
+
+        $outer = $this->dnsConfigValue();
+
+        if ($outer === null) {
+            return ['configured' => false, 'lines_configured' => false];
+        }
+
+        return [
+            'configured' => ($outer['dns'] ?? '') !== '',
+            'lines_configured' => ($outer['lines'] ?? '') !== '',
+            'dns' => (string) ($outer['dns'] ?? 'aliyun'),
+            'id' => (string) ($outer['id'] ?? ''),
+            'token' => (string) ($outer['token'] ?? ''),
+            'ttl' => (int) ($outer['ttl'] ?? 600),
+            'weight_on' => (int) ($outer['weight_on'] ?? 1) === 1 ? 1 : 0,
+        ];
+    }
+
+    /**
+     * Write the global DNS resolution settings.
+     *
+     * Shape copied from the master panel (chunk-45f4d7f2, component
+     * "dns-setting"): {id, weight_on, token, dns, ttl, rnd, gateway}. The
+     * panel sends a fresh random `rnd` on every save so the value always
+     * differs and the master re-runs its provider check; without it a re-save
+     * with identical credentials is a no-op and the line list is never
+     * regenerated.
+     *
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
+    public function saveDnsSetting(array $data): array
+    {
+        $this->ensureOutboundEnabled('save dns setting');
+
+        $value = [
+            'id' => (string) ($data['id'] ?? ''),
+            'weight_on' => (int) ($data['weight_on'] ?? 1) === 1 ? 1 : 0,
+            'token' => (string) ($data['token'] ?? ''),
+            'dns' => (string) ($data['dns'] ?? ''),
+            'ttl' => (int) ($data['ttl'] ?? 600),
+            // Forces a distinct value so the master re-validates.
+            'rnd' => random_int(1, 100),
+            'gateway' => '',
+        ];
+
+        return $this->upsertConfig([
+            'scope_name' => 'global',
+            'scope_id' => 0,
+            'type' => 'system',
+            'name' => 'dns_config',
+            'value' => json_encode($value, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+        ]);
     }
 
     public function updateLine(int $id, array $data): array
