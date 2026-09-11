@@ -2295,7 +2295,7 @@ function regionNameById(id: unknown): string {
             reasons. It lives behind 执行命令 in the top bar instead.
         -->
         <Dialog v-model:open="installDialogOpen">
-            <DialogContent class="max-w-3xl">
+            <DialogScrollContent class="sm:max-w-3xl">
                 <DialogHeader>
                     <DialogTitle>节点安装命令</DialogTitle>
                     <DialogDescription>
@@ -2346,7 +2346,7 @@ function regionNameById(id: unknown): string {
                         {{ commandCopied ? '已复制' : '复制命令' }}
                     </Button>
                 </DialogFooter>
-            </DialogContent>
+            </DialogScrollContent>
         </Dialog>
 
         <Dialog v-model:open="initDialogOpen">
