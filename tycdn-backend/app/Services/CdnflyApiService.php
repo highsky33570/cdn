@@ -464,18 +464,18 @@ class CdnflyApiService
         $payload = $this->parseResponse($response, 'get dns config');
 
         // CDNfly is not consistent about whether a single record comes back as
-        // data.value, data.0.value, or the row itself — so probe rather than
-        // assume, and say so when none of them hold.
+        // data.value, data.0.value, or the row itself - so probe rather than
+        // assume.
         $value = data_get($payload, 'data.value')
             ?? data_get($payload, 'data.0.value')
             ?? data_get($payload, 'value');
 
-        if (! is_string($value) || $value === '') {
-            throw new \RuntimeException(
-                'CDNfly returned no value for global-0-system-dns_config; '
-                .'DNS lines cannot be listed. Keys present: '
-                .implode(', ', array_keys((array) data_get($payload, 'data', [])))
-            );
+        // An absent or empty row means DNS has simply never been set up. The
+        // master's own panel treats that as a prompt to go and configure it
+        // (未设置DNS或CNAME域名 -> /node/dns) rather than as an error, so the
+        // caller gets an empty list and shows the same guidance.
+        if (! is_string($value) || trim($value) === '') {
+            return [];
         }
 
         $outer = json_decode($value, true);
@@ -486,16 +486,15 @@ class CdnflyApiService
 
         $lines = $outer['lines'] ?? null;
 
-        // The inner value is itself a JSON string, not an array.
+        // The master stores `lines` as a JSON string nested inside the config
+        // value, and only writes it once a DNS provider and a CNAME domain
+        // exist. Until then the object legitimately has no lines at all.
         if (is_string($lines)) {
             $lines = json_decode($lines, true);
         }
 
         if (! is_array($lines)) {
-            throw new \RuntimeException(
-                'dns_config has no usable `lines`. Keys present: '
-                .implode(', ', array_keys($outer))
-            );
+            return [];
         }
 
         return array_values(array_filter($lines, 'is_array'));

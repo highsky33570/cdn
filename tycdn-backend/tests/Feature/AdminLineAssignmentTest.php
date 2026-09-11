@@ -145,6 +145,65 @@ class AdminLineAssignmentTest extends TestCase
             ->assertJsonPath('data.1.name', '电信');
     }
 
+    /**
+     * Until a DNS provider and a CNAME domain are configured on the master, the
+     * config row exists but its value is an empty object with no `lines` at
+     * all. The master's own panel treats that as a prompt to go and configure
+     * DNS, so it must not surface here as a failed request.
+     */
+    public function test_an_unconfigured_dns_config_yields_no_lines_rather_than_an_error(): void
+    {
+        $this->fakeConfigValue('{}');
+
+        $this->actingAs($this->admin())
+            ->getJson('/api/admin/dns-lines')
+            ->assertOk()
+            ->assertJsonPath('data', []);
+    }
+
+    public function test_an_empty_config_value_yields_no_lines_rather_than_an_error(): void
+    {
+        $this->fakeConfigValue('');
+
+        $this->actingAs($this->admin())
+            ->getJson('/api/admin/dns-lines')
+            ->assertOk()
+            ->assertJsonPath('data', []);
+    }
+
+    /**
+     * A value that is present but not JSON is a genuine fault, and still has to
+     * reach the operator as a 500 carrying the real reason - never a bare 502.
+     */
+    public function test_a_malformed_config_value_reports_the_real_error(): void
+    {
+        $this->fakeConfigValue('not json at all');
+
+        $this->actingAs($this->admin())
+            ->getJson('/api/admin/dns-lines')
+            ->assertStatus(500)
+            ->assertJsonPath('ok', false)
+            ->assertJsonPath('context', 'dnsLines')
+            ->assertJsonFragment(['upstream_error' => 'dns_config value is not valid JSON.']);
+    }
+
+    private function fakeConfigValue(string $value): void
+    {
+        config([
+            'services.cdnfly.base_url' => 'https://panel.example.test',
+            'services.cdnfly.admin_api_key' => 'k',
+            'services.cdnfly.admin_api_secret' => 's',
+            'services.cdnfly.outbound_enabled' => true,
+        ]);
+
+        Http::fake([
+            'https://panel.example.test/v1/configs/*' => Http::response([
+                'code' => 0,
+                'data' => ['value' => $value],
+            ]),
+        ]);
+    }
+
     public function test_a_non_admin_cannot_assign_lines(): void
     {
         $user = User::factory()->create(['role' => 'user']);

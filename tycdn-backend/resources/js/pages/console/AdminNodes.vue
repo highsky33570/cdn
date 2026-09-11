@@ -1113,7 +1113,10 @@ async function loadDnsLines(): Promise<void> {
 
         if (dnsLines.value.length === 0) {
             dnsLinesError.value =
-                'CDNfly 未返回任何 DNS 线路。请在主控面板「系统设置 → DNS 配置」中确认线路已配置。';
+                '主控尚未配置 DNS 解析线路。请先在 CDNfly 主控面板「节点管理 → DNS 设置」中' +
+                '填写 DNS 服务商（阿里云 / DNSPod / Cloudflare 等）的 API 凭据，' +
+                '并在「CNAME 域名」标签页添加一个 CNAME 域名。' +
+                '主控会在配置完成后自动写入线路列表，届时刷新本页即可。';
 
             return;
         }
@@ -2222,7 +2225,7 @@ function regionNameById(id: unknown): string {
                 <CardContent class="grid gap-6">
                     <Alert v-if="dnsLinesError" variant="destructive">
                         <AlertCircle data-icon="alert" />
-                        <AlertTitle>无法读取 DNS 线路</AlertTitle>
+                        <AlertTitle>DNS 线路不可用</AlertTitle>
                         <AlertDescription>
                             {{ dnsLinesError }}
                         </AlertDescription>
