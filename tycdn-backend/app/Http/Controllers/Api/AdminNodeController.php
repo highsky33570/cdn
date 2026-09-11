@@ -371,6 +371,27 @@ class AdminNodeController extends Controller
      *
      * @return array<string, mixed>
      */
+    /**
+     * Mirrors the payload the CDNfly panel itself sends to /v1/node-groups.
+     *
+     * Captured from the panel's own bundle (chunk-579346f2), because sending a
+     * field its create struct does not accept is rejected with a bare
+     * "数据类型错误" that names neither the field nor the expected type.
+     *
+     *   create: {region_id, name, cname_hostname, des, sort, backup_switch_type,
+     *            l2_config_id}
+     *   edit:   the above plus {id, v4_cname_hostname, backup_switch_policy}
+     *
+     * Two things that cost a failed create here:
+     *
+     * 1. `backup_switch_policy` is **not sent on create** — only on edit, and
+     *    then as a JSON *string* (the panel does JSON.parse on it when loading).
+     *    We were sending it on create, which is what produced 数据类型错误.
+     *
+     * 2. `sort` and `l2_config_id` go through the panel's `integerOrNull`: a
+     *    blank becomes null, a numeric string becomes an int. They are integers
+     *    upstream, not the strings this used to declare.
+     */
     private function validatedNodeGroupPayload(Request $request, bool $creating): array
     {
         $requiredWhenCreating = $creating ? 'required' : 'sometimes';
@@ -379,19 +400,26 @@ class AdminNodeController extends Controller
             'name' => [$requiredWhenCreating, 'string', 'max:255'],
             'region_id' => [$requiredWhenCreating, 'integer', 'min:1'],
             'des' => ['sometimes', 'nullable', 'string', 'max:1000'],
-            // Documented as optional on POST /v1/node-groups: "未传 CNAME 主机名时
-            // 服务端自动生成", and an L2 config that must match the region.
+            // Optional upstream: "未传 CNAME 主机名时服务端自动生成".
             'cname_hostname' => ['sometimes', 'nullable', 'string', 'max:255'],
-            'l2_config_id' => ['sometimes', 'nullable', 'string', 'max:64'],
+            'v4_cname_hostname' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'sort' => ['sometimes', 'nullable', 'integer', 'min:0'],
+            'l2_config_id' => ['sometimes', 'nullable', 'integer', 'min:1'],
             'backup_switch_type' => ['sometimes', 'nullable', 'string', Rule::in(['master_down', 'interval'])],
-            // A JSON string built by the client ({ip_num, interval, switch_order}),
-            // passed through as CDNfly expects it rather than re-encoded here.
+            // A JSON string, e.g. {"ip_num":2,"interval":60,"switch_order":"rand"}.
             'backup_switch_policy' => ['sometimes', 'nullable', 'string', 'max:2000'],
         ]);
 
-        return collect($validated)
+        $payload = collect($validated)
             ->reject(fn ($value): bool => $value === '' || $value === null)
             ->all();
+
+        // The create endpoint has no such field; only the edit endpoint takes it.
+        if ($creating) {
+            unset($payload['backup_switch_policy'], $payload['v4_cname_hostname']);
+        }
+
+        return $payload;
     }
 
     private function validatedNodePayload(Request $request, bool $creating): array

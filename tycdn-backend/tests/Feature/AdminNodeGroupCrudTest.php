@@ -24,6 +24,8 @@ class AdminNodeGroupCrudTest extends TestCase
     public function test_an_admin_can_create_a_node_group(): void
     {
         $cdnfly = $this->mock(CdnflyApiService::class);
+        // backup_switch_policy is deliberately absent: the panel does not send
+        // it on create, and CDNfly rejects it with 数据类型错误 when it is.
         $cdnfly->shouldReceive('createNodeGroup')
             ->once()
             ->with([
@@ -31,7 +33,6 @@ class AdminNodeGroupCrudTest extends TestCase
                 'region_id' => 3,
                 'des' => 'shared tier',
                 'backup_switch_type' => 'interval',
-                'backup_switch_policy' => '{"ip_num":2,"interval":60,"switch_order":"rand"}',
             ])
             ->andReturn(['code' => 0, 'data' => 9]);
 
@@ -244,6 +245,101 @@ class AdminNodeGroupCrudTest extends TestCase
             ->assertCreated();
 
         $this->assertSame(12, $received['node_group_id']);
+    }
+
+    /**
+     * The panel's create payload, captured from its own bundle
+     * (chunk-579346f2): region_id, name, cname_hostname, des, sort,
+     * backup_switch_type, l2_config_id — and notably NOT
+     * backup_switch_policy, which only the edit endpoint accepts.
+     *
+     * Sending it on create is what CDNfly answered with 数据类型错误.
+     */
+    public function test_the_switch_policy_is_not_sent_on_create(): void
+    {
+        $received = null;
+
+        $cdnfly = $this->mock(CdnflyApiService::class);
+        $cdnfly->shouldReceive('createNodeGroup')
+            ->once()
+            ->andReturnUsing(function (array $payload) use (&$received) {
+                $received = $payload;
+
+                return ['code' => 0];
+            });
+
+        $this->actingAs($this->admin())
+            ->postJson('/api/admin/node-groups', [
+                'name' => 'jp-shared',
+                'region_id' => 1,
+                'des' => '',
+                'backup_switch_type' => 'master_down',
+                'backup_switch_policy' => '{}',
+            ])
+            ->assertCreated();
+
+        $this->assertArrayNotHasKey('backup_switch_policy', $received);
+        $this->assertSame('master_down', $received['backup_switch_type']);
+        $this->assertSame(1, $received['region_id']);
+    }
+
+    /**
+     * Edit does take it, so the field must survive there.
+     */
+    public function test_the_switch_policy_is_kept_on_edit(): void
+    {
+        $received = null;
+
+        $cdnfly = $this->mock(CdnflyApiService::class);
+        $cdnfly->shouldReceive('updateNodeGroup')
+            ->once()
+            ->andReturnUsing(function (int $id, array $payload) use (&$received) {
+                $received = $payload;
+
+                return ['code' => 0];
+            });
+
+        $this->actingAs($this->admin())
+            ->putJson('/api/admin/node-groups/9', [
+                'backup_switch_type' => 'interval',
+                'backup_switch_policy' => '{"ip_num":2,"interval":60,"switch_order":"rand"}',
+            ])
+            ->assertOk();
+
+        $this->assertSame(
+            '{"ip_num":2,"interval":60,"switch_order":"rand"}',
+            $received['backup_switch_policy'],
+        );
+    }
+
+    /**
+     * sort and l2_config_id are integers upstream (the panel runs them through
+     * integerOrNull), not the strings this once declared.
+     */
+    public function test_sort_and_l2_config_are_integers(): void
+    {
+        $received = null;
+
+        $cdnfly = $this->mock(CdnflyApiService::class);
+        $cdnfly->shouldReceive('createNodeGroup')
+            ->once()
+            ->andReturnUsing(function (array $payload) use (&$received) {
+                $received = $payload;
+
+                return ['code' => 0];
+            });
+
+        $this->actingAs($this->admin())
+            ->postJson('/api/admin/node-groups', [
+                'name' => 'jp-shared',
+                'region_id' => 1,
+                'sort' => 100,
+                'l2_config_id' => 7,
+            ])
+            ->assertCreated();
+
+        $this->assertSame(100, $received['sort']);
+        $this->assertSame(7, $received['l2_config_id']);
     }
 
     private function admin(): User
