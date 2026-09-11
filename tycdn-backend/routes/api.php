@@ -107,10 +107,12 @@ Route::middleware(['auth:sanctum', 'verified', 'admin', 'throttle:60,1'])->prefi
     Route::post('/regions', [AdminNodeController::class, 'storeRegion'])->middleware('throttle:20,1');
     Route::put('/regions/{id}', [AdminNodeController::class, 'updateRegion'])->middleware('throttle:20,1');
     Route::delete('/regions/{id}', [AdminNodeController::class, 'destroyRegion'])->middleware('throttle:10,1');
+    // 线路不是可创建的对象：DNS 线路定义在系统配置里，POST /v1/lines 是把节点 IP
+    // 绑定到某个节点组的某条线路上。详见 CdnflyApiService::assignLines()。
     Route::get('/lines', [AdminNodeController::class, 'lines']);
+    Route::get('/dns-lines', [AdminNodeController::class, 'dnsLines']);
     Route::post('/lines', [AdminNodeController::class, 'storeLine'])->middleware('throttle:20,1');
-    Route::put('/lines/{id}', [AdminNodeController::class, 'updateLine'])->middleware('throttle:20,1');
-    Route::delete('/lines/{id}', [AdminNodeController::class, 'destroyLine'])->middleware('throttle:10,1');
+    Route::delete('/lines/{id}', [AdminNodeController::class, 'destroyLine'])->where('id', '[0-9,]+')->middleware('throttle:10,1');
 
     // 全部网站（管理端）
     Route::get('/sites', [AdminSiteController::class, 'index']);
@@ -141,7 +143,6 @@ Route::middleware(['auth:sanctum', 'verified', 'admin', 'throttle:60,1'])->prefi
     Route::post('/dns-apis', [AdminDnsController::class, 'store'])->middleware('throttle:20,1');
     Route::put('/dns-apis/{id}', [AdminDnsController::class, 'update'])->middleware('throttle:20,1');
     Route::delete('/dns-apis/{id}', [AdminDnsController::class, 'destroy'])->middleware('throttle:10,1');
-    Route::get('/dns-lines', [AdminDnsController::class, 'lines']);
 
     // ACL 规则管理
     Route::post('/acls', [AdminSiteController::class, 'storeAcl'])->middleware('throttle:20,1');

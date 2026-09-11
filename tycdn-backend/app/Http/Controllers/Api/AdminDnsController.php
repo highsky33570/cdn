@@ -74,15 +74,4 @@ class AdminDnsController extends Controller
             return $this->cdnflyFailure($e, __FUNCTION__);
         }
     }
-
-    public function lines(Request $request): JsonResponse
-    {
-        try {
-            $data = $this->cdnfly->listLines($request->query());
-
-            return response()->json(['ok' => true, 'data' => $data]);
-        } catch (\Throwable $e) {
-            return $this->cdnflyFailure($e, __FUNCTION__);
-        }
-    }
 }

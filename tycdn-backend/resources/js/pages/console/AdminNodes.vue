@@ -24,6 +24,7 @@ import ConfirmDeleteDialog from '@/components/console/ConfirmDeleteDialog.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
     Dialog,
     DialogDescription,
@@ -44,10 +45,10 @@ import {
 } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
 import {
-    createAdminLine,
+    assignAdminLines,
     createAdminNodeGroup,
     createAdminRegion,
-    deleteAdminLine,
+    listAdminDnsLines,
     deleteAdminNode,
     deleteAdminNodeGroup,
     deleteAdminPendingNode,
@@ -60,13 +61,14 @@ import {
     listAdminPendingNodes,
     listAdminRegions,
     setAdminNodeEnabled,
-    updateAdminLine,
+    unassignAdminLines,
     updateAdminNode,
     updateAdminNodeGroup,
     updateAdminRegion,
 } from '@/lib/adminModulesApi';
 import type {
-    AdminLinePayload,
+    AdminDnsLine,
+    AdminLineAssignment,
     AdminNodeGroupPayload,
     AdminNodeInstallCommand,
     AdminNodePayload,
@@ -205,7 +207,8 @@ onMounted(() => {
         loadInstallCommand(),
         loadRegions(),
         loadNodeGroups(),
-        loadLines(),
+        // the DNS line list, not assignments — those need a node group chosen first
+        loadDnsLines(),
     ]);
 });
 
@@ -1040,47 +1043,96 @@ function openDeleteNodeGroup(record: CdnflyRecord): void {
     deleteConfirmOpen.value = true;
 }
 
-// ─── Line CRUD ────────────────────────────────────────
+// ─── 线路分配 ─────────────────────────────────────────
+/**
+ * backup_switch_policy arrives as a JSON string; the node-group form edits its
+ * parts as separate fields. Shared by the group editor.
+ */
+function parseSwitchPolicy(raw: unknown): {
+    ip_num: string;
+    interval: string;
+    switch_order: string;
+} {
+    const fallback = { ip_num: '2', interval: '60', switch_order: 'rand' };
+
+    if (typeof raw !== 'string' || raw.trim() === '') return fallback;
+
+    try {
+        const parsed = JSON.parse(raw) as Record<string, unknown>;
+
+        return {
+            ip_num: String(parsed.ip_num ?? fallback.ip_num),
+            interval: String(parsed.interval ?? fallback.interval),
+            switch_order: String(parsed.switch_order ?? fallback.switch_order),
+        };
+    } catch {
+        return fallback;
+    }
+}
+
+/**
+ * Assigning nodes to a DNS line.
+ *
+ * The old 新增线路 form asked for a name, region, CNAME hostname, sort order and
+ * failover policy — none of which CDNfly's /v1/lines accepts. A line is not an
+ * object you create: the DNS lines live in a system config, and this endpoint
+ * binds a node's IPs to one of them inside a node group.
+ *
+ * Shape verified against the master's own panel source
+ * (cdnfly-go/panel/dashboard/js/chunk-49f49657).
+ */
+const lineRows = ref<CdnflyRecord[]>([]);
 const lineLoading = ref(false);
 const lineError = ref('');
-const lineDialogOpen = ref(false);
-const lineSaving = ref(false);
-const lineFormError = ref('');
-const editingLine = ref<CdnflyRecord | null>(null);
-const linePage = ref(1);
-const lineTotal = ref<number | null>(null);
-const lineRows = ref<CdnflyRecord[]>([]);
+const dnsLines = ref<AdminDnsLine[]>([]);
 
-const lineForm = reactive({
-    region_id: '',
-    name: '',
-    cname_hostname: '',
-    des: '',
-    sort: '100',
-    backup_switch_type: 'master_down' as 'master_down' | 'interval',
-    backup_policy_ip_num: '2',
-    backup_policy_interval: '60',
-    backup_policy_switch_order: 'rand' as 'rand' | 'seq',
-    l2_config_id: '',
-});
+const lineGroupId = ref<string>('');
+const lineDnsId = ref<string>('');
 
-const hasLinePrevPage = computed(() => linePage.value > 1);
-const hasLineNextPage = computed(() => {
-    if (typeof lineTotal.value === 'number') {
-        return linePage.value * 20 < lineTotal.value;
+/** Candidate nodes, one row per IP (sub-ip=1). */
+const lineCandidates = ref<CdnflyRecord[]>([]);
+const lineCandidatesLoading = ref(false);
+const selectedIpIds = ref<number[]>([]);
+const assigning = ref(false);
+
+const currentDnsLine = computed(() =>
+    dnsLines.value.find((l) => String(l.id) === lineDnsId.value),
+);
+
+const currentLineGroup = computed(() =>
+    nodeGroups.value.find((g) => String(g.id) === lineGroupId.value),
+);
+
+async function loadDnsLines(): Promise<void> {
+    try {
+        dnsLines.value = await listAdminDnsLines();
+
+        if (dnsLines.value.length > 0 && lineDnsId.value === '') {
+            lineDnsId.value = String(dnsLines.value[0].id);
+        }
+    } catch (error) {
+        lineError.value = getErrorMessage(error);
     }
-    return lineRows.value.length >= 20;
-});
+}
 
-async function loadLines(targetPage = linePage.value): Promise<void> {
+async function loadLines(): Promise<void> {
+    if (lineGroupId.value === '') {
+        lineRows.value = [];
+
+        return;
+    }
+
     lineLoading.value = true;
     lineError.value = '';
+
     try {
-        const result = await listAdminLines({ page: targetPage, limit: 20 });
+        const result = await listAdminLines({
+            limit: 0,
+            node_group_id: Number(lineGroupId.value),
+            line_id: lineDnsId.value,
+        });
+
         lineRows.value = extractRows(result);
-        lineTotal.value = extractTotal(result, lineRows.value.length);
-        linePage.value = targetPage;
-        lines.value = lineRows.value.length > 0 ? lineRows.value : lines.value;
     } catch (error) {
         lineError.value = getErrorMessage(error);
     } finally {
@@ -1088,143 +1140,115 @@ async function loadLines(targetPage = linePage.value): Promise<void> {
     }
 }
 
-function openAddLine(): void {
-    editingLine.value = null;
-    lineForm.region_id = regionOptions.value[0]?.id ?? '';
-    lineForm.name = '';
-    lineForm.cname_hostname = '';
-    lineForm.des = '';
-    lineForm.sort = '100';
-    lineForm.backup_switch_type = 'master_down';
-    lineForm.backup_policy_ip_num = '2';
-    lineForm.backup_policy_interval = '60';
-    lineForm.backup_policy_switch_order = 'rand';
-    lineForm.l2_config_id = '';
-    lineFormError.value = '';
-    lineDialogOpen.value = true;
-}
+/**
+ * sub-ip=1 returns one row per IP instead of per node. A row with pid !== 0 is
+ * an extra IP belonging to node pid; otherwise the row is the node itself.
+ * That is exactly the node_id / node_ip_id distinction the API wants.
+ */
+async function loadLineCandidates(): Promise<void> {
+    const group = currentLineGroup.value;
 
-function openEditLine(record: CdnflyRecord): void {
-    editingLine.value = record;
-    lineForm.region_id = idField(record.region_id);
-    lineForm.name = textValue(record.name);
-    lineForm.cname_hostname = textValue(record.cname_hostname);
-    lineForm.des = textValue(record.des);
-    lineForm.sort = textValue(record.sort) || '100';
-    const switchType = textValue(record.backup_switch_type);
-    lineForm.backup_switch_type =
-        switchType === 'interval' ? 'interval' : 'master_down';
-    // Parse backup_switch_policy JSON
-    const policyRaw = record.backup_switch_policy;
-    const policy = parseSwitchPolicy(policyRaw);
-    lineForm.backup_policy_ip_num = String(policy.ip_num ?? 2);
-    lineForm.backup_policy_interval = String(policy.interval ?? 60);
-    lineForm.backup_policy_switch_order =
-        policy.switch_order === 'seq' ? 'seq' : 'rand';
-    lineForm.l2_config_id = textValue(record.l2_config_id);
-    lineFormError.value = '';
-    lineDialogOpen.value = true;
-}
+    if (!group) {
+        lineCandidates.value = [];
 
-function parseSwitchPolicy(raw: unknown): {
-    ip_num?: number;
-    interval?: number;
-    switch_order?: string;
-} {
-    if (!raw) return {};
-    if (typeof raw === 'object') return raw as Record<string, unknown>;
-    if (typeof raw === 'string') {
-        try {
-            return JSON.parse(raw);
-        } catch {
-            return {};
-        }
-    }
-    return {};
-}
-
-async function submitLine(): Promise<void> {
-    if (lineForm.name.trim() === '') {
-        lineFormError.value = '线路名称不能为空';
-        return;
-    }
-    const regionId = asNumber(lineForm.region_id);
-    if (!regionId) {
-        lineFormError.value = '请选择所属区域';
         return;
     }
 
-    const switchType = lineForm.backup_switch_type || 'master_down';
-    const policyJson =
-        switchType === 'interval'
-            ? JSON.stringify({
-                  ip_num: Number(lineForm.backup_policy_ip_num) || 2,
-                  interval: Number(lineForm.backup_policy_interval) || 60,
-                  switch_order: lineForm.backup_policy_switch_order || 'rand',
-              })
-            : '{}';
-
-    const payload: AdminLinePayload = {
-        region_id: regionId,
-        name: lineForm.name.trim(),
-        cname_hostname: lineForm.cname_hostname.trim(),
-        des: lineForm.des.trim(),
-        sort: Number(lineForm.sort) || 100,
-        backup_switch_type: switchType,
-        backup_switch_policy: policyJson,
-        l2_config_id: lineForm.l2_config_id.trim(),
-    };
-
-    lineSaving.value = true;
-    lineFormError.value = '';
+    lineCandidatesLoading.value = true;
 
     try {
-        if (editingLine.value) {
-            const id = asNumber(editingLine.value.id);
-            if (!id) {
-                lineFormError.value = '线路 ID 缺失';
-                return;
-            }
-            await updateAdminLine(id, payload);
-            toast.success('线路已更新');
-        } else {
-            await createAdminLine(payload);
-            toast.success('线路已创建');
-        }
-        lineDialogOpen.value = false;
-        await loadLines();
-        await loadReferenceData();
+        const result = await listAdminNodes({
+            limit: 0,
+            'sub-ip': 1,
+            type: 'L1',
+            region_id: asNumber(group.region_id) ?? 0,
+        });
+
+        lineCandidates.value = extractRows(result);
     } catch (error) {
-        lineFormError.value = getErrorMessage(error);
+        lineError.value = getErrorMessage(error);
     } finally {
-        lineSaving.value = false;
+        lineCandidatesLoading.value = false;
     }
 }
 
-function openDeleteLine(record: CdnflyRecord): void {
-    const id = asNumber(record.id);
-    if (!id) {
-        lineError.value = '线路 ID 缺失';
+async function onLineGroupChange(): Promise<void> {
+    selectedIpIds.value = [];
+    await Promise.all([loadLines(), loadLineCandidates()]);
+}
+
+function isIpSelected(row: CdnflyRecord): boolean {
+    return selectedIpIds.value.includes(Number(row.id));
+}
+
+function toggleIpSelection(row: CdnflyRecord): void {
+    const id = Number(row.id);
+
+    if (!id) return;
+
+    selectedIpIds.value = selectedIpIds.value.includes(id)
+        ? selectedIpIds.value.filter((x) => x !== id)
+        : [...selectedIpIds.value, id];
+}
+
+async function submitLineAssignment(): Promise<void> {
+    const group = currentLineGroup.value;
+    const line = currentDnsLine.value;
+
+    if (!group || !line) {
+        lineError.value = '请先选择节点组和线路';
+
         return;
     }
-    deleteConfirmTitle.value = '确认删除线路';
-    deleteConfirmDesc.value = `确认删除线路「${textValue(record.name) || '#' + id}」？删除后不可恢复。`;
-    deleteConfirmError.value = '';
-    deleteConfirmAction.value = async () => {
-        deleteConfirmLoading.value = true;
-        try {
-            await deleteAdminLine(id);
-            deleteConfirmOpen.value = false;
-            toast.success('线路已删除');
-            await loadLines();
-            await loadReferenceData();
-        } catch (error) {
-            deleteConfirmError.value = getErrorMessage(error);
-        } finally {
-            deleteConfirmLoading.value = false;
-        }
-    };
-    deleteConfirmOpen.value = true;
+
+    if (selectedIpIds.value.length === 0) {
+        lineError.value = '请选择节点';
+
+        return;
+    }
+
+    const assignments: AdminLineAssignment[] = selectedIpIds.value.map(
+        (ipId) => {
+            const row = lineCandidates.value.find((r) => Number(r.id) === ipId);
+            const pid = Number(row?.pid) || 0;
+
+            return {
+                node_group_id: Number(group.id),
+                node_id: pid !== 0 ? pid : ipId,
+                node_ip_id: ipId,
+                line_id: Number(line.id),
+                line_name: String(line.display_name || line.name),
+            };
+        },
+    );
+
+    assigning.value = true;
+    lineError.value = '';
+
+    try {
+        await assignAdminLines(assignments);
+        toast.success('节点已加入线路');
+        selectedIpIds.value = [];
+        await loadLines();
+    } catch (error) {
+        lineError.value = getErrorMessage(error);
+    } finally {
+        assigning.value = false;
+    }
+}
+
+async function removeAssignment(row: CdnflyRecord): Promise<void> {
+    const id = Number(row.id);
+
+    if (!id) return;
+
+    try {
+        await unassignAdminLines([id]);
+        toast.success('已移出线路');
+        await loadLines();
+    } catch (error) {
+        lineError.value = getErrorMessage(error);
+    }
 }
 
 function regionNameById(id: unknown): string {
@@ -2122,169 +2146,245 @@ function regionNameById(id: unknown): string {
             </Card>
 
             <!-- ─── 线路管理 (CRUD) ─── -->
+            <!--
+                Assigning nodes to a line, not creating one. A CDNfly line is a
+                DNS line defined in system config; this binds a node's IPs to it
+                inside a node group. The previous 新增线路 form invented fields
+                the endpoint never accepted.
+            -->
             <Card>
                 <CardHeader
                     class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between"
                 >
-                    <CardTitle class="text-base">线路管理</CardTitle>
-                    <div class="flex items-center gap-2">
-                        <Button size="sm" @click="openAddLine">
-                            <Plus data-icon="inline-start" />
-                            新增线路
-                        </Button>
+                    <CardTitle class="text-base">线路分配</CardTitle>
+                    <div class="flex flex-wrap items-center gap-2">
+                        <Select
+                            v-model="lineGroupId"
+                            @update:model-value="onLineGroupChange"
+                        >
+                            <SelectTrigger class="w-48">
+                                <SelectValue placeholder="选择节点组" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectGroup>
+                                    <SelectItem
+                                        v-for="g in nodeGroups"
+                                        :key="String(g.id)"
+                                        :value="String(g.id)"
+                                    >
+                                        {{ textValue(g.name) }}
+                                    </SelectItem>
+                                </SelectGroup>
+                            </SelectContent>
+                        </Select>
+                        <Select
+                            v-model="lineDnsId"
+                            @update:model-value="loadLines"
+                        >
+                            <SelectTrigger class="w-36">
+                                <SelectValue placeholder="选择线路" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectGroup>
+                                    <SelectItem
+                                        v-for="l in dnsLines"
+                                        :key="String(l.id)"
+                                        :value="String(l.id)"
+                                    >
+                                        {{ l.display_name || l.name }}
+                                    </SelectItem>
+                                </SelectGroup>
+                            </SelectContent>
+                        </Select>
                         <Button
                             variant="outline"
                             size="sm"
                             :disabled="lineLoading"
-                            @click="loadLines(1)"
+                            @click="onLineGroupChange"
                         >
                             <RefreshCw data-icon="inline-start" />
                             刷新
                         </Button>
                     </div>
                 </CardHeader>
-                <CardContent>
-                    <Alert v-if="lineError" variant="destructive" class="mb-4">
+
+                <CardContent class="grid gap-6">
+                    <Alert v-if="lineError" variant="destructive">
                         <AlertCircle data-icon="alert" />
                         <AlertTitle>线路请求失败</AlertTitle>
                         <AlertDescription>{{ lineError }}</AlertDescription>
                     </Alert>
-                    <div class="overflow-x-auto rounded-md border">
-                        <table class="w-full min-w-[800px] text-sm">
-                            <thead
-                                class="border-b bg-muted/40 text-muted-foreground"
+
+                    <p
+                        v-if="lineGroupId === ''"
+                        class="text-sm text-muted-foreground"
+                    >
+                        先选择一个节点组。线路是把节点 IP 绑定到某条 DNS
+                        线路上，不是单独创建的对象。
+                    </p>
+
+                    <template v-else>
+                        <!-- already on this line -->
+                        <div class="grid gap-2">
+                            <div class="text-sm font-medium">
+                                已在该线路上的节点
+                            </div>
+                            <div class="overflow-x-auto rounded-md border">
+                                <table class="w-full text-sm">
+                                    <thead
+                                        class="bg-muted/40 text-xs text-muted-foreground"
+                                    >
+                                        <tr>
+                                            <th class="px-4 py-2 text-left">
+                                                节点
+                                            </th>
+                                            <th class="px-4 py-2 text-left">
+                                                IP
+                                            </th>
+                                            <th class="px-4 py-2 text-left">
+                                                线路
+                                            </th>
+                                            <th class="px-4 py-2 text-right">
+                                                操作
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr
+                                            v-for="l in lineRows"
+                                            :key="String(l.id)"
+                                            class="border-t"
+                                        >
+                                            <td class="px-4 py-2">
+                                                {{ textValue(l.node_name) }}
+                                            </td>
+                                            <td class="px-4 py-2">
+                                                {{ textValue(l.ip) }}
+                                            </td>
+                                            <td class="px-4 py-2">
+                                                {{ textValue(l.line_name) }}
+                                            </td>
+                                            <td class="px-4 py-2 text-right">
+                                                <Button
+                                                    variant="destructive"
+                                                    size="sm"
+                                                    @click="removeAssignment(l)"
+                                                >
+                                                    <Trash2
+                                                        data-icon="inline-start"
+                                                    />
+                                                    移出
+                                                </Button>
+                                            </td>
+                                        </tr>
+                                        <tr v-if="lineRows.length === 0">
+                                            <td
+                                                colspan="4"
+                                                class="px-4 py-8 text-center text-muted-foreground"
+                                            >
+                                                该线路暂无节点
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- candidates -->
+                        <div class="grid gap-2">
+                            <div
+                                class="flex flex-wrap items-center justify-between gap-2"
                             >
-                                <tr>
-                                    <th
-                                        class="w-16 px-4 py-3 text-left font-medium"
+                                <div class="text-sm font-medium">
+                                    可加入的节点
+                                    <span
+                                        class="ml-1 text-xs text-muted-foreground"
                                     >
-                                        ID
-                                    </th>
-                                    <th class="px-4 py-3 text-left font-medium">
-                                        名称
-                                    </th>
-                                    <th class="px-4 py-3 text-left font-medium">
-                                        所属区域
-                                    </th>
-                                    <th class="px-4 py-3 text-left font-medium">
-                                        CNAME
-                                    </th>
-                                    <th class="px-4 py-3 text-left font-medium">
-                                        备注
-                                    </th>
-                                    <th
-                                        class="w-24 px-4 py-3 text-left font-medium"
-                                    >
-                                        排序
-                                    </th>
-                                    <th class="px-4 py-3 text-left font-medium">
-                                        切换类型
-                                    </th>
-                                    <th
-                                        class="w-44 px-4 py-3 text-right font-medium"
-                                    >
-                                        操作
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr v-if="lineLoading && lineRows.length === 0">
-                                    <td
-                                        class="px-4 py-12 text-center"
-                                        colspan="8"
-                                    >
-                                        <Spinner />
-                                    </td>
-                                </tr>
-                                <tr
-                                    v-for="l in lineRows"
-                                    :key="textValue(l.id)"
-                                    class="border-b last:border-b-0"
+                                        已选 {{ selectedIpIds.length }}
+                                    </span>
+                                </div>
+                                <Button
+                                    size="sm"
+                                    :disabled="
+                                        assigning || selectedIpIds.length === 0
+                                    "
+                                    @click="submitLineAssignment"
                                 >
-                                    <td class="px-4 py-3 text-muted-foreground">
-                                        {{ textValue(l.id) }}
-                                    </td>
-                                    <td class="px-4 py-3 font-medium">
-                                        {{ textValue(l.name) || '-' }}
-                                    </td>
-                                    <td class="px-4 py-3 text-muted-foreground">
-                                        {{ regionNameById(l.region_id) }}
-                                    </td>
-                                    <td class="px-4 py-3 font-mono text-xs">
-                                        {{
-                                            textValue(l.cname_hostname) ||
-                                            '(随机)'
-                                        }}
-                                    </td>
-                                    <td class="px-4 py-3 text-muted-foreground">
-                                        {{ textValue(l.des) || '-' }}
-                                    </td>
-                                    <td class="px-4 py-3">
-                                        {{ textValue(l.sort) || '-' }}
-                                    </td>
-                                    <td class="px-4 py-3">
-                                        {{
-                                            textValue(l.backup_switch_type) ||
-                                            '-'
-                                        }}
-                                    </td>
-                                    <td class="px-4 py-3">
-                                        <div class="flex justify-end gap-2">
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                @click="openEditLine(l)"
-                                            >
-                                                <Pencil
-                                                    data-icon="inline-start"
-                                                />
-                                                编辑
-                                            </Button>
-                                            <Button
-                                                variant="destructive"
-                                                size="sm"
-                                                @click="openDeleteLine(l)"
-                                            >
-                                                <Trash2
-                                                    data-icon="inline-start"
-                                                />
-                                                删除
-                                            </Button>
-                                        </div>
-                                    </td>
-                                </tr>
-                                <tr
-                                    v-if="!lineLoading && lineRows.length === 0"
-                                >
-                                    <td
-                                        class="px-4 py-12 text-center text-muted-foreground"
-                                        colspan="8"
+                                    <Spinner
+                                        v-if="assigning"
+                                        data-icon="inline-start"
+                                    />
+                                    <Plus v-else data-icon="inline-start" />
+                                    加入线路
+                                </Button>
+                            </div>
+
+                            <div class="overflow-x-auto rounded-md border">
+                                <table class="w-full text-sm">
+                                    <thead
+                                        class="bg-muted/40 text-xs text-muted-foreground"
                                     >
-                                        暂无线路
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                    <div class="mt-3 flex items-center justify-end gap-2">
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            :disabled="!hasLinePrevPage || lineLoading"
-                            @click="loadLines(linePage - 1)"
-                            >上一页</Button
-                        >
-                        <span class="text-sm text-muted-foreground"
-                            >第 {{ linePage }} 页</span
-                        >
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            :disabled="!hasLineNextPage || lineLoading"
-                            @click="loadLines(linePage + 1)"
-                            >下一页</Button
-                        >
-                    </div>
+                                        <tr>
+                                            <th class="w-12 px-4 py-2"></th>
+                                            <th class="px-4 py-2 text-left">
+                                                节点
+                                            </th>
+                                            <th class="px-4 py-2 text-left">
+                                                IP
+                                            </th>
+                                            <th class="px-4 py-2 text-left">
+                                                类型
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr
+                                            v-for="n in lineCandidates"
+                                            :key="String(n.id)"
+                                            class="cursor-pointer border-t hover:bg-accent/40"
+                                            @click="toggleIpSelection(n)"
+                                        >
+                                            <td class="px-4 py-2">
+                                                <Checkbox
+                                                    :model-value="
+                                                        isIpSelected(n)
+                                                    "
+                                                />
+                                            </td>
+                                            <td class="px-4 py-2">
+                                                {{ textValue(n.name) }}
+                                            </td>
+                                            <td class="px-4 py-2">
+                                                {{ textValue(n.ip) }}
+                                            </td>
+                                            <td
+                                                class="px-4 py-2 text-muted-foreground"
+                                            >
+                                                {{
+                                                    Number(n.pid) !== 0
+                                                        ? '附加 IP'
+                                                        : '主 IP'
+                                                }}
+                                            </td>
+                                        </tr>
+                                        <tr
+                                            v-if="
+                                                lineCandidates.length === 0 &&
+                                                !lineCandidatesLoading
+                                            "
+                                        >
+                                            <td
+                                                colspan="4"
+                                                class="px-4 py-8 text-center text-muted-foreground"
+                                            >
+                                                该区域暂无可用 L1 节点
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </template>
                 </CardContent>
             </Card>
         </template>
@@ -2847,180 +2947,6 @@ function regionNameById(id: unknown): string {
         </Dialog>
 
         <!-- ─── Line Dialog ─── -->
-        <Dialog v-model:open="lineDialogOpen">
-            <DialogScrollContent class="sm:max-w-lg">
-                <DialogHeader>
-                    <DialogTitle>{{
-                        editingLine ? '编辑线路' : '新增线路'
-                    }}</DialogTitle>
-                    <DialogDescription>
-                        {{
-                            editingLine
-                                ? '修改线路配置，提交后立即生效。'
-                                : '创建新线路。cname_hostname 留空则随机生成。'
-                        }}
-                    </DialogDescription>
-                </DialogHeader>
-
-                <form class="grid gap-5" @submit.prevent="submitLine">
-                    <Alert v-if="lineFormError" variant="destructive">
-                        <AlertCircle data-icon="alert" />
-                        <AlertTitle>提交失败</AlertTitle>
-                        <AlertDescription>{{ lineFormError }}</AlertDescription>
-                    </Alert>
-
-                    <div class="grid gap-4 md:grid-cols-2">
-                        <div class="grid gap-2">
-                            <Label for="line-name">线路名称</Label>
-                            <Input
-                                id="line-name"
-                                v-model="lineForm.name"
-                                autocomplete="off"
-                                required
-                            />
-                        </div>
-                        <div class="grid gap-2">
-                            <Label>所属区域</Label>
-                            <Select v-model="lineForm.region_id">
-                                <SelectTrigger :disabled="referencesLoading">
-                                    <SelectValue placeholder="请选择区域" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectGroup>
-                                        <SelectItem
-                                            v-for="option in regionOptions"
-                                            :key="option.id"
-                                            :value="option.id"
-                                        >
-                                            {{ option.label }}
-                                        </SelectItem>
-                                    </SelectGroup>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        <div class="grid gap-2">
-                            <Label for="line-cname">CNAME 主机名</Label>
-                            <Input
-                                id="line-cname"
-                                v-model="lineForm.cname_hostname"
-                                placeholder="留空则随机生成"
-                                autocomplete="off"
-                            />
-                        </div>
-                        <div class="grid gap-2">
-                            <Label for="line-sort">排序</Label>
-                            <Input
-                                id="line-sort"
-                                v-model="lineForm.sort"
-                                type="number"
-                                min="0"
-                            />
-                        </div>
-                        <div class="grid gap-2">
-                            <Label>备用IP切换策略</Label>
-                            <Select v-model="lineForm.backup_switch_type">
-                                <SelectTrigger>
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectGroup>
-                                        <SelectItem value="master_down"
-                                            >master_down（主IP不可用时切换）</SelectItem
-                                        >
-                                        <SelectItem value="interval"
-                                            >interval（间隔时间切换）</SelectItem
-                                        >
-                                    </SelectGroup>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        <div class="grid gap-2">
-                            <Label for="line-l2-config">L2 配置 ID</Label>
-                            <Input
-                                id="line-l2-config"
-                                v-model="lineForm.l2_config_id"
-                                placeholder="可选"
-                                autocomplete="off"
-                            />
-                        </div>
-                    </div>
-
-                    <div
-                        v-if="lineForm.backup_switch_type === 'interval'"
-                        class="grid gap-4 md:grid-cols-3"
-                    >
-                        <div class="grid gap-2">
-                            <Label for="line-policy-ip-num"
-                                >同时启用备用IP数</Label
-                            >
-                            <Input
-                                id="line-policy-ip-num"
-                                v-model="lineForm.backup_policy_ip_num"
-                                type="number"
-                                min="1"
-                            />
-                        </div>
-                        <div class="grid gap-2">
-                            <Label for="line-policy-interval"
-                                >切换间隔（秒）</Label
-                            >
-                            <Input
-                                id="line-policy-interval"
-                                v-model="lineForm.backup_policy_interval"
-                                type="number"
-                                min="1"
-                            />
-                        </div>
-                        <div class="grid gap-2">
-                            <Label>切换顺序</Label>
-                            <Select
-                                v-model="lineForm.backup_policy_switch_order"
-                            >
-                                <SelectTrigger>
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectGroup>
-                                        <SelectItem value="rand"
-                                            >rand（随机）</SelectItem
-                                        >
-                                        <SelectItem value="seq"
-                                            >seq（顺序）</SelectItem
-                                        >
-                                    </SelectGroup>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                    </div>
-
-                    <div class="grid gap-2">
-                        <Label for="line-des">备注</Label>
-                        <textarea
-                            id="line-des"
-                            v-model="lineForm.des"
-                            class="min-h-20 w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-xs transition-[color,box-shadow] outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50"
-                        />
-                    </div>
-
-                    <DialogFooter>
-                        <Button
-                            variant="outline"
-                            type="button"
-                            @click="lineDialogOpen = false"
-                            >取消</Button
-                        >
-                        <Button :disabled="lineSaving" type="submit">
-                            <Spinner
-                                v-if="lineSaving"
-                                data-icon="inline-start"
-                            />
-                            <Save v-else data-icon="inline-start" />
-                            {{ editingLine ? '保存' : '创建' }}
-                        </Button>
-                    </DialogFooter>
-                </form>
-            </DialogScrollContent>
-        </Dialog>
 
         <ConfirmDeleteDialog
             :open="deleteConfirmOpen"

@@ -254,44 +254,63 @@ export type AdminBackupSwitchPolicy = {
     switch_order?: 'rand' | 'seq';
 };
 
-export type AdminLinePayload = {
-    region_id: number;
-    name: string;
-    cname_hostname?: string;
-    des?: string;
-    sort?: number;
-    backup_switch_type?: 'master_down' | 'interval';
-    backup_switch_policy?: string;
-    l2_config_id?: string;
+/**
+ * Assigning nodes to a DNS line.
+ *
+ * A CDNfly "line" is not a createable object. The DNS lines themselves
+ * (默认 / 电信 / 联通 / 移动 …) are defined in a system config, and POST
+ * /v1/lines binds node IPs to one of them inside a node group.
+ *
+ * Verified against the master's own panel source
+ * (cdnfly-go/panel/dashboard/js/chunk-49f49657), which posts an array of:
+ *   {node_group_id, node_id, node_ip_id, line_id, line_name, is_backup?}
+ *
+ * The console previously offered a 新增线路 form with a name, region, CNAME and
+ * failover policy — fields this endpoint has never accepted.
+ */
+export type AdminLineAssignment = {
+    node_group_id: number;
+    node_id: number;
+    node_ip_id: number;
+    line_id: number;
+    line_name: string;
+    /** 1 when the IP is being added as a backup rather than a primary. */
+    is_backup?: number;
 };
 
+export type AdminDnsLine = {
+    id: number | string;
+    name: string;
+    display_name?: string;
+};
+
+/** Existing assignments, filtered by node group and line. */
 export async function listAdminLines(
     params: Record<string, string | number> = {},
 ): Promise<CdnflyListData> {
     return apiRequest<CdnflyListData>(buildUrl('/api/admin/lines', params));
 }
 
-export async function createAdminLine(
-    payload: AdminLinePayload,
+/** The DNS lines available to assign to. */
+export async function listAdminDnsLines(): Promise<AdminDnsLine[]> {
+    return apiRequest<AdminDnsLine[]>('/api/admin/dns-lines');
+}
+
+export async function assignAdminLines(
+    assignments: AdminLineAssignment[],
 ): Promise<CdnflyRecord> {
     return apiRequest<CdnflyRecord>('/api/admin/lines', {
         method: 'POST',
-        body: JSON.stringify(payload),
+        body: JSON.stringify({ assignments }),
     });
 }
 
-export async function updateAdminLine(
-    id: number,
-    payload: Partial<AdminLinePayload>,
-): Promise<CdnflyRecord> {
-    return apiRequest<CdnflyRecord>(`/api/admin/lines/${id}`, {
-        method: 'PUT',
-        body: JSON.stringify(payload),
-    });
-}
-
-export async function deleteAdminLine(id: number): Promise<CdnflyRecord> {
-    return apiRequest<CdnflyRecord>(`/api/admin/lines/${id}`, {
+/**
+ * Unassign. Ids are comma-joined so a node with several IPs is removed in one
+ * call, matching the panel.
+ */
+export async function unassignAdminLines(ids: number[]): Promise<CdnflyRecord> {
+    return apiRequest<CdnflyRecord>(`/api/admin/lines/${ids.join(',')}`, {
         method: 'DELETE',
     });
 }
@@ -481,12 +500,6 @@ export async function listAdminDnsApis(
     params: Record<string, string | number> = {},
 ): Promise<CdnflyListData> {
     return apiRequest<CdnflyListData>(buildUrl(DNS_APIS, params));
-}
-
-export async function listAdminDnsLines(
-    params: Record<string, string | number> = {},
-): Promise<CdnflyListData> {
-    return apiRequest<CdnflyListData>(buildUrl('/api/admin/dns-lines', params));
 }
 
 // ─── Finance ───────────────────────────────────────────

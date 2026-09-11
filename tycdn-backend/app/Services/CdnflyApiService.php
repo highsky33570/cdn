@@ -418,12 +418,66 @@ class CdnflyApiService
     }
 
     // ─── Admin: Lines CRUD ───────────────────────────────────
-    public function createLine(array $data): array
+    /**
+     * Assign node IPs to a DNS line inside a node group.
+     *
+     * A "line" in CDNfly is not an object you create with a name and a CNAME —
+     * that was this method's original, wrong assumption. The DNS lines
+     * themselves (电信 / 联通 / 移动 / 默认 …) are defined in a system config, and
+     * POST /v1/lines *binds nodes to one of them* within a node group.
+     *
+     * Verified against the panel's own source (cdnfly-go/panel/dashboard,
+     * chunk-49f49657), which builds:
+     *
+     *   [{node_group_id, node_id, node_ip_id, line_id, line_name, is_backup?}]
+     *
+     * Note the payload is an **array** — one entry per node IP being assigned.
+     *
+     * @param  array<int, array<string, mixed>>  $assignments
+     * @return array<string, mixed>
+     */
+    public function assignLines(array $assignments): array
     {
-        $this->ensureOutboundEnabled('create line');
-        $response = $this->adminHttp()->post('/v1/lines', $data);
+        $this->ensureOutboundEnabled('assign lines');
+        $response = $this->adminHttp()->post('/v1/lines', array_values($assignments));
 
-        return $this->parseResponse($response, 'create line');
+        return $this->parseResponse($response, 'assign lines');
+    }
+
+    /**
+     * The DNS lines available to assign nodes to.
+     *
+     * There is no /v1/dns-lines endpoint: the panel reads them out of a single
+     * config row and unwraps two levels of JSON encoding —
+     *
+     *   JSON.parse(JSON.parse(res.data.value)['lines'])
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public function listDnsLines(): array
+    {
+        if (! $this->outboundEnabled()) {
+            return [];
+        }
+
+        $response = $this->adminHttp()->get('/v1/configs/global-0-system-dns_config');
+        $payload = $this->parseResponse($response, 'get dns config');
+
+        $value = data_get($payload, 'data.value');
+
+        if (! is_string($value)) {
+            return [];
+        }
+
+        $outer = json_decode($value, true);
+        $lines = is_array($outer) ? ($outer['lines'] ?? null) : null;
+
+        // The inner value is itself a JSON string, not an array.
+        if (is_string($lines)) {
+            $lines = json_decode($lines, true);
+        }
+
+        return is_array($lines) ? array_values(array_filter($lines, 'is_array')) : [];
     }
 
     public function updateLine(int $id, array $data): array
@@ -434,12 +488,23 @@ class CdnflyApiService
         return $this->parseResponse($response, 'update line');
     }
 
-    public function deleteLine(int $id): array
+    /**
+     * Remove one or more line assignments.
+     *
+     * The panel deletes in bulk by joining ids with commas
+     * (`'/lines/' + req_data.join(",")`), so unassigning a node with several
+     * IPs is one call rather than one per IP.
+     *
+     * @param  array<int, int>  $ids
+     * @return array<string, mixed>
+     */
+    public function deleteLines(array $ids): array
     {
-        $this->ensureOutboundEnabled('delete line');
-        $response = $this->adminHttp()->delete("/v1/lines/{$id}");
+        $this->ensureOutboundEnabled('delete lines');
+        $path = implode(',', array_map('intval', array_values($ids)));
+        $response = $this->adminHttp()->delete("/v1/lines/{$path}");
 
-        return $this->parseResponse($response, 'delete line');
+        return $this->parseResponse($response, 'delete lines');
     }
 
     /**

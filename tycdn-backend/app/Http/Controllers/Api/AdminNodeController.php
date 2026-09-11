@@ -257,12 +257,44 @@ class AdminNodeController extends Controller
         }
     }
 
+    /**
+     * The DNS lines nodes can be assigned to.
+     *
+     * Not a CRUD resource — CDNfly keeps them in a single system config row,
+     * double-JSON-encoded. See CdnflyApiService::listDnsLines().
+     */
+    public function dnsLines(): JsonResponse
+    {
+        try {
+            return response()->json(['ok' => true, 'data' => $this->cdnfly->listDnsLines()]);
+        } catch (\Throwable $e) {
+            return $this->cdnflyFailure($e, __FUNCTION__);
+        }
+    }
+
+    /**
+     * Assign node IPs to a DNS line within a node group.
+     *
+     * This used to validate a line as though it were a named object with a
+     * region, CNAME, sort order and failover policy — none of which CDNfly
+     * accepts here. Its real payload, taken from the panel's own source, is an
+     * array of node assignments.
+     */
     public function storeLine(Request $request): JsonResponse
     {
-        $payload = $this->validatedLinePayload($request, true);
+        $validated = $request->validate([
+            'assignments' => ['required', 'array', 'min:1', 'max:200'],
+            'assignments.*.node_group_id' => ['required', 'integer', 'min:1'],
+            'assignments.*.node_id' => ['required', 'integer', 'min:1'],
+            'assignments.*.node_ip_id' => ['required', 'integer', 'min:1'],
+            'assignments.*.line_id' => ['required', 'integer', 'min:0'],
+            'assignments.*.line_name' => ['required', 'string', 'max:100'],
+            // Present only when the node is being added as a backup IP.
+            'assignments.*.is_backup' => ['sometimes', 'integer', 'in:0,1'],
+        ]);
 
         try {
-            $data = $this->cdnfly->createLine($payload);
+            $data = $this->cdnfly->assignLines($validated['assignments']);
 
             return response()->json(['ok' => true, 'data' => $data], 201);
         } catch (\Throwable $e) {
@@ -270,27 +302,23 @@ class AdminNodeController extends Controller
         }
     }
 
-    public function updateLine(Request $request, int $id): JsonResponse
+    /**
+     * Unassign one or more nodes from a line. `{id}` may be a comma-separated
+     * list, matching how the panel removes a multi-IP node in one call.
+     */
+    public function destroyLine(string $id): JsonResponse
     {
-        $payload = $this->validatedLinePayload($request, false);
+        $ids = array_values(array_filter(
+            array_map('trim', explode(',', $id)),
+            static fn (string $v): bool => ctype_digit($v) && (int) $v > 0,
+        ));
 
-        if ($payload === []) {
-            return response()->json(['ok' => false, 'message' => '没有可更新的字段'], 422);
+        if ($ids === []) {
+            return response()->json(['ok' => false, 'message' => '缺少有效的线路 ID'], 422);
         }
 
         try {
-            $data = $this->cdnfly->updateLine($id, $payload);
-
-            return response()->json(['ok' => true, 'data' => $data]);
-        } catch (\Throwable $e) {
-            return $this->cdnflyFailure($e, __FUNCTION__);
-        }
-    }
-
-    public function destroyLine(int $id): JsonResponse
-    {
-        try {
-            $data = $this->cdnfly->deleteLine($id);
+            $data = $this->cdnfly->deleteLines($ids);
 
             return response()->json(['ok' => true, 'data' => $data]);
         } catch (\Throwable $e) {
@@ -326,51 +354,14 @@ class AdminNodeController extends Controller
             'l2_check_port' => ['sometimes', 'nullable', 'integer', 'min:1', 'max:65535'],
         ]);
 
-        return collect($validated)
-            ->reject(fn ($value): bool => $value === '' || $value === null)
-            ->all();
+        return $this->castIntegers(
+            collect($validated)
+                ->reject(fn ($value): bool => $value === '' || $value === null)
+                ->all(),
+            ['sort', 'l2_check_port'],
+        );
     }
 
-    /**
-     * Mirrors AdminLinePayload in resources/js/lib/adminModulesApi.ts.
-     *
-     * @return array<string, mixed>
-     */
-    private function validatedLinePayload(Request $request, bool $creating): array
-    {
-        $requiredWhenCreating = $creating ? 'required' : 'sometimes';
-
-        $validated = $request->validate([
-            'name' => [$requiredWhenCreating, 'string', 'max:255'],
-            // The v6 docs say a line is added *to a node group* and needs an L1
-            // master node ("创建时需提供节点组和 L1 主节点"), while the console form
-            // sends region_id. Rather than pick a winner and reject the other,
-            // both pass through and CDNfly decides — its rejection now reaches the
-            // operator verbatim instead of being hidden behind a generic 502.
-            'region_id' => ['sometimes', 'integer', 'min:1'],
-            'node_group_id' => ['sometimes', 'integer', 'min:1'],
-            'cname_hostname' => ['sometimes', 'nullable', 'string', 'max:255'],
-            'des' => ['sometimes', 'nullable', 'string', 'max:1000'],
-            'sort' => ['sometimes', 'nullable', 'integer', 'min:0'],
-            'backup_switch_type' => ['sometimes', 'nullable', 'string', Rule::in(['master_down', 'interval'])],
-            'backup_switch_policy' => ['sometimes', 'nullable', 'string', 'max:2000'],
-            'l2_config_id' => ['sometimes', 'nullable', 'string', 'max:64'],
-        ]);
-
-        return collect($validated)
-            ->reject(fn ($value): bool => $value === '' || $value === null)
-            ->all();
-    }
-
-    /**
-     * Mirrors AdminNodeGroupPayload in resources/js/lib/adminModulesApi.ts.
-     *
-     * validate() returns only the keys it was given rules for, so any field
-     * missing here is silently dropped before it reaches CDNfly — the group would
-     * be created without its failover policy and nothing would report why.
-     *
-     * @return array<string, mixed>
-     */
     /**
      * Mirrors the payload the CDNfly panel itself sends to /v1/node-groups.
      *
@@ -410,9 +401,12 @@ class AdminNodeController extends Controller
             'backup_switch_policy' => ['sometimes', 'nullable', 'string', 'max:2000'],
         ]);
 
-        $payload = collect($validated)
-            ->reject(fn ($value): bool => $value === '' || $value === null)
-            ->all();
+        $payload = $this->castIntegers(
+            collect($validated)
+                ->reject(fn ($value): bool => $value === '' || $value === null)
+                ->all(),
+            ['region_id', 'sort', 'l2_config_id'],
+        );
 
         // The create endpoint has no such field; only the edit endpoint takes it.
         if ($creating) {
@@ -602,6 +596,31 @@ class AdminNodeController extends Controller
     /**
      * @param  array<string, mixed>  $payload
      */
+    /**
+     * Send numbers as numbers.
+     *
+     * Laravel's `integer` rule accepts the string "7" and validated() hands
+     * back the string, so a form posting "7" reached CDNfly as "7". The panel
+     * runs the same fields through its own integerOrNull and sends 7. CDNfly
+     * rejects type mismatches on these endpoints with a bare 数据类型错误, so
+     * matching the panel exactly is cheaper than discovering which fields it
+     * happens to tolerate.
+     *
+     * @param  array<string, mixed>  $payload
+     * @param  array<int, string>  $keys
+     * @return array<string, mixed>
+     */
+    private function castIntegers(array $payload, array $keys): array
+    {
+        foreach ($keys as $key) {
+            if (isset($payload[$key]) && is_numeric($payload[$key])) {
+                $payload[$key] = (int) $payload[$key];
+            }
+        }
+
+        return $payload;
+    }
+
     private function stringField(array $payload, string $key): string
     {
         $value = $payload[$key] ?? '';

@@ -138,8 +138,8 @@ class AdminNodeGroupCrudTest extends TestCase
     }
 
     /**
-     * Regions and lines sit above node groups in the same chain, and shipped
-     * with the same defect: a full UI over routes that were never registered.
+     * Regions sit above node groups in the same chain, and shipped with the
+     * same defect: a full UI over routes that were never registered.
      */
     public function test_regions_can_be_created_updated_and_deleted(): void
     {
@@ -156,36 +156,11 @@ class AdminNodeGroupCrudTest extends TestCase
         $this->actingAs($admin)->deleteJson('/api/admin/regions/4')->assertOk();
     }
 
-    public function test_lines_can_be_created_and_keep_their_failover_policy(): void
-    {
-        $cdnfly = $this->mock(CdnflyApiService::class);
-        $cdnfly->shouldReceive('createLine')->once()
-            ->with([
-                'name' => 'Asia BGP',
-                'region_id' => 4,
-                'cname_hostname' => 'cdn.tycdn.org',
-                'backup_switch_type' => 'interval',
-                'backup_switch_policy' => '{"ip_num":2}',
-            ])
-            ->andReturn(['code' => 0]);
-
-        $this->actingAs($this->admin())
-            ->postJson('/api/admin/lines', [
-                'name' => 'Asia BGP',
-                'region_id' => 4,
-                'cname_hostname' => 'cdn.tycdn.org',
-                'backup_switch_type' => 'interval',
-                'backup_switch_policy' => '{"ip_num":2}',
-            ])
-            ->assertCreated();
-    }
-
-    public function test_a_non_admin_cannot_touch_regions_or_lines(): void
+    public function test_a_non_admin_cannot_touch_regions(): void
     {
         $user = User::factory()->create(['role' => 'user']);
 
         $this->actingAs($user)->postJson('/api/admin/regions', ['name' => 'x'])->assertForbidden();
-        $this->actingAs($user)->postJson('/api/admin/lines', ['name' => 'x', 'region_id' => 1])->assertForbidden();
     }
 
     /**
@@ -216,35 +191,8 @@ class AdminNodeGroupCrudTest extends TestCase
             ->assertCreated();
 
         $this->assertSame('ng1.tycdn.org', $received['cname_hostname']);
-        $this->assertSame('7', $received['l2_config_id']);
-    }
-
-    /**
-     * The v6 docs describe a line as belonging to a node group ("创建时需提供节点组
-     * 和 L1 主节点") while the console form sends region_id. Both pass through so
-     * CDNfly can decide, rather than this layer rejecting whichever one it
-     * happens to disagree with.
-     */
-    public function test_a_line_may_carry_either_a_region_or_a_node_group(): void
-    {
-        $received = null;
-
-        $cdnfly = $this->mock(CdnflyApiService::class);
-        $cdnfly->shouldReceive('createLine')->once()
-            ->andReturnUsing(function (array $payload) use (&$received) {
-                $received = $payload;
-
-                return ['code' => 0];
-            });
-
-        $this->actingAs($this->admin())
-            ->postJson('/api/admin/lines', [
-                'name' => 'Asia BGP',
-                'node_group_id' => 12,
-            ])
-            ->assertCreated();
-
-        $this->assertSame(12, $received['node_group_id']);
+        // cast to an int, matching the panel's integerOrNull
+        $this->assertSame(7, $received['l2_config_id']);
     }
 
     /**
