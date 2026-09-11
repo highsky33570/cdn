@@ -63,6 +63,7 @@ import type { CdnflyRecord } from '@/lib/sharedTypes';
 const AUTH_TEMPLATES: Record<string, Record<string, string>> = {
     CloudFlare: { CF_Key: '', CF_Email: '' },
     'DNSPod.cn': { DP_Id: '', DP_Key: '' },
+    'DNSPod.com': { DPI_Id: '', DPI_Key: '' },
     'GoDaddy.com': { GD_Key: '', GD_Secret: '' },
     Aliyun: { Ali_Key: '', Ali_Secret: '' },
     'cloudns.net': { CLOUDNS_SUB_AUTH_ID: '', CLOUDNS_AUTH_PASSWORD: '' },
@@ -73,15 +74,24 @@ const AUTH_TEMPLATES: Record<string, Record<string, string>> = {
         NAMECHEAP_SOURCEIP: '',
     },
     'jdcloud.com': { JD_ACCESS_KEY_ID: '', JD_ACCESS_KEY_SECRET: '' },
-    dnsdun: { Dnsdun_uid: '', Dnsdun_api_key: '' },
+    'DNS.LA': { LA_Ak: '', LA_Sk: '' },
+    'Namesilo.com': { Namesilo_Key: '' },
+    '51DNS.COM': { dns_com_key: '', dns_com_secret: '' },
+    // The misspelling is the master's own field name — do not "fix" it.
+    'huaweicloud.com': {
+        huaweicloud_access_key_id: '',
+        huaweicloud_serect_access_key: '',
+    },
 };
 
 /** Friendly labels for each auth field key. Falls back to the raw key name. */
 const AUTH_FIELD_LABELS: Record<string, string> = {
-    CF_Key: 'API Key',
+    CF_Key: 'Global API Key',
     CF_Email: '账号邮箱',
     DP_Id: 'ID',
-    DP_Key: 'API Key',
+    DP_Key: 'Token',
+    DPI_Id: 'ID',
+    DPI_Key: 'Token',
     GD_Key: 'API Key',
     GD_Secret: 'API Secret',
     Ali_Key: 'Access Key ID',
@@ -95,8 +105,13 @@ const AUTH_FIELD_LABELS: Record<string, string> = {
     NAMECHEAP_SOURCEIP: '源 IP 地址',
     JD_ACCESS_KEY_ID: 'Access Key ID',
     JD_ACCESS_KEY_SECRET: 'Access Key Secret',
-    Dnsdun_uid: '用户 ID',
-    Dnsdun_api_key: 'API Key',
+    LA_Ak: 'APPID',
+    LA_Sk: 'API 密钥',
+    Namesilo_Key: 'API Key',
+    dns_com_key: 'API Key',
+    dns_com_secret: 'API Secret',
+    huaweicloud_access_key_id: 'Access Key Id',
+    huaweicloud_serect_access_key: 'Secret Access Key',
 };
 
 const dnsApiColumns: ColumnDef[] = [
