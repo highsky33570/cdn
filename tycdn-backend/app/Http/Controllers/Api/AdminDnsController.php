@@ -74,4 +74,70 @@ class AdminDnsController extends Controller
             return $this->cdnflyFailure($e, __FUNCTION__);
         }
     }
+
+    // ─── CNAME domains ───────────────────────────────────────
+    // Admin scope, unlike the DNS API credentials above: these live next to
+    // /v1/nodes in the master and are keyed with the master api-key, so they
+    // go through here rather than the per-user proxy.
+
+    public function cnameIndex(Request $request): JsonResponse
+    {
+        try {
+            $data = $this->cdnfly->listCnameDomains($request->query());
+
+            return response()->json(['ok' => true, 'data' => $data]);
+        } catch (\Throwable $e) {
+            return $this->cdnflyFailure($e, __FUNCTION__);
+        }
+    }
+
+    public function cnameStore(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'domain' => ['required', 'string', 'max:255'],
+            'des' => ['nullable', 'string', 'max:500'],
+        ]);
+
+        try {
+            $result = $this->cdnfly->createCnameDomain($validated + ['des' => '']);
+
+            return response()->json(['ok' => true, 'data' => $result], 201);
+        } catch (\Throwable $e) {
+            return $this->cdnflyFailure($e, __FUNCTION__);
+        }
+    }
+
+    public function cnameUpdate(Request $request, int $id): JsonResponse
+    {
+        $validated = $request->validate([
+            'domain' => ['required', 'string', 'max:255'],
+            'des' => ['nullable', 'string', 'max:500'],
+        ]);
+
+        try {
+            $result = $this->cdnfly->updateCnameDomain($id, $validated + ['des' => '']);
+
+            return response()->json(['ok' => true, 'data' => $result]);
+        } catch (\Throwable $e) {
+            return $this->cdnflyFailure($e, __FUNCTION__);
+        }
+    }
+
+    public function cnameDestroy(string $id): JsonResponse
+    {
+        // Comma-separated ids, matching the panel's multi-select delete.
+        $ids = array_filter(array_map('trim', explode(',', $id)), 'is_numeric');
+
+        if ($ids === []) {
+            return response()->json(['ok' => false, 'message' => '缺少有效的域名 ID'], 422);
+        }
+
+        try {
+            $this->cdnfly->deleteCnameDomains(array_values($ids));
+
+            return response()->json(['ok' => true]);
+        } catch (\Throwable $e) {
+            return $this->cdnflyFailure($e, __FUNCTION__);
+        }
+    }
 }

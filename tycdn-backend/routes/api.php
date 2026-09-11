@@ -144,6 +144,11 @@ Route::middleware(['auth:sanctum', 'verified', 'admin', 'throttle:60,1'])->prefi
     Route::put('/dns-apis/{id}', [AdminDnsController::class, 'update'])->middleware('throttle:20,1');
     Route::delete('/dns-apis/{id}', [AdminDnsController::class, 'destroy'])->middleware('throttle:10,1');
 
+    // CNAME 域名：主控在生成 DNS 线路前要求至少存在一个
+    Route::get('/cname-domains', [AdminDnsController::class, 'cnameIndex']);
+    Route::post('/cname-domains', [AdminDnsController::class, 'cnameStore'])->middleware('throttle:20,1');
+    Route::put('/cname-domains/{id}', [AdminDnsController::class, 'cnameUpdate'])->middleware('throttle:20,1');
+    Route::delete('/cname-domains/{id}', [AdminDnsController::class, 'cnameDestroy'])->middleware('throttle:10,1');
     // ACL 规则管理
     Route::post('/acls', [AdminSiteController::class, 'storeAcl'])->middleware('throttle:20,1');
     Route::put('/acls/{id}', [AdminSiteController::class, 'updateAcl'])->middleware('throttle:20,1');

@@ -579,6 +579,57 @@ class CdnflyApiService
         return $this->parseResponse($response, 'list cname domains');
     }
 
+    // The CNAME zone customer records point at. The master writes into it
+    // through the configured DNS provider, and will not generate the DNS line
+    // list until at least one exists - so this is a prerequisite for 线路分配,
+    // not an optional extra.
+    //
+    // Shape verified against the master panel (chunk-45f4d7f2, component
+    // "cnameDomain"): the record is only {id, domain, des}.
+
+    /**
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
+    public function createCnameDomain(array $data): array
+    {
+        $this->ensureOutboundEnabled('create cname domain');
+        $response = $this->adminHttp()->post('/v1/cname-domains', $data);
+
+        return $this->parseResponse($response, 'create cname domain');
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
+    public function updateCnameDomain(int $id, array $data): array
+    {
+        $this->ensureOutboundEnabled('update cname domain');
+
+        // The panel sends the id in the body as well as the path.
+        $response = $this->adminHttp()->put("/v1/cname-domains/{$id}", $data + ['id' => $id]);
+
+        return $this->parseResponse($response, 'update cname domain');
+    }
+
+    /**
+     * Accepts several ids at once: the panel joins a multi-select with commas
+     * and sends them as one path segment.
+     *
+     * @param  array<int, int|string>  $ids
+     * @return array<string, mixed>
+     */
+    public function deleteCnameDomains(array $ids): array
+    {
+        $this->ensureOutboundEnabled('delete cname domain');
+
+        $path = implode(',', array_map('intval', $ids));
+        $response = $this->adminHttp()->delete("/v1/cname-domains/{$path}");
+
+        return $this->parseResponse($response, 'delete cname domain');
+    }
+
     public function listConfigs(array $params = []): array
     {
         if (! $this->outboundEnabled()) {

@@ -719,6 +719,43 @@ export function deleteAdminDnsApi(id: number) {
     return apiRequest(`${DNS_APIS}/${id}`, { method: 'DELETE' });
 }
 
+// ─── CNAME domains ───────────────────────────────────
+/**
+ * The zone customer CNAMEs resolve into. Admin scope (the master keys these
+ * with the master api-key, unlike /v1/dnsapis), so these go through our own
+ * admin routes rather than the per-user proxy.
+ *
+ * The master refuses to generate the DNS line list until one of these exists,
+ * which is why it has to be creatable from the console.
+ */
+const CNAME_DOMAINS = '/api/admin/cname-domains';
+
+export async function listAdminCnameDomains(
+    params: Record<string, string | number> = {},
+): Promise<CdnflyListData> {
+    return apiRequest<CdnflyListData>(buildUrl(CNAME_DOMAINS, params));
+}
+
+export function createAdminCnameDomain(data: Record<string, unknown>) {
+    return apiRequest(CNAME_DOMAINS, {
+        method: 'POST',
+        body: JSON.stringify(data),
+    });
+}
+
+export function updateAdminCnameDomain(
+    id: number,
+    data: Record<string, unknown>,
+) {
+    return apiRequest(`${CNAME_DOMAINS}/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+    });
+}
+
+export function deleteAdminCnameDomain(id: number) {
+    return apiRequest(`${CNAME_DOMAINS}/${id}`, { method: 'DELETE' });
+}
 // ─── Admin Stream enable/delete ──────────────────────
 export function setAdminStreamEnabled(id: number, enable: number) {
     return apiRequest(`/api/admin/streams/${id}/enable`, {
