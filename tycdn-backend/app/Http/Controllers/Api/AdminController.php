@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\Controllers\Concerns\ReportsCdnflyFailures;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\Product;
@@ -20,6 +21,8 @@ use Illuminate\Validation\ValidationException;
 
 class AdminController extends Controller
 {
+    use ReportsCdnflyFailures;
+
     private const ADMIN_PROXY_BLOCKED_PREFIXES = [
         '/v1/api-key',
         '/v1/login',
@@ -324,8 +327,8 @@ class AdminController extends Controller
                 'ok' => true,
                 'message' => $outcome === 'synced' ? 'API 密钥同步成功' : 'API 密钥开通成功',
             ]);
-        } catch (\Throwable) {
-            return $this->cdnflyFailure();
+        } catch (\Throwable $e) {
+            return $this->cdnflyFailure($e, __FUNCTION__);
         }
     }
 
@@ -351,8 +354,8 @@ class AdminController extends Controller
             $result = $this->cdnfly->rechargeUser($user->cdnfly_user_id, $validated['amount']);
 
             return response()->json(['ok' => true, 'data' => $result]);
-        } catch (\Throwable) {
-            return $this->cdnflyFailure();
+        } catch (\Throwable $e) {
+            return $this->cdnflyFailure($e, __FUNCTION__);
         }
     }
 
@@ -365,8 +368,8 @@ class AdminController extends Controller
             $data = $this->cdnfly->listPackages($request->query());
 
             return response()->json(['ok' => true, 'data' => $data]);
-        } catch (\Throwable) {
-            return $this->cdnflyFailure();
+        } catch (\Throwable $e) {
+            return $this->cdnflyFailure($e, __FUNCTION__);
         }
     }
 
@@ -409,8 +412,8 @@ class AdminController extends Controller
             $data = $this->cdnfly->getPackage($id);
 
             return response()->json(['ok' => true, 'data' => $data]);
-        } catch (\Throwable) {
-            return $this->cdnflyFailure();
+        } catch (\Throwable $e) {
+            return $this->cdnflyFailure($e, __FUNCTION__);
         }
     }
 
@@ -425,8 +428,8 @@ class AdminController extends Controller
             $data = $this->cdnfly->createPackage($payload);
 
             return response()->json(['ok' => true, 'data' => $data], 201);
-        } catch (\Throwable) {
-            return $this->cdnflyFailure();
+        } catch (\Throwable $e) {
+            return $this->cdnflyFailure($e, __FUNCTION__);
         }
     }
 
@@ -476,8 +479,8 @@ class AdminController extends Controller
                     'failed_count' => 0,
                 ],
             ]);
-        } catch (\Throwable) {
-            return $this->cdnflyFailure();
+        } catch (\Throwable $e) {
+            return $this->cdnflyFailure($e, __FUNCTION__);
         }
     }
 
@@ -492,8 +495,8 @@ class AdminController extends Controller
             $data = $this->cdnfly->updatePackage($id, $payload);
 
             return response()->json(['ok' => true, 'data' => $data]);
-        } catch (\Throwable) {
-            return $this->cdnflyFailure();
+        } catch (\Throwable $e) {
+            return $this->cdnflyFailure($e, __FUNCTION__);
         }
     }
 
@@ -506,8 +509,8 @@ class AdminController extends Controller
             $data = $this->cdnfly->deletePackage($id);
 
             return response()->json(['ok' => true, 'data' => $data]);
-        } catch (\Throwable) {
-            return $this->cdnflyFailure();
+        } catch (\Throwable $e) {
+            return $this->cdnflyFailure($e, __FUNCTION__);
         }
     }
 
@@ -520,8 +523,8 @@ class AdminController extends Controller
             $data = $this->cdnfly->listUserPackages($request->query());
 
             return response()->json(['ok' => true, 'data' => $data]);
-        } catch (\Throwable) {
-            return $this->cdnflyFailure();
+        } catch (\Throwable $e) {
+            return $this->cdnflyFailure($e, __FUNCTION__);
         }
     }
 
@@ -565,8 +568,8 @@ class AdminController extends Controller
             return response()->json(['ok' => true, 'data' => $result]);
         } catch (ValidationException $e) {
             throw $e;
-        } catch (\Throwable) {
-            return $this->cdnflyFailure();
+        } catch (\Throwable $e) {
+            return $this->cdnflyFailure($e, __FUNCTION__);
         }
     }
 
@@ -995,13 +998,5 @@ class AdminController extends Controller
         }
 
         return $data;
-    }
-
-    private function cdnflyFailure(string $message = 'CDNfly 通讯失败，请稍后重试'): JsonResponse
-    {
-        return response()->json([
-            'ok' => false,
-            'message' => $message,
-        ], 500);
     }
 }

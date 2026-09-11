@@ -95,12 +95,50 @@ class CdnflyFailureReportingTest extends TestCase
      * Every admin controller that talks to CDNfly must behave the same way —
      * this used to be 64 hand-copied handlers, which is how they drifted.
      */
+    /**
+     * AdminController kept its own reporter with `catch (\Throwable)` — no
+     * variable bound — so the master's reason was discarded and every failure
+     * read 「请稍后重试」. Package creation is the one most likely to be
+     * rejected for a specific reason (a missing node group, a duplicate name),
+     * which is exactly the text an operator needs.
+     */
+    public function test_package_creation_failures_carry_the_master_reason(): void
+    {
+        $cdnfly = $this->mock(CdnflyApiService::class);
+        $cdnfly->shouldReceive('createPackage')
+            ->andThrow(new \RuntimeException('CDNfly create package failed: 节点组不存在'));
+
+        $response = $this->actingAs($this->admin())
+            ->postJson('/api/admin/packages', [
+                'name' => 'jp-mini',
+                'region_id' => 1,
+                'node_group_id' => 2,
+                'month_price' => '30',
+                'quarter_price' => '85',
+                'year_price' => '320',
+                'groups' => '1',
+            ])
+            ->assertStatus(500)
+            ->assertJsonPath('ok', false)
+            ->assertJsonPath('context', 'createPackage');
+
+        $this->assertStringContainsString(
+            '节点组不存在',
+            (string) $response->json('message'),
+        );
+        $this->assertStringContainsString(
+            '节点组不存在',
+            (string) $response->json('upstream_error'),
+        );
+    }
+
     public function test_the_behaviour_is_consistent_across_controllers(): void
     {
         $cdnfly = $this->mock(CdnflyApiService::class);
         $cdnfly->shouldReceive('listAllSites')->andThrow(new \RuntimeException('sites down'));
         $cdnfly->shouldReceive('getConfigs')->andThrow(new \RuntimeException('configs down'));
         $cdnfly->shouldReceive('listAllDnsApis')->andThrow(new \RuntimeException('dns down'));
+        $cdnfly->shouldReceive('listPackages')->andThrow(new \RuntimeException('packages down'));
 
         $admin = $this->admin();
 
@@ -108,6 +146,7 @@ class CdnflyFailureReportingTest extends TestCase
             '/api/admin/sites' => 'sites down',
             '/api/admin/configs' => 'configs down',
             '/api/admin/dns-apis' => 'dns down',
+            '/api/admin/packages' => 'packages down',
         ] as $url => $expected) {
             $response = $this->actingAs($admin)->getJson($url)->assertStatus(500);
 
