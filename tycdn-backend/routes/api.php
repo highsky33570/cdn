@@ -79,6 +79,9 @@ Route::middleware(['auth:sanctum', 'verified', 'admin', 'throttle:60,1'])->prefi
     Route::get('/packages', [AdminController::class, 'listPackages']);
     Route::get('/packages/{id}', [AdminController::class, 'showPackage']);
     Route::post('/packages', [AdminController::class, 'createPackage'])->middleware('throttle:20,1');
+    // 门户商品：套餐实际的对外售价，与 CDNfly 内部价格无关
+    Route::get('/package-products', [AdminController::class, 'packageProducts']);
+    Route::put('/package-products/{packageId}', [AdminController::class, 'updatePackageProduct'])->middleware('throttle:30,1');
     Route::put('/packages/batch', [AdminController::class, 'batchUpdatePackages'])->middleware('throttle:10,1');
     Route::put('/packages/{id}', [AdminController::class, 'updatePackage'])->middleware('throttle:20,1');
     Route::delete('/packages/{id}', [AdminController::class, 'deletePackage'])->middleware('throttle:10,1');

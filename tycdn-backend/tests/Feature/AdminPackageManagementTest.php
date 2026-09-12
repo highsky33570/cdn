@@ -68,14 +68,17 @@ class AdminPackageManagementTest extends TestCase
                 'enable' => 1,
             ])
             ->assertCreated()
-            ->assertJsonPath('data.data.method', 'POST')
-            ->assertJsonPath('data.data.payload.name', '标准版')
-            ->assertJsonPath('data.data.payload.month_price', 20)
-            ->assertJsonPath('data.data.payload.stream_port', 1)
-            ->assertJsonPath('data.data.payload.custom_cc_rule', 1)
-            ->assertJsonPath('data.data.payload.http3', 1)
-            ->assertJsonPath('data.data.payload.l2_state', 0)
-            ->assertJsonPath('data.data.payload.ddos_protect', '500G');
+            // Create nests the CDNfly response under  so the portal
+            // product result can travel beside it; update and delete are
+            // unchanged.
+            ->assertJsonPath('data.package.data.method', 'POST')
+            ->assertJsonPath('data.package.data.payload.name', '标准版')
+            ->assertJsonPath('data.package.data.payload.month_price', 20)
+            ->assertJsonPath('data.package.data.payload.stream_port', 1)
+            ->assertJsonPath('data.package.data.payload.custom_cc_rule', 1)
+            ->assertJsonPath('data.package.data.payload.http3', 1)
+            ->assertJsonPath('data.package.data.payload.l2_state', 0)
+            ->assertJsonPath('data.package.data.payload.ddos_protect', '500G');
 
         $this->actingAs($admin)
             ->getJson('/api/admin/packages/101')

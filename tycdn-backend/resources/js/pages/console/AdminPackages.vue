@@ -12,6 +12,8 @@ import {
 } from 'lucide-vue-next';
 import { FolderTree, Zap } from 'lucide-vue-next';
 import { computed, onMounted, reactive, ref } from 'vue';
+import { toast } from 'vue-sonner';
+import ConfirmDeleteDialog from '@/components/console/ConfirmDeleteDialog.vue';
 import ConsoleDataTable from '@/components/console/ConsoleDataTable.vue';
 import type { ColumnDef } from '@/components/console/ConsoleDataTable.vue';
 import ConsolePageHeader from '@/components/console/ConsolePageHeader.vue';
@@ -50,17 +52,6 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
-import { toast } from 'vue-sonner';
-import ConfirmDeleteDialog from '@/components/console/ConfirmDeleteDialog.vue';
-import {
-    batchUpdateAdminPackages,
-    createAdminPackage,
-    deleteAdminPackage,
-    getAdminPackage,
-    listAdminPackageOptions,
-    listAdminPackages,
-    updateAdminPackage,
-} from '@/lib/adminPackagesApi';
 import {
     listAdminPackageGroups,
     createAdminPackageGroup,
@@ -71,14 +62,26 @@ import {
     updateAdminPackageUp,
     deleteAdminPackageUp,
 } from '@/lib/adminModulesApi';
-import type { CdnflyRecord } from '@/lib/sharedTypes';
-import { formatDate, getErrorMessage as fmtError } from '@/lib/formatters';
+import {
+    batchUpdateAdminPackages,
+    createAdminPackage,
+    deleteAdminPackage,
+    getAdminPackage,
+    listAdminPackageOptions,
+    listAdminPackageProducts,
+    listAdminPackages,
+    saveAdminPackageProduct,
+    updateAdminPackage,
+} from '@/lib/adminPackagesApi';
+import type { AdminPackageProduct } from '@/lib/adminPackagesApi';
 import type {
     AdminPackageBatchItem,
     AdminPackageOption,
     AdminPackageOptions,
     AdminPackagePayload,
 } from '@/lib/adminPackagesApi';
+import { formatDate, getErrorMessage as fmtError } from '@/lib/formatters';
+import type { CdnflyRecord } from '@/lib/sharedTypes';
 
 type PackageRecord = Record<string, unknown>;
 
@@ -131,6 +134,117 @@ type LimitFieldKey =
 
 const SELECT_KEEP_VALUE = 'keep';
 const CNAME_DEFAULT_VALUE = '__default__';
+
+/**
+ * Tier presets for a single-node Tokyo deployment.
+ *
+ * The numbers match what ProductSeeder already advertises on the landing page,
+ * so the console, the catalogue and the marketing copy cannot drift apart.
+ *
+ * Units come from the master: `traffic` is GB, `bandwidth` is free text
+ * (100Mbps / 1Gbps), and -1 means unlimited. `main_domain` is the site count a
+ * customer sees as "N 个网站"; `domain` is the larger total including
+ * subdomains.
+ *
+ * DDoS protection is left as 不支持 deliberately: a plain VPS has no scrubbing
+ * in front of it, and selling protection that does not exist is worse than
+ * selling none.
+ *
+ * `features` holds only claims the limits cannot express. The numbers on a
+ * plan card are rendered from the CDNfly package itself, so repeating them
+ * here would reintroduce the drift this is meant to prevent.
+ */
+const TIER_PRESETS = [
+    {
+        key: 'mini',
+        label: '入门',
+        name: 'JPN-Mini',
+        price: '5',
+        limits: {
+            traffic: '50',
+            bandwidth: '100Mbps',
+            connection: '2000',
+            domain: '5',
+            main_domain: '1',
+            http_port: '0',
+            stream_port: '0',
+        },
+        // Custom CC rules are the upsell; basic CC protection is included
+        // everywhere because the agent does it anyway.
+        custom_cc_rule: '0',
+        features: ['东京 BGP 线路', '被攻击不额外收费', '5 分钟内开通'],
+        description: '日本东京节点入门套餐，适合个人站点与小流量业务。',
+    },
+    {
+        key: 'standard',
+        label: '标准',
+        name: 'JPN-Standard',
+        price: '10',
+        limits: {
+            traffic: '100',
+            bandwidth: '300Mbps',
+            connection: '5000',
+            domain: '15',
+            main_domain: '5',
+            http_port: '2',
+            stream_port: '0',
+        },
+        custom_cc_rule: '0',
+        features: ['东京 BGP 线路', '被攻击不额外收费', '免费 SSL 证书'],
+        description: '日本东京节点标准套餐，适合中小企业站点与多域名业务。',
+    },
+    {
+        key: 'plus',
+        label: '进阶',
+        name: 'JPN-Plus',
+        price: '20',
+        limits: {
+            traffic: '200',
+            bandwidth: '1Gbps',
+            connection: '10000',
+            domain: '30',
+            main_domain: '10',
+            http_port: '5',
+            stream_port: '5',
+        },
+        custom_cc_rule: '1',
+        features: [
+            '东京 BGP 线路',
+            '被攻击不额外收费',
+            '免费 SSL 证书',
+            '工单优先响应',
+        ],
+        description: '日本东京节点进阶套餐，适合流量增长期的业务。',
+    },
+    {
+        key: 'pro',
+        label: '高阶',
+        name: 'JPN-Pro',
+        price: '30',
+        limits: {
+            traffic: '300',
+            bandwidth: '1Gbps',
+            connection: '20000',
+            domain: '60',
+            main_domain: '20',
+            http_port: '10',
+            stream_port: '10',
+        },
+        custom_cc_rule: '1',
+        features: [
+            '东京 BGP 线路',
+            '被攻击不额外收费',
+            '免费 SSL 证书',
+            '专属技术支持',
+        ],
+        description: '日本东京节点高阶套餐，适合高并发与多站点业务。',
+    },
+];
+
+type TierPreset = (typeof TIER_PRESETS)[number];
+
+/** The portal charges in USD (products.currency defaults to USD). */
+const PORTAL_CURRENCY = 'USD';
 const cnameModeOptions = [
     { value: 'site', label: '按网站生成' },
     { value: 'package', label: '按套餐生成' },
@@ -208,6 +322,137 @@ const packageDialogOpen = ref(false);
 const detailDialogOpen = ref(false);
 const batchDialogOpen = ref(false);
 const dialogMode = ref<DialogMode>('create');
+
+/**
+ * The portal-side product — the price customers actually pay.
+ *
+ * Kept next to the package form because the two are useless apart: a package
+ * with no product cannot be bought, and a product with no package cannot be
+ * provisioned. Creating them separately is what used to require editing .env
+ * and re-running a seeder.
+ */
+/** CDNfly internal prices stay collapsed: 0 is the right answer. */
+const cdnflyPriceOpen = ref(false);
+
+const portalProducts = ref<Record<string, AdminPackageProduct>>({});
+
+const portalForm = reactive({
+    sell: true,
+    name: '',
+    price_monthly: '',
+    price_quarterly: '',
+    price_yearly: '',
+    description: '',
+    features: '',
+    sort_order: '',
+    is_active: true,
+});
+
+/**
+ * Fill the limits, capability flags and portal pricing from a tier.
+ *
+ * Region, 线路组 and 套餐组 are left alone on purpose — those are choices about
+ * this deployment, not about the tier, and the admin has already made them.
+ */
+function applyTierPreset(preset: TierPreset): void {
+    form.name = preset.name;
+    Object.assign(form, preset.limits);
+
+    form.custom_cc_rule = preset.custom_cc_rule;
+    form.cc_protect = '支持';
+    form.websocket = '1';
+    form.http3 = '1';
+    // One node means no L2 tier to fall back to.
+    form.l2_state = '0';
+    // Real-name verification blocks checkout unless you actually police it.
+    form.id_verify = '0';
+    // A plain VPS has no scrubbing in front of it.
+    form.ddos_protect = '不支持';
+
+    // CDNfly bills these against the customer's CDNfly balance, which a portal
+    // order never credits.
+    form.month_price = '0';
+    form.quarter_price = '0';
+    form.year_price = '0';
+
+    portalForm.sell = true;
+    portalForm.name = preset.name;
+    portalForm.price_monthly = preset.price;
+    portalForm.price_quarterly = '';
+    portalForm.price_yearly = '';
+    portalForm.description = preset.description;
+    portalForm.features = preset.features.join('\n');
+    portalForm.is_active = true;
+    portalForm.sort_order = String(
+        (TIER_PRESETS.findIndex((tier) => tier.key === preset.key) + 1) * 10,
+    );
+}
+
+function resetPortalForm(
+    packageName = '',
+    existing?: AdminPackageProduct,
+): void {
+    portalForm.sell = true;
+    portalForm.name = existing?.name ?? packageName;
+    portalForm.price_monthly = existing ? String(existing.price_monthly) : '';
+    portalForm.price_quarterly = existing
+        ? String(existing.price_quarterly)
+        : '';
+    portalForm.price_yearly = existing ? String(existing.price_yearly) : '';
+    portalForm.description = existing?.description ?? '';
+    portalForm.features = (existing?.features ?? []).join('\n');
+    portalForm.sort_order = existing ? String(existing.sort_order) : '';
+    portalForm.is_active = existing?.is_active ?? true;
+}
+
+/** Preview of what a blank quarterly/yearly price will become. */
+const portalDerived = computed(() => {
+    const monthly = Number(portalForm.price_monthly);
+
+    if (!Number.isFinite(monthly) || monthly <= 0) {
+        return null;
+    }
+
+    return {
+        quarterly: (monthly * 3).toFixed(2),
+        yearly: (monthly * 12).toFixed(2),
+    };
+});
+
+function portalPayload(): Record<string, unknown> {
+    return {
+        name: portalForm.name.trim(),
+        price_monthly: Number(portalForm.price_monthly) || 0,
+        price_quarterly:
+            portalForm.price_quarterly === ''
+                ? null
+                : Number(portalForm.price_quarterly),
+        price_yearly:
+            portalForm.price_yearly === ''
+                ? null
+                : Number(portalForm.price_yearly),
+        description: portalForm.description.trim() || null,
+        features: portalForm.features
+            .split('\n')
+            .map((line) => line.trim())
+            .filter((line) => line !== ''),
+        sort_order:
+            portalForm.sort_order === '' ? 0 : Number(portalForm.sort_order),
+        is_active: portalForm.is_active,
+        currency: PORTAL_CURRENCY,
+    };
+}
+
+async function loadPortalProducts(): Promise<void> {
+    try {
+        portalProducts.value = await listAdminPackageProducts();
+    } catch {
+        // A pricing lookup must never block the package list; the column just
+        // shows 未上架 until it succeeds.
+        portalProducts.value = {};
+    }
+}
+
 const editingId = ref<number | null>(null);
 const detailRecord = ref<PackageRecord | null>(null);
 const packageCnameOpen = ref(false);
@@ -253,6 +498,7 @@ const cnameDomainOptions = computed(() => [
 onMounted(() => {
     void loadPackages();
     void loadPackageOptions();
+    void loadPortalProducts();
 });
 
 async function loadPackages(): Promise<void> {
@@ -288,6 +534,7 @@ async function loadPackageOptions(): Promise<void> {
 
 function openCreateDialog(): void {
     Object.assign(form, emptyPackageForm());
+    resetPortalForm();
     formError.value = '';
     editingId.value = null;
     dialogMode.value = 'create';
@@ -311,6 +558,10 @@ async function openEditDialog(record: PackageRecord): Promise<void> {
         const payload = await getAdminPackage(id);
         const detail = extractPackageDetail(payload) ?? record;
         Object.assign(form, formFromRecord(detail));
+        resetPortalForm(
+            String(detail.name ?? ''),
+            portalProducts.value[String(id)],
+        );
         editingId.value = id;
         dialogMode.value = 'edit';
         closePackageAdvancedSections();
@@ -356,13 +607,27 @@ async function submitPackage(): Promise<void> {
         );
 
         if (dialogMode.value === 'create') {
-            await createAdminPackage(payload);
+            const result = (await createAdminPackage(
+                portalForm.sell
+                    ? { ...payload, portal: portalPayload() }
+                    : payload,
+            )) as { portal_warning?: string } | undefined;
+
+            // The package is created either way; a portal problem must be
+            // visible without implying the whole operation failed.
+            if (result?.portal_warning) {
+                toast.warning(result.portal_warning);
+            }
         } else if (editingId.value !== null) {
             await updateAdminPackage(editingId.value, payload);
+
+            if (portalForm.sell) {
+                await saveAdminPackageProduct(editingId.value, portalPayload());
+            }
         }
 
         packageDialogOpen.value = false;
-        await loadPackages();
+        await Promise.all([loadPackages(), loadPortalProducts()]);
     } catch (error) {
         formError.value = getErrorMessage(error);
     } finally {
@@ -398,17 +663,32 @@ async function submitBatchUpdate(): Promise<void> {
 
 function openDeletePackage(record: PackageRecord) {
     const id = getPackageId(record);
-    if (id === null) { errorMessage.value = '套餐缺少 ID，无法删除'; return; }
+
+    if (id === null) {
+        errorMessage.value = '套餐缺少 ID，无法删除';
+
+        return;
+    }
+
     deleteTargetId.value = id;
-    deleteTargetName.value = getDisplayValue(record, ['name', 'title'], `#${id}`);
+    deleteTargetName.value = getDisplayValue(
+        record,
+        ['name', 'title'],
+        `#${id}`,
+    );
     deleteError.value = '';
     deleteOpen.value = true;
 }
 
 async function confirmDeletePackage(): Promise<void> {
     const id = deleteTargetId.value;
-    if (id === null) return;
+
+    if (id === null) {
+        return;
+    }
+
     deleting.value = true;
+
     try {
         await deleteAdminPackage(id);
         deleteOpen.value = false;
@@ -461,6 +741,7 @@ function openBatchDialog(): void {
 }
 
 function closePackageAdvancedSections(): void {
+    cdnflyPriceOpen.value = false;
     packageCnameOpen.value = false;
     packagePurchaseLimitOpen.value = false;
     packageOtherOpen.value = false;
@@ -488,9 +769,9 @@ function emptyPackageForm(batch = false): PackageForm {
         node_group_id: '',
         backup_node_group: '',
         groups: '',
-        month_price: '',
-        quarter_price: '',
-        year_price: '',
+        month_price: batch ? '' : '0',
+        quarter_price: batch ? '' : '0',
+        year_price: batch ? '' : '0',
         traffic: batch ? '' : '-1',
         bandwidth: batch ? '' : '-1',
         connection: batch ? '' : '-1',
@@ -889,7 +1170,12 @@ const pgColumns: ColumnDef[] = [
     { key: 'id', label: 'ID', width: '70px' },
     { key: 'name', label: '名称' },
     { key: 'des', label: '备注', format: (v) => String(v ?? '-') },
-    { key: 'created_at', label: '创建时间', width: '160px', format: (v) => formatDate(v as string | null | undefined) },
+    {
+        key: 'created_at',
+        label: '创建时间',
+        width: '160px',
+        format: (v) => formatDate(v as string | null | undefined),
+    },
 ];
 
 const pgTableRef = ref<InstanceType<typeof ConsoleDataTable> | null>(null);
@@ -922,8 +1208,13 @@ function openPgEdit(row: CdnflyRecord): void {
 async function submitPg(): Promise<void> {
     pgSaving.value = true;
     pgError.value = '';
+
     try {
-        const payload: Record<string, unknown> = { name: pgForm.name.trim(), des: pgForm.des.trim() || undefined };
+        const payload: Record<string, unknown> = {
+            name: pgForm.name.trim(),
+            des: pgForm.des.trim() || undefined,
+        };
+
         if (pgEditing.value) {
             await updateAdminPackageGroup(Number(pgEditing.value.id), payload);
             toast.success('套餐组已更新');
@@ -931,6 +1222,7 @@ async function submitPg(): Promise<void> {
             await createAdminPackageGroup(payload);
             toast.success('套餐组已创建');
         }
+
         pgDialogOpen.value = false;
         pgTableRef.value?.refresh();
         void loadPackageOptions();
@@ -948,9 +1240,13 @@ function openPgDelete(row: CdnflyRecord): void {
 }
 
 async function confirmPgDelete(): Promise<void> {
-    if (!pgDeleteTarget.value) return;
+    if (!pgDeleteTarget.value) {
+        return;
+    }
+
     pgDeleting.value = true;
     pgDeleteError.value = '';
+
     try {
         await deleteAdminPackageGroup(Number(pgDeleteTarget.value.id));
         pgDeleteOpen.value = false;
@@ -968,9 +1264,24 @@ async function confirmPgDelete(): Promise<void> {
 const puColumns: ColumnDef[] = [
     { key: 'id', label: 'ID', width: '70px' },
     { key: 'name', label: '名称' },
-    { key: 'groups', label: '套餐组', width: '100px', format: (v) => String(v ?? '-') },
-    { key: 'month_price', label: '月价格', width: '100px', format: (v) => String(v ?? '-') },
-    { key: 'created_at', label: '创建时间', width: '160px', format: (v) => formatDate(v as string | null | undefined) },
+    {
+        key: 'groups',
+        label: '套餐组',
+        width: '100px',
+        format: (v) => String(v ?? '-'),
+    },
+    {
+        key: 'month_price',
+        label: '月价格',
+        width: '100px',
+        format: (v) => String(v ?? '-'),
+    },
+    {
+        key: 'created_at',
+        label: '创建时间',
+        width: '160px',
+        format: (v) => formatDate(v as string | null | undefined),
+    },
 ];
 
 const puTableRef = ref<InstanceType<typeof ConsoleDataTable> | null>(null);
@@ -998,7 +1309,19 @@ const puDeleteError = ref('');
 
 function openPuCreate(): void {
     puEditing.value = null;
-    Object.assign(puForm, { name: '', des: '', groups: '', month_price: '', quarter_price: '', year_price: '', traffic: '', bandwidth: '', connection: '', domain: '', extra_json: '{}' });
+    Object.assign(puForm, {
+        name: '',
+        des: '',
+        groups: '',
+        month_price: '',
+        quarter_price: '',
+        year_price: '',
+        traffic: '',
+        bandwidth: '',
+        connection: '',
+        domain: '',
+        extra_json: '{}',
+    });
     puError.value = '';
     puDialogOpen.value = true;
 }
@@ -1022,23 +1345,50 @@ function openPuEdit(row: CdnflyRecord): void {
 
 function buildPuPayload(): Record<string, unknown> {
     const p: Record<string, unknown> = { name: puForm.name.trim() };
-    if (puForm.des.trim()) p.des = puForm.des.trim();
-    if (puForm.groups.trim()) p.groups = puForm.groups.trim();
-    for (const k of ['month_price', 'quarter_price', 'year_price', 'traffic', 'connection', 'domain'] as const) {
-        const v = puForm[k].trim();
-        if (v !== '') p[k] = Number(v);
+
+    if (puForm.des.trim()) {
+        p.des = puForm.des.trim();
     }
-    if (puForm.bandwidth.trim()) p.bandwidth = puForm.bandwidth.trim();
+
+    if (puForm.groups.trim()) {
+        p.groups = puForm.groups.trim();
+    }
+
+    for (const k of [
+        'month_price',
+        'quarter_price',
+        'year_price',
+        'traffic',
+        'connection',
+        'domain',
+    ] as const) {
+        const v = puForm[k].trim();
+
+        if (v !== '') {
+            p[k] = Number(v);
+        }
+    }
+
+    if (puForm.bandwidth.trim()) {
+        p.bandwidth = puForm.bandwidth.trim();
+    }
+
     const extra = puForm.extra_json.trim();
-    if (extra && extra !== '{}') Object.assign(p, JSON.parse(extra));
+
+    if (extra && extra !== '{}') {
+        Object.assign(p, JSON.parse(extra));
+    }
+
     return p;
 }
 
 async function submitPu(): Promise<void> {
     puSaving.value = true;
     puError.value = '';
+
     try {
         const payload = buildPuPayload();
+
         if (puEditing.value) {
             await updateAdminPackageUp(Number(puEditing.value.id), payload);
             toast.success('升级包已更新');
@@ -1046,6 +1396,7 @@ async function submitPu(): Promise<void> {
             await createAdminPackageUp(payload);
             toast.success('升级包已创建');
         }
+
         puDialogOpen.value = false;
         puTableRef.value?.refresh();
     } catch (error) {
@@ -1062,9 +1413,13 @@ function openPuDelete(row: CdnflyRecord): void {
 }
 
 async function confirmPuDelete(): Promise<void> {
-    if (!puDeleteTarget.value) return;
+    if (!puDeleteTarget.value) {
+        return;
+    }
+
     puDeleting.value = true;
     puDeleteError.value = '';
+
     try {
         await deleteAdminPackageUp(Number(puDeleteTarget.value.id));
         puDeleteOpen.value = false;
@@ -1313,9 +1668,13 @@ async function confirmPuDelete(): Promise<void> {
                                             <Button
                                                 variant="ghost"
                                                 size="sm"
-                                                @click="openDeletePackage(record)"
+                                                @click="
+                                                    openDeletePackage(record)
+                                                "
                                             >
-                                                <Trash2 data-icon="inline-start" />
+                                                <Trash2
+                                                    data-icon="inline-start"
+                                                />
                                                 删除
                                             </Button>
                                         </div>
@@ -1356,6 +1715,40 @@ async function confirmPuDelete(): Promise<void> {
                     <AlertTitle>保存失败</AlertTitle>
                     <AlertDescription>{{ formError }}</AlertDescription>
                 </Alert>
+
+                <!--
+                    Forty fields is the real barrier to creating four tiers.
+                    These fill the limits, capability flags and portal price in
+                    one click, leaving 区域 / 线路组 / 套餐组 — the choices that
+                    belong to this deployment rather than to the tier.
+                -->
+                <div
+                    v-if="dialogMode === 'create'"
+                    class="rounded-lg border bg-muted/30 p-3"
+                >
+                    <div class="flex flex-wrap items-center gap-2">
+                        <span class="text-sm font-medium">套餐预设</span>
+                        <Button
+                            v-for="preset in TIER_PRESETS"
+                            :key="preset.key"
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            @click="applyTierPreset(preset)"
+                        >
+                            {{ preset.label }}
+                            <span class="ml-1 text-xs text-muted-foreground">
+                                {{ preset.limits.traffic }}G ·
+                                {{ preset.limits.bandwidth }} · ${{
+                                    preset.price
+                                }}
+                            </span>
+                        </Button>
+                    </div>
+                    <p class="mt-2 text-xs text-muted-foreground">
+                        点击后会覆盖下方的限制与售价，区域、线路组、套餐组保持不变。
+                    </p>
+                </div>
 
                 <div class="grid gap-4 md:grid-cols-3">
                     <div class="flex flex-col gap-2">
@@ -1428,38 +1821,182 @@ async function confirmPuDelete(): Promise<void> {
                             </SelectContent>
                         </Select>
                     </div>
-                    <div class="grid gap-4 md:col-span-3 md:grid-cols-3">
-                        <div class="flex flex-col gap-2">
-                            <Label for="package-month-price">
-                                月付价格（元）
-                            </Label>
-                            <Input
-                                id="package-month-price"
-                                v-model="form.month_price"
-                                inputmode="decimal"
-                            />
+                    <!--
+                        The price that matters. CDNfly's own prices bill against
+                        the customer's CDNfly balance, which a portal order never
+                        credits — so they stay at 0, out of the way, and this is
+                        what customers actually pay.
+                    -->
+                    <div
+                        class="rounded-lg border border-primary/30 bg-primary/5 p-4 md:col-span-3"
+                    >
+                        <div
+                            class="flex flex-wrap items-center justify-between gap-3"
+                        >
+                            <div>
+                                <div class="font-medium">门户售价</div>
+                                <div class="text-xs text-muted-foreground">
+                                    客户在本站看到并支付的价格（{{
+                                        PORTAL_CURRENCY
+                                    }}）。保存后会自动创建对应商品，无需再改
+                                    .env。
+                                </div>
+                            </div>
+                            <label
+                                class="flex items-center gap-2 text-sm text-muted-foreground"
+                            >
+                                <Checkbox v-model="portalForm.sell" />
+                                在门户上架销售
+                            </label>
                         </div>
-                        <div class="flex flex-col gap-2">
-                            <Label for="package-quarter-price">
-                                季付价格（元）
-                            </Label>
-                            <Input
-                                id="package-quarter-price"
-                                v-model="form.quarter_price"
-                                inputmode="decimal"
-                            />
-                        </div>
-                        <div class="flex flex-col gap-2">
-                            <Label for="package-year-price">
-                                年付价格（元）
-                            </Label>
-                            <Input
-                                id="package-year-price"
-                                v-model="form.year_price"
-                                inputmode="decimal"
-                            />
+
+                        <div v-if="portalForm.sell" class="mt-4 grid gap-4">
+                            <div class="grid gap-4 md:grid-cols-2">
+                                <div class="flex flex-col gap-2">
+                                    <Label for="portal-name">商品名称</Label>
+                                    <Input
+                                        id="portal-name"
+                                        v-model="portalForm.name"
+                                        placeholder="客户看到的名称"
+                                    />
+                                </div>
+                                <div class="flex flex-col gap-2">
+                                    <Label for="portal-monthly">
+                                        月付价格（{{ PORTAL_CURRENCY }}）
+                                    </Label>
+                                    <Input
+                                        id="portal-monthly"
+                                        v-model="portalForm.price_monthly"
+                                        inputmode="decimal"
+                                        placeholder="例如 5"
+                                    />
+                                </div>
+                            </div>
+
+                            <div class="grid gap-4 md:grid-cols-2">
+                                <div class="flex flex-col gap-2">
+                                    <Label for="portal-quarterly">
+                                        季付价格（可留空）
+                                    </Label>
+                                    <Input
+                                        id="portal-quarterly"
+                                        v-model="portalForm.price_quarterly"
+                                        inputmode="decimal"
+                                        :placeholder="
+                                            portalDerived
+                                                ? `留空按 ${portalDerived.quarterly}`
+                                                : '留空 = 月付 × 3'
+                                        "
+                                    />
+                                </div>
+                                <div class="flex flex-col gap-2">
+                                    <Label for="portal-yearly">
+                                        年付价格（可留空）
+                                    </Label>
+                                    <Input
+                                        id="portal-yearly"
+                                        v-model="portalForm.price_yearly"
+                                        inputmode="decimal"
+                                        :placeholder="
+                                            portalDerived
+                                                ? `留空按 ${portalDerived.yearly}`
+                                                : '留空 = 月付 × 12'
+                                        "
+                                    />
+                                </div>
+                            </div>
+
+                            <div class="flex flex-col gap-2">
+                                <Label for="portal-features">
+                                    营销卖点（每行一条，可留空）
+                                </Label>
+                                <textarea
+                                    id="portal-features"
+                                    v-model="portalForm.features"
+                                    rows="3"
+                                    class="min-h-20 rounded-md border bg-transparent px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                                    placeholder="东京 BGP 线路&#10;被攻击不额外收费&#10;免费 SSL 证书"
+                                />
+                                <p class="text-xs text-muted-foreground">
+                                    只写限制之外的卖点。流量、带宽、网站数等数字会自动取自本套餐的限制设置，
+                                    无需也不要在这里重复填写。
+                                </p>
+                            </div>
                         </div>
                     </div>
+
+                    <!--
+                        CDNfly's internal prices. Collapsed because the correct
+                        value is 0 for a portal-driven sale and changing it
+                        breaks provisioning on an empty CDNfly balance.
+                    -->
+                    <Collapsible
+                        v-model:open="cdnflyPriceOpen"
+                        class="rounded-lg border md:col-span-3"
+                    >
+                        <CollapsibleTrigger
+                            class="flex w-full items-center justify-between gap-3 p-4 text-left"
+                        >
+                            <div>
+                                <div class="font-medium">
+                                    CDNfly 内部价格（通常保持 0）
+                                </div>
+                                <div class="text-xs text-muted-foreground">
+                                    仅在让客户用 CDNfly
+                                    余额自助购买时才需要填写。
+                                </div>
+                            </div>
+                            <ChevronDown
+                                class="size-4 shrink-0 transition-transform"
+                                :class="cdnflyPriceOpen ? 'rotate-180' : ''"
+                            />
+                        </CollapsibleTrigger>
+                        <CollapsibleContent class="border-t p-4">
+                            <Alert class="mb-4">
+                                <AlertCircle />
+                                <AlertTitle>为什么保持 0</AlertTitle>
+                                <AlertDescription>
+                                    门户下单时以客户自己的 CDNfly 账号调用
+                                    <code>POST /v1/user-packages</code>，CDNfly
+                                    会按这里的价格扣该账号的 CDNfly
+                                    余额。门户订单并不会为该余额充值，所以非 0
+                                    的价格会让开通因余额不足而失败。
+                                </AlertDescription>
+                            </Alert>
+                            <div class="grid gap-4 md:grid-cols-3">
+                                <div class="flex flex-col gap-2">
+                                    <Label for="package-month-price">
+                                        月付价格
+                                    </Label>
+                                    <Input
+                                        id="package-month-price"
+                                        v-model="form.month_price"
+                                        inputmode="decimal"
+                                    />
+                                </div>
+                                <div class="flex flex-col gap-2">
+                                    <Label for="package-quarter-price">
+                                        季付价格
+                                    </Label>
+                                    <Input
+                                        id="package-quarter-price"
+                                        v-model="form.quarter_price"
+                                        inputmode="decimal"
+                                    />
+                                </div>
+                                <div class="flex flex-col gap-2">
+                                    <Label for="package-year-price">
+                                        年付价格
+                                    </Label>
+                                    <Input
+                                        id="package-year-price"
+                                        v-model="form.year_price"
+                                        inputmode="decimal"
+                                    />
+                                </div>
+                            </div>
+                        </CollapsibleContent>
+                    </Collapsible>
                     <div class="grid gap-4 md:col-span-3 md:grid-cols-3">
                         <div
                             v-for="field in limitFieldConfigs"
@@ -2318,7 +2855,9 @@ async function confirmPuDelete(): Promise<void> {
         <Dialog v-model:open="pgDialogOpen">
             <DialogScrollContent class="max-w-md">
                 <DialogHeader>
-                    <DialogTitle>{{ pgEditing ? '编辑套餐组' : '新增套餐组' }}</DialogTitle>
+                    <DialogTitle>{{
+                        pgEditing ? '编辑套餐组' : '新增套餐组'
+                    }}</DialogTitle>
                     <DialogDescription>管理 CDNfly 套餐组。</DialogDescription>
                 </DialogHeader>
                 <Alert v-if="pgError" variant="destructive">
@@ -2329,15 +2868,25 @@ async function confirmPuDelete(): Promise<void> {
                 <div class="grid gap-4">
                     <div class="grid gap-2">
                         <Label for="pg-name">名称</Label>
-                        <Input id="pg-name" v-model="pgForm.name" placeholder="套餐组名称" />
+                        <Input
+                            id="pg-name"
+                            v-model="pgForm.name"
+                            placeholder="套餐组名称"
+                        />
                     </div>
                     <div class="grid gap-2">
                         <Label for="pg-des">备注</Label>
-                        <Input id="pg-des" v-model="pgForm.des" placeholder="可选备注" />
+                        <Input
+                            id="pg-des"
+                            v-model="pgForm.des"
+                            placeholder="可选备注"
+                        />
                     </div>
                 </div>
                 <DialogFooter>
-                    <Button variant="outline" @click="pgDialogOpen = false">取消</Button>
+                    <Button variant="outline" @click="pgDialogOpen = false"
+                        >取消</Button
+                    >
                     <Button :disabled="pgSaving" @click="submitPg">
                         <Spinner v-if="pgSaving" data-icon="inline-start" />
                         <Save v-else data-icon="inline-start" />
@@ -2362,8 +2911,14 @@ async function confirmPuDelete(): Promise<void> {
                     <AlertDescription>{{ pgDeleteError }}</AlertDescription>
                 </Alert>
                 <DialogFooter>
-                    <Button variant="outline" @click="pgDeleteOpen = false">取消</Button>
-                    <Button variant="destructive" :disabled="pgDeleting" @click="confirmPgDelete">
+                    <Button variant="outline" @click="pgDeleteOpen = false"
+                        >取消</Button
+                    >
+                    <Button
+                        variant="destructive"
+                        :disabled="pgDeleting"
+                        @click="confirmPgDelete"
+                    >
                         <Spinner v-if="pgDeleting" data-icon="inline-start" />
                         <Trash2 v-else data-icon="inline-start" />
                         确认删除
@@ -2401,7 +2956,9 @@ async function confirmPuDelete(): Promise<void> {
         <Dialog v-model:open="puDialogOpen">
             <DialogScrollContent class="max-w-lg">
                 <DialogHeader>
-                    <DialogTitle>{{ puEditing ? '编辑升级包' : '新增升级包' }}</DialogTitle>
+                    <DialogTitle>{{
+                        puEditing ? '编辑升级包' : '新增升级包'
+                    }}</DialogTitle>
                     <DialogDescription>管理 CDNfly 升级包。</DialogDescription>
                 </DialogHeader>
                 <Alert v-if="puError" variant="destructive">
@@ -2412,47 +2969,90 @@ async function confirmPuDelete(): Promise<void> {
                 <div class="grid gap-4">
                     <div class="grid gap-2">
                         <Label for="pu-name">名称</Label>
-                        <Input id="pu-name" v-model="puForm.name" placeholder="升级包名称" />
+                        <Input
+                            id="pu-name"
+                            v-model="puForm.name"
+                            placeholder="升级包名称"
+                        />
                     </div>
                     <div class="grid gap-2">
                         <Label for="pu-groups">所属套餐组 ID</Label>
-                        <Input id="pu-groups" v-model="puForm.groups" placeholder="套餐组 ID" />
+                        <Input
+                            id="pu-groups"
+                            v-model="puForm.groups"
+                            placeholder="套餐组 ID"
+                        />
                     </div>
                     <div class="grid grid-cols-3 gap-4">
                         <div class="grid gap-2">
                             <Label for="pu-month">月价格</Label>
-                            <Input id="pu-month" v-model="puForm.month_price" inputmode="decimal" />
+                            <Input
+                                id="pu-month"
+                                v-model="puForm.month_price"
+                                inputmode="decimal"
+                            />
                         </div>
                         <div class="grid gap-2">
                             <Label for="pu-quarter">季价格</Label>
-                            <Input id="pu-quarter" v-model="puForm.quarter_price" inputmode="decimal" />
+                            <Input
+                                id="pu-quarter"
+                                v-model="puForm.quarter_price"
+                                inputmode="decimal"
+                            />
                         </div>
                         <div class="grid gap-2">
                             <Label for="pu-year">年价格</Label>
-                            <Input id="pu-year" v-model="puForm.year_price" inputmode="decimal" />
+                            <Input
+                                id="pu-year"
+                                v-model="puForm.year_price"
+                                inputmode="decimal"
+                            />
                         </div>
                     </div>
                     <div class="grid grid-cols-2 gap-4">
                         <div class="grid gap-2">
                             <Label for="pu-traffic">月流量（G）</Label>
-                            <Input id="pu-traffic" v-model="puForm.traffic" inputmode="decimal" placeholder="-1 不限" />
+                            <Input
+                                id="pu-traffic"
+                                v-model="puForm.traffic"
+                                inputmode="decimal"
+                                placeholder="-1 不限"
+                            />
                         </div>
                         <div class="grid gap-2">
                             <Label for="pu-bandwidth">带宽</Label>
-                            <Input id="pu-bandwidth" v-model="puForm.bandwidth" placeholder="如 100Mbps" />
+                            <Input
+                                id="pu-bandwidth"
+                                v-model="puForm.bandwidth"
+                                placeholder="如 100Mbps"
+                            />
                         </div>
                         <div class="grid gap-2">
                             <Label for="pu-connection">连接数</Label>
-                            <Input id="pu-connection" v-model="puForm.connection" inputmode="numeric" placeholder="-1 不限" />
+                            <Input
+                                id="pu-connection"
+                                v-model="puForm.connection"
+                                inputmode="numeric"
+                                placeholder="-1 不限"
+                            />
                         </div>
                         <div class="grid gap-2">
                             <Label for="pu-domain">域名数</Label>
-                            <Input id="pu-domain" v-model="puForm.domain" inputmode="numeric" placeholder="-1 不限" />
+                            <Input
+                                id="pu-domain"
+                                v-model="puForm.domain"
+                                inputmode="numeric"
+                                placeholder="-1 不限"
+                            />
                         </div>
                     </div>
                     <div class="grid gap-2">
                         <Label for="pu-des">备注</Label>
-                        <Input id="pu-des" v-model="puForm.des" placeholder="可选备注" />
+                        <Input
+                            id="pu-des"
+                            v-model="puForm.des"
+                            placeholder="可选备注"
+                        />
                     </div>
                     <div class="grid gap-2">
                         <Label for="pu-extra">扩展字段 JSON</Label>
@@ -2465,7 +3065,9 @@ async function confirmPuDelete(): Promise<void> {
                     </div>
                 </div>
                 <DialogFooter>
-                    <Button variant="outline" @click="puDialogOpen = false">取消</Button>
+                    <Button variant="outline" @click="puDialogOpen = false"
+                        >取消</Button
+                    >
                     <Button :disabled="puSaving" @click="submitPu">
                         <Spinner v-if="puSaving" data-icon="inline-start" />
                         <Save v-else data-icon="inline-start" />
@@ -2490,8 +3092,14 @@ async function confirmPuDelete(): Promise<void> {
                     <AlertDescription>{{ puDeleteError }}</AlertDescription>
                 </Alert>
                 <DialogFooter>
-                    <Button variant="outline" @click="puDeleteOpen = false">取消</Button>
-                    <Button variant="destructive" :disabled="puDeleting" @click="confirmPuDelete">
+                    <Button variant="outline" @click="puDeleteOpen = false"
+                        >取消</Button
+                    >
+                    <Button
+                        variant="destructive"
+                        :disabled="puDeleting"
+                        @click="confirmPuDelete"
+                    >
                         <Spinner v-if="puDeleting" data-icon="inline-start" />
                         <Trash2 v-else data-icon="inline-start" />
                         确认删除

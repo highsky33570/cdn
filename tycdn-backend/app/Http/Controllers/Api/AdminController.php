@@ -6,10 +6,13 @@ use App\Http\Controllers\Concerns\ReportsCdnflyFailures;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\Product;
+use App\Models\ProductCdnflyMapping;
 use App\Models\ServiceInstance;
 use App\Models\User;
 use App\Services\CdnflyAccountService;
 use App\Services\CdnflyApiService;
+use App\Services\PackageProductLinker;
+use App\Services\PackageSpecResolver;
 use App\Support\QueryHelper;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -64,6 +67,8 @@ class AdminController extends Controller
     public function __construct(
         private readonly CdnflyApiService $cdnfly,
         private readonly CdnflyAccountService $accounts,
+        private readonly PackageProductLinker $productLinker,
+        private readonly PackageSpecResolver $specs,
     ) {}
 
     /**
@@ -422,15 +427,171 @@ class AdminController extends Controller
      */
     public function createPackage(Request $request): JsonResponse
     {
-        $payload = $this->sanitizePackagePayload($request->all(), true);
+        $input = $request->all();
+
+        // The portal half never goes to CDNfly — it would be rejected as an
+        // unknown field, and it describes what *we* sell, not what CDNfly runs.
+        $portal = $this->validatedPortalProduct($request);
+        unset($input['portal']);
+
+        $payload = $this->sanitizePackagePayload($input, true);
 
         try {
             $data = $this->cdnfly->createPackage($payload);
-
-            return response()->json(['ok' => true, 'data' => $data], 201);
+            $this->specs->forget();
         } catch (\Throwable $e) {
             return $this->cdnflyFailure($e, __FUNCTION__);
         }
+
+        $response = ['ok' => true, 'data' => ['package' => $data]];
+
+        if ($portal === null) {
+            return response()->json($response, 201);
+        }
+
+        $packageId = $this->extractPackageId($data);
+
+        // The package exists in CDNfly either way. Say so plainly rather than
+        // reporting a flat failure that invites a duplicate retry.
+        if ($packageId === null) {
+            $response['data']['portal_warning'] = 'CDNfly 套餐已创建，但未能取得套餐 ID，门户商品需手动关联。';
+
+            return response()->json($response, 201);
+        }
+
+        try {
+            $product = $this->productLinker->link($packageId, $portal);
+            $response['data']['product'] = $product->only(['id', 'slug', 'name', 'price_monthly', 'currency']);
+        } catch (\Throwable $e) {
+            Log::error('portal product link failed', [
+                'cdnfly_package_id' => $packageId,
+                'error' => $e->getMessage(),
+            ]);
+
+            $response['data']['portal_warning'] = 'CDNfly 套餐已创建（ID '.$packageId.'），但门户商品写入失败：'.$e->getMessage();
+        }
+
+        return response()->json($response, 201);
+    }
+
+    /**
+     * GET /api/admin/package-products
+     *
+     * The portal products behind the CDNfly packages, keyed by CDNfly package
+     * id so the package list can show what each one is actually sold as — and
+     * so a package with no product is visible as such rather than failing at
+     * checkout much later.
+     */
+    public function packageProducts(): JsonResponse
+    {
+        $rows = ProductCdnflyMapping::query()
+            ->whereNotNull('cdnfly_plan_id')
+            ->get()
+            ->keyBy(fn (ProductCdnflyMapping $mapping): string => (string) $mapping->cdnfly_plan_id);
+
+        $products = Product::query()
+            ->whereIn('id', $rows->pluck('product_id'))
+            ->get()
+            ->keyBy('id');
+
+        $data = [];
+
+        foreach ($rows as $planId => $mapping) {
+            $product = $products->get($mapping->product_id);
+
+            if (! $product) {
+                continue;
+            }
+
+            $data[$planId] = [
+                'id' => $product->id,
+                'name' => $product->name,
+                'slug' => $product->slug,
+                'description' => $product->description,
+                'price_monthly' => (float) $product->price_monthly,
+                'price_quarterly' => (float) $product->price_quarterly,
+                'price_yearly' => (float) $product->price_yearly,
+                'currency' => $product->currency,
+                'is_active' => (bool) $product->is_active,
+                'sort_order' => (int) $product->sort_order,
+                'features' => $product->features ?? [],
+            ];
+        }
+
+        return response()->json(['ok' => true, 'data' => $data]);
+    }
+
+    /**
+     * PUT /api/admin/package-products/{packageId}
+     *
+     * Edit what a package sells for, or attach a product to a package that has
+     * none. Kept separate from updatePackage: this touches only our database,
+     * so a CDNfly outage must not stop a price change.
+     */
+    public function updatePackageProduct(Request $request, int $packageId): JsonResponse
+    {
+        $portal = $this->validatedPortalProduct($request);
+
+        if ($portal === null) {
+            throw ValidationException::withMessages([
+                'portal' => '缺少门户商品字段',
+            ]);
+        }
+
+        $product = $this->productLinker->link($packageId, $portal);
+
+        return response()->json([
+            'ok' => true,
+            'data' => $product->only([
+                'id', 'slug', 'name', 'price_monthly', 'price_quarterly',
+                'price_yearly', 'currency', 'is_active', 'sort_order',
+            ]),
+        ]);
+    }
+
+    /**
+     * The portal-side product, or null when the admin chose not to sell this
+     * package through the portal.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function validatedPortalProduct(Request $request): ?array
+    {
+        if (! $request->filled('portal')) {
+            return null;
+        }
+
+        $validated = $request->validate([
+            'portal.name' => ['required', 'string', 'max:100'],
+            'portal.slug' => ['nullable', 'string', 'max:100'],
+            'portal.description' => ['nullable', 'string', 'max:1000'],
+            'portal.price_monthly' => ['required', 'numeric', 'min:0', 'max:99999999'],
+            'portal.price_quarterly' => ['nullable', 'numeric', 'min:0', 'max:99999999'],
+            'portal.price_yearly' => ['nullable', 'numeric', 'min:0', 'max:99999999'],
+            'portal.currency' => ['nullable', 'string', 'size:3'],
+            'portal.sort_order' => ['nullable', 'integer', 'min:0', 'max:9999'],
+            'portal.is_active' => ['nullable', 'boolean'],
+            'portal.features' => ['nullable', 'array', 'max:20'],
+            'portal.features.*' => ['string', 'max:100'],
+        ]);
+
+        return $validated['portal'];
+    }
+
+    /**
+     * CDNfly is inconsistent about where a created record's id lands, so probe
+     * the shapes it actually uses rather than assuming one.
+     *
+     * @param  array<string, mixed>  $data
+     */
+    private function extractPackageId(array $data): ?int
+    {
+        $id = data_get($data, 'data.id')
+            ?? data_get($data, 'data.0.id')
+            ?? data_get($data, 'id')
+            ?? (is_numeric(data_get($data, 'data')) ? data_get($data, 'data') : null);
+
+        return is_numeric($id) && (int) $id > 0 ? (int) $id : null;
     }
 
     /**
@@ -468,6 +629,7 @@ class AdminController extends Controller
 
         try {
             $data = $this->cdnfly->batchUpdatePackages($packages);
+            $this->specs->forget();
 
             return response()->json([
                 'ok' => true,
@@ -493,6 +655,7 @@ class AdminController extends Controller
 
         try {
             $data = $this->cdnfly->updatePackage($id, $payload);
+            $this->specs->forget();
 
             return response()->json(['ok' => true, 'data' => $data]);
         } catch (\Throwable $e) {
@@ -507,6 +670,7 @@ class AdminController extends Controller
     {
         try {
             $data = $this->cdnfly->deletePackage($id);
+            $this->specs->forget();
 
             return response()->json(['ok' => true, 'data' => $data]);
         } catch (\Throwable $e) {

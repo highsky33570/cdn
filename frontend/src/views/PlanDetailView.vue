@@ -27,24 +27,12 @@
                 <a-descriptions-item label="适用场景">{{
                   plan.scene
                 }}</a-descriptions-item>
-                <a-descriptions-item label="带宽">{{
-                  plan.bandwidth
-                }}</a-descriptions-item>
-                <a-descriptions-item label="流量">{{
-                  plan.traffic
-                }}</a-descriptions-item>
-                <a-descriptions-item label="站点数">{{
-                  plan.websites
-                }}</a-descriptions-item>
-                <a-descriptions-item label="域名数">{{
-                  plan.domains
-                }}</a-descriptions-item>
-                <a-descriptions-item label="上传限制">{{
-                  plan.uploadSize
-                }}</a-descriptions-item>
-                <a-descriptions-item label="WebSocket">
-                  {{ plan.websocket ? "Supported" : "Not Supported" }}
-                </a-descriptions-item>
+                <a-descriptions-item
+                  v-for="spec in liveSpecs"
+                  :key="spec.label"
+                  :label="spec.label"
+                  >{{ spec.value }}</a-descriptions-item
+                >
               </a-descriptions>
             </section>
 
@@ -88,6 +76,7 @@ import AppFooter from "../components/AppFooter.vue";
 import { getGroupByKey, getPlanBySlug } from "../data/plans";
 import {
   useLivePricing,
+  resolvePlanSpecs,
   formatPlanPrice,
 } from "../composables/useLivePricing";
 import {
@@ -102,7 +91,13 @@ const router = useRouter();
 const plan = computed(() => getPlanBySlug(route.params.slug));
 
 // Live catalogue price, falling back to the static entry.
-const { priceBySlug } = useLivePricing();
+const { priceBySlug, limitsBySlug } = useLivePricing();
+
+// Limits come from the CDNfly package that enforces them, falling back per
+// field to the static entry when a plan has no package behind it.
+const liveSpecs = computed(() =>
+  plan.value ? resolvePlanSpecs(plan.value, limitsBySlug.value) : [],
+);
 const displayPrice = computed(() =>
   plan.value ? formatPlanPrice(plan.value, priceBySlug.value) : "-",
 );

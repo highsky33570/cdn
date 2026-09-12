@@ -75,7 +75,11 @@
 import { useRouter } from 'vue-router'
 import { getPlansByGroup } from '../data/plans'
 import { contact } from '../data/landing'
-import { useLivePricing, formatPlanPrice } from '../composables/useLivePricing'
+import {
+  useLivePricing,
+  formatPlanPrice,
+  resolvePlanSpecs,
+} from '../composables/useLivePricing'
 import { useReveal } from '../composables/useReveal'
 
 const router = useRouter()
@@ -85,9 +89,10 @@ const { sectionRef, isVisible } = useReveal()
 /** The tier we steer people to. Kept as a slug so reordering plans is safe. */
 const featuredSlug = 'jpn-plus'
 
-// Prices come from /api/products so the homepage cannot drift from checkout;
-// data/plans.js values are only a fallback when the catalogue is unreachable.
-const { priceBySlug } = useLivePricing()
+// Prices and limits come from /api/products so the homepage cannot drift from
+// checkout or from the package that enforces them; data/plans.js values are
+// only a fallback when the catalogue is unreachable.
+const { priceBySlug, limitsBySlug } = useLivePricing()
 
 /**
  * The card sets the symbol, the number and the period at three different sizes,
@@ -109,14 +114,7 @@ const priceOf = (item) => {
   }
 }
 
-const specsOf = (item) => [
-  { label: '峰值带宽', value: item.bandwidth },
-  { label: '月流量', value: item.traffic },
-  { label: '站点数', value: item.websites },
-  { label: '域名数', value: item.domains },
-  { label: '上传限制', value: item.uploadSize },
-  { label: 'WebSocket', value: item.websocket ? '支持' : '不支持' },
-]
+const specsOf = (item) => resolvePlanSpecs(item, limitsBySlug.value)
 
 const goPlan = (slug) => {
   router.push({ path: '/plans', query: { group: 'jpn', plan: slug } })

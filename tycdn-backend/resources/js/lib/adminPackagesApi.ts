@@ -83,3 +83,44 @@ export async function deleteAdminPackage(id: number): Promise<unknown> {
         method: 'DELETE',
     });
 }
+
+// ─── 门户商品 ─────────────────────────────────────────
+/**
+ * What a CDNfly package is actually sold as.
+ *
+ * CDNfly's own month/quarter/year prices bill against the customer's CDNfly
+ * balance, which a portal order never credits — so those stay at 0 and these
+ * are the prices customers pay.
+ */
+export interface AdminPackageProduct {
+    id: number;
+    name: string;
+    slug: string;
+    description: string | null;
+    price_monthly: number;
+    price_quarterly: number;
+    price_yearly: number;
+    currency: string;
+    is_active: boolean;
+    sort_order: number;
+    features: string[];
+}
+
+/** Keyed by CDNfly package id. */
+export async function listAdminPackageProducts(): Promise<
+    Record<string, AdminPackageProduct>
+> {
+    return apiRequest<Record<string, AdminPackageProduct>>(
+        '/api/admin/package-products',
+    );
+}
+
+export function saveAdminPackageProduct(
+    packageId: number | string,
+    portal: Record<string, unknown>,
+) {
+    return apiRequest(`/api/admin/package-products/${packageId}`, {
+        method: 'PUT',
+        body: JSON.stringify({ portal }),
+    });
+}
