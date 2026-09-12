@@ -85,10 +85,16 @@ class PackageProductLinkTest extends TestCase
         $this->assertSame('package-43', Product::query()->firstOrFail()->slug);
     }
 
-    public function test_a_duplicate_slug_is_given_a_suffix(): void
+    /**
+     * The seeded catalogue already contains the tier being created, and the
+     * storefront merges live data onto it BY SLUG. Creating a second product
+     * left the seeded one unmapped and listed every tier twice, with the live
+     * prices attached to the copy nothing rendered.
+     */
+    public function test_an_existing_product_with_the_same_slug_is_adopted(): void
     {
-        Product::query()->create([
-            'name' => 'Existing', 'slug' => 'jp-mini', 'price_monthly' => 1,
+        $seeded = Product::query()->create([
+            'name' => 'JPN-Mini', 'slug' => 'jpn-mini', 'price_monthly' => 1,
             'price_quarterly' => 3, 'price_yearly' => 12, 'currency' => 'USD',
         ]);
 
@@ -96,13 +102,93 @@ class PackageProductLinkTest extends TestCase
 
         $this->actingAs($this->admin())
             ->postJson('/api/admin/packages', $this->packagePayload([
-                'name' => 'JP Mini',
-                'slug' => 'jp-mini',
+                'name' => 'JPN-Mini',
+                'slug' => 'jpn-mini',
                 'price_monthly' => 5,
             ]))
             ->assertCreated();
 
-        $this->assertNotNull(Product::query()->where('slug', 'jp-mini-2')->first());
+        $this->assertSame(1, Product::query()->count());
+        $this->assertEqualsWithDelta(
+            5.0,
+            (float) $seeded->refresh()->price_monthly,
+            0.001,
+        );
+        $this->assertDatabaseHas('product_cdnfly_mappings', [
+            'product_id' => $seeded->id,
+            'cdnfly_plan_id' => '44',
+        ]);
+    }
+
+    /**
+     * Re-pointing a package at another product must not leave the previous one
+     * on sale — a tier a customer could buy that nothing provisions.
+     */
+    public function test_repointing_a_package_retires_the_product_it_generated(): void
+    {
+        $admin = $this->admin();
+
+        // First save with no slug: a product is generated.
+        $this->actingAs($admin)
+            ->putJson('/api/admin/package-products/44', [
+                'portal' => ['name' => 'JPN-Mini', 'price_monthly' => 5],
+            ])
+            ->assertOk();
+
+        $generated = Product::query()->firstOrFail();
+        $this->assertSame('package-44', $generated->slug);
+
+        // The operator then points the same package at the seeded tier.
+        $seeded = Product::query()->create([
+            'name' => 'JPN-Mini', 'slug' => 'jpn-mini', 'price_monthly' => 1,
+            'price_quarterly' => 3, 'price_yearly' => 12, 'currency' => 'USD',
+        ]);
+
+        $this->actingAs($admin)
+            ->putJson('/api/admin/package-products/44', [
+                'portal' => [
+                    'name' => 'JPN-Mini',
+                    'slug' => 'jpn-mini',
+                    'price_monthly' => 5,
+                ],
+            ])
+            ->assertOk();
+
+        // The generated one had no orders, so it is gone rather than lingering.
+        $this->assertNull(Product::query()->find($generated->id));
+        $this->assertSame(1, ProductCdnflyMapping::query()->count());
+        $this->assertDatabaseHas('product_cdnfly_mappings', [
+            'product_id' => $seeded->id,
+            'cdnfly_plan_id' => '44',
+        ]);
+    }
+
+    /**
+     * A save that carries no slug at all must keep the current link — that is
+     * the path a price-only edit takes.
+     */
+    public function test_a_save_without_a_slug_keeps_the_current_link(): void
+    {
+        $admin = $this->admin();
+
+        $this->actingAs($admin)
+            ->putJson('/api/admin/package-products/44', [
+                'portal' => ['name' => 'A', 'slug' => 'tier-a', 'price_monthly' => 5],
+            ])
+            ->assertOk();
+
+        $this->actingAs($admin)
+            ->putJson('/api/admin/package-products/44', [
+                'portal' => ['name' => 'A', 'price_monthly' => 9],
+            ])
+            ->assertOk();
+
+        $this->assertSame(1, Product::query()->count());
+
+        $product = Product::query()->firstOrFail();
+
+        $this->assertSame('tier-a', $product->slug);
+        $this->assertEqualsWithDelta(9.0, (float) $product->price_monthly, 0.001);
     }
 
     /**

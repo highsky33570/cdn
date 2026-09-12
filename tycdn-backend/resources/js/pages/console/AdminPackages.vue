@@ -161,6 +161,7 @@ const TIER_PRESETS = [
         key: 'mini',
         label: '入门',
         name: 'JPN-Mini',
+        slug: 'jpn-mini',
         price: '5',
         limits: {
             traffic: '50',
@@ -181,6 +182,7 @@ const TIER_PRESETS = [
         key: 'standard',
         label: '标准',
         name: 'JPN-Standard',
+        slug: 'jpn-standard',
         price: '10',
         limits: {
             traffic: '100',
@@ -199,6 +201,7 @@ const TIER_PRESETS = [
         key: 'plus',
         label: '进阶',
         name: 'JPN-Plus',
+        slug: 'jpn-plus',
         price: '20',
         limits: {
             traffic: '200',
@@ -222,6 +225,7 @@ const TIER_PRESETS = [
         key: 'pro',
         label: '高阶',
         name: 'JPN-Pro',
+        slug: 'jpn-pro',
         price: '30',
         limits: {
             traffic: '300',
@@ -352,6 +356,7 @@ const portalProducts = ref<Record<string, AdminPackageProduct>>({});
 const portalForm = reactive({
     sell: true,
     name: '',
+    slug: '',
     price_monthly: '',
     price_quarterly: '',
     price_yearly: '',
@@ -395,6 +400,7 @@ function applyTierPreset(preset: TierPreset): void {
 
     portalForm.sell = true;
     portalForm.name = preset.name;
+    portalForm.slug = preset.slug;
     portalForm.price_monthly = preset.price;
     portalForm.price_quarterly = '';
     portalForm.price_yearly = '';
@@ -412,6 +418,9 @@ function resetPortalForm(
 ): void {
     portalForm.sell = true;
     portalForm.name = existing?.name ?? packageName;
+    // Pre-filled from the linked product so a price-only edit re-sends the slug
+    // it already has and cannot move the tier.
+    portalForm.slug = existing?.slug ?? '';
     portalForm.price_monthly = existing ? String(existing.price_monthly) : '';
     portalForm.price_quarterly = existing
         ? String(existing.price_quarterly)
@@ -440,6 +449,7 @@ const portalDerived = computed(() => {
 function portalPayload(): Record<string, unknown> {
     return {
         name: portalForm.name.trim(),
+        slug: portalForm.slug.trim(),
         price_monthly: Number(portalForm.price_monthly) || 0,
         price_quarterly:
             portalForm.price_quarterly === ''
@@ -2114,6 +2124,18 @@ async function confirmPuDelete(): Promise<void> {
                                         v-model="portalForm.name"
                                         placeholder="客户看到的名称"
                                     />
+                                </div>
+                                <div class="flex flex-col gap-2">
+                                    <Label for="portal-slug">商品标识</Label>
+                                    <Input
+                                        id="portal-slug"
+                                        v-model="portalForm.slug"
+                                        placeholder="例如 jpn-mini"
+                                    />
+                                    <p class="text-xs text-muted-foreground">
+                                        落地页按此标识匹配套餐。填写已存在的标识会直接接管该商品，
+                                        而不是新建一个重复的。
+                                    </p>
                                 </div>
                                 <div class="flex flex-col gap-2">
                                     <Label for="portal-monthly">

@@ -27,13 +27,7 @@ class PackageProductLinker
     public function link(int $cdnflyPackageId, array $portal): Product
     {
         return DB::transaction(function () use ($cdnflyPackageId, $portal): Product {
-            $existing = ProductCdnflyMapping::query()
-                ->where('cdnfly_plan_id', (string) $cdnflyPackageId)
-                ->first();
-
-            $product = $existing
-                ? Product::query()->find($existing->product_id)
-                : null;
+            $product = $this->resolveProduct($cdnflyPackageId, $portal['slug'] ?? null);
 
             $monthly = $this->money($portal['price_monthly'] ?? 0);
 
@@ -69,8 +63,79 @@ class PackageProductLinker
                 ],
             );
 
+            $this->releaseOtherProducts($cdnflyPackageId, $product->id);
+
             return $product->refresh();
         });
+    }
+
+    /**
+     * The product this package should be sold as.
+     *
+     * Order matters. An explicitly supplied slug wins: naming an existing
+     * product is a deliberate instruction to sell this package as that tier,
+     * and it is the only way to correct a package linked to the wrong one. The
+     * form pre-fills the current slug, so an ordinary price edit re-sends what
+     * is already linked and nothing moves.
+     *
+     * Falling back to the existing link covers a save with no slug at all.
+     * Creating is the last resort — doing it first left the seeded catalogue
+     * (jpn-mini, …) unmapped beside a duplicate set, and the storefront listed
+     * every tier twice with the live prices on the copy nothing rendered.
+     */
+    private function resolveProduct(int $cdnflyPackageId, mixed $slug): ?Product
+    {
+        $wanted = Str::slug((string) ($slug ?? ''));
+
+        if ($wanted !== '') {
+            $named = Product::query()->where('slug', $wanted)->first();
+
+            if ($named) {
+                return $named;
+            }
+        }
+
+        $mapped = ProductCdnflyMapping::query()
+            ->where('cdnfly_plan_id', (string) $cdnflyPackageId)
+            ->first();
+
+        return $mapped ? Product::query()->find($mapped->product_id) : null;
+    }
+
+    /**
+     * Detach any other product still claiming this package.
+     *
+     * Re-pointing a package at a different product leaves the previous one
+     * orphaned but still on sale — a tier customers could buy that nothing
+     * provisions. A product this class generated and that nobody has ordered is
+     * removed; anything else is only deactivated, because deleting a product
+     * with order history would take the order rows with it.
+     */
+    private function releaseOtherProducts(int $cdnflyPackageId, int $keepProductId): void
+    {
+        $stale = ProductCdnflyMapping::query()
+            ->where('cdnfly_plan_id', (string) $cdnflyPackageId)
+            ->where('product_id', '!=', $keepProductId)
+            ->get();
+
+        foreach ($stale as $mapping) {
+            $product = Product::query()->find($mapping->product_id);
+            $mapping->delete();
+
+            if (! $product) {
+                continue;
+            }
+
+            $generated = $product->slug === 'package-'.$cdnflyPackageId;
+
+            if ($generated && $product->orders()->doesntExist()) {
+                $product->delete();
+
+                continue;
+            }
+
+            $product->forceFill(['is_active' => false])->save();
+        }
     }
 
     /**
