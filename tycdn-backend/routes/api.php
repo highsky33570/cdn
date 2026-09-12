@@ -161,6 +161,7 @@ Route::middleware(['auth:sanctum', 'verified', 'admin', 'throttle:60,1'])->prefi
     Route::delete('/acls/{id}', [AdminSiteController::class, 'destroyAcl'])->middleware('throttle:10,1');
 
     // 财务管理
+    Route::get('/finance/summary', [AdminFinanceController::class, 'summary']);
     Route::get('/orders', [AdminFinanceController::class, 'index']);
     Route::put('/orders/{order}/status', [AdminFinanceController::class, 'updateOrderStatus']);
     Route::get('/services', [AdminFinanceController::class, 'services']);

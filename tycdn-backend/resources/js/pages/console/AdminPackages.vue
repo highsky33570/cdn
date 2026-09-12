@@ -246,7 +246,7 @@ type TierPreset = (typeof TIER_PRESETS)[number];
 /** The portal charges in USD (products.currency defaults to USD). */
 const PORTAL_CURRENCY = 'USD';
 const cnameModeOptions = [
-    { value: 'site', label: '按网站生成' },
+    { value: 'site', label: '按网站生成（推荐）' },
     { value: 'package', label: '按套餐生成' },
 ] as const;
 const limitFieldConfigs: Array<{
@@ -320,6 +320,7 @@ const batchError = ref('');
 const optionsError = ref('');
 const packageDialogOpen = ref(false);
 const detailDialogOpen = ref(false);
+const detailJsonOpen = ref(false);
 const batchDialogOpen = ref(false);
 const dialogMode = ref<DialogMode>('create');
 
@@ -495,6 +496,208 @@ const selectedCount = computed(() => selectedIds.value.length);
 const detailJson = computed(() =>
     JSON.stringify(detailRecord.value ?? {}, null, 2),
 );
+
+/**
+ * The detail view used to be a raw JSON dump, which meant reading -1 as
+ * "unlimited" and 0/1 as feature flags in your head, and gave no sign of what
+ * the package is actually sold for.
+ *
+ * Names are resolved through the option lists so 区域 1 reads as its name.
+ */
+function detailValue(key: string): unknown {
+    return detailRecord.value?.[key];
+}
+
+/** -1 is CDNfly's unlimited; 0 means genuinely none. */
+function limitText(key: string, unit = ''): string {
+    const raw = detailValue(key);
+
+    if (raw === null || raw === undefined || raw === '') {
+        return '—';
+    }
+
+    if (String(raw) === '-1') {
+        return '不限';
+    }
+
+    return `${raw}${unit}`;
+}
+
+function flagText(key: string): string {
+    const raw = detailValue(key);
+
+    if (raw === null || raw === undefined || raw === '') {
+        return '—';
+    }
+
+    return String(raw) === '1' ? '支持' : '不支持';
+}
+
+function optionName(
+    list: AdminPackageOption[],
+    value: unknown,
+    fallback = '—',
+): string {
+    if (value === null || value === undefined || value === '') {
+        return fallback;
+    }
+
+    const match = list.find((option) => String(option.id) === String(value));
+
+    return match ? `${match.name}（${value}）` : String(value);
+}
+
+function plainText(key: string): string {
+    const raw = detailValue(key);
+
+    return raw === null || raw === undefined || raw === '' ? '—' : String(raw);
+}
+
+const detailSections = computed(() => {
+    if (!detailRecord.value) {
+        return [];
+    }
+
+    const options = packageOptions.value;
+
+    return [
+        {
+            title: '基本信息',
+            rows: [
+                { label: '套餐 ID', value: plainText('id') },
+                { label: '名称', value: plainText('name') },
+                {
+                    label: '区域',
+                    value: optionName(
+                        options.regions,
+                        detailValue('region_id'),
+                    ),
+                },
+                {
+                    label: '线路组',
+                    value: optionName(
+                        options.node_groups,
+                        detailValue('node_group_id'),
+                    ),
+                },
+                { label: '所属套餐组', value: plainText('groups') },
+                {
+                    label: '状态',
+                    value:
+                        String(detailValue('enable')) === '1' ? '启用' : '停用',
+                },
+                { label: '备注', value: plainText('des') },
+                {
+                    label: '创建时间',
+                    value: formatDate(detailValue('create_at') as string),
+                },
+            ],
+        },
+        {
+            title: '规格限制',
+            rows: [
+                { label: '月流量', value: limitText('traffic', ' GB') },
+                { label: '带宽', value: limitText('bandwidth') },
+                { label: '连接数', value: limitText('connection') },
+                { label: '主域名数（网站）', value: limitText('main_domain') },
+                { label: '域名数', value: limitText('domain') },
+                { label: '网站非标端口数', value: limitText('http_port') },
+                { label: '四层端口数', value: limitText('stream_port') },
+            ],
+        },
+        {
+            title: '功能',
+            rows: [
+                { label: '自定义 CC 规则', value: flagText('custom_cc_rule') },
+                { label: 'CC 防护', value: plainText('cc_protect') },
+                { label: 'DDoS 防护', value: plainText('ddos_protect') },
+                { label: 'WebSocket', value: flagText('websocket') },
+                { label: 'HTTP3', value: flagText('http3') },
+                {
+                    label: 'L2 节点回源',
+                    value:
+                        String(detailValue('l2_state')) === '1'
+                            ? '启用'
+                            : '禁用',
+                },
+                {
+                    label: '实名认证',
+                    value:
+                        String(detailValue('id_verify')) === '1'
+                            ? '需要'
+                            : '不需要',
+                },
+            ],
+        },
+        {
+            title: 'CNAME 设置',
+            rows: [
+                {
+                    label: 'CNAME 域名',
+                    value: optionName(
+                        options.cname_domains,
+                        detailValue('cname_domain'),
+                    ),
+                },
+                { label: 'CNAME 主机名', value: plainText('cname_hostname2') },
+                {
+                    label: 'CNAME 模式',
+                    value:
+                        String(detailValue('cname_mode')) === 'package'
+                            ? '按套餐生成'
+                            : '按网站生成',
+                },
+            ],
+        },
+        {
+            title: '购买与计费',
+            rows: [
+                { label: '单用户购买数量', value: limitText('buy_num_limit') },
+                {
+                    label: '提前续费天数',
+                    value: limitText('before_exp_days_renew', ' 天'),
+                },
+                { label: '可购买截止时间', value: plainText('expire') },
+                // These are CDNfly's internal prices, billed against the
+                // customer's CDNfly balance. 0 is correct for portal selling.
+                { label: 'CDNfly 月付', value: plainText('month_price') },
+                { label: 'CDNfly 季付', value: plainText('quarter_price') },
+                { label: 'CDNfly 年付', value: plainText('year_price') },
+            ],
+        },
+    ];
+});
+
+/**
+ * The customer-facing monthly price, or '' when the package has no product.
+ *
+ * CDNfly's own month_price is 0 on every portal-sold tier, so showing it in the
+ * list made every package look free.
+ */
+function portalPriceOf(record: PackageRecord): string {
+    const id = getPackageId(record);
+
+    if (id === null) {
+return '';
+}
+
+    const product = portalProducts.value[String(id)];
+
+    if (!product) {
+return '';
+}
+
+    return `${product.currency} ${product.price_monthly}`;
+}
+
+/** The portal product this package is sold as, if any. */
+const detailProduct = computed(() => {
+    const id = detailValue('id');
+
+    return id === null || id === undefined
+        ? undefined
+        : portalProducts.value[String(id)];
+});
 const cnameDomainOptions = computed(() => [
     { id: CNAME_DEFAULT_VALUE, name: '不指定 CNAME 域名' },
     ...packageOptions.value.cname_domains,
@@ -1569,7 +1772,7 @@ async function confirmPuDelete(): Promise<void> {
                                     名称
                                 </th>
                                 <th class="px-4 py-3 text-left font-medium">
-                                    月付
+                                    门户月付
                                 </th>
                                 <th class="px-4 py-3 text-left font-medium">
                                     月流量
@@ -1629,12 +1832,16 @@ async function confirmPuDelete(): Promise<void> {
                                             ])
                                         }}
                                     </td>
-                                    <td class="px-4 py-4 text-muted-foreground">
-                                        {{
-                                            getDisplayValue(record, [
-                                                'month_price',
-                                            ])
-                                        }}
+                                    <td class="px-4 py-4">
+                                        <span
+                                            v-if="portalPriceOf(record)"
+                                            class="font-medium"
+                                        >
+                                            {{ portalPriceOf(record) }}
+                                        </span>
+                                        <Badge v-else variant="outline">
+                                            未上架
+                                        </Badge>
                                     </td>
                                     <td class="px-4 py-4 text-muted-foreground">
                                         {{
@@ -2836,13 +3043,119 @@ async function confirmPuDelete(): Promise<void> {
                 <DialogHeader>
                     <DialogTitle>基础套餐详情</DialogTitle>
                     <DialogDescription>
-                        来自 CDNfly 指定套餐详情接口的原始数据。
+                        套餐的限制、功能与对外售价。
                     </DialogDescription>
                 </DialogHeader>
-                <pre
-                    class="max-h-[520px] overflow-auto rounded-md border bg-muted p-4 text-xs text-muted-foreground"
-                    >{{ detailJson }}</pre
-                >
+
+                <div class="grid max-h-[560px] gap-4 overflow-auto pr-1">
+                    <!--
+                        What the package is sold for is the first thing an
+                        operator wants and the one thing the CDNfly payload
+                        cannot answer, so it leads.
+                    -->
+                    <div
+                        v-if="detailProduct"
+                        class="rounded-lg border border-primary/30 bg-primary/5 p-4"
+                    >
+                        <div
+                            class="flex flex-wrap items-baseline justify-between gap-2"
+                        >
+                            <div class="text-sm font-medium">门户售价</div>
+                            <Badge
+                                :variant="
+                                    detailProduct.is_active
+                                        ? 'secondary'
+                                        : 'outline'
+                                "
+                            >
+                                {{
+                                    detailProduct.is_active
+                                        ? '已上架'
+                                        : '已下架'
+                                }}
+                            </Badge>
+                        </div>
+                        <div
+                            class="mt-2 flex flex-wrap items-baseline gap-x-6 gap-y-1"
+                        >
+                            <span class="text-2xl font-semibold">
+                                {{ detailProduct.currency }}
+                                {{ detailProduct.price_monthly }}
+                                <span
+                                    class="text-sm font-normal text-muted-foreground"
+                                >
+                                    / 月
+                                </span>
+                            </span>
+                            <span class="text-sm text-muted-foreground">
+                                季付 {{ detailProduct.price_quarterly }} · 年付
+                                {{ detailProduct.price_yearly }}
+                            </span>
+                        </div>
+                        <div class="mt-1 text-xs text-muted-foreground">
+                            商品：{{ detailProduct.name }}（{{
+                                detailProduct.slug
+                            }}）
+                        </div>
+                    </div>
+
+                    <Alert v-else>
+                        <AlertCircle />
+                        <AlertTitle>尚未在门户上架</AlertTitle>
+                        <AlertDescription>
+                            该套餐没有对应的门户商品，客户无法下单购买。
+                            点击「修改」并填写门户售价即可上架。
+                        </AlertDescription>
+                    </Alert>
+
+                    <div
+                        v-for="section in detailSections"
+                        :key="section.title"
+                        class="rounded-lg border"
+                    >
+                        <div class="border-b px-4 py-2 text-sm font-medium">
+                            {{ section.title }}
+                        </div>
+                        <dl class="grid gap-x-6 gap-y-2 p-4 sm:grid-cols-2">
+                            <div
+                                v-for="row in section.rows"
+                                :key="row.label"
+                                class="flex items-baseline justify-between gap-3 border-b border-dashed border-border/60 pb-1 last:border-0"
+                            >
+                                <dt class="text-xs text-muted-foreground">
+                                    {{ row.label }}
+                                </dt>
+                                <dd class="text-sm">{{ row.value }}</dd>
+                            </div>
+                        </dl>
+                    </div>
+
+                    <!--
+                        Kept, collapsed: when CDNfly returns a field this view
+                        does not model, the raw payload is the only way to see
+                        it.
+                    -->
+                    <Collapsible
+                        v-model:open="detailJsonOpen"
+                        class="rounded-lg border"
+                    >
+                        <CollapsibleTrigger
+                            class="flex w-full items-center justify-between gap-3 px-4 py-2 text-left text-sm font-medium"
+                        >
+                            原始数据
+                            <ChevronDown
+                                class="size-4 shrink-0 transition-transform"
+                                :class="detailJsonOpen ? 'rotate-180' : ''"
+                            />
+                        </CollapsibleTrigger>
+                        <CollapsibleContent>
+                            <pre
+                                class="max-h-80 overflow-auto border-t bg-muted p-4 text-xs text-muted-foreground"
+                                >{{ detailJson }}</pre
+                            >
+                        </CollapsibleContent>
+                    </Collapsible>
+                </div>
                 <DialogFooter>
                     <Button variant="outline" @click="detailDialogOpen = false">
                         关闭

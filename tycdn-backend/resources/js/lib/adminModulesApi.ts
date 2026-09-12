@@ -503,6 +503,26 @@ export async function listAdminDnsApis(
 }
 
 // ─── Finance ───────────────────────────────────────────
+/**
+ * Headline numbers for the finance page.
+ *
+ * Computed in the database rather than from the current page of a paginated
+ * list — a total derived from page one is wrong the moment there is a page two.
+ */
+export interface AdminFinanceSummary {
+    revenue_total: number;
+    revenue_month: number;
+    orders_total: number;
+    orders_pending: number;
+    orders_failed: number;
+    services_active: number;
+    services_total: number;
+}
+
+export async function getAdminFinanceSummary(): Promise<AdminFinanceSummary> {
+    return apiRequest<AdminFinanceSummary>('/api/admin/finance/summary');
+}
+
 export async function listAdminOrders(
     params: Record<string, string | number> = {},
 ): Promise<Paginated<AdminOrderRecord>> {

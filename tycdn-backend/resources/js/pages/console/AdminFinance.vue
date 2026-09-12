@@ -1,6 +1,20 @@
 <script setup lang="ts">
-import { AlertCircle, CreditCard, Eye, Package, Pencil, Plus, Receipt, Save, Trash2, Zap } from 'lucide-vue-next';
-import { computed, reactive, ref } from 'vue';
+import {
+    AlertCircle,
+    CircleCheck,
+    CreditCard,
+    Eye,
+    Package,
+    Pencil,
+    Plus,
+    Receipt,
+    Save,
+    Trash2,
+    TriangleAlert,
+    Wallet,
+    Zap,
+} from 'lucide-vue-next';
+import { computed, onMounted, reactive, ref } from 'vue';
 import { toast } from 'vue-sonner';
 import ConsoleDataTable from '@/components/console/ConsoleDataTable.vue';
 import type { ColumnDef } from '@/components/console/ConsoleDataTable.vue';
@@ -28,6 +42,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
+import { getAdminFinanceSummary } from '@/lib/adminModulesApi';
 import {
     listAdminOrders,
     listAdminServices,
@@ -41,14 +56,94 @@ import {
     removeAdminUserPackageUpgrade,
     listAdminPackageUps,
 } from '@/lib/adminModulesApi';
+import type { AdminFinanceSummary } from '@/lib/adminModulesApi';
 import type {
     AdminOrderRecord,
     AdminServiceRecord,
     CdnflyRecord,
-    CdnflyListData,
 } from '@/lib/adminModulesApi';
 import { getErrorMessage } from '@/lib/formatters';
 import { formatDate, formatMoney } from '@/lib/formatters';
+
+/**
+ * The page used to open onto three stacked tables, each with its own toolbar
+ * and its own 暂无记录 block, and answered nothing an operator arrives with.
+ *
+ * Now: the numbers first, then ONE panel with the three lists behind tabs, so
+ * there is a single toolbar and a single empty state at a time.
+ */
+const summary = ref<AdminFinanceSummary | null>(null);
+const summaryError = ref('');
+
+async function loadSummary(): Promise<void> {
+    summaryError.value = '';
+
+    try {
+        summary.value = await getAdminFinanceSummary();
+    } catch (error) {
+        summaryError.value = getErrorMessage(error);
+    }
+}
+
+onMounted(loadSummary);
+
+const money = (value: number | undefined): string =>
+    value === undefined ? '—' : `${Number(value).toFixed(2)}`;
+
+/**
+ * Paid-but-undelivered is the only figure here that demands action today, so it
+ * is styled as a warning rather than sitting quietly among the totals.
+ */
+const summaryCards = computed(() => [
+    {
+        key: 'revenue_month',
+        label: '本月收入',
+        value: money(summary.value?.revenue_month),
+        hint: `累计 ${money(summary.value?.revenue_total)}`,
+        icon: Wallet,
+        tone: 'default' as const,
+    },
+    {
+        key: 'orders_pending',
+        label: '待支付订单',
+        value: String(summary.value?.orders_pending ?? '—'),
+        hint: `共 ${summary.value?.orders_total ?? '—'} 笔订单`,
+        icon: Receipt,
+        tone: 'default' as const,
+    },
+    {
+        key: 'services_active',
+        label: '运行中的服务',
+        value: String(summary.value?.services_active ?? '—'),
+        hint: `共 ${summary.value?.services_total ?? '—'} 个实例`,
+        icon: CircleCheck,
+        tone: 'default' as const,
+    },
+    {
+        key: 'orders_failed',
+        label: '开通失败',
+        value: String(summary.value?.orders_failed ?? '—'),
+        hint:
+            (summary.value?.orders_failed ?? 0) > 0
+                ? '已收款但未交付，需处理'
+                : '无需处理',
+        icon: TriangleAlert,
+        tone:
+            (summary.value?.orders_failed ?? 0) > 0
+                ? ('warning' as const)
+                : ('default' as const),
+    },
+]);
+
+type FinanceTab = 'orders' | 'services' | 'packages';
+
+const activeTab = ref<FinanceTab>('orders');
+
+const financeTabs = [
+    { key: 'orders' as const, label: '订单', icon: Receipt },
+    { key: 'services' as const, label: '服务实例', icon: Package },
+    { key: 'packages' as const, label: 'CDNfly 用户套餐', icon: Zap },
+];
 
 const STATUS_ALL = 'all';
 
@@ -68,8 +163,14 @@ const orderColumns: ColumnDef[] = [
         width: '100px',
         badge: true,
         badgeVariant: (v) => {
-            if (v === 'paid' || v === 'provisioned') return 'secondary';
-            if (v === 'failed' || v === 'expired') return 'destructive';
+            if (v === 'paid' || v === 'provisioned') {
+                return 'secondary';
+            }
+
+            if (v === 'failed' || v === 'expired') {
+                return 'destructive';
+            }
+
             return 'outline';
         },
     },
@@ -104,8 +205,14 @@ const serviceColumns: ColumnDef[] = [
         width: '100px',
         badge: true,
         badgeVariant: (v) => {
-            if (v === 'active') return 'secondary';
-            if (v === 'failed') return 'destructive';
+            if (v === 'active') {
+                return 'secondary';
+            }
+
+            if (v === 'failed') {
+                return 'destructive';
+            }
+
             return 'outline';
         },
     },
@@ -171,7 +278,10 @@ function openStatusDialog(row: Record<string, unknown>): void {
 }
 
 async function submitStatusUpdate(): Promise<void> {
-    if (!statusTarget.value) return;
+    if (!statusTarget.value) {
+        return;
+    }
+
     statusSaving.value = true;
     statusError.value = '';
 
@@ -181,9 +291,10 @@ async function submitStatusUpdate(): Promise<void> {
         statusDialogOpen.value = false;
         ordersTableRef.value?.refresh();
     } catch (error) {
-        statusError.value = typeof error === 'object' && error !== null && 'message' in error
-            ? String((error as { message: string }).message)
-            : '更新失败';
+        statusError.value =
+            typeof error === 'object' && error !== null && 'message' in error
+                ? String((error as { message: string }).message)
+                : '更新失败';
     } finally {
         statusSaving.value = false;
     }
@@ -201,7 +312,9 @@ const upDeleteTarget = ref<CdnflyRecord | null>(null);
 const upDeleting = ref(false);
 const upDeleteError = ref('');
 
-const upDialogTitle = computed(() => (upEditing.value ? '编辑用户套餐' : '新增用户套餐'));
+const upDialogTitle = computed(() =>
+    upEditing.value ? '编辑用户套餐' : '新增用户套餐',
+);
 
 const DURATION_OPTIONS = [
     { value: 'month', label: '月付' },
@@ -233,6 +346,7 @@ function openUpEdit(row: Record<string, unknown>): void {
 async function submitUp(): Promise<void> {
     upSaving.value = true;
     upError.value = '';
+
     try {
         if (upEditing.value) {
             await updateAdminUserPackage(Number(upEditing.value.id), {
@@ -249,6 +363,7 @@ async function submitUp(): Promise<void> {
             });
             toast.success('用户套餐已创建');
         }
+
         upDialogOpen.value = false;
         upTableRef.value?.refresh();
     } catch (error) {
@@ -265,9 +380,13 @@ function openUpDelete(row: Record<string, unknown>): void {
 }
 
 async function confirmUpDelete(): Promise<void> {
-    if (!upDeleteTarget.value) return;
+    if (!upDeleteTarget.value) {
+        return;
+    }
+
     upDeleting.value = true;
     upDeleteError.value = '';
+
     try {
         await deleteAdminUserPackage(Number(upDeleteTarget.value.id));
         upDeleteOpen.value = false;
@@ -300,10 +419,16 @@ async function openUpgradeDialog(row: Record<string, unknown>): Promise<void> {
 }
 
 async function loadUpgrades(): Promise<void> {
-    if (!upgradeTarget.value) return;
+    if (!upgradeTarget.value) {
+        return;
+    }
+
     upgradesLoading.value = true;
+
     try {
-        const data = await listAdminUserPackageUpgrades(Number(upgradeTarget.value.id));
+        const data = await listAdminUserPackageUpgrades(
+            Number(upgradeTarget.value.id),
+        );
         const raw = (data as unknown as { data?: unknown })?.data;
         upgrades.value = Array.isArray(raw) ? raw : [];
     } catch (error) {
@@ -325,11 +450,18 @@ async function loadPackageUpOptions(): Promise<void> {
 }
 
 async function submitAddUpgrade(): Promise<void> {
-    if (!upgradeTarget.value || !upgradeAddForm.package_up_id) return;
+    if (!upgradeTarget.value || !upgradeAddForm.package_up_id) {
+        return;
+    }
+
     upgradeAdding.value = true;
     upgradeError.value = '';
+
     try {
-        await addAdminUserPackageUpgrade(Number(upgradeTarget.value.id), Number(upgradeAddForm.package_up_id));
+        await addAdminUserPackageUpgrade(
+            Number(upgradeTarget.value.id),
+            Number(upgradeAddForm.package_up_id),
+        );
         toast.success('升级包已添加');
         upgradeAddForm.package_up_id = '';
         await loadUpgrades();
@@ -341,11 +473,18 @@ async function submitAddUpgrade(): Promise<void> {
 }
 
 async function removeUpgrade(upgradeId: number): Promise<void> {
-    if (!upgradeTarget.value) return;
+    if (!upgradeTarget.value) {
+        return;
+    }
+
     upgradeRemovingId.value = upgradeId;
     upgradeError.value = '';
+
     try {
-        await removeAdminUserPackageUpgrade(Number(upgradeTarget.value.id), upgradeId);
+        await removeAdminUserPackageUpgrade(
+            Number(upgradeTarget.value.id),
+            upgradeId,
+        );
         toast.success('升级包已移除');
         await loadUpgrades();
     } catch (error) {
@@ -362,16 +501,30 @@ const serviceFilters = reactive({ search: '', status: STATUS_ALL });
 const orderSearchParams = computed(() => {
     const p: Record<string, string | number> = {};
     const s = orderFilters.search.trim();
-    if (s) p.search = s;
-    if (orderFilters.status !== STATUS_ALL) p.status = orderFilters.status;
+
+    if (s) {
+        p.search = s;
+    }
+
+    if (orderFilters.status !== STATUS_ALL) {
+        p.status = orderFilters.status;
+    }
+
     return p;
 });
 
 const serviceSearchParams = computed(() => {
     const p: Record<string, string | number> = {};
     const s = serviceFilters.search.trim();
-    if (s) p.search = s;
-    if (serviceFilters.status !== STATUS_ALL) p.status = serviceFilters.status;
+
+    if (s) {
+        p.search = s;
+    }
+
+    if (serviceFilters.status !== STATUS_ALL) {
+        p.status = serviceFilters.status;
+    }
+
     return p;
 });
 
@@ -386,10 +539,19 @@ function openOrderDetail(row: Record<string, unknown>): void {
 
 const orderDetailFields = computed<{ label: string; value: string }[]>(() => {
     const o = orderDetail.value;
-    if (!o) return [];
+
+    if (!o) {
+        return [];
+    }
+
     return [
         { label: '订单号', value: o.order_no || `#${o.id}` },
-        { label: '用户', value: o.user_name ? `${o.user_name} (${o.user_email})` : String(o.user_id ?? '-') },
+        {
+            label: '用户',
+            value: o.user_name
+                ? `${o.user_name} (${o.user_email})`
+                : String(o.user_id ?? '-'),
+        },
         { label: '产品', value: o.product_name ?? '-' },
         { label: '类型', value: o.order_type ?? '-' },
         { label: '计费周期', value: o.billing_cycle ?? '-' },
@@ -418,10 +580,19 @@ function openServiceDetail(row: Record<string, unknown>): void {
 
 const serviceDetailFields = computed<{ label: string; value: string }[]>(() => {
     const s = serviceDetail.value;
-    if (!s) return [];
+
+    if (!s) {
+        return [];
+    }
+
     return [
         { label: 'ID', value: String(s.id) },
-        { label: '用户', value: s.user_name ? `${s.user_name} (${s.user_email})` : String(s.user_id ?? '-') },
+        {
+            label: '用户',
+            value: s.user_name
+                ? `${s.user_name} (${s.user_email})`
+                : String(s.user_id ?? '-'),
+        },
         { label: '订单号', value: s.order_no ?? '-' },
         { label: '产品', value: s.product_name ?? '-' },
         { label: '服务名称', value: s.service_name ?? '-' },
@@ -444,8 +615,77 @@ const serviceDetailFields = computed<{ label: string; value: string }[]>(() => {
             :show-api-badge="false"
         />
 
-        <!-- 订单列表 -->
+        <!--
+            The numbers first. Three empty tables told an operator nothing about
+            whether the business was working.
+        -->
+        <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <div
+                v-for="card in summaryCards"
+                :key="card.key"
+                class="rounded-xl border p-4"
+                :class="
+                    card.tone === 'warning'
+                        ? 'border-destructive/40 bg-destructive/5'
+                        : 'bg-card'
+                "
+            >
+                <div class="flex items-center justify-between gap-2">
+                    <span class="text-xs text-muted-foreground">
+                        {{ card.label }}
+                    </span>
+                    <component
+                        :is="card.icon"
+                        class="size-4"
+                        :class="
+                            card.tone === 'warning'
+                                ? 'text-destructive'
+                                : 'text-muted-foreground'
+                        "
+                    />
+                </div>
+                <div
+                    class="mt-2 text-2xl font-semibold"
+                    :class="card.tone === 'warning' ? 'text-destructive' : ''"
+                >
+                    {{ card.value }}
+                </div>
+                <div class="mt-1 text-xs text-muted-foreground">
+                    {{ card.hint }}
+                </div>
+            </div>
+        </div>
+
+        <Alert v-if="summaryError" variant="destructive">
+            <AlertCircle />
+            <AlertTitle>统计加载失败</AlertTitle>
+            <AlertDescription>{{ summaryError }}</AlertDescription>
+        </Alert>
+
+        <!--
+            One panel, three lists. Previously each had its own search box,
+            page-size select and refresh button stacked down the page.
+        -->
+        <div class="flex flex-wrap gap-1 border-b pb-3">
+            <button
+                v-for="tab in financeTabs"
+                :key="tab.key"
+                type="button"
+                class="flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors"
+                :class="
+                    activeTab === tab.key
+                        ? 'bg-primary/10 text-primary'
+                        : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+                "
+                @click="activeTab = tab.key"
+            >
+                <component :is="tab.icon" class="size-4" />
+                {{ tab.label }}
+            </button>
+        </div>
+
         <ConsoleDataTable
+            v-if="activeTab === 'orders'"
             ref="ordersTableRef"
             title="订单列表"
             :icon="Receipt"
@@ -468,10 +708,14 @@ const serviceDetailFields = computed<{ label: string; value: string }[]>(() => {
                         </SelectTrigger>
                         <SelectContent>
                             <SelectGroup>
-                                <SelectItem :value="STATUS_ALL">全部状态</SelectItem>
+                                <SelectItem :value="STATUS_ALL"
+                                    >全部状态</SelectItem
+                                >
                                 <SelectItem value="pending">待支付</SelectItem>
                                 <SelectItem value="paid">已支付</SelectItem>
-                                <SelectItem value="provisioned">已开通</SelectItem>
+                                <SelectItem value="provisioned"
+                                    >已开通</SelectItem
+                                >
                                 <SelectItem value="failed">失败</SelectItem>
                                 <SelectItem value="expired">已过期</SelectItem>
                             </SelectGroup>
@@ -482,17 +726,16 @@ const serviceDetailFields = computed<{ label: string; value: string }[]>(() => {
 
             <template #cell-user_name="{ row }">
                 <div>{{ row.user_name ?? '-' }}</div>
-                <div v-if="row.user_email" class="text-xs text-muted-foreground">
+                <div
+                    v-if="row.user_email"
+                    class="text-xs text-muted-foreground"
+                >
                     {{ row.user_email }}
                 </div>
             </template>
 
             <template #row-actions="{ row }">
-                <Button
-                    variant="ghost"
-                    size="sm"
-                    @click="openOrderDetail(row)"
-                >
+                <Button variant="ghost" size="sm" @click="openOrderDetail(row)">
                     <Eye class="size-4" />
                 </Button>
                 <Button
@@ -505,8 +748,8 @@ const serviceDetailFields = computed<{ label: string; value: string }[]>(() => {
             </template>
         </ConsoleDataTable>
 
-        <!-- 服务实例 -->
         <ConsoleDataTable
+            v-else-if="activeTab === 'services'"
             title="服务实例"
             :icon="Package"
             :columns="serviceColumns"
@@ -528,7 +771,9 @@ const serviceDetailFields = computed<{ label: string; value: string }[]>(() => {
                         </SelectTrigger>
                         <SelectContent>
                             <SelectGroup>
-                                <SelectItem :value="STATUS_ALL">全部状态</SelectItem>
+                                <SelectItem :value="STATUS_ALL"
+                                    >全部状态</SelectItem
+                                >
                                 <SelectItem value="pending">待开通</SelectItem>
                                 <SelectItem value="active">运行中</SelectItem>
                                 <SelectItem value="failed">失败</SelectItem>
@@ -541,7 +786,10 @@ const serviceDetailFields = computed<{ label: string; value: string }[]>(() => {
 
             <template #cell-user_name="{ row }">
                 <div>{{ row.user_name ?? row.user_id ?? '-' }}</div>
-                <div v-if="row.user_email" class="text-xs text-muted-foreground">
+                <div
+                    v-if="row.user_email"
+                    class="text-xs text-muted-foreground"
+                >
                     {{ row.user_email }}
                 </div>
             </template>
@@ -557,8 +805,8 @@ const serviceDetailFields = computed<{ label: string; value: string }[]>(() => {
             </template>
         </ConsoleDataTable>
 
-        <!-- CDNfly 用户套餐 -->
         <ConsoleDataTable
+            v-else
             ref="upTableRef"
             title="CDNfly 用户套餐"
             :icon="Package"
@@ -576,7 +824,11 @@ const serviceDetailFields = computed<{ label: string; value: string }[]>(() => {
                 <Button variant="ghost" size="sm" @click="openUpEdit(row)">
                     <Pencil class="size-4" />
                 </Button>
-                <Button variant="ghost" size="sm" @click="openUpgradeDialog(row)">
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    @click="openUpgradeDialog(row)"
+                >
                     <Zap class="size-4" />
                 </Button>
                 <Button variant="ghost" size="sm" @click="openUpDelete(row)">
@@ -603,13 +855,17 @@ const serviceDetailFields = computed<{ label: string; value: string }[]>(() => {
                     :key="field.label"
                     class="grid grid-cols-[140px_1fr] gap-2"
                 >
-                    <Label class="text-muted-foreground">{{ field.label }}</Label>
+                    <Label class="text-muted-foreground">{{
+                        field.label
+                    }}</Label>
                     <Badge
                         v-if="field.label === '状态'"
                         :variant="
-                            orderDetail.status === 'paid' || orderDetail.status === 'provisioned'
+                            orderDetail.status === 'paid' ||
+                            orderDetail.status === 'provisioned'
                                 ? 'secondary'
-                                : orderDetail.status === 'failed' || orderDetail.status === 'expired'
+                                : orderDetail.status === 'failed' ||
+                                    orderDetail.status === 'expired'
                                   ? 'destructive'
                                   : 'outline'
                         "
@@ -640,7 +896,9 @@ const serviceDetailFields = computed<{ label: string; value: string }[]>(() => {
                     :key="field.label"
                     class="grid grid-cols-[140px_1fr] gap-2"
                 >
-                    <Label class="text-muted-foreground">{{ field.label }}</Label>
+                    <Label class="text-muted-foreground">{{
+                        field.label
+                    }}</Label>
                     <Badge
                         v-if="field.label === '状态'"
                         :variant="
@@ -657,7 +915,11 @@ const serviceDetailFields = computed<{ label: string; value: string }[]>(() => {
                     <span
                         v-else
                         class="break-all"
-                        :class="{ 'text-destructive': field.label === '错误信息' && field.value !== '-' }"
+                        :class="{
+                            'text-destructive':
+                                field.label === '错误信息' &&
+                                field.value !== '-',
+                        }"
                     >
                         {{ field.value }}
                     </span>
@@ -670,7 +932,9 @@ const serviceDetailFields = computed<{ label: string; value: string }[]>(() => {
             <DialogScrollContent class="max-w-md">
                 <DialogHeader>
                     <DialogTitle>{{ upDialogTitle }}</DialogTitle>
-                    <DialogDescription>管理 CDNfly 用户套餐。</DialogDescription>
+                    <DialogDescription
+                        >管理 CDNfly 用户套餐。</DialogDescription
+                    >
                 </DialogHeader>
 
                 <Alert v-if="upError" variant="destructive">
@@ -682,11 +946,21 @@ const serviceDetailFields = computed<{ label: string; value: string }[]>(() => {
                 <div class="grid gap-4">
                     <div v-if="!upEditing" class="grid gap-2">
                         <Label for="up-uid">CDNfly 用户 ID</Label>
-                        <Input id="up-uid" v-model="upForm.uid" placeholder="CDNfly uid" inputmode="numeric" />
+                        <Input
+                            id="up-uid"
+                            v-model="upForm.uid"
+                            placeholder="CDNfly uid"
+                            inputmode="numeric"
+                        />
                     </div>
                     <div v-if="!upEditing" class="grid gap-2">
                         <Label for="up-package">套餐 ID</Label>
-                        <Input id="up-package" v-model="upForm.package" placeholder="CDNfly package id" inputmode="numeric" />
+                        <Input
+                            id="up-package"
+                            v-model="upForm.package"
+                            placeholder="CDNfly package id"
+                            inputmode="numeric"
+                        />
                     </div>
                     <div class="grid gap-2">
                         <Label>时长</Label>
@@ -694,7 +968,11 @@ const serviceDetailFields = computed<{ label: string; value: string }[]>(() => {
                             <SelectTrigger><SelectValue /></SelectTrigger>
                             <SelectContent>
                                 <SelectGroup>
-                                    <SelectItem v-for="d in DURATION_OPTIONS" :key="d.value" :value="d.value">
+                                    <SelectItem
+                                        v-for="d in DURATION_OPTIONS"
+                                        :key="d.value"
+                                        :value="d.value"
+                                    >
                                         {{ d.label }}
                                     </SelectItem>
                                 </SelectGroup>
@@ -703,12 +981,18 @@ const serviceDetailFields = computed<{ label: string; value: string }[]>(() => {
                     </div>
                     <div class="grid gap-2">
                         <Label for="up-name">名称（可选）</Label>
-                        <Input id="up-name" v-model="upForm.name" placeholder="自定义名称" />
+                        <Input
+                            id="up-name"
+                            v-model="upForm.name"
+                            placeholder="自定义名称"
+                        />
                     </div>
                 </div>
 
                 <DialogFooter>
-                    <Button variant="outline" @click="upDialogOpen = false">取消</Button>
+                    <Button variant="outline" @click="upDialogOpen = false"
+                        >取消</Button
+                    >
                     <Button :disabled="upSaving" @click="submitUp">
                         <Spinner v-if="upSaving" data-icon="inline-start" />
                         <Save v-else data-icon="inline-start" />
@@ -733,8 +1017,14 @@ const serviceDetailFields = computed<{ label: string; value: string }[]>(() => {
                     <AlertDescription>{{ upDeleteError }}</AlertDescription>
                 </Alert>
                 <DialogFooter>
-                    <Button variant="outline" @click="upDeleteOpen = false">取消</Button>
-                    <Button variant="destructive" :disabled="upDeleting" @click="confirmUpDelete">
+                    <Button variant="outline" @click="upDeleteOpen = false"
+                        >取消</Button
+                    >
+                    <Button
+                        variant="destructive"
+                        :disabled="upDeleting"
+                        @click="confirmUpDelete"
+                    >
                         <Spinner v-if="upDeleting" data-icon="inline-start" />
                         <Trash2 v-else data-icon="inline-start" />
                         确认删除
@@ -764,7 +1054,9 @@ const serviceDetailFields = computed<{ label: string; value: string }[]>(() => {
                         <div class="grid flex-1 gap-2">
                             <Label>添加升级包</Label>
                             <Select v-model="upgradeAddForm.package_up_id">
-                                <SelectTrigger><SelectValue placeholder="选择升级包" /></SelectTrigger>
+                                <SelectTrigger
+                                    ><SelectValue placeholder="选择升级包"
+                                /></SelectTrigger>
                                 <SelectContent>
                                     <SelectGroup>
                                         <SelectItem
@@ -780,21 +1072,36 @@ const serviceDetailFields = computed<{ label: string; value: string }[]>(() => {
                         </div>
                         <Button
                             size="sm"
-                            :disabled="upgradeAdding || !upgradeAddForm.package_up_id"
+                            :disabled="
+                                upgradeAdding || !upgradeAddForm.package_up_id
+                            "
                             @click="submitAddUpgrade"
                         >
-                            <Spinner v-if="upgradeAdding" data-icon="inline-start" />
-                            <Plus v-else data-icon="inline-start" class="size-4" />
+                            <Spinner
+                                v-if="upgradeAdding"
+                                data-icon="inline-start"
+                            />
+                            <Plus
+                                v-else
+                                data-icon="inline-start"
+                                class="size-4"
+                            />
                             添加
                         </Button>
                     </div>
 
                     <div class="rounded-md border">
-                        <div v-if="upgradesLoading" class="flex items-center justify-center gap-2 p-6 text-muted-foreground">
+                        <div
+                            v-if="upgradesLoading"
+                            class="flex items-center justify-center gap-2 p-6 text-muted-foreground"
+                        >
                             <Spinner />
                             加载中
                         </div>
-                        <div v-else-if="upgrades.length === 0" class="p-6 text-center text-muted-foreground">
+                        <div
+                            v-else-if="upgrades.length === 0"
+                            class="p-6 text-center text-muted-foreground"
+                        >
                             暂无升级包
                         </div>
                         <div v-else class="divide-y">
@@ -804,19 +1111,34 @@ const serviceDetailFields = computed<{ label: string; value: string }[]>(() => {
                                 class="flex items-center justify-between px-4 py-3"
                             >
                                 <div>
-                                    <div class="text-sm font-medium">{{ up.name ?? `升级包 #${up.id}` }}</div>
-                                    <div v-if="up.package_up_id" class="text-xs text-muted-foreground">
+                                    <div class="text-sm font-medium">
+                                        {{ up.name ?? `升级包 #${up.id}` }}
+                                    </div>
+                                    <div
+                                        v-if="up.package_up_id"
+                                        class="text-xs text-muted-foreground"
+                                    >
                                         升级包 ID: {{ up.package_up_id }}
                                     </div>
                                 </div>
                                 <Button
                                     variant="ghost"
                                     size="sm"
-                                    :disabled="upgradeRemovingId === Number(up.id)"
+                                    :disabled="
+                                        upgradeRemovingId === Number(up.id)
+                                    "
                                     @click="removeUpgrade(Number(up.id))"
                                 >
-                                    <Spinner v-if="upgradeRemovingId === Number(up.id)" class="size-4" />
-                                    <Trash2 v-else class="size-4 text-destructive" />
+                                    <Spinner
+                                        v-if="
+                                            upgradeRemovingId === Number(up.id)
+                                        "
+                                        class="size-4"
+                                    />
+                                    <Trash2
+                                        v-else
+                                        class="size-4 text-destructive"
+                                    />
                                 </Button>
                             </div>
                         </div>
@@ -824,7 +1146,9 @@ const serviceDetailFields = computed<{ label: string; value: string }[]>(() => {
                 </div>
 
                 <DialogFooter>
-                    <Button variant="outline" @click="upgradeDialogOpen = false">关闭</Button>
+                    <Button variant="outline" @click="upgradeDialogOpen = false"
+                        >关闭</Button
+                    >
                 </DialogFooter>
             </DialogScrollContent>
         </Dialog>
@@ -865,8 +1189,13 @@ const serviceDetailFields = computed<{ label: string; value: string }[]>(() => {
                 </div>
 
                 <DialogFooter>
-                    <Button variant="outline" @click="statusDialogOpen = false">取消</Button>
-                    <Button :disabled="statusSaving" @click="submitStatusUpdate">
+                    <Button variant="outline" @click="statusDialogOpen = false"
+                        >取消</Button
+                    >
+                    <Button
+                        :disabled="statusSaving"
+                        @click="submitStatusUpdate"
+                    >
                         <Spinner v-if="statusSaving" data-icon="inline-start" />
                         <Save v-else data-icon="inline-start" />
                         保存

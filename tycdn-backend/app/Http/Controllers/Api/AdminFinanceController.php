@@ -9,6 +9,7 @@ use App\Models\ServiceInstance;
 use App\Services\CdnflyApiService;
 use App\Support\OrderStatus;
 use App\Support\QueryHelper;
+use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -77,6 +78,43 @@ class AdminFinanceController extends Controller
             ]);
 
         return response()->json(['ok' => true, 'data' => $orders]);
+    }
+
+    /**
+     * GET /api/admin/finance/summary
+     *
+     * The finance page opened onto three empty tables and answered nothing.
+     * These are the numbers an operator actually arrives wanting, computed in
+     * the database rather than by counting rows on the current page.
+     *
+     * Revenue counts paid and provisioned orders: money has changed hands in
+     * both, and excluding provisioned would under-report every completed sale.
+     */
+    public function summary(): JsonResponse
+    {
+        // Money has changed hands from PAID onward; PROVISIONING and
+        // ACTIVE are later stages of the same sale, not separate ones.
+        $earned = [OrderStatus::PAID, OrderStatus::PROVISIONING, OrderStatus::ACTIVE];
+
+        $revenue = fn (?Carbon $since) => (float) Order::query()
+            ->whereIn('status', $earned)
+            ->when($since, fn ($q) => $q->where('paid_at', '>=', $since))
+            ->sum('amount_usdt');
+
+        return response()->json([
+            'ok' => true,
+            'data' => [
+                'revenue_total' => $revenue(null),
+                'revenue_month' => $revenue(Carbon::now()->startOfMonth()),
+                'orders_total' => Order::query()->count(),
+                'orders_pending' => Order::query()->where('status', OrderStatus::PENDING)->count(),
+                // Money taken but nothing delivered — the one number worth
+                // acting on today, so it is surfaced on its own.
+                'orders_failed' => Order::query()->where('status', OrderStatus::FAILED)->count(),
+                'services_active' => ServiceInstance::query()->where('status', 'active')->count(),
+                'services_total' => ServiceInstance::query()->count(),
+            ],
+        ]);
     }
 
     public function services(Request $request): JsonResponse
