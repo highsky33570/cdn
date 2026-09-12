@@ -9,15 +9,16 @@ import {
     ReceiptText,
     Save,
     Search,
-    ShieldCheck,
     Trash2,
     UserRound,
     Users,
     Wallet,
 } from 'lucide-vue-next';
 import { computed, onMounted, reactive, ref } from 'vue';
-import { toast } from 'vue-sonner'
+import { toast } from 'vue-sonner';
 import ConsolePageHeader from '@/components/console/ConsolePageHeader.vue';
+import ConsoleStatCards from '@/components/console/ConsoleStatCards.vue';
+import type { ConsoleStat } from '@/components/console/ConsoleStatCards.vue';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -44,12 +45,14 @@ import { Spinner } from '@/components/ui/spinner';
 import {
     createAdminUser,
     deleteAdminUser,
+    getAdminOverview,
     listAdminUsers,
     rechargeAdminUser,
     syncAdminUserApiKey,
     updateAdminUser,
 } from '@/lib/adminConsoleApi';
 import type {
+    AdminOverviewMetrics,
     AdminRole,
     AdminUserRecord,
     Paginated,
@@ -129,7 +132,64 @@ const paginationText = computed(() => {
     return `${users.value.from ?? 0}-${users.value.to ?? 0} / ${users.value.total}`;
 });
 
+/**
+ * Headline numbers, so the page answers "how many customers, and how many are
+ * actually wired up to CDNfly" before showing a page of rows.
+ *
+ * An account with no CDNfly id cannot be provisioned, which is invisible in the
+ * table until an order fails — so it gets a card of its own.
+ */
+const metrics = ref<AdminOverviewMetrics | null>(null);
+
+async function loadMetrics(): Promise<void> {
+    try {
+        metrics.value = (await getAdminOverview()).metrics;
+    } catch {
+        // The list is the page's job; a failed stat lookup must not blank it.
+        metrics.value = null;
+    }
+}
+
+const userStats = computed<ConsoleStat[]>(() => {
+    const m = metrics.value;
+    const unmapped =
+        m === null ? null : Math.max(0, m.users_total - m.cdnfly_mapped_users);
+
+    return [
+        {
+            key: 'users',
+            label: '用户总数',
+            value: m?.users_total ?? '—',
+            hint: `其中管理员 ${m?.admins_total ?? '—'} 人`,
+            icon: Users,
+        },
+        {
+            key: 'mapped',
+            label: '已关联 CDNfly',
+            value: m?.cdnfly_mapped_users ?? '—',
+            hint: `API Key 就绪 ${m?.api_key_ready_users ?? '—'} 人`,
+            icon: PackageCheck,
+        },
+        {
+            key: 'unmapped',
+            label: '未关联 CDNfly',
+            value: unmapped ?? '—',
+            hint: (unmapped ?? 0) > 0 ? '这些账号无法开通服务' : '全部已关联',
+            icon: AlertCircle,
+            tone: (unmapped ?? 0) > 0 ? 'warning' : 'default',
+        },
+        {
+            key: 'services',
+            label: '运行中的服务',
+            value: m?.services_active ?? '—',
+            hint: `共 ${m?.services_total ?? '—'} 个实例`,
+            icon: ReceiptText,
+        },
+    ];
+});
+
 onMounted(() => {
+    void loadMetrics();
     void loadUsers();
 });
 
@@ -445,6 +505,8 @@ function detailPaginationText<T>(payload: Paginated<T> | null): string {
             :icon="Users"
             :show-api-badge="false"
         />
+
+        <ConsoleStatCards :stats="userStats" />
 
         <Card class="gap-4">
             <CardContent class="pt-6">
@@ -1221,10 +1283,7 @@ function detailPaginationText<T>(payload: Paginated<T> | null): string {
                 </div>
 
                 <DialogFooter>
-                    <Button
-                        variant="outline"
-                        @click="createDialogOpen = false"
-                    >
+                    <Button variant="outline" @click="createDialogOpen = false">
                         取消
                     </Button>
                     <Button :disabled="creating" @click="submitCreate">
@@ -1246,7 +1305,8 @@ function detailPaginationText<T>(payload: Paginated<T> | null): string {
                             deleteTargetUser
                                 ? userDisplayName(deleteTargetUser)
                                 : ''
-                        }}</strong>（#{{
+                        }}</strong
+                        >（#{{
                             deleteTargetUser?.id ?? ''
                         }}）吗？此操作不可撤销。
                     </DialogDescription>

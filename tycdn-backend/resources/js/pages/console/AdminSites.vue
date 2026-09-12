@@ -1,20 +1,24 @@
 <script setup lang="ts">
 import {
     Eye,
+    FileKey2,
     Globe2,
     Pencil,
     Plus,
     Power,
     PowerOff,
     Save,
+    Shield,
     Trash2,
 } from 'lucide-vue-next';
 import { computed, reactive, ref } from 'vue';
-import { toast } from 'vue-sonner'
+import { toast } from 'vue-sonner';
 import ConsoleDataTable from '@/components/console/ConsoleDataTable.vue';
 import type { ColumnDef } from '@/components/console/ConsoleDataTable.vue';
 import ConsoleFormDialog from '@/components/console/ConsoleFormDialog.vue';
 import ConsolePageHeader from '@/components/console/ConsolePageHeader.vue';
+import ConsoleTabs from '@/components/console/ConsoleTabs.vue';
+import type { ConsoleTab } from '@/components/console/ConsoleTabs.vue';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -53,8 +57,8 @@ import {
     updateAdminSite,
 } from '@/lib/adminModulesApi';
 import type { AdminCertPayload, AdminSitePayload } from '@/lib/adminModulesApi';
-import type { CdnflyRecord } from '@/lib/sharedTypes';
 import { formatDate, getErrorMessage } from '@/lib/formatters';
+import type { CdnflyRecord } from '@/lib/sharedTypes';
 
 const STATUS_ALL = 'all';
 const STATUS_RUNNING = '1';
@@ -98,7 +102,8 @@ const certColumns: ColumnDef[] = [
         badge: true,
         width: '90px',
         format: (v) => (v === 1 || v === '1' ? '可用' : '已停用'),
-        badgeVariant: (v) => (v === 1 || v === '1' ? 'secondary' : 'destructive'),
+        badgeVariant: (v) =>
+            v === 1 || v === '1' ? 'secondary' : 'destructive',
     },
     {
         key: 'expire_time',
@@ -123,6 +128,16 @@ const aclColumns: ColumnDef[] = [
 
 const sitesTableRef = ref<InstanceType<typeof ConsoleDataTable> | null>(null);
 const togglingId = ref<number | null>(null);
+type SiteTab = 'sites' | 'certificates' | 'acls';
+
+const activeTab = ref<SiteTab>('sites');
+
+const siteTabs: ConsoleTab[] = [
+    { key: 'sites', label: '站点', icon: Globe2 },
+    { key: 'certificates', label: '证书', icon: FileKey2 },
+    { key: 'acls', label: 'ACL', icon: Shield },
+];
+
 const detailOpen = ref(false);
 const detailLoading = ref(false);
 const detailError = ref('');
@@ -162,10 +177,12 @@ async function loadUserPackages(): Promise<void> {
     try {
         const result = await listAdminCdnflyUserPackages({ limit: '500' });
         const rows = (result.data ?? result) as Array<Record<string, unknown>>;
-        userPackages.value = Array.isArray(rows) ? rows.map((r) => ({
-            id: Number(r.id ?? 0),
-            name: String(r.name ?? r.package_name ?? r.id ?? '-'),
-        })) : [];
+        userPackages.value = Array.isArray(rows)
+            ? rows.map((r) => ({
+                  id: Number(r.id ?? 0),
+                  name: String(r.name ?? r.package_name ?? r.id ?? '-'),
+              }))
+            : [];
     } catch {
         userPackages.value = [];
     }
@@ -180,10 +197,21 @@ const filters = reactive({
 const searchParams = computed(() => {
     const params: Record<string, string | number> = {};
     const search = filters.search.trim();
-    if (search !== '') params.search = search;
+
+    if (search !== '') {
+params.search = search;
+}
+
     const uid = filters.user_id.trim();
-    if (uid !== '') params.user_id = uid;
-    if (filters.status !== STATUS_ALL) params.status = filters.status;
+
+    if (uid !== '') {
+params.user_id = uid;
+}
+
+    if (filters.status !== STATUS_ALL) {
+params.status = filters.status;
+}
+
     return params;
 });
 
@@ -193,9 +221,13 @@ function isSiteRunning(row: CdnflyRecord): boolean {
 
 async function toggleSiteEnabled(row: CdnflyRecord): Promise<void> {
     const id = Number(row.id);
-    if (!id) return;
+
+    if (!id) {
+return;
+}
 
     togglingId.value = id;
+
     try {
         await setAdminSiteEnabled(id, !isSiteRunning(row));
         sitesTableRef.value?.refresh();
@@ -208,7 +240,10 @@ async function toggleSiteEnabled(row: CdnflyRecord): Promise<void> {
 
 async function openDetail(row: CdnflyRecord): Promise<void> {
     const id = Number(row.id);
-    if (!id) return;
+
+    if (!id) {
+return;
+}
 
     detailOpen.value = true;
     detailLoading.value = true;
@@ -237,6 +272,7 @@ function openCreateDialog(): void {
     createError.value = '';
     showAdvancedCreate.value = false;
     createOpen.value = true;
+
     if (userPackages.value.length === 0) {
         void loadUserPackages();
     }
@@ -260,14 +296,19 @@ async function submitCreate(): Promise<void> {
 
 function openEditDialog(row: CdnflyRecord): void {
     editTargetId.value = Number(row.id);
-    editForm.user_package = row.user_package != null ? String(row.user_package) : '';
+    editForm.user_package =
+        row.user_package != null ? String(row.user_package) : '';
     editForm.domain = String(row.domain ?? row.name ?? '');
     const backend = row.backend;
+
     if (Array.isArray(backend) && backend.length > 0) {
-        editForm.backend_addr = String((backend[0] as Record<string, unknown>).addr ?? '');
+        editForm.backend_addr = String(
+            (backend[0] as Record<string, unknown>).addr ?? '',
+        );
     } else {
         editForm.backend_addr = '';
     }
+
     editForm.groups = row.groups != null ? String(row.groups) : '';
     editError.value = '';
     showAdvancedEdit.value = false;
@@ -275,7 +316,9 @@ function openEditDialog(row: CdnflyRecord): void {
 }
 
 async function submitEdit(): Promise<void> {
-    if (!editTargetId.value) return;
+    if (!editTargetId.value) {
+return;
+}
 
     saving.value = true;
     editError.value = '';
@@ -299,7 +342,9 @@ function openDeleteConfirm(row: CdnflyRecord): void {
 }
 
 async function confirmDelete(): Promise<void> {
-    if (!deleteTarget.value) return;
+    if (!deleteTarget.value) {
+return;
+}
 
     deleting.value = true;
     deleteError.value = '';
@@ -327,7 +372,11 @@ function toSitePayload(form: typeof createForm): AdminSitePayload {
 
 const detailFields = computed<{ label: string; value: string }[]>(() => {
     const s = detailSite.value;
-    if (!s) return [];
+
+    if (!s) {
+return [];
+}
+
     return [
         { label: 'ID', value: String(s.id ?? '-') },
         { label: '域名', value: String(s.name ?? '-') },
@@ -376,23 +425,33 @@ const certForm = reactive({
 });
 
 const certDialogTitle = computed(() => {
-    if (certEditing.value) return '编辑证书';
+    if (certEditing.value) {
+return '编辑证书';
+}
+
     return certForm.type === 'custom' ? '新增证书' : '批量申请证书';
 });
 
-const certShowTypeSelector = computed(() =>
-    !certEditing.value && certForm.type !== 'custom',
+const certShowTypeSelector = computed(
+    () => !certEditing.value && certForm.type !== 'custom',
 );
 
 async function loadDnsApis(): Promise<void> {
-    if (dnsApiOptions.value.length > 0) return;
+    if (dnsApiOptions.value.length > 0) {
+return;
+}
+
     try {
         const result = await listAdminDnsApis({ limit: '500' });
-        const rows = Array.isArray(result) ? result : ((result as Record<string, unknown>).data ?? []);
-        dnsApiOptions.value = (rows as Array<Record<string, unknown>>).map((r) => ({
-            id: Number(r.id),
-            name: String(r.name ?? r.id),
-        }));
+        const rows = Array.isArray(result)
+            ? result
+            : ((result as Record<string, unknown>).data ?? []);
+        dnsApiOptions.value = (rows as Array<Record<string, unknown>>).map(
+            (r) => ({
+                id: Number(r.id),
+                name: String(r.name ?? r.id),
+            }),
+        );
     } catch {
         dnsApiOptions.value = [];
     }
@@ -433,7 +492,10 @@ function openCertEdit(row: CdnflyRecord): void {
     certForm.des = String(row.des ?? '');
     certFormError.value = '';
     certDialogOpen.value = true;
-    if (certForm.type !== 'custom') void loadDnsApis();
+
+    if (certForm.type !== 'custom') {
+void loadDnsApis();
+}
 }
 
 async function submitCert(): Promise<void> {
@@ -447,11 +509,21 @@ async function submitCert(): Promise<void> {
     };
 
     if (certForm.type === 'custom') {
-        if (certForm.key.trim()) payload.key = certForm.key.trim();
-        if (certForm.cert.trim()) payload.cert = certForm.cert.trim();
+        if (certForm.key.trim()) {
+payload.key = certForm.key.trim();
+}
+
+        if (certForm.cert.trim()) {
+payload.cert = certForm.cert.trim();
+}
     } else {
-        if (certForm.domain.trim()) payload.domain = certForm.domain.trim();
-        if (certForm.dnsapi) payload.dnsapi = certForm.dnsapi;
+        if (certForm.domain.trim()) {
+payload.domain = certForm.domain.trim();
+}
+
+        if (certForm.dnsapi) {
+payload.dnsapi = certForm.dnsapi;
+}
     }
 
     try {
@@ -462,6 +534,7 @@ async function submitCert(): Promise<void> {
             await createAdminCert(payload);
             toast.success('证书已创建');
         }
+
         certDialogOpen.value = false;
         certsTableRef.value?.refresh();
     } catch (error) {
@@ -478,7 +551,10 @@ function openCertDelete(row: CdnflyRecord): void {
 }
 
 async function confirmCertDelete(): Promise<void> {
-    if (!certDeleteTarget.value) return;
+    if (!certDeleteTarget.value) {
+return;
+}
+
     certDeleting.value = true;
     certFormError.value = '';
 
@@ -510,7 +586,10 @@ async function confirmCertDelete(): Promise<void> {
             </Button>
         </div>
 
+        <ConsoleTabs v-model="activeTab" :tabs="siteTabs" />
+
         <ConsoleDataTable
+            v-if="activeTab === 'sites'"
             ref="sitesTableRef"
             title="站点列表"
             :icon="Globe2"
@@ -520,9 +599,7 @@ async function confirmCertDelete(): Promise<void> {
             search-placeholder="搜索域名"
             @row-click="openDetail"
         >
-            <template
-                #search-fields="{ loading: l, submitSearch }"
-            >
+            <template #search-fields="{ submitSearch }">
                 <div class="grid gap-3 sm:grid-cols-3">
                     <Input
                         v-model="filters.search"
@@ -556,18 +633,10 @@ async function confirmCertDelete(): Promise<void> {
             </template>
 
             <template #row-actions="{ row }">
-                <Button
-                    variant="ghost"
-                    size="sm"
-                    @click="openDetail(row)"
-                >
+                <Button variant="ghost" size="sm" @click="openDetail(row)">
                     <Eye class="size-4" />
                 </Button>
-                <Button
-                    variant="ghost"
-                    size="sm"
-                    @click="openEditDialog(row)"
-                >
+                <Button variant="ghost" size="sm" @click="openEditDialog(row)">
                     <Pencil class="size-4" />
                 </Button>
                 <Button
@@ -584,10 +653,7 @@ async function confirmCertDelete(): Promise<void> {
                         v-else-if="!isSiteRunning(row)"
                         class="size-4 text-green-600"
                     />
-                    <PowerOff
-                        v-else
-                        class="size-4 text-destructive"
-                    />
+                    <PowerOff v-else class="size-4 text-destructive" />
                 </Button>
                 <Button
                     variant="ghost"
@@ -600,6 +666,7 @@ async function confirmCertDelete(): Promise<void> {
         </ConsoleDataTable>
 
         <ConsoleDataTable
+            v-else-if="activeTab === 'certificates'"
             ref="certsTableRef"
             title="全部证书"
             :columns="certColumns"
@@ -627,6 +694,7 @@ async function confirmCertDelete(): Promise<void> {
         </ConsoleDataTable>
 
         <ConsoleDataTable
+            v-else
             title="全部 ACL"
             :columns="aclColumns"
             :fetch-fn="listAdminAllAcls"
@@ -656,7 +724,12 @@ async function confirmCertDelete(): Promise<void> {
                         <Label for="site-create-package">套餐</Label>
                         <Select
                             v-model="createForm.user_package"
-                            @open-change="(open: boolean) => open && userPackages.length === 0 && loadUserPackages()"
+                            @open-change="
+                                (open: boolean) =>
+                                    open &&
+                                    userPackages.length === 0 &&
+                                    loadUserPackages()
+                            "
                         >
                             <SelectTrigger id="site-create-package">
                                 <SelectValue placeholder="选择已购套餐" />
@@ -746,7 +819,12 @@ async function confirmCertDelete(): Promise<void> {
                         <Label for="site-edit-package">套餐</Label>
                         <Select
                             v-model="editForm.user_package"
-                            @open-change="(open: boolean) => open && userPackages.length === 0 && loadUserPackages()"
+                            @open-change="
+                                (open: boolean) =>
+                                    open &&
+                                    userPackages.length === 0 &&
+                                    loadUserPackages()
+                            "
                         >
                             <SelectTrigger id="site-edit-package">
                                 <SelectValue placeholder="选择已购套餐" />
@@ -823,7 +901,9 @@ async function confirmCertDelete(): Promise<void> {
                     <DialogTitle>确认删除</DialogTitle>
                     <DialogDescription>
                         确定要删除网站
-                        <strong>{{ deleteTarget?.domain ?? deleteTarget?.name ?? '-' }}</strong>
+                        <strong>{{
+                            deleteTarget?.domain ?? deleteTarget?.name ?? '-'
+                        }}</strong>
                         （ID: {{ deleteTarget?.id }}）吗？此操作不可撤销。
                     </DialogDescription>
                 </DialogHeader>
@@ -866,18 +946,42 @@ async function confirmCertDelete(): Promise<void> {
                 <div class="grid gap-4">
                     <div class="grid gap-2">
                         <Label for="cert-name">名称</Label>
-                        <Input id="cert-name" v-model="certForm.name" placeholder="证书名称" />
+                        <Input
+                            id="cert-name"
+                            v-model="certForm.name"
+                            placeholder="证书名称"
+                        />
                     </div>
 
                     <!-- 批量申请或编辑非 custom 证书时显示类型选择 -->
-                    <div v-if="certShowTypeSelector || (certEditing && certForm.type !== 'custom')" class="grid gap-2">
+                    <div
+                        v-if="
+                            certShowTypeSelector ||
+                            (certEditing && certForm.type !== 'custom')
+                        "
+                        class="grid gap-2"
+                    >
                         <Label>签发方式</Label>
-                        <Select v-model="certForm.type" @update:model-value="(v) => { certForm.type = String(v) as 'custom' | 'lets' | 'zerossl'; }">
+                        <Select
+                            v-model="certForm.type"
+                            @update:model-value="
+                                (v) => {
+                                    certForm.type = String(v) as
+                                        | 'custom'
+                                        | 'lets'
+                                        | 'zerossl';
+                                }
+                            "
+                        >
                             <SelectTrigger><SelectValue /></SelectTrigger>
                             <SelectContent>
                                 <SelectGroup>
-                                    <SelectItem value="lets">Let's Encrypt</SelectItem>
-                                    <SelectItem value="zerossl">ZeroSSL</SelectItem>
+                                    <SelectItem value="lets"
+                                        >Let's Encrypt</SelectItem
+                                    >
+                                    <SelectItem value="zerossl"
+                                        >ZeroSSL</SelectItem
+                                    >
                                 </SelectGroup>
                             </SelectContent>
                         </Select>
@@ -891,7 +995,11 @@ async function confirmCertDelete(): Promise<void> {
                                 id="cert-key"
                                 v-model="certForm.key"
                                 class="min-h-24 w-full rounded-md border border-input bg-background px-3 py-2 font-mono text-xs shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
-                                :placeholder="certEditing ? '留空不修改' : '-----BEGIN RSA PRIVATE KEY-----'"
+                                :placeholder="
+                                    certEditing
+                                        ? '留空不修改'
+                                        : '-----BEGIN RSA PRIVATE KEY-----'
+                                "
                                 spellcheck="false"
                             />
                         </div>
@@ -901,7 +1009,11 @@ async function confirmCertDelete(): Promise<void> {
                                 id="cert-cert"
                                 v-model="certForm.cert"
                                 class="min-h-24 w-full rounded-md border border-input bg-background px-3 py-2 font-mono text-xs shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
-                                :placeholder="certEditing ? '留空不修改' : '-----BEGIN CERTIFICATE-----'"
+                                :placeholder="
+                                    certEditing
+                                        ? '留空不修改'
+                                        : '-----BEGIN CERTIFICATE-----'
+                                "
                                 spellcheck="false"
                             />
                         </div>
@@ -911,15 +1023,25 @@ async function confirmCertDelete(): Promise<void> {
                     <template v-else>
                         <div class="grid gap-2">
                             <Label for="cert-domain">域名</Label>
-                            <Input id="cert-domain" v-model="certForm.domain" placeholder="example.com 或 *.example.com" />
+                            <Input
+                                id="cert-domain"
+                                v-model="certForm.domain"
+                                placeholder="example.com 或 *.example.com"
+                            />
                         </div>
                         <div class="grid gap-2">
                             <Label>DNS API</Label>
                             <Select v-model="certForm.dnsapi">
-                                <SelectTrigger><SelectValue placeholder="选择 DNS API" /></SelectTrigger>
+                                <SelectTrigger
+                                    ><SelectValue placeholder="选择 DNS API"
+                                /></SelectTrigger>
                                 <SelectContent>
                                     <SelectGroup>
-                                        <SelectItem v-for="api in dnsApiOptions" :key="api.id" :value="String(api.id)">
+                                        <SelectItem
+                                            v-for="api in dnsApiOptions"
+                                            :key="api.id"
+                                            :value="String(api.id)"
+                                        >
                                             {{ api.name }} (#{{ api.id }})
                                         </SelectItem>
                                     </SelectGroup>
@@ -930,12 +1052,18 @@ async function confirmCertDelete(): Promise<void> {
 
                     <div class="grid gap-2">
                         <Label for="cert-des">备注</Label>
-                        <Input id="cert-des" v-model="certForm.des" placeholder="可选备注" />
+                        <Input
+                            id="cert-des"
+                            v-model="certForm.des"
+                            placeholder="可选备注"
+                        />
                     </div>
                 </div>
 
                 <DialogFooter>
-                    <Button variant="outline" @click="certDialogOpen = false">取消</Button>
+                    <Button variant="outline" @click="certDialogOpen = false"
+                        >取消</Button
+                    >
                     <Button :disabled="certSaving" @click="submitCert">
                         <Spinner v-if="certSaving" data-icon="inline-start" />
                         <Save v-else data-icon="inline-start" />
@@ -961,8 +1089,14 @@ async function confirmCertDelete(): Promise<void> {
                 </Alert>
 
                 <DialogFooter>
-                    <Button variant="outline" @click="certDeleteOpen = false">取消</Button>
-                    <Button variant="destructive" :disabled="certDeleting" @click="confirmCertDelete">
+                    <Button variant="outline" @click="certDeleteOpen = false"
+                        >取消</Button
+                    >
+                    <Button
+                        variant="destructive"
+                        :disabled="certDeleting"
+                        @click="confirmCertDelete"
+                    >
                         <Spinner v-if="certDeleting" data-icon="inline-start" />
                         <Trash2 v-else data-icon="inline-start" />
                         确认删除

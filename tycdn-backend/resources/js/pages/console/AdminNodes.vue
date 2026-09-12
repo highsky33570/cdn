@@ -17,10 +17,12 @@ import {
     Trash2,
 } from 'lucide-vue-next';
 import { computed, onMounted, reactive, ref } from 'vue';
-import ConsolePageHeader from '@/components/console/ConsolePageHeader.vue';
 import { toast } from 'vue-sonner';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import ConfirmDeleteDialog from '@/components/console/ConfirmDeleteDialog.vue';
+import ConsolePageHeader from '@/components/console/ConsolePageHeader.vue';
+import ConsoleTabs from '@/components/console/ConsoleTabs.vue';
+import type { ConsoleTab } from '@/components/console/ConsoleTabs.vue';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -426,15 +428,19 @@ async function submitNode(): Promise<void> {
 
 function openDeleteNode(node: CdnflyRecord) {
     const id = asNumber(node.id);
+
     if (!id) {
         errorMessage.value = '节点 ID 缺失';
+
         return;
     }
+
     deleteConfirmTitle.value = '确认删除';
     deleteConfirmDesc.value = `确认删除节点「${nodeName(node)}」？该操作会提交到 CDNfly，删除后不可恢复。`;
     deleteConfirmError.value = '';
     deleteConfirmAction.value = async () => {
         deleteConfirmLoading.value = true;
+
         try {
             await deleteAdminNode(id);
             deleteConfirmOpen.value = false;
@@ -479,15 +485,19 @@ async function setNodeEnabled(
 
 function openDeletePendingNode(node: CdnflyRecord) {
     const id = asNumber(node.id);
+
     if (!id) {
         pendingError.value = '待初始化节点 ID 缺失';
+
         return;
     }
+
     deleteConfirmTitle.value = '确认删除';
     deleteConfirmDesc.value = `确认删除待初始化节点 #${id}？`;
     deleteConfirmError.value = '';
     deleteConfirmAction.value = async () => {
         deleteConfirmLoading.value = true;
+
         try {
             await deleteAdminPendingNode(id);
             deleteConfirmOpen.value = false;
@@ -744,12 +754,14 @@ const hasRegionNextPage = computed(() => {
     if (typeof regionTotal.value === 'number') {
         return regionPage.value * 20 < regionTotal.value;
     }
+
     return regionRows.value.length >= 20;
 });
 
 async function loadRegions(targetPage = regionPage.value): Promise<void> {
     regionLoading.value = true;
     regionError.value = '';
+
     try {
         const result = await listAdminRegions({ page: targetPage, limit: 20 });
         regionRows.value = extractRows(result);
@@ -788,6 +800,7 @@ function openEditRegion(record: CdnflyRecord): void {
 async function submitRegion(): Promise<void> {
     if (regionForm.name.trim() === '') {
         regionFormError.value = '区域名称不能为空';
+
         return;
     }
 
@@ -804,16 +817,20 @@ async function submitRegion(): Promise<void> {
     try {
         if (editingRegion.value) {
             const id = asNumber(editingRegion.value.id);
+
             if (!id) {
                 regionFormError.value = '区域 ID 缺失';
+
                 return;
             }
+
             await updateAdminRegion(id, payload);
             toast.success('区域已更新');
         } else {
             await createAdminRegion(payload);
             toast.success('区域已创建');
         }
+
         regionDialogOpen.value = false;
         await loadRegions();
         // Refresh reference data for node form dropdowns
@@ -827,15 +844,19 @@ async function submitRegion(): Promise<void> {
 
 function openDeleteRegion(record: CdnflyRecord): void {
     const id = asNumber(record.id);
+
     if (!id) {
         regionError.value = '区域 ID 缺失';
+
         return;
     }
+
     deleteConfirmTitle.value = '确认删除区域';
     deleteConfirmDesc.value = `确认删除区域「${textValue(record.name) || '#' + id}」？删除后不可恢复。`;
     deleteConfirmError.value = '';
     deleteConfirmAction.value = async () => {
         deleteConfirmLoading.value = true;
+
         try {
             await deleteAdminRegion(id);
             deleteConfirmOpen.value = false;
@@ -867,7 +888,7 @@ type NodeTab = 'nodes' | 'pending' | 'topology';
 
 const activeTab = ref<NodeTab>('nodes');
 
-const nodeTabs = computed(() => [
+const nodeTabs = computed<ConsoleTab[]>(() => [
     { key: 'nodes' as const, label: '节点', icon: Server, count: total.value },
     {
         key: 'pending' as const,
@@ -909,12 +930,14 @@ const hasNgNextPage = computed(() => {
     if (typeof ngTotal.value === 'number') {
         return ngPage.value * 20 < ngTotal.value;
     }
+
     return ngRows.value.length >= 20;
 });
 
 async function loadNodeGroups(targetPage = ngPage.value): Promise<void> {
     ngLoading.value = true;
     ngError.value = '';
+
     try {
         const result = await listAdminNodeGroups({
             page: targetPage,
@@ -965,11 +988,15 @@ function openEditNodeGroup(record: CdnflyRecord): void {
 async function submitNodeGroup(): Promise<void> {
     if (ngForm.name.trim() === '') {
         ngFormError.value = '节点组名称不能为空';
+
         return;
     }
+
     const regionId = asNumber(ngForm.region_id);
+
     if (!regionId) {
         ngFormError.value = '请选择所属区域';
+
         return;
     }
 
@@ -997,16 +1024,20 @@ async function submitNodeGroup(): Promise<void> {
     try {
         if (editingNodeGroup.value) {
             const id = asNumber(editingNodeGroup.value.id);
+
             if (!id) {
                 ngFormError.value = '节点组 ID 缺失';
+
                 return;
             }
+
             await updateAdminNodeGroup(id, payload);
             toast.success('节点组已更新');
         } else {
             await createAdminNodeGroup(payload);
             toast.success('节点组已创建');
         }
+
         ngDialogOpen.value = false;
         await loadNodeGroups();
         await loadReferenceData();
@@ -1019,15 +1050,19 @@ async function submitNodeGroup(): Promise<void> {
 
 function openDeleteNodeGroup(record: CdnflyRecord): void {
     const id = asNumber(record.id);
+
     if (!id) {
         ngError.value = '节点组 ID 缺失';
+
         return;
     }
+
     deleteConfirmTitle.value = '确认删除节点组';
     deleteConfirmDesc.value = `确认删除节点组「${textValue(record.name) || '#' + id}」？删除后不可恢复。`;
     deleteConfirmError.value = '';
     deleteConfirmAction.value = async () => {
         deleteConfirmLoading.value = true;
+
         try {
             await deleteAdminNodeGroup(id);
             deleteConfirmOpen.value = false;
@@ -1055,7 +1090,9 @@ function parseSwitchPolicy(raw: unknown): {
 } {
     const fallback = { ip_num: '2', interval: '60', switch_order: 'rand' };
 
-    if (typeof raw !== 'string' || raw.trim() === '') return fallback;
+    if (typeof raw !== 'string' || raw.trim() === '') {
+return fallback;
+}
 
     try {
         const parsed = JSON.parse(raw) as Record<string, unknown>;
@@ -1198,7 +1235,9 @@ function isIpSelected(row: CdnflyRecord): boolean {
 function toggleIpSelection(row: CdnflyRecord): void {
     const id = Number(row.id);
 
-    if (!id) return;
+    if (!id) {
+return;
+}
 
     selectedIpIds.value = selectedIpIds.value.includes(id)
         ? selectedIpIds.value.filter((x) => x !== id)
@@ -1254,7 +1293,9 @@ async function submitLineAssignment(): Promise<void> {
 async function removeAssignment(row: CdnflyRecord): Promise<void> {
     const id = Number(row.id);
 
-    if (!id) return;
+    if (!id) {
+return;
+}
 
     try {
         await unassignAdminLines([id]);
@@ -1267,8 +1308,13 @@ async function removeAssignment(row: CdnflyRecord): Promise<void> {
 
 function regionNameById(id: unknown): string {
     const numId = asNumber(id);
-    if (!numId) return '-';
+
+    if (!numId) {
+return '-';
+}
+
     const region = regions.value.find((r) => asNumber(r.id) === numId);
+
     return region ? textValue(region.name) : `#${numId}`;
 }
 </script>
@@ -1282,39 +1328,14 @@ function regionNameById(id: unknown): string {
         />
 
         <!-- top bar: tabs on the left, the once-per-node action on the right -->
-        <div
-            class="flex flex-col gap-3 border-b pb-3 md:flex-row md:items-center md:justify-between"
-        >
-            <div class="flex flex-wrap gap-1">
-                <button
-                    v-for="tab in nodeTabs"
-                    :key="tab.key"
-                    type="button"
-                    class="flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors"
-                    :class="
-                        activeTab === tab.key
-                            ? 'bg-primary/10 text-primary'
-                            : 'text-muted-foreground hover:bg-accent hover:text-foreground'
-                    "
-                    @click="activeTab = tab.key"
-                >
-                    <component :is="tab.icon" class="size-4" />
-                    {{ tab.label }}
-                    <Badge
-                        v-if="tab.count"
-                        variant="secondary"
-                        class="ml-1 px-1.5 py-0 text-xs"
-                    >
-                        {{ tab.count }}
-                    </Badge>
-                </button>
-            </div>
-
-            <Button variant="outline" @click="installDialogOpen = true">
-                <Terminal data-icon="inline-start" />
-                执行命令
-            </Button>
-        </div>
+        <ConsoleTabs v-model="activeTab" :tabs="nodeTabs">
+            <template #actions>
+                <Button variant="outline" @click="installDialogOpen = true">
+                    <Terminal data-icon="inline-start" />
+                    执行命令
+                </Button>
+            </template>
+        </ConsoleTabs>
 
         <template v-if="activeTab === 'nodes'">
             <Card class="gap-4">

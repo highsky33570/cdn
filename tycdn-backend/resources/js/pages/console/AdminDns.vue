@@ -15,6 +15,8 @@ import { toast } from 'vue-sonner';
 import ConsoleDataTable from '@/components/console/ConsoleDataTable.vue';
 import type { ColumnDef } from '@/components/console/ConsoleDataTable.vue';
 import ConsolePageHeader from '@/components/console/ConsolePageHeader.vue';
+import ConsoleTabs from '@/components/console/ConsoleTabs.vue';
+import type { ConsoleTab } from '@/components/console/ConsoleTabs.vue';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -264,7 +266,7 @@ type DnsTab = 'setting' | 'cnames' | 'apis';
 
 const activeTab = ref<DnsTab>('setting');
 
-const dnsTabs = [
+const dnsTabs: ConsoleTab[] = [
     { key: 'setting' as const, label: 'DNS 设置', icon: Settings2 },
     { key: 'cnames' as const, label: 'CNAME 域名', icon: Globe },
     { key: 'apis' as const, label: '证书 DNS API', icon: ShieldCheck },
@@ -522,23 +524,7 @@ onMounted(loadDnsSetting);
         </Alert>
 
         <!-- tab bar: same pattern as /console/admin/nodes -->
-        <div class="flex flex-wrap gap-1 border-b pb-3">
-            <button
-                v-for="tab in dnsTabs"
-                :key="tab.key"
-                type="button"
-                class="flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors"
-                :class="
-                    activeTab === tab.key
-                        ? 'bg-primary/10 text-primary'
-                        : 'text-muted-foreground hover:bg-accent hover:text-foreground'
-                "
-                @click="activeTab = tab.key"
-            >
-                <component :is="tab.icon" class="size-4" />
-                {{ tab.label }}
-            </button>
-        </div>
+        <ConsoleTabs v-model="activeTab" :tabs="dnsTabs" />
 
         <template v-if="activeTab === 'setting'">
             <!--

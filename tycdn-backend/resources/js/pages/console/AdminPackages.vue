@@ -10,13 +10,15 @@ import {
     Save,
     Trash2,
 } from 'lucide-vue-next';
-import { FolderTree, Zap } from 'lucide-vue-next';
+import { FolderTree, Package, Zap } from 'lucide-vue-next';
 import { computed, onMounted, reactive, ref } from 'vue';
 import { toast } from 'vue-sonner';
 import ConfirmDeleteDialog from '@/components/console/ConfirmDeleteDialog.vue';
 import ConsoleDataTable from '@/components/console/ConsoleDataTable.vue';
 import type { ColumnDef } from '@/components/console/ConsoleDataTable.vue';
 import ConsolePageHeader from '@/components/console/ConsolePageHeader.vue';
+import ConsoleTabs from '@/components/console/ConsoleTabs.vue';
+import type { ConsoleTab } from '@/components/console/ConsoleTabs.vue';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -319,6 +321,16 @@ const formError = ref('');
 const batchError = ref('');
 const optionsError = ref('');
 const packageDialogOpen = ref(false);
+type PackageTab = 'packages' | 'groups' | 'upgrades';
+
+const activeTab = ref<PackageTab>('packages');
+
+const packageTabs: ConsoleTab[] = [
+    { key: 'packages', label: '基础套餐', icon: Package },
+    { key: 'groups', label: '套餐组', icon: FolderTree },
+    { key: 'upgrades', label: '升级包', icon: Zap },
+];
+
 const detailDialogOpen = ref(false);
 const detailJsonOpen = ref(false);
 const batchDialogOpen = ref(false);
@@ -678,14 +690,14 @@ function portalPriceOf(record: PackageRecord): string {
     const id = getPackageId(record);
 
     if (id === null) {
-return '';
-}
+        return '';
+    }
 
     const product = portalProducts.value[String(id)];
 
     if (!product) {
-return '';
-}
+        return '';
+    }
 
     return `${product.currency} ${product.price_monthly}`;
 }
@@ -1740,7 +1752,9 @@ async function confirmPuDelete(): Promise<void> {
             </Card>
         </div>
 
-        <Card class="gap-0 overflow-hidden">
+        <ConsoleTabs v-model="activeTab" :tabs="packageTabs" />
+
+        <Card v-if="activeTab === 'packages'" class="gap-0 overflow-hidden">
             <CardHeader class="gap-2">
                 <div
                     class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between"
@@ -3175,6 +3189,7 @@ async function confirmPuDelete(): Promise<void> {
 
         <!-- ─── Package Groups ────────────────────────────────── -->
         <ConsoleDataTable
+            v-if="activeTab === 'groups'"
             ref="pgTableRef"
             title="套餐组"
             :icon="FolderTree"
@@ -3276,6 +3291,7 @@ async function confirmPuDelete(): Promise<void> {
 
         <!-- ─── Package Ups (升级包) ──────────────────────────── -->
         <ConsoleDataTable
+            v-if="activeTab === 'upgrades'"
             ref="puTableRef"
             title="升级包"
             :icon="Zap"

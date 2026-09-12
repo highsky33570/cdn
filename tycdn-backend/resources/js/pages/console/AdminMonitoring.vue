@@ -1,8 +1,17 @@
 <script setup lang="ts">
-import { Activity } from 'lucide-vue-next';
+import {
+    Activity,
+    Globe,
+    KeyRound,
+    Network,
+    ScrollText,
+} from 'lucide-vue-next';
+import { ref } from 'vue';
 import ConsoleDataTable from '@/components/console/ConsoleDataTable.vue';
 import type { ColumnDef } from '@/components/console/ConsoleDataTable.vue';
 import ConsolePageHeader from '@/components/console/ConsolePageHeader.vue';
+import ConsoleTabs from '@/components/console/ConsoleTabs.vue';
+import type { ConsoleTab } from '@/components/console/ConsoleTabs.vue';
 import {
     getAdminSiteRealtime,
     getAdminStreamRealtime,
@@ -85,6 +94,17 @@ const streamRealtimeColumns: ColumnDef[] = [
     },
 ];
 
+type MonitorTab = 'sites' | 'streams' | 'login' | 'ops';
+
+const activeTab = ref<MonitorTab>('sites');
+
+const monitorTabs: ConsoleTab[] = [
+    { key: 'sites', label: '站点排行', icon: Globe },
+    { key: 'streams', label: '四层排行', icon: Network },
+    { key: 'login', label: '登录日志', icon: KeyRound },
+    { key: 'ops', label: '操作日志', icon: ScrollText },
+];
+
 function formatCount(value: unknown): string {
     const n = Number(value);
 
@@ -119,7 +139,10 @@ function formatBytes(value: unknown): string {
             :show-api-badge="false"
         />
 
+        <ConsoleTabs v-model="activeTab" :tabs="monitorTabs" />
+
         <ConsoleDataTable
+            v-if="activeTab === 'sites'"
             title="站点排行（近 30 分钟）"
             :columns="siteRealtimeColumns"
             :fetch-fn="getAdminSiteRealtime"
@@ -131,6 +154,7 @@ function formatBytes(value: unknown): string {
         </ConsoleDataTable>
 
         <ConsoleDataTable
+            v-else-if="activeTab === 'streams'"
             title="四层排行（近 30 分钟）"
             :columns="streamRealtimeColumns"
             :fetch-fn="getAdminStreamRealtime"
@@ -142,6 +166,7 @@ function formatBytes(value: unknown): string {
         </ConsoleDataTable>
 
         <ConsoleDataTable
+            v-else-if="activeTab === 'login'"
             title="登录日志"
             :columns="loginLogColumns"
             :fetch-fn="listAdminLoginLogs"
@@ -152,6 +177,7 @@ function formatBytes(value: unknown): string {
         </ConsoleDataTable>
 
         <ConsoleDataTable
+            v-else
             title="操作日志"
             :columns="opLogColumns"
             :fetch-fn="listAdminOpLogs"

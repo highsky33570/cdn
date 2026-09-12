@@ -17,6 +17,8 @@ import { toast } from 'vue-sonner';
 import ConsoleDataTable from '@/components/console/ConsoleDataTable.vue';
 import type { ColumnDef } from '@/components/console/ConsoleDataTable.vue';
 import ConsolePageHeader from '@/components/console/ConsolePageHeader.vue';
+import ConsoleTabs from '@/components/console/ConsoleTabs.vue';
+import type { ConsoleTab } from '@/components/console/ConsoleTabs.vue';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -61,16 +63,10 @@ import {
     updateAdminCcMatcher,
     updateAdminCcRule,
 } from '@/lib/adminModulesApi';
-import type { CdnflyRecord } from '@/lib/sharedTypes';
-import { formatDate, getErrorMessage } from '@/lib/formatters';
-import {
-    textValue,
-    recordId,
-    numberValue,
-    yesNo,
-    jsonText,
-} from '@/lib/cdnRecord';
+import { textValue, recordId, yesNo, jsonText } from '@/lib/cdnRecord';
 import { extractCdnflyRows, extractCdnflyTotal } from '@/lib/cdnUserApi';
+import { formatDate, getErrorMessage } from '@/lib/formatters';
+import type { CdnflyRecord } from '@/lib/sharedTypes';
 
 const DEFAULT_DATA_JSON = JSON.stringify(
     [
@@ -104,6 +100,7 @@ onMounted(async () => {
     } catch {
         // stats are non-critical
     }
+
     void loadCcRows();
 });
 
@@ -172,6 +169,15 @@ const togglingId = ref<number | null>(null);
 const deletingId = ref<number | null>(null);
 const errorMessage = ref('');
 const formError = ref('');
+type SecurityTab = 'admins' | 'acls';
+
+const activeTab = ref<SecurityTab>('admins');
+
+const securityTabs: ConsoleTab[] = [
+    { key: 'admins', label: '管理员', icon: ShieldCheck },
+    { key: 'acls', label: 'ACL 规则', icon: KeyRound },
+];
+
 const dialogOpen = ref(false);
 const deleteOpen = ref(false);
 const editingRecord = ref<CdnflyRecord | null>(null);
@@ -212,7 +218,10 @@ async function toggleAclEnabled(
     checked: boolean,
 ): Promise<void> {
     const id = Number(row.id);
-    if (!id) return;
+
+    if (!id) {
+        return;
+    }
 
     const owner = ownerId(row);
 
@@ -223,6 +232,7 @@ async function toggleAclEnabled(
     }
 
     togglingId.value = id;
+
     try {
         await updateAdminAcl(id, {
             enable: checked ? 1 : 0,
@@ -268,11 +278,13 @@ async function submitAcl(): Promise<void> {
     formError.value = '';
 
     let dataArr: unknown;
+
     try {
         dataArr = JSON.parse(form.data);
     } catch {
         formError.value = 'data 字段不是有效的 JSON';
         saving.value = false;
+
         return;
     }
 
@@ -289,8 +301,10 @@ async function submitAcl(): Promise<void> {
     if (!form.user_id.trim()) {
         formError.value = '用户 ID 不能为空';
         saving.value = false;
+
         return;
     }
+
     payload.user_id = Number(form.user_id);
 
     try {
@@ -301,6 +315,7 @@ async function submitAcl(): Promise<void> {
             await createAdminAcl(payload);
             toast.success('ACL 已创建');
         }
+
         dialogOpen.value = false;
         aclTableRef.value?.refresh();
     } catch (error) {
@@ -317,8 +332,12 @@ function openDeleteConfirm(row: CdnflyRecord): void {
 }
 
 async function confirmDelete(): Promise<void> {
-    if (!deleteTarget.value) return;
+    if (!deleteTarget.value) {
+        return;
+    }
+
     deletingId.value = Number(deleteTarget.value.id);
+
     try {
         const owner = ownerId(deleteTarget.value);
 
@@ -453,8 +472,12 @@ function ccKindLabel(kind: CcKind): string {
 
 function buildMatcherData(): Record<string, unknown> {
     const data: Record<string, unknown> = {};
+
     for (const c of matcherConditions.value) {
-        if (!c.key) continue;
+        if (!c.key) {
+            continue;
+        }
+
         const isArrayOp = c.operator === 'AC' || c.operator === '!AC';
         data[c.key] = {
             operator: c.operator || '=',
@@ -466,11 +489,15 @@ function buildMatcherData(): Record<string, unknown> {
                 : c.value,
         };
     }
+
     return data;
 }
 
 function parseMatcherData(data: Record<string, unknown>): MatcherCondition[] {
-    if (!data || typeof data !== 'object') return [];
+    if (!data || typeof data !== 'object') {
+        return [];
+    }
+
     return Object.entries(data).map(([key, rule]) => ({
         key,
         operator: (rule as any).operator ?? '=',
@@ -481,7 +508,10 @@ function parseMatcherData(data: Record<string, unknown>): MatcherCondition[] {
 }
 
 function buildExtra(): Record<string, unknown> {
-    if (ccForm.type !== 'url_auth') return {};
+    if (ccForm.type !== 'url_auth') {
+        return {};
+    }
+
     const obj: Record<string, unknown> = {
         mode: extraForm.mode,
         key: extraForm.key,
@@ -489,12 +519,17 @@ function buildExtra(): Record<string, unknown> {
         time_diff: Number(extraForm.time_diff),
         sign_use_times: Number(extraForm.sign_use_times),
     };
-    if (extraForm.mode === 'TypeA') obj.time_name = extraForm.time_name;
+
+    if (extraForm.mode === 'TypeA') {
+        obj.time_name = extraForm.time_name;
+    }
+
     return obj;
 }
 
 function parseExtra(extra: unknown): void {
     let raw = extra;
+
     if (typeof raw === 'string') {
         try {
             raw = JSON.parse(raw);
@@ -502,6 +537,7 @@ function parseExtra(extra: unknown): void {
             raw = {};
         }
     }
+
     const e = (
         raw && typeof raw === 'object' && !Array.isArray(raw) ? raw : {}
     ) as Record<string, unknown>;
@@ -515,6 +551,7 @@ function parseExtra(extra: unknown): void {
 
 async function loadRuleFormOptions(): Promise<void> {
     loadingRuleOptions.value = true;
+
     try {
         const [matchers, filters] = await Promise.all([
             listAdminCcMatchers({ limit: 200 }),
@@ -552,20 +589,31 @@ async function loadUserOptions(): Promise<void> {
 }
 
 async function ccList(kind: CcKind, params: Record<string, string | number>) {
-    if (kind === 'filter') return listAdminCcFilters(params);
-    if (kind === 'rule') return listAdminCcRules(params);
+    if (kind === 'filter') {
+        return listAdminCcFilters(params);
+    }
+
+    if (kind === 'rule') {
+        return listAdminCcRules(params);
+    }
+
     return listAdminCcMatchers(params);
 }
 
 async function loadCcRows(targetPage = ccPage.value): Promise<void> {
     ccLoading.value = true;
     ccError.value = '';
+
     try {
         const params: Record<string, string | number> = {
             page: targetPage,
             limit: Number(ccFilters.per_page),
         };
-        if (ccFilters.enable !== 'all') params.enable = ccFilters.enable;
+
+        if (ccFilters.enable !== 'all') {
+            params.enable = ccFilters.enable;
+        }
+
         const result = await ccList(activeCcKind.value, params);
         const rows = extractCdnflyRows(result);
         ccRows.value = rows;
@@ -624,7 +672,11 @@ function openCcCreateDialog(): void {
     ruleEntries.value = [];
     ccUid.value = '';
     parseExtra(null);
-    if (activeCcKind.value === 'rule') void loadRuleFormOptions();
+
+    if (activeCcKind.value === 'rule') {
+        void loadRuleFormOptions();
+    }
+
     void loadUserOptions();
     ccDialogOpen.value = true;
 }
@@ -645,8 +697,10 @@ function openCcEditDialog(record: CdnflyRecord): void {
     ccFormError.value = '';
 
     const rawData = record.data;
+
     if (activeCcKind.value === 'matcher') {
         let dataObj: Record<string, unknown>;
+
         if (typeof rawData === 'string') {
             try {
                 dataObj = JSON.parse(rawData);
@@ -657,20 +711,27 @@ function openCcEditDialog(record: CdnflyRecord): void {
             rawData &&
             typeof rawData === 'object' &&
             !Array.isArray(rawData)
-        )
+        ) {
             dataObj = rawData as Record<string, unknown>;
-        else dataObj = {};
+        } else {
+            dataObj = {};
+        }
+
         matcherConditions.value = parseMatcherData(dataObj);
         ruleEntries.value = [];
     } else if (activeCcKind.value === 'rule') {
         let dataArr: unknown[];
+
         if (typeof rawData === 'string') {
             try {
                 dataArr = JSON.parse(rawData);
             } catch {
                 dataArr = [];
             }
-        } else dataArr = Array.isArray(rawData) ? rawData : [];
+        } else {
+            dataArr = Array.isArray(rawData) ? rawData : [];
+        }
+
         ruleEntries.value = dataArr.map((entry: any) => ({
             action: String(entry.action ?? 'ipset'),
             matcher: String(entry.matcher ?? ''),
@@ -684,6 +745,7 @@ function openCcEditDialog(record: CdnflyRecord): void {
         matcherConditions.value = [];
         ruleEntries.value = [];
     }
+
     parseExtra(record.extra);
     ccUid.value = String(record.uid ?? '');
     void loadUserOptions();
@@ -691,7 +753,7 @@ function openCcEditDialog(record: CdnflyRecord): void {
 }
 
 async function submitCc(): Promise<void> {
-    let data: Record<string, unknown>;
+    const data: Record<string, unknown> = {};
     const base: Record<string, unknown> = {
         name: ccForm.name.trim(),
         des: ccForm.des.trim() || undefined,
@@ -720,37 +782,52 @@ async function submitCc(): Promise<void> {
         }));
     }
 
-    if (ccUid.value) base.uid = Number(ccUid.value);
-    data = base;
+    if (ccUid.value) {
+        base.uid = Number(ccUid.value);
+    }
+
+    Object.assign(data, base);
 
     if (!data.name || String(data.name).trim() === '') {
         ccFormError.value = '名称不能为空';
+
         return;
     }
 
     ccSaving.value = true;
     ccFormError.value = '';
+
     try {
         if (editingCc.value) {
             const id = recordId(editingCc.value);
+
             if (!id) {
                 ccFormError.value = 'ID 缺失';
+
                 return;
             }
-            if (activeCcKind.value === 'filter')
+
+            if (activeCcKind.value === 'filter') {
                 await updateAdminCcFilter(id, data);
-            else if (activeCcKind.value === 'rule')
+            } else if (activeCcKind.value === 'rule') {
                 await updateAdminCcRule(id, data);
-            else await updateAdminCcMatcher(id, data);
+            } else {
+                await updateAdminCcMatcher(id, data);
+            }
+
             toast.success(`${ccKindLabel(activeCcKind.value)}更新成功`);
         } else {
-            if (activeCcKind.value === 'filter')
+            if (activeCcKind.value === 'filter') {
                 await createAdminCcFilter(data);
-            else if (activeCcKind.value === 'rule')
+            } else if (activeCcKind.value === 'rule') {
                 await createAdminCcRule(data);
-            else await createAdminCcMatcher(data);
+            } else {
+                await createAdminCcMatcher(data);
+            }
+
             toast.success(`${ccKindLabel(activeCcKind.value)}创建成功`);
         }
+
         ccDialogOpen.value = false;
         await loadCcRows();
     } catch (error) {
@@ -762,16 +839,25 @@ async function submitCc(): Promise<void> {
 
 async function removeCc(record: CdnflyRecord): Promise<void> {
     const id = recordId(record);
+
     if (!id) {
         ccError.value = 'ID 缺失';
+
         return;
     }
+
     ccDeletingId.value = id;
     ccError.value = '';
+
     try {
-        if (activeCcKind.value === 'filter') await deleteAdminCcFilter(id);
-        else if (activeCcKind.value === 'rule') await deleteAdminCcRule(id);
-        else await deleteAdminCcMatcher(id);
+        if (activeCcKind.value === 'filter') {
+            await deleteAdminCcFilter(id);
+        } else if (activeCcKind.value === 'rule') {
+            await deleteAdminCcRule(id);
+        } else {
+            await deleteAdminCcMatcher(id);
+        }
+
         toast.success(`${ccKindLabel(activeCcKind.value)}已删除`);
         await loadCcRows();
     } catch (error) {
@@ -784,12 +870,18 @@ async function removeCc(record: CdnflyRecord): Promise<void> {
 function dataCount(value: unknown): string {
     try {
         const parsed = typeof value === 'string' ? JSON.parse(value) : value;
-        if (Array.isArray(parsed)) return `${parsed.length} 条`;
-        if (parsed && typeof parsed === 'object')
+
+        if (Array.isArray(parsed)) {
+            return `${parsed.length} 条`;
+        }
+
+        if (parsed && typeof parsed === 'object') {
             return `${Object.keys(parsed).length} 项`;
+        }
     } catch {
         return '已配置';
     }
+
     return '-';
 }
 
@@ -800,7 +892,11 @@ const hasCcNextPage = computed(
 
 const displayedCcRows = computed(() => {
     const keyword = ccFilters.search.trim().toLowerCase();
-    if (!keyword) return ccRows.value;
+
+    if (!keyword) {
+        return ccRows.value;
+    }
+
     return ccRows.value.filter((r) =>
         [r.name, r.des, r.type]
             .map((v) => textValue(v).toLowerCase())
@@ -871,7 +967,10 @@ const displayedCcRows = computed(() => {
             </Card>
         </div>
 
+        <ConsoleTabs v-model="activeTab" :tabs="securityTabs" />
+
         <ConsoleDataTable
+            v-if="activeTab === 'admins'"
             title="管理员列表"
             :icon="Users"
             :columns="adminColumns"
@@ -890,6 +989,7 @@ const displayedCcRows = computed(() => {
         </ConsoleDataTable>
 
         <ConsoleDataTable
+            v-else
             ref="aclTableRef"
             title="全部 ACL 规则"
             :icon="ShieldCheck"

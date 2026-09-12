@@ -20,6 +20,8 @@ import ConsoleDataTable from '@/components/console/ConsoleDataTable.vue';
 import type { ColumnDef } from '@/components/console/ConsoleDataTable.vue';
 import ConsoleFormDialog from '@/components/console/ConsoleFormDialog.vue';
 import ConsolePageHeader from '@/components/console/ConsolePageHeader.vue';
+import ConsoleTabs from '@/components/console/ConsoleTabs.vue';
+import type { ConsoleTab } from '@/components/console/ConsoleTabs.vue';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -139,7 +141,7 @@ type FinanceTab = 'orders' | 'services' | 'packages';
 
 const activeTab = ref<FinanceTab>('orders');
 
-const financeTabs = [
+const financeTabs: ConsoleTab[] = [
     { key: 'orders' as const, label: '订单', icon: Receipt },
     { key: 'services' as const, label: '服务实例', icon: Package },
     { key: 'packages' as const, label: 'CDNfly 用户套餐', icon: Zap },
@@ -666,23 +668,7 @@ const serviceDetailFields = computed<{ label: string; value: string }[]>(() => {
             One panel, three lists. Previously each had its own search box,
             page-size select and refresh button stacked down the page.
         -->
-        <div class="flex flex-wrap gap-1 border-b pb-3">
-            <button
-                v-for="tab in financeTabs"
-                :key="tab.key"
-                type="button"
-                class="flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors"
-                :class="
-                    activeTab === tab.key
-                        ? 'bg-primary/10 text-primary'
-                        : 'text-muted-foreground hover:bg-accent hover:text-foreground'
-                "
-                @click="activeTab = tab.key"
-            >
-                <component :is="tab.icon" class="size-4" />
-                {{ tab.label }}
-            </button>
-        </div>
+        <ConsoleTabs v-model="activeTab" :tabs="financeTabs" />
 
         <ConsoleDataTable
             v-if="activeTab === 'orders'"

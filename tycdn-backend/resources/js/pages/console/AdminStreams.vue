@@ -1,12 +1,22 @@
 <script setup lang="ts">
-import { AlertCircle, Network, Pencil, Plus, RefreshCw, Save, Trash2 } from 'lucide-vue-next';
-import Switch from '@/components/ui/switch/Switch.vue';
+import {
+    AlertCircle,
+    FolderTree,
+    Network,
+    Pencil,
+    Plus,
+    RefreshCw,
+    Save,
+    Trash2,
+} from 'lucide-vue-next';
 import { computed, onMounted, reactive, ref } from 'vue';
+import { toast } from 'vue-sonner';
+import ConfirmDeleteDialog from '@/components/console/ConfirmDeleteDialog.vue';
 import ConsoleDataTable from '@/components/console/ConsoleDataTable.vue';
 import type { ColumnDef } from '@/components/console/ConsoleDataTable.vue';
 import ConsolePageHeader from '@/components/console/ConsolePageHeader.vue';
-import ConfirmDeleteDialog from '@/components/console/ConfirmDeleteDialog.vue';
-import { toast } from 'vue-sonner';
+import ConsoleTabs from '@/components/console/ConsoleTabs.vue';
+import type { ConsoleTab } from '@/components/console/ConsoleTabs.vue';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -30,6 +40,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
+import Switch from '@/components/ui/switch/Switch.vue';
 import {
     createAdminStream,
     createAdminStreamGroup,
@@ -54,38 +65,74 @@ function isRecord(value: unknown): value is CdnflyRecord {
 }
 
 function extractRows(result: unknown): CdnflyRecord[] {
-    if (Array.isArray(result)) return result.filter(isRecord);
-    if (!isRecord(result)) return [];
+    if (Array.isArray(result)) {
+        return result.filter(isRecord);
+    }
+
+    if (!isRecord(result)) {
+        return [];
+    }
+
     for (const key of ['data', 'items', 'list', 'rows', 'records']) {
         const value = result[key];
-        if (Array.isArray(value)) return value.filter(isRecord);
+
+        if (Array.isArray(value)) {
+            return value.filter(isRecord);
+        }
+
         if (isRecord(value)) {
             const nested = extractRows(value);
-            if (nested.length > 0) return nested;
+
+            if (nested.length > 0) {
+                return nested;
+            }
         }
     }
+
     return [];
 }
 
-function extractTotal(result: CdnflyListData, fallback: number): number | null {
-    if (typeof result.total === 'number') return result.total;
-    if (typeof result.count === 'number') return result.count;
-    if (isRecord(result.meta) && typeof result.meta.total === 'number') return result.meta.total;
-    if (isRecord(result.data) && typeof result.data.total === 'number') return result.data.total;
+function extractTotal(result: CdnflyListData): number | null {
+    if (typeof result.total === 'number') {
+        return result.total;
+    }
+
+    if (typeof result.count === 'number') {
+        return result.count;
+    }
+
+    if (isRecord(result.meta) && typeof result.meta.total === 'number') {
+        return result.meta.total;
+    }
+
+    if (isRecord(result.data) && typeof result.data.total === 'number') {
+        return result.data.total;
+    }
+
     return null;
 }
 
 function asNumber(value: unknown): number | null {
-    if (typeof value === 'number' && Number.isFinite(value)) return value;
+    if (typeof value === 'number' && Number.isFinite(value)) {
+        return value;
+    }
+
     if (typeof value === 'string') {
         const parsed = Number(value);
-        if (Number.isFinite(parsed)) return parsed;
+
+        if (Number.isFinite(parsed)) {
+            return parsed;
+        }
     }
+
     return null;
 }
 
 function textValue(value: unknown): string {
-    if (value === null || value === undefined) return '';
+    if (value === null || value === undefined) {
+        return '';
+    }
+
     return String(value);
 }
 
@@ -124,14 +171,18 @@ const deletingId = ref<number | null>(null);
 const deleteOpen = ref(false);
 const deleteTarget = ref<CdnflyRecord | null>(null);
 
-function isRunning(row: CdnflyRecord): boolean {
-    return row.enable === 1 || row.enable === '1';
-}
-
-async function toggleEnabled(row: CdnflyRecord, checked: boolean): Promise<void> {
+async function toggleEnabled(
+    row: CdnflyRecord,
+    checked: boolean,
+): Promise<void> {
     const id = Number(row.id);
-    if (!id) return;
+
+    if (!id) {
+        return;
+    }
+
     togglingId.value = id;
+
     try {
         await setAdminStreamEnabled(id, checked ? 1 : 0);
         streamsTableRef.value?.refresh();
@@ -146,8 +197,12 @@ function openDeleteConfirm(row: CdnflyRecord): void {
 }
 
 async function confirmDelete(): Promise<void> {
-    if (!deleteTarget.value) return;
+    if (!deleteTarget.value) {
+        return;
+    }
+
     deletingId.value = Number(deleteTarget.value.id);
+
     try {
         await deleteAdminStream(Number(deleteTarget.value.id));
         deleteOpen.value = false;
@@ -197,9 +252,14 @@ function openAddStream(): void {
 function openEditStream(row: CdnflyRecord): void {
     editingStream.value = row;
     streamForm.user_package = textValue(row.user_package);
+
     // Parse listen JSON
     try {
-        const listenArr = typeof row.listen === 'string' ? JSON.parse(row.listen) : row.listen;
+        const listenArr =
+            typeof row.listen === 'string'
+                ? JSON.parse(row.listen)
+                : row.listen;
+
         if (Array.isArray(listenArr) && listenArr.length > 0) {
             streamForm.listen_protocol = listenArr[0].protocol || 'tcp';
             streamForm.listen_port = textValue(listenArr[0].port);
@@ -211,9 +271,14 @@ function openEditStream(row: CdnflyRecord): void {
         streamForm.listen_protocol = 'tcp';
         streamForm.listen_port = '';
     }
+
     // Parse backend JSON
     try {
-        const backendArr = typeof row.backend === 'string' ? JSON.parse(row.backend) : row.backend;
+        const backendArr =
+            typeof row.backend === 'string'
+                ? JSON.parse(row.backend)
+                : row.backend;
+
         if (Array.isArray(backendArr) && backendArr.length > 0) {
             streamForm.backend_addr = textValue(backendArr[0].addr);
         } else {
@@ -222,29 +287,43 @@ function openEditStream(row: CdnflyRecord): void {
     } catch {
         streamForm.backend_addr = '';
     }
+
     streamForm.backend_port = textValue(row.backend_port);
     streamForm.balance_way = textValue(row.balance_way) || 'rr';
-    streamForm.proxy_protocol = row.proxy_protocol === true || row.proxy_protocol === 1 || row.proxy_protocol === '1';
+    streamForm.proxy_protocol =
+        row.proxy_protocol === true ||
+        row.proxy_protocol === 1 ||
+        row.proxy_protocol === '1';
     streamForm.conn_limit = textValue(row.conn_limit);
-    streamForm.enable = row.enable === 1 || row.enable === '1' || row.enable === true;
+    streamForm.enable =
+        row.enable === 1 || row.enable === '1' || row.enable === true;
     streamFormError.value = '';
     streamDialogOpen.value = true;
 }
 
 async function submitStream(): Promise<void> {
     const userPkg = asNumber(streamForm.user_package);
+
     if (userPkg === null) {
         streamFormError.value = '用户套餐 ID 不能为空';
-        return;
-    }
-    const backendPort = asNumber(streamForm.backend_port);
-    if (backendPort === null) {
-        streamFormError.value = '后端端口不能为空';
+
         return;
     }
 
-    const listen = JSON.stringify([{ protocol: streamForm.listen_protocol, port: streamForm.listen_port }]);
-    const backend = JSON.stringify([{ addr: streamForm.backend_addr, weight: 1, state: 'up' }]);
+    const backendPort = asNumber(streamForm.backend_port);
+
+    if (backendPort === null) {
+        streamFormError.value = '后端端口不能为空';
+
+        return;
+    }
+
+    const listen = JSON.stringify([
+        { protocol: streamForm.listen_protocol, port: streamForm.listen_port },
+    ]);
+    const backend = JSON.stringify([
+        { addr: streamForm.backend_addr, weight: 1, state: 'up' },
+    ]);
 
     const payload: AdminStreamPayload = {
         user_package: userPkg,
@@ -266,13 +345,20 @@ async function submitStream(): Promise<void> {
     try {
         if (editingStream.value) {
             const id = asNumber(editingStream.value.id);
-            if (!id) { streamFormError.value = '转发 ID 缺失'; return; }
+
+            if (!id) {
+                streamFormError.value = '转发 ID 缺失';
+
+                return;
+            }
+
             await updateAdminStream(id, payload);
             toast.success('转发已更新');
         } else {
             await createAdminStream(payload);
             toast.success('转发已创建');
         }
+
         streamDialogOpen.value = false;
         streamsTableRef.value?.refresh();
     } catch (error) {
@@ -311,8 +397,18 @@ const hasSgNextPage = computed(() => {
     if (typeof sgTotal.value === 'number') {
         return sgPage.value * 20 < sgTotal.value;
     }
+
     return sgRows.value.length >= 20;
 });
+
+type StreamTab = 'streams' | 'groups';
+
+const activeTab = ref<StreamTab>('streams');
+
+const streamTabs: ConsoleTab[] = [
+    { key: 'streams', label: '转发列表', icon: Network },
+    { key: 'groups', label: '转发分组', icon: FolderTree },
+];
 
 onMounted(() => {
     void loadStreamGroups();
@@ -321,10 +417,14 @@ onMounted(() => {
 async function loadStreamGroups(targetPage = sgPage.value): Promise<void> {
     sgLoading.value = true;
     sgError.value = '';
+
     try {
-        const result = await listAdminStreamGroups({ page: targetPage, limit: 20 });
+        const result = await listAdminStreamGroups({
+            page: targetPage,
+            limit: 20,
+        });
         sgRows.value = extractRows(result);
-        sgTotal.value = extractTotal(result, sgRows.value.length);
+        sgTotal.value = extractTotal(result);
         sgPage.value = targetPage;
     } catch (error) {
         sgError.value = getErrorMessage(error);
@@ -352,6 +452,7 @@ function openEditStreamGroup(record: CdnflyRecord): void {
 async function submitStreamGroup(): Promise<void> {
     if (sgForm.name.trim() === '') {
         sgFormError.value = '分组名称不能为空';
+
         return;
     }
 
@@ -366,13 +467,20 @@ async function submitStreamGroup(): Promise<void> {
     try {
         if (editingStreamGroup.value) {
             const id = asNumber(editingStreamGroup.value.id);
-            if (!id) { sgFormError.value = '分组 ID 缺失'; return; }
+
+            if (!id) {
+                sgFormError.value = '分组 ID 缺失';
+
+                return;
+            }
+
             await updateAdminStreamGroup(id, payload);
             toast.success('转发分组已更新');
         } else {
             await createAdminStreamGroup(payload);
             toast.success('转发分组已创建');
         }
+
         sgDialogOpen.value = false;
         await loadStreamGroups();
     } catch (error) {
@@ -384,12 +492,19 @@ async function submitStreamGroup(): Promise<void> {
 
 function openDeleteStreamGroup(record: CdnflyRecord): void {
     const id = asNumber(record.id);
-    if (!id) { sgError.value = '分组 ID 缺失'; return; }
+
+    if (!id) {
+        sgError.value = '分组 ID 缺失';
+
+        return;
+    }
+
     deleteConfirmTitle.value = '确认删除分组';
     deleteConfirmDesc.value = `确认删除转发分组「${textValue(record.name) || '#' + id}」？删除后不可恢复。`;
     deleteConfirmError.value = '';
     deleteConfirmAction.value = async () => {
         deleteConfirmLoading.value = true;
+
         try {
             await deleteAdminStreamGroup(id);
             deleteConfirmOpen.value = false;
@@ -407,9 +522,16 @@ function openDeleteStreamGroup(record: CdnflyRecord): void {
 
 <template>
     <div class="flex flex-1 flex-col gap-6 p-4 md:p-6">
-        <ConsolePageHeader title="四层转发管理" :icon="Network" :show-api-badge="false" />
+        <ConsolePageHeader
+            title="四层转发管理"
+            :icon="Network"
+            :show-api-badge="false"
+        />
+
+        <ConsoleTabs v-model="activeTab" :tabs="streamTabs" />
 
         <ConsoleDataTable
+            v-if="activeTab === 'streams'"
             ref="streamsTableRef"
             title="转发列表"
             :icon="Network"
@@ -423,7 +545,12 @@ function openDeleteStreamGroup(record: CdnflyRecord): void {
                         <Plus data-icon="inline-start" />
                         新增转发
                     </Button>
-                    <Button variant="outline" size="sm" :disabled="tLoading" @click="tRefresh">
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        :disabled="tLoading"
+                        @click="tRefresh"
+                    >
                         <Spinner v-if="tLoading" data-icon="inline-start" />
                         <RefreshCw v-else data-icon="inline-start" />
                         刷新
@@ -438,11 +565,7 @@ function openDeleteStreamGroup(record: CdnflyRecord): void {
                 />
             </template>
             <template #row-actions="{ row }">
-                <Button
-                    variant="ghost"
-                    size="sm"
-                    @click="openEditStream(row)"
-                >
+                <Button variant="ghost" size="sm" @click="openEditStream(row)">
                     <Pencil class="size-4" />
                 </Button>
                 <Button
@@ -451,22 +574,32 @@ function openDeleteStreamGroup(record: CdnflyRecord): void {
                     :disabled="deletingId === Number(row.id)"
                     @click="openDeleteConfirm(row)"
                 >
-                    <Spinner v-if="deletingId === Number(row.id)" class="size-4" />
+                    <Spinner
+                        v-if="deletingId === Number(row.id)"
+                        class="size-4"
+                    />
                     <Trash2 v-else class="size-4 text-destructive" />
                 </Button>
             </template>
         </ConsoleDataTable>
 
         <!-- ─── Stream Groups (CRUD) ─── -->
-        <Card>
-            <CardHeader class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <Card v-if="activeTab === 'groups'">
+            <CardHeader
+                class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between"
+            >
                 <CardTitle class="text-base">转发分组</CardTitle>
                 <div class="flex items-center gap-2">
                     <Button size="sm" @click="openAddStreamGroup">
                         <Plus data-icon="inline-start" />
                         新增转发组
                     </Button>
-                    <Button variant="outline" size="sm" :disabled="sgLoading" @click="loadStreamGroups(1)">
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        :disabled="sgLoading"
+                        @click="loadStreamGroups(1)"
+                    >
                         <RefreshCw data-icon="inline-start" />
                         刷新
                     </Button>
@@ -480,29 +613,63 @@ function openDeleteStreamGroup(record: CdnflyRecord): void {
                 </Alert>
                 <div class="overflow-x-auto rounded-md border">
                     <table class="w-full min-w-[640px] text-sm">
-                        <thead class="border-b bg-muted/40 text-muted-foreground">
+                        <thead
+                            class="border-b bg-muted/40 text-muted-foreground"
+                        >
                             <tr>
-                                <th class="w-20 px-4 py-3 text-left font-medium">ID</th>
-                                <th class="px-4 py-3 text-left font-medium">名称</th>
-                                <th class="px-4 py-3 text-left font-medium">备注</th>
-                                <th class="w-44 px-4 py-3 text-right font-medium">操作</th>
+                                <th
+                                    class="w-20 px-4 py-3 text-left font-medium"
+                                >
+                                    ID
+                                </th>
+                                <th class="px-4 py-3 text-left font-medium">
+                                    名称
+                                </th>
+                                <th class="px-4 py-3 text-left font-medium">
+                                    备注
+                                </th>
+                                <th
+                                    class="w-44 px-4 py-3 text-right font-medium"
+                                >
+                                    操作
+                                </th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr v-if="sgLoading && sgRows.length === 0">
-                                <td class="px-4 py-12 text-center" colspan="4"><Spinner /></td>
+                                <td class="px-4 py-12 text-center" colspan="4">
+                                    <Spinner />
+                                </td>
                             </tr>
-                            <tr v-for="r in sgRows" :key="textValue(r.id)" class="border-b last:border-b-0">
-                                <td class="px-4 py-3 text-muted-foreground">{{ textValue(r.id) }}</td>
-                                <td class="px-4 py-3 font-medium">{{ textValue(r.name) || '-' }}</td>
-                                <td class="px-4 py-3 text-muted-foreground">{{ textValue(r.des) || '-' }}</td>
+                            <tr
+                                v-for="r in sgRows"
+                                :key="textValue(r.id)"
+                                class="border-b last:border-b-0"
+                            >
+                                <td class="px-4 py-3 text-muted-foreground">
+                                    {{ textValue(r.id) }}
+                                </td>
+                                <td class="px-4 py-3 font-medium">
+                                    {{ textValue(r.name) || '-' }}
+                                </td>
+                                <td class="px-4 py-3 text-muted-foreground">
+                                    {{ textValue(r.des) || '-' }}
+                                </td>
                                 <td class="px-4 py-3">
                                     <div class="flex justify-end gap-2">
-                                        <Button variant="outline" size="sm" @click="openEditStreamGroup(r)">
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            @click="openEditStreamGroup(r)"
+                                        >
                                             <Pencil data-icon="inline-start" />
                                             编辑
                                         </Button>
-                                        <Button variant="destructive" size="sm" @click="openDeleteStreamGroup(r)">
+                                        <Button
+                                            variant="destructive"
+                                            size="sm"
+                                            @click="openDeleteStreamGroup(r)"
+                                        >
                                             <Trash2 data-icon="inline-start" />
                                             删除
                                         </Button>
@@ -510,15 +677,34 @@ function openDeleteStreamGroup(record: CdnflyRecord): void {
                                 </td>
                             </tr>
                             <tr v-if="!sgLoading && sgRows.length === 0">
-                                <td class="px-4 py-12 text-center text-muted-foreground" colspan="4">暂无转发分组</td>
+                                <td
+                                    class="px-4 py-12 text-center text-muted-foreground"
+                                    colspan="4"
+                                >
+                                    暂无转发分组
+                                </td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
                 <div class="mt-3 flex items-center justify-end gap-2">
-                    <Button variant="outline" size="sm" :disabled="!hasSgPrevPage || sgLoading" @click="loadStreamGroups(sgPage - 1)">上一页</Button>
-                    <span class="text-sm text-muted-foreground">第 {{ sgPage }} 页</span>
-                    <Button variant="outline" size="sm" :disabled="!hasSgNextPage || sgLoading" @click="loadStreamGroups(sgPage + 1)">下一页</Button>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        :disabled="!hasSgPrevPage || sgLoading"
+                        @click="loadStreamGroups(sgPage - 1)"
+                        >上一页</Button
+                    >
+                    <span class="text-sm text-muted-foreground"
+                        >第 {{ sgPage }} 页</span
+                    >
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        :disabled="!hasSgNextPage || sgLoading"
+                        @click="loadStreamGroups(sgPage + 1)"
+                        >下一页</Button
+                    >
                 </div>
             </CardContent>
         </Card>
@@ -529,13 +715,24 @@ function openDeleteStreamGroup(record: CdnflyRecord): void {
                 <DialogHeader>
                     <DialogTitle>确认删除</DialogTitle>
                     <DialogDescription>
-                        确定要删除转发「{{ deleteTarget?.name }}」吗？删除前会自动停用。
+                        确定要删除转发「{{
+                            deleteTarget?.name
+                        }}」吗？删除前会自动停用。
                     </DialogDescription>
                 </DialogHeader>
                 <DialogFooter>
-                    <Button variant="outline" @click="deleteOpen = false">取消</Button>
-                    <Button variant="destructive" :disabled="deletingId !== null" @click="confirmDelete">
-                        <Spinner v-if="deletingId !== null" data-icon="inline-start" />
+                    <Button variant="outline" @click="deleteOpen = false"
+                        >取消</Button
+                    >
+                    <Button
+                        variant="destructive"
+                        :disabled="deletingId !== null"
+                        @click="confirmDelete"
+                    >
+                        <Spinner
+                            v-if="deletingId !== null"
+                            data-icon="inline-start"
+                        />
                         <Trash2 v-else data-icon="inline-start" />
                         确认删除
                     </Button>
@@ -547,9 +744,15 @@ function openDeleteStreamGroup(record: CdnflyRecord): void {
         <Dialog v-model:open="streamDialogOpen">
             <DialogScrollContent class="sm:max-w-lg">
                 <DialogHeader>
-                    <DialogTitle>{{ editingStream ? '编辑转发' : '新增转发' }}</DialogTitle>
+                    <DialogTitle>{{
+                        editingStream ? '编辑转发' : '新增转发'
+                    }}</DialogTitle>
                     <DialogDescription>
-                        {{ editingStream ? '修改转发配置，提交后立即生效。' : '创建新的四层转发规则。' }}
+                        {{
+                            editingStream
+                                ? '修改转发配置，提交后立即生效。'
+                                : '创建新的四层转发规则。'
+                        }}
                     </DialogDescription>
                 </DialogHeader>
 
@@ -557,24 +760,43 @@ function openDeleteStreamGroup(record: CdnflyRecord): void {
                     <Alert v-if="streamFormError" variant="destructive">
                         <AlertCircle data-icon="alert" />
                         <AlertTitle>提交失败</AlertTitle>
-                        <AlertDescription>{{ streamFormError }}</AlertDescription>
+                        <AlertDescription>{{
+                            streamFormError
+                        }}</AlertDescription>
                     </Alert>
 
                     <div class="grid gap-4 md:grid-cols-2">
                         <div class="grid gap-2">
                             <Label for="stream-user-package">用户套餐 ID</Label>
-                            <Input id="stream-user-package" v-model="streamForm.user_package" type="number" min="1" autocomplete="off" required />
+                            <Input
+                                id="stream-user-package"
+                                v-model="streamForm.user_package"
+                                type="number"
+                                min="1"
+                                autocomplete="off"
+                                required
+                            />
                         </div>
                         <div class="grid gap-2">
                             <Label for="stream-balance-way">负载均衡</Label>
                             <Select v-model="streamForm.balance_way">
-                                <SelectTrigger id="stream-balance-way"><SelectValue /></SelectTrigger>
+                                <SelectTrigger id="stream-balance-way"
+                                    ><SelectValue
+                                /></SelectTrigger>
                                 <SelectContent>
                                     <SelectGroup>
-                                        <SelectItem value="rr">轮询 (rr)</SelectItem>
-                                        <SelectItem value="ip_hash">IP 哈希 (ip_hash)</SelectItem>
-                                        <SelectItem value="least_conn">最少连接 (least_conn)</SelectItem>
-                                        <SelectItem value="random">随机 (random)</SelectItem>
+                                        <SelectItem value="rr"
+                                            >轮询 (rr)</SelectItem
+                                        >
+                                        <SelectItem value="ip_hash"
+                                            >IP 哈希 (ip_hash)</SelectItem
+                                        >
+                                        <SelectItem value="least_conn"
+                                            >最少连接 (least_conn)</SelectItem
+                                        >
+                                        <SelectItem value="random"
+                                            >随机 (random)</SelectItem
+                                        >
                                     </SelectGroup>
                                 </SelectContent>
                             </Select>
@@ -585,7 +807,9 @@ function openDeleteStreamGroup(record: CdnflyRecord): void {
                         <div class="grid gap-2">
                             <Label for="stream-listen-protocol">监听协议</Label>
                             <Select v-model="streamForm.listen_protocol">
-                                <SelectTrigger id="stream-listen-protocol"><SelectValue /></SelectTrigger>
+                                <SelectTrigger id="stream-listen-protocol"
+                                    ><SelectValue
+                                /></SelectTrigger>
                                 <SelectContent>
                                     <SelectGroup>
                                         <SelectItem value="tcp">TCP</SelectItem>
@@ -596,25 +820,50 @@ function openDeleteStreamGroup(record: CdnflyRecord): void {
                         </div>
                         <div class="grid gap-2">
                             <Label for="stream-listen-port">监听端口</Label>
-                            <Input id="stream-listen-port" v-model="streamForm.listen_port" placeholder="例如 80" autocomplete="off" />
+                            <Input
+                                id="stream-listen-port"
+                                v-model="streamForm.listen_port"
+                                placeholder="例如 80"
+                                autocomplete="off"
+                            />
                         </div>
                     </div>
 
                     <div class="grid gap-4 md:grid-cols-2">
                         <div class="grid gap-2">
                             <Label for="stream-backend-addr">后端地址</Label>
-                            <Input id="stream-backend-addr" v-model="streamForm.backend_addr" placeholder="例如 1.1.1.1" autocomplete="off" />
+                            <Input
+                                id="stream-backend-addr"
+                                v-model="streamForm.backend_addr"
+                                placeholder="例如 1.1.1.1"
+                                autocomplete="off"
+                            />
                         </div>
                         <div class="grid gap-2">
                             <Label for="stream-backend-port">后端端口</Label>
-                            <Input id="stream-backend-port" v-model="streamForm.backend_port" type="number" min="1" max="65535" autocomplete="off" required />
+                            <Input
+                                id="stream-backend-port"
+                                v-model="streamForm.backend_port"
+                                type="number"
+                                min="1"
+                                max="65535"
+                                autocomplete="off"
+                                required
+                            />
                         </div>
                     </div>
 
                     <div class="grid gap-4 md:grid-cols-2">
                         <div class="grid gap-2">
                             <Label for="stream-conn-limit">连接限制</Label>
-                            <Input id="stream-conn-limit" v-model="streamForm.conn_limit" type="number" min="0" placeholder="留空则不限" autocomplete="off" />
+                            <Input
+                                id="stream-conn-limit"
+                                v-model="streamForm.conn_limit"
+                                type="number"
+                                min="0"
+                                placeholder="留空则不限"
+                                autocomplete="off"
+                            />
                         </div>
                     </div>
 
@@ -623,24 +872,38 @@ function openDeleteStreamGroup(record: CdnflyRecord): void {
                             <Checkbox
                                 id="stream-proxy-protocol"
                                 :checked="streamForm.proxy_protocol"
-                                @update:checked="streamForm.proxy_protocol = $event === true"
+                                @update:checked="
+                                    streamForm.proxy_protocol = $event === true
+                                "
                             />
-                            <Label for="stream-proxy-protocol">Proxy Protocol</Label>
+                            <Label for="stream-proxy-protocol"
+                                >Proxy Protocol</Label
+                            >
                         </div>
                         <div class="flex items-center gap-2">
                             <Checkbox
                                 id="stream-enable"
                                 :checked="streamForm.enable"
-                                @update:checked="streamForm.enable = $event === true"
+                                @update:checked="
+                                    streamForm.enable = $event === true
+                                "
                             />
                             <Label for="stream-enable">启用</Label>
                         </div>
                     </div>
 
                     <DialogFooter>
-                        <Button variant="outline" type="button" @click="streamDialogOpen = false">取消</Button>
+                        <Button
+                            variant="outline"
+                            type="button"
+                            @click="streamDialogOpen = false"
+                            >取消</Button
+                        >
                         <Button :disabled="streamSaving" type="submit">
-                            <Spinner v-if="streamSaving" data-icon="inline-start" />
+                            <Spinner
+                                v-if="streamSaving"
+                                data-icon="inline-start"
+                            />
                             <Save v-else data-icon="inline-start" />
                             {{ editingStream ? '保存' : '创建' }}
                         </Button>
@@ -653,9 +916,15 @@ function openDeleteStreamGroup(record: CdnflyRecord): void {
         <Dialog v-model:open="sgDialogOpen">
             <DialogScrollContent class="sm:max-w-lg">
                 <DialogHeader>
-                    <DialogTitle>{{ editingStreamGroup ? '编辑转发分组' : '新增转发分组' }}</DialogTitle>
+                    <DialogTitle>{{
+                        editingStreamGroup ? '编辑转发分组' : '新增转发分组'
+                    }}</DialogTitle>
                     <DialogDescription>
-                        {{ editingStreamGroup ? '修改分组信息，提交后立即生效。' : '创建新的转发分组。' }}
+                        {{
+                            editingStreamGroup
+                                ? '修改分组信息，提交后立即生效。'
+                                : '创建新的转发分组。'
+                        }}
                     </DialogDescription>
                 </DialogHeader>
 
@@ -668,7 +937,12 @@ function openDeleteStreamGroup(record: CdnflyRecord): void {
 
                     <div class="grid gap-2">
                         <Label for="sg-name">分组名称</Label>
-                        <Input id="sg-name" v-model="sgForm.name" autocomplete="off" required />
+                        <Input
+                            id="sg-name"
+                            v-model="sgForm.name"
+                            autocomplete="off"
+                            required
+                        />
                     </div>
 
                     <div class="grid gap-2">
@@ -681,7 +955,12 @@ function openDeleteStreamGroup(record: CdnflyRecord): void {
                     </div>
 
                     <DialogFooter>
-                        <Button variant="outline" type="button" @click="sgDialogOpen = false">取消</Button>
+                        <Button
+                            variant="outline"
+                            type="button"
+                            @click="sgDialogOpen = false"
+                            >取消</Button
+                        >
                         <Button :disabled="sgSaving" type="submit">
                             <Spinner v-if="sgSaving" data-icon="inline-start" />
                             <Save v-else data-icon="inline-start" />
