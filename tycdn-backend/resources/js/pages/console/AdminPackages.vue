@@ -356,6 +356,11 @@ const portalForm = reactive({
  */
 function applyTierPreset(preset: TierPreset): void {
     form.name = preset.name;
+
+    if (form.cname_domain === CNAME_DEFAULT_VALUE || form.cname_domain === '') {
+        form.cname_domain = defaultCnameDomainId();
+    }
+
     Object.assign(form, preset.limits);
 
     form.custom_cc_rule = preset.custom_cc_rule;
@@ -532,8 +537,23 @@ async function loadPackageOptions(): Promise<void> {
     }
 }
 
+/**
+ * The first real CNAME domain, or '' when the options have not loaded.
+ *
+ * 不指定 is a valid choice when editing, but on create the master requires a
+ * domain, so leaving the placeholder selected guarantees a failed save.
+ */
+function defaultCnameDomainId(): string {
+    const first = packageOptions.value.cname_domains.find(
+        (option) => String(option.id) !== CNAME_DEFAULT_VALUE,
+    );
+
+    return first ? String(first.id) : '';
+}
+
 function openCreateDialog(): void {
     Object.assign(form, emptyPackageForm());
+    form.cname_domain = defaultCnameDomainId();
     resetPortalForm();
     formError.value = '';
     editingId.value = null;
@@ -932,6 +952,9 @@ function buildPackagePayload(
             ['quarter_price', '请填写季付价格'],
             ['year_price', '请填写年付价格'],
             ['groups', '请填写所属套餐组 ID'],
+            // Omitting it gets rejected by the master with 无法找到此cname域名,
+            // which does not hint that a field is simply missing.
+            ['cname_domain', '请选择 CNAME 域名'],
         ]);
     }
 
@@ -1012,7 +1035,18 @@ function appendCnameDomain(payload: AdminPackagePayload, value: string): void {
         return;
     }
 
-    appendText(payload, 'cname_domain', value.trim());
+    const trimmed = value.trim();
+
+    if (trimmed === '') {
+        return;
+    }
+
+    // The master keys this on the CNAME domain's id and sends it as a number
+    // (packageNumber, chunk-7d3669d6). Sending the domain text instead gets
+    // rejected with 无法找到此cname域名.
+    const id = Number(trimmed);
+
+    payload.cname_domain = Number.isInteger(id) ? id : trimmed;
 }
 
 function requirePayloadKeys(

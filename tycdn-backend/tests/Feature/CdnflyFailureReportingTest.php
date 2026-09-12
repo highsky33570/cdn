@@ -117,6 +117,7 @@ class CdnflyFailureReportingTest extends TestCase
                 'quarter_price' => '85',
                 'year_price' => '320',
                 'groups' => '1',
+                'cname_domain' => 1,
             ])
             ->assertStatus(500)
             ->assertJsonPath('ok', false)

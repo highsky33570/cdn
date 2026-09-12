@@ -1084,6 +1084,10 @@ class AdminController extends Controller
                 'quarter_price' => '新增基础套餐需要季付价格',
                 'year_price' => '新增基础套餐需要年付价格',
                 'groups' => '新增基础套餐需要所属套餐组',
+                // CDNfly rejects a package with no CNAME domain as
+                // 「无法找到此cname域名」, which reads like a lookup failure
+                // rather than a missing field.
+                'cname_domain' => '新增基础套餐需要 CNAME 域名',
             ] as $key => $message) {
                 if (! array_key_exists($key, $data) || $data[$key] === '') {
                     throw ValidationException::withMessages([

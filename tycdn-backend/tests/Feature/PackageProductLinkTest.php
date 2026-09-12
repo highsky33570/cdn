@@ -105,6 +105,24 @@ class PackageProductLinkTest extends TestCase
         $this->assertNotNull(Product::query()->where('slug', 'jp-mini-2')->first());
     }
 
+    /**
+     * A package with no CNAME domain is rejected by CDNfly as
+     * 「无法找到此cname域名」 — a lookup failure, with no hint that a field is
+     * simply absent. Catch it here, where the message can say so.
+     */
+    public function test_a_package_without_a_cname_domain_is_rejected_before_cdnfly(): void
+    {
+        $this->mock(CdnflyApiService::class)->shouldNotReceive('createPackage');
+
+        $payload = $this->packagePayload(['name' => 'x', 'price_monthly' => 5]);
+        unset($payload['cname_domain']);
+
+        $this->actingAs($this->admin())
+            ->postJson('/api/admin/packages', $payload)
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('cname_domain');
+    }
+
     /** The portal half must never be forwarded to CDNfly as a package field. */
     public function test_the_portal_block_is_not_sent_to_cdnfly(): void
     {
@@ -253,6 +271,7 @@ class PackageProductLinkTest extends TestCase
             'quarter_price' => '0',
             'year_price' => '0',
             'groups' => '1',
+            'cname_domain' => 1,
             'portal' => $portal,
         ];
     }
