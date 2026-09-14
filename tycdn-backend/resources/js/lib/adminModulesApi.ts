@@ -326,6 +326,17 @@ export async function getAdminSite(id: number): Promise<CdnflyRecord> {
     return apiRequest<CdnflyRecord>(`/api/admin/sites/${id}`);
 }
 
+/**
+ * Issue a free certificate for a site and attach it.
+ *
+ * Two master calls behind one endpoint, in the order its own panel makes
+ * them: create the cert, then point the site at the new id. Turning on an
+ * https listener without a certificate is rejected as 「https需要指定证书」.
+ */
+export async function applyAdminSiteCertificate(id: number) {
+    return apiRequest(`/api/admin/sites/${id}/certificate`, { method: 'POST' });
+}
+
 export async function setAdminSiteEnabled(
     id: number,
     enable: boolean,
@@ -353,11 +364,6 @@ export type AdminSitePayload = {
     backend: { addr: string; weight?: number; state?: string }[];
     /** The origin port, carried separately from the address. Defaults to 80. */
     backend_http_port?: string;
-    /**
-     * Let the master obtain a certificate itself, validating over HTTP
-     * through the node. Requires an https listener to exist.
-     */
-    auto_cert?: number;
     https_listen?: {
         port?: string;
         /** An existing certificate id, as an alternative to auto_cert. */

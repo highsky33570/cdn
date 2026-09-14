@@ -57,6 +57,7 @@ import {
     listAdminSites,
     setAdminSiteEnabled,
     updateAdminCert,
+    applyAdminSiteCertificate,
     updateAdminSite,
 } from '@/lib/adminModulesApi';
 import type { AdminCertPayload, AdminSitePayload } from '@/lib/adminModulesApi';
@@ -468,15 +469,16 @@ const copiedField = ref('');
 const enablingHttpsId = ref<number | null>(null);
 
 /**
- * Turn on HTTPS and let the master obtain the certificate.
+ * Issue a free certificate for the site and switch it to HTTPS.
  *
- * A site created over HTTP has no certificate, so any origin that redirects to
- * https — most do — dead-ends at a failed TLS handshake. The master issues one
- * itself when auto_cert is set, validating over HTTP through the node, which
- * only works once the customer's DNS actually points at the node.
+ * A site created over HTTP has no certificate, so an origin that redirects to
+ * https — most do — dead-ends at a failed TLS handshake. There is no "just
+ * enable HTTPS" flag: the master rejects a listener with no certificate as
+ * 「https需要指定证书」. The endpoint issues one and attaches it, the way the
+ * master's own 申请证书 button does.
  *
- * Field names verified against the master's own panel (chunk-0871c1ec):
- * autoCert -> auto_cert, httpsPort -> https_listen.port.
+ * Validation happens over HTTP through the node, so the customer's DNS must
+ * already point at it.
  */
 async function enableHttps(row: CdnflyRecord): Promise<void> {
     const id = Number(row.id);
@@ -488,11 +490,8 @@ async function enableHttps(row: CdnflyRecord): Promise<void> {
     enablingHttpsId.value = id;
 
     try {
-        await updateAdminSite(id, {
-            auto_cert: 1,
-            https_listen: { port: '443' },
-        });
-        toast.success('已开启 HTTPS，证书签发中');
+        await applyAdminSiteCertificate(id);
+        toast.success('证书申请已提交，几分钟后生效');
         sitesTableRef.value?.refresh();
     } catch (error) {
         // A row action has no dialog to report into.

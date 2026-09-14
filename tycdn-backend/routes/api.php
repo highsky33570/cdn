@@ -124,6 +124,8 @@ Route::middleware(['auth:sanctum', 'verified', 'admin', 'throttle:60,1'])->prefi
     Route::put('/sites/{id}', [AdminSiteController::class, 'update'])->middleware('throttle:20,1');
     Route::delete('/sites/{id}', [AdminSiteController::class, 'destroy'])->middleware('throttle:10,1');
     Route::put('/sites/{id}/enable', [AdminSiteController::class, 'setEnabled'])->middleware('throttle:20,1');
+    // 申请免费证书并绑定：先建证书再回写 https_listen.cert
+    Route::post('/sites/{id}/certificate', [AdminSiteController::class, 'applyCertificate'])->middleware('throttle:10,1');
     Route::get('/all-certs', [AdminSiteController::class, 'certs']);
     Route::post('/all-certs', [AdminSiteController::class, 'storeCert'])->middleware('throttle:20,1');
     Route::put('/all-certs/{id}', [AdminSiteController::class, 'updateCert'])->middleware('throttle:20,1');
