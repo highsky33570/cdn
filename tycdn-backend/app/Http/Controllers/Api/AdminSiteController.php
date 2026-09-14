@@ -75,6 +75,17 @@ class AdminSiteController extends Controller
             'backend.*.weight' => ['sometimes', 'integer', 'min:1'],
             'backend.*.state' => ['sometimes', 'string', 'in:up,down'],
             'groups' => ['nullable', 'string', 'max:255'],
+            // HTTPS. The master needs either a cert id or auto_cert once an
+            // https listener exists; field names verified against its own
+            // panel (chunk-0871c1ec): autoCert -> auto_cert, certId ->
+            // https_listen.cert.
+            'auto_cert' => ['sometimes', 'integer', 'in:0,1'],
+            'https_listen' => ['sometimes', 'array'],
+            'https_listen.port' => ['sometimes', 'string', 'max:50'],
+            'https_listen.cert' => ['sometimes', 'integer', 'min:0'],
+            'https_listen.hsts' => ['sometimes', 'integer', 'in:0,1'],
+            'https_listen.http2' => ['sometimes', 'integer', 'in:0,1'],
+            'https_listen.http3' => ['sometimes', 'integer', 'in:0,1'],
         ]);
 
         if ($validated === []) {

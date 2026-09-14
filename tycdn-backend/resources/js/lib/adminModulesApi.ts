@@ -353,6 +353,19 @@ export type AdminSitePayload = {
     backend: { addr: string; weight?: number; state?: string }[];
     /** The origin port, carried separately from the address. Defaults to 80. */
     backend_http_port?: string;
+    /**
+     * Let the master obtain a certificate itself, validating over HTTP
+     * through the node. Requires an https listener to exist.
+     */
+    auto_cert?: number;
+    https_listen?: {
+        port?: string;
+        /** An existing certificate id, as an alternative to auto_cert. */
+        cert?: number;
+        hsts?: number;
+        http2?: number;
+        http3?: number;
+    };
     groups?: string;
 };
 

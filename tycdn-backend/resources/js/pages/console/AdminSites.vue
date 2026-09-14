@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import {
+    Check,
+    Copy,
     Eye,
+    ShieldCheck,
     FileKey2,
     Globe2,
     Pencil,
@@ -407,7 +410,9 @@ function splitOrigin(value: string): [string, string] {
  * rendered a dash for almost every row and showed the site's internal name
  * where the domain belongs.
  */
-const detailFields = computed<{ label: string; value: string }[]>(() => {
+const detailFields = computed<
+    { label: string; value: string; copyable?: boolean }[]
+>(() => {
     const s = detailSite.value;
 
     if (!s) {
@@ -416,7 +421,11 @@ const detailFields = computed<{ label: string; value: string }[]>(() => {
 
     return [
         { label: 'ID', value: String(s.id ?? '-') },
-        { label: '域名', value: String(s.domain ?? s.name ?? '-') },
+        {
+            label: '域名',
+            value: String(s.domain ?? s.name ?? '-'),
+            copyable: true,
+        },
         { label: '用户 ID', value: String(s.uid ?? s.user_id ?? '-') },
         {
             label: '状态',
@@ -424,7 +433,7 @@ const detailFields = computed<{ label: string; value: string }[]>(() => {
         },
         // What the customer points their CNAME at. Without it the site cannot
         // be reached, so it is the single most useful line in this dialog.
-        { label: 'CNAME 记录', value: siteCname(s) },
+        { label: 'CNAME 记录', value: siteCname(s), copyable: true },
         // Whether the node has actually received this config yet.
         { label: '同步状态', value: syncStateText(s) },
         {
@@ -454,6 +463,68 @@ const detailFields = computed<{ label: string; value: string }[]>(() => {
         },
     ];
 });
+
+const copiedField = ref('');
+const enablingHttpsId = ref<number | null>(null);
+
+/**
+ * Turn on HTTPS and let the master obtain the certificate.
+ *
+ * A site created over HTTP has no certificate, so any origin that redirects to
+ * https — most do — dead-ends at a failed TLS handshake. The master issues one
+ * itself when auto_cert is set, validating over HTTP through the node, which
+ * only works once the customer's DNS actually points at the node.
+ *
+ * Field names verified against the master's own panel (chunk-0871c1ec):
+ * autoCert -> auto_cert, httpsPort -> https_listen.port.
+ */
+async function enableHttps(row: CdnflyRecord): Promise<void> {
+    const id = Number(row.id);
+
+    if (!id) {
+        return;
+    }
+
+    enablingHttpsId.value = id;
+
+    try {
+        await updateAdminSite(id, {
+            auto_cert: 1,
+            https_listen: { port: '443' },
+        });
+        toast.success('已开启 HTTPS，证书签发中');
+        sitesTableRef.value?.refresh();
+    } catch (error) {
+        // A row action has no dialog to report into.
+        toast.error(getErrorMessage(error));
+    } finally {
+        enablingHttpsId.value = null;
+    }
+}
+
+/**
+ * The CNAME is transcribed into someone's DNS panel, where one wrong character
+ * fails silently — so it is copied rather than retyped.
+ */
+async function copyField(label: string, value: string): Promise<void> {
+    if (value === '' || value === '-') {
+        return;
+    }
+
+    try {
+        await navigator.clipboard.writeText(value);
+        copiedField.value = label;
+        setTimeout(() => {
+            if (copiedField.value === label) {
+                copiedField.value = '';
+            }
+        }, 2000);
+    } catch {
+        // Clipboard access is denied outside a secure context; the value is
+        // still on screen to copy by hand, so this must not throw.
+        detailError.value = '无法访问剪贴板，请手动复制';
+    }
+}
 
 /**
  * The hostname a customer CNAMEs to.
@@ -737,6 +808,19 @@ async function confirmCertDelete(): Promise<void> {
             <template #row-actions="{ row }">
                 <Button variant="ghost" size="sm" @click="openDetail(row)">
                     <Eye class="size-4" />
+                </Button>
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    title="开启 HTTPS 并自动申请证书"
+                    :disabled="enablingHttpsId === Number(row.id)"
+                    @click="enableHttps(row)"
+                >
+                    <Spinner
+                        v-if="enablingHttpsId === Number(row.id)"
+                        class="size-4"
+                    />
+                    <ShieldCheck v-else class="size-4" />
                 </Button>
                 <Button variant="ghost" size="sm" @click="openEditDialog(row)">
                     <Pencil class="size-4" />
@@ -1246,6 +1330,29 @@ async function confirmCertDelete(): Promise<void> {
                     >
                         {{ field.value }}
                     </Badge>
+                    <div
+                        v-else-if="field.copyable && field.value !== '-'"
+                        class="flex items-start gap-2"
+                    >
+                        <code
+                            class="flex-1 rounded-md bg-muted px-2 py-1 font-mono text-sm break-all"
+                        >
+                            {{ field.value }}
+                        </code>
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            class="shrink-0"
+                            :title="`复制${field.label}`"
+                            @click="copyField(field.label, field.value)"
+                        >
+                            <Check
+                                v-if="copiedField === field.label"
+                                class="size-4 text-green-600"
+                            />
+                            <Copy v-else class="size-4" />
+                        </Button>
+                    </div>
                     <span v-else class="break-all">{{ field.value }}</span>
                 </div>
             </div>
