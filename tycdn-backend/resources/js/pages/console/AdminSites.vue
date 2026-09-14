@@ -399,6 +399,14 @@ function splitOrigin(value: string): [string, string] {
     return parts.length === 2 ? [parts[0], parts[1]] : [value, '80'];
 }
 
+/**
+ * Field names verified against the master's own panel (chunk-0871c1ec).
+ *
+ * Every key here was previously guessed — name/user_id/package_id/http_port/
+ * source_address/created_at — and CDNfly uses none of them, so the dialog
+ * rendered a dash for almost every row and showed the site's internal name
+ * where the domain belongs.
+ */
 const detailFields = computed<{ label: string; value: string }[]>(() => {
     const s = detailSite.value;
 
@@ -408,29 +416,94 @@ const detailFields = computed<{ label: string; value: string }[]>(() => {
 
     return [
         { label: 'ID', value: String(s.id ?? '-') },
-        { label: '域名', value: String(s.name ?? '-') },
-        { label: '用户 ID', value: String(s.user_id ?? '-') },
+        { label: '域名', value: String(s.domain ?? s.name ?? '-') },
+        { label: '用户 ID', value: String(s.uid ?? s.user_id ?? '-') },
         {
             label: '状态',
             value: isSiteRunning(s) ? '运行中' : '已停用',
         },
-        { label: '套餐 ID', value: String(s.package_id ?? '-') },
-        { label: 'HTTP 端口', value: String(s.http_port ?? '-') },
-        { label: 'HTTPS 端口', value: String(s.https_port ?? '-') },
+        // What the customer points their CNAME at. Without it the site cannot
+        // be reached, so it is the single most useful line in this dialog.
+        { label: 'CNAME 记录', value: siteCname(s) },
+        // Whether the node has actually received this config yet.
+        { label: '同步状态', value: syncStateText(s) },
         {
-            label: '源站地址',
-            value: String(s.source_address ?? s.origin ?? '-'),
+            label: '套餐 ID',
+            value: String(s.user_package ?? s.package_id ?? '-'),
         },
         {
+            label: 'HTTP 端口',
+            value: String(s.http_listen_port ?? s.http_port ?? '-'),
+        },
+        {
+            label: 'HTTPS 端口',
+            value: String(s.https_listen_port ?? s.https_port ?? '-'),
+        },
+        { label: '源站地址', value: backendText(s) },
+        {
             label: '创建时间',
-            value: formatDate(s.created_at as string | null | undefined),
+            value: formatDate(
+                (s.create_at ?? s.created_at) as string | null | undefined,
+            ),
         },
         {
             label: '更新时间',
-            value: formatDate(s.updated_at as string | null | undefined),
+            value: formatDate(
+                (s.update_at ?? s.updated_at) as string | null | undefined,
+            ),
         },
     ];
 });
+
+/**
+ * The hostname a customer CNAMEs to.
+ *
+ * Copied from the master's own cname() helper: 按网站生成 uses the site's own
+ * hostname, 按套餐生成 uses the package-level one shared by every site on it.
+ */
+function siteCname(s: CdnflyRecord): string {
+    const host =
+        String(s.cname_mode) === 'package'
+            ? `${s.up_cname_hostname ?? ''}.${s.up_cname_domain ?? ''}`
+            : `${s.cname_hostname ?? ''}.${s.cname_domain ?? ''}`;
+
+    return host.replace(/^\.|\.$/g, '') || '-';
+}
+
+/** A site can exist in the master and not yet be live on any node. */
+function syncStateText(s: CdnflyRecord): string {
+    switch (String(s.sync_state ?? '')) {
+        case 'done':
+            return '已同步';
+        case 'process':
+            return '同步中';
+        case 'pending':
+            return s.depend ? '证书签发中' : '待同步';
+        case 'error':
+            return '同步失败';
+        default:
+            return '-';
+    }
+}
+
+/** backend is an array of {addr, weight, state}. */
+function backendText(s: CdnflyRecord): string {
+    const backend = s.backend;
+
+    if (!Array.isArray(backend) || backend.length === 0) {
+        return '-';
+    }
+
+    const port = s.backend_http_port ? `:${s.backend_http_port}` : '';
+
+    return (
+        backend
+            .map((b) => String((b as Record<string, unknown>)?.addr ?? ''))
+            .filter((addr) => addr !== '')
+            .map((addr) => `${addr}${port}`)
+            .join(', ') || '-'
+    );
+}
 
 // ─── Certs CRUD ─────────────────────────────────────────
 const certsTableRef = ref<InstanceType<typeof ConsoleDataTable> | null>(null);
