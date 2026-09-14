@@ -147,7 +147,7 @@ const streamColumns: ColumnDef[] = [
     { key: 'src_port', label: '源端口', width: '100px' },
     { key: 'dst_addr', label: '目标地址' },
     { key: 'protocol', label: '协议', width: '80px' },
-    { key: 'user_id', label: '用户 ID', width: '90px' },
+    { key: 'user_id', altKeys: ['uid'], label: '用户 ID', width: '90px' },
     {
         key: 'enable',
         label: '状态',

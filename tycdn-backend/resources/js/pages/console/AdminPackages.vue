@@ -1431,6 +1431,7 @@ const pgColumns: ColumnDef[] = [
     { key: 'des', label: '备注', format: (v) => String(v ?? '-') },
     {
         key: 'created_at',
+        altKeys: ['create_at'],
         label: '创建时间',
         width: '160px',
         format: (v) => formatDate(v as string | null | undefined),
@@ -1537,6 +1538,7 @@ const puColumns: ColumnDef[] = [
     },
     {
         key: 'created_at',
+        altKeys: ['create_at'],
         label: '创建时间',
         width: '160px',
         format: (v) => formatDate(v as string | null | undefined),

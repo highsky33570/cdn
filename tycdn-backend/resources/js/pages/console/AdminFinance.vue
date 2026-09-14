@@ -227,30 +227,65 @@ const serviceColumns: ColumnDef[] = [
 ];
 
 // ─── CDNfly user package columns ────────────────────────
+/**
+ * Field names taken from an actual /v1/user-packages response.
+ *
+ * These were guessed — user_id/package_id/status/expire_time/created_at — and
+ * CDNfly uses none of them, so every column rendered a dash on a record that
+ * was fully populated.
+ *
+ * The user's NAME and the package's NAME are shown rather than their ids:
+ * "adminty1 / JPN-Mini" answers the question the table is for, where "4 / 1"
+ * does not.
+ */
 const userPackageColumns: ColumnDef[] = [
     { key: 'id', label: 'ID', width: '70px' },
-    { key: 'user_id', label: '用户 ID', width: '90px' },
-    { key: 'package_id', label: '套餐 ID', width: '90px' },
+    { key: 'user_name', label: '用户', width: '140px' },
+    { key: 'package_name', label: '套餐', width: '140px' },
     {
-        key: 'status',
+        key: 'enable',
         label: '状态',
         badge: true,
         width: '100px',
-        format: (v) => String(v ?? '-'),
+        format: (v) => (v === 1 || v === '1' ? '生效中' : '已停用'),
+        badgeVariant: (v) =>
+            v === 1 || v === '1' ? 'secondary' : 'destructive',
+    },
+    // Traffic is the number that decides whether a customer is about to be cut
+    // off, so it belongs in the list rather than behind a detail click.
+    {
+        key: 'traffic_usage',
+        label: '流量',
+        width: '130px',
+        format: (v, row) => trafficText(v, row),
     },
     {
-        key: 'expire_time',
+        key: 'end_at',
         label: '到期时间',
         width: '160px',
         format: (v) => formatDate(v as string | null | undefined),
     },
     {
-        key: 'created_at',
+        key: 'create_at',
         label: '创建时间',
         width: '160px',
         format: (v) => formatDate(v as string | null | undefined),
     },
 ];
+
+/** `traffic` is the GB allowance; -1 means unlimited. */
+function trafficText(usage: unknown, row?: Record<string, unknown>): string {
+    const used = Number(usage ?? 0);
+    const limit = row?.traffic;
+
+    if (String(limit) === '-1') {
+        return `${used.toFixed(2)} GB / 不限`;
+    }
+
+    return limit === undefined || limit === null
+        ? `${used.toFixed(2)} GB`
+        : `${used.toFixed(2)} / ${limit} GB`;
+}
 
 const ORDER_STATUSES = [
     { value: 'pending', label: '待支付' },

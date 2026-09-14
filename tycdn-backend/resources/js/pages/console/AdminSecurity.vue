@@ -131,6 +131,7 @@ const adminColumns: ColumnDef[] = [
     },
     {
         key: 'updated_at',
+        altKeys: ['update_at'],
         label: '更新时间',
         width: '140px',
         format: (v) => formatDate(v as string | null | undefined),
@@ -151,7 +152,7 @@ const aclColumns: ColumnDef[] = [
         badge: true,
         format: (v) => String(v ?? '-'),
     },
-    { key: 'user_id', label: '用户 ID', width: '90px' },
+    { key: 'user_id', altKeys: ['uid'], label: '用户 ID', width: '90px' },
     {
         key: 'enable',
         label: '状态',

@@ -24,10 +24,17 @@ const loginLogColumns: ColumnDef[] = [
     { key: 'id', label: 'ID', width: '70px' },
     { key: 'username', label: '账号' },
     { key: 'ip', label: 'IP', width: '140px' },
-    { key: 'status', label: '状态', badge: true, width: '90px' },
+    {
+        key: 'status',
+        altKeys: ['state', 'enable'],
+        label: '状态',
+        badge: true,
+        width: '90px',
+    },
     { key: 'reason', label: '原因' },
     {
         key: 'created_at',
+        altKeys: ['create_at'],
         label: '时间',
         width: '140px',
         format: (v) => formatDate(v as string | null | undefined),
@@ -42,6 +49,7 @@ const opLogColumns: ColumnDef[] = [
     { key: 'ip', label: 'IP', width: '140px' },
     {
         key: 'created_at',
+        altKeys: ['create_at'],
         label: '时间',
         width: '140px',
         format: (v) => formatDate(v as string | null | undefined),

@@ -135,6 +135,7 @@ const certColumns: ColumnDef[] = [
     },
     {
         key: 'expire_time',
+        altKeys: ['end_at', 'expire_at', 'not_after'],
         label: '到期时间',
         width: '160px',
         format: (v) => formatDate(v as string | null | undefined),
@@ -147,6 +148,7 @@ const aclColumns: ColumnDef[] = [
     { key: 'type', label: '类型', width: '100px' },
     {
         key: 'status',
+        altKeys: ['enable'],
         label: '状态',
         badge: true,
         width: '100px',

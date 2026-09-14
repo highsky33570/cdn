@@ -19,7 +19,21 @@ import { Spinner } from '@/components/ui/spinner';
 import type { CdnflyListData, CdnflyRecord } from '@/lib/sharedTypes';
 
 export type ColumnDef = {
+    /**
+     * The field to read. Used as-is for the slot name and as the first
+     * candidate when `altKeys` is present.
+     */
     key: string;
+    /**
+     * Fallback field names, tried in order when `key` is absent.
+     *
+     * CDNfly and Laravel disagree on spelling for the same concepts —
+     * create_at vs created_at, uid vs user_id, enable vs status — and a column
+     * pointed at the wrong one renders a dash on a fully populated record
+     * while looking like missing data. Listing the alternatives makes a table
+     * survive either source instead of silently lying.
+     */
+    altKeys?: string[];
     label: string;
     width?: string;
     align?: 'left' | 'center' | 'right';
@@ -181,8 +195,27 @@ function rowKey(row: CdnflyRecord): string | number {
     return JSON.stringify(row);
 }
 
+/** The first of key/altKeys that the row actually carries. */
+function rawValue(row: CdnflyRecord, col: ColumnDef): unknown {
+    const value = row[col.key];
+
+    if (value !== undefined && value !== null) {
+        return value;
+    }
+
+    for (const alt of col.altKeys ?? []) {
+        const fallback = row[alt];
+
+        if (fallback !== undefined && fallback !== null) {
+            return fallback;
+        }
+    }
+
+    return value;
+}
+
 function cellValue(row: CdnflyRecord, col: ColumnDef): string {
-    const raw = row[col.key];
+    const raw = rawValue(row, col);
 
     if (col.format) {
         return col.format(raw, row);
@@ -200,7 +233,7 @@ function cellBadgeVariant(
     col: ColumnDef,
 ): 'secondary' | 'outline' | 'destructive' {
     if (col.badgeVariant) {
-        return col.badgeVariant(row[col.key], row);
+        return col.badgeVariant(rawValue(row, col), row);
     }
 
     return 'secondary';
@@ -473,7 +506,7 @@ defineExpose({
                                 <slot
                                     :name="`cell-${col.key}`"
                                     :row="row"
-                                    :value="row[col.key]"
+                                    :value="rawValue(row, col)"
                                     :formatted="cellValue(row, col)"
                                 >
                                     <Badge
