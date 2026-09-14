@@ -171,7 +171,7 @@ const deleting = ref(false);
 const deleteError = ref('');
 const deleteTarget = ref<CdnflyRecord | null>(null);
 
-const userPackages = ref<{ id: number; name: string }[]>([]);
+const userPackages = ref<{ id: number; name: string; uid: number }[]>([]);
 
 async function loadUserPackages(): Promise<void> {
     try {
@@ -181,6 +181,7 @@ async function loadUserPackages(): Promise<void> {
             ? rows.map((r) => ({
                   id: Number(r.id ?? 0),
                   name: String(r.name ?? r.package_name ?? r.id ?? '-'),
+                  uid: Number(r.uid ?? r.user_id ?? 0),
               }))
             : [];
     } catch {
@@ -199,18 +200,18 @@ const searchParams = computed(() => {
     const search = filters.search.trim();
 
     if (search !== '') {
-params.search = search;
-}
+        params.search = search;
+    }
 
     const uid = filters.user_id.trim();
 
     if (uid !== '') {
-params.user_id = uid;
-}
+        params.user_id = uid;
+    }
 
     if (filters.status !== STATUS_ALL) {
-params.status = filters.status;
-}
+        params.status = filters.status;
+    }
 
     return params;
 });
@@ -223,8 +224,8 @@ async function toggleSiteEnabled(row: CdnflyRecord): Promise<void> {
     const id = Number(row.id);
 
     if (!id) {
-return;
-}
+        return;
+    }
 
     togglingId.value = id;
 
@@ -242,8 +243,8 @@ async function openDetail(row: CdnflyRecord): Promise<void> {
     const id = Number(row.id);
 
     if (!id) {
-return;
-}
+        return;
+    }
 
     detailOpen.value = true;
     detailLoading.value = true;
@@ -265,6 +266,11 @@ return;
 }
 
 function openCreateDialog(): void {
+    // Without the list loaded, the owner cannot be resolved from the package.
+    if (userPackages.value.length === 0) {
+        void loadUserPackages();
+    }
+
     createForm.user_package = '';
     createForm.domain = '';
     createForm.backend_addr = '';
@@ -317,8 +323,8 @@ function openEditDialog(row: CdnflyRecord): void {
 
 async function submitEdit(): Promise<void> {
     if (!editTargetId.value) {
-return;
-}
+        return;
+    }
 
     saving.value = true;
     editError.value = '';
@@ -343,8 +349,8 @@ function openDeleteConfirm(row: CdnflyRecord): void {
 
 async function confirmDelete(): Promise<void> {
     if (!deleteTarget.value) {
-return;
-}
+        return;
+    }
 
     deleting.value = true;
     deleteError.value = '';
@@ -361,21 +367,44 @@ return;
     }
 }
 
+/**
+ * Shape verified against the master's own panel (chunk-0871c1ec,
+ * handleAddSite): an admin must name the owning user, and the origin port
+ * travels separately from the address.
+ */
 function toSitePayload(form: typeof createForm): AdminSitePayload {
+    const [addr, port] = splitOrigin(form.backend_addr.trim());
+    const owner = ownerOf(Number(form.user_package));
+
     return {
+        // Omitted when unknown rather than sent as 0, so the master's own
+        // validation reports a missing owner instead of a bogus one.
+        ...(owner > 0 ? { uid: owner } : {}),
         user_package: Number(form.user_package),
         domain: form.domain.trim(),
-        backend: [{ addr: form.backend_addr.trim() }],
+        backend: [{ addr }],
+        backend_http_port: port,
         groups: form.groups.trim() || undefined,
     };
+}
+
+function ownerOf(userPackageId: number): number {
+    return userPackages.value.find((p) => p.id === userPackageId)?.uid ?? 0;
+}
+
+/** `1.2.3.4:8080` -> ['1.2.3.4', '8080']; a bare address defaults to 80. */
+function splitOrigin(value: string): [string, string] {
+    const parts = value.split(':');
+
+    return parts.length === 2 ? [parts[0], parts[1]] : [value, '80'];
 }
 
 const detailFields = computed<{ label: string; value: string }[]>(() => {
     const s = detailSite.value;
 
     if (!s) {
-return [];
-}
+        return [];
+    }
 
     return [
         { label: 'ID', value: String(s.id ?? '-') },
@@ -426,8 +455,8 @@ const certForm = reactive({
 
 const certDialogTitle = computed(() => {
     if (certEditing.value) {
-return '编辑证书';
-}
+        return '编辑证书';
+    }
 
     return certForm.type === 'custom' ? '新增证书' : '批量申请证书';
 });
@@ -438,8 +467,8 @@ const certShowTypeSelector = computed(
 
 async function loadDnsApis(): Promise<void> {
     if (dnsApiOptions.value.length > 0) {
-return;
-}
+        return;
+    }
 
     try {
         const result = await listAdminDnsApis({ limit: '500' });
@@ -494,8 +523,8 @@ function openCertEdit(row: CdnflyRecord): void {
     certDialogOpen.value = true;
 
     if (certForm.type !== 'custom') {
-void loadDnsApis();
-}
+        void loadDnsApis();
+    }
 }
 
 async function submitCert(): Promise<void> {
@@ -510,20 +539,20 @@ async function submitCert(): Promise<void> {
 
     if (certForm.type === 'custom') {
         if (certForm.key.trim()) {
-payload.key = certForm.key.trim();
-}
+            payload.key = certForm.key.trim();
+        }
 
         if (certForm.cert.trim()) {
-payload.cert = certForm.cert.trim();
-}
+            payload.cert = certForm.cert.trim();
+        }
     } else {
         if (certForm.domain.trim()) {
-payload.domain = certForm.domain.trim();
-}
+            payload.domain = certForm.domain.trim();
+        }
 
         if (certForm.dnsapi) {
-payload.dnsapi = certForm.dnsapi;
-}
+            payload.dnsapi = certForm.dnsapi;
+        }
     }
 
     try {
@@ -552,8 +581,8 @@ function openCertDelete(row: CdnflyRecord): void {
 
 async function confirmCertDelete(): Promise<void> {
     if (!certDeleteTarget.value) {
-return;
-}
+        return;
+    }
 
     certDeleting.value = true;
     certFormError.value = '';

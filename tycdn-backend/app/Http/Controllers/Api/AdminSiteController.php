@@ -41,8 +41,14 @@ class AdminSiteController extends Controller
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
+            // An admin creates a site on behalf of a user; without uid the
+            // master resolves the caller as the owner and rejects the package
+            // with 「指定的套餐不属于当前用户」.
+            'uid' => ['required', 'integer', 'min:1'],
             'user_package' => ['required', 'integer', 'min:1'],
             'domain' => ['required', 'string', 'max:255'],
+            // The origin port travels separately from the address.
+            'backend_http_port' => ['sometimes', 'string', 'max:10'],
             'backend' => ['required', 'array', 'min:1'],
             'backend.*.addr' => ['required', 'string', 'max:255'],
             'backend.*.weight' => ['sometimes', 'integer', 'min:1'],

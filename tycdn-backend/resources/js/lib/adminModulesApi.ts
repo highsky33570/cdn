@@ -336,10 +336,23 @@ export async function setAdminSiteEnabled(
     });
 }
 
+/**
+ * Shape verified against the master's own panel (chunk-0871c1ec,
+ * handleAddSite).
+ */
 export type AdminSitePayload = {
+    /**
+     * The owning user. The master resolves "current user" from the credential
+     * making the call — ours is the master admin key — so a site sent without
+     * this is attributed to the admin and the customer's package is rejected
+     * as 「指定的套餐不属于当前用户」.
+     */
+    uid?: number;
     user_package: number;
     domain: string;
     backend: { addr: string; weight?: number; state?: string }[];
+    /** The origin port, carried separately from the address. Defaults to 80. */
+    backend_http_port?: string;
     groups?: string;
 };
 
