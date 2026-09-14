@@ -41,7 +41,6 @@ import { DateRangePicker } from '@/components/ui/date-range-picker';
 import {
     formatDate,
     getErrorMessage,
-    jsonText,
     numberValue,
     recordId,
     textValue,
@@ -514,12 +513,73 @@ function streamCname(record: CdnflyRecord): string {
     return '';
 }
 
-function listenText(record: CdnflyRecord): string {
-    return jsonText(record.listen, '-').replace(/\s+/g, ' ');
+/** [{addr,state,weight}] or a JSON string of it. */
+function parseRows(raw: unknown): Record<string, unknown>[] {
+    let value: unknown = raw;
+
+    if (typeof raw === 'string') {
+        try {
+            value = JSON.parse(raw);
+        } catch {
+            return [];
+        }
+    }
+
+    return Array.isArray(value)
+        ? (value.filter((r) => r && typeof r === 'object') as Record<
+              string,
+              unknown
+          >[])
+        : [];
 }
 
+/**
+ * Listen ports, the way the master's own panel shows them: a tcp port bare, any
+ * other protocol suffixed `/proto`. Was dumping the raw
+ * [{"protocol":"tcp","port":"88"}] JSON.
+ */
+function listenText(record: CdnflyRecord): string {
+    const rows = parseRows(record.listen);
+
+    if (rows.length === 0) {
+        return textValue(record.listen) || '-';
+    }
+
+    const ports = rows
+        .map((r) => {
+            const port = textValue(r.port);
+
+            if (port === '') {
+                return '';
+            }
+
+            const proto = textValue(r.protocol);
+
+            return proto === '' || proto === 'tcp' ? port : `${port}/${proto}`;
+        })
+        .filter((p) => p !== '');
+
+    return ports.length > 0 ? ports.join(' ') : '-';
+}
+
+/** Primary origin address, "+N" when several, was raw backend JSON. */
 function backendText(record: CdnflyRecord): string {
-    return jsonText(record.backend, '-').replace(/\s+/g, ' ');
+    const rows = parseRows(record.backend);
+
+    if (rows.length === 0) {
+        return textValue(record.backend) || '-';
+    }
+
+    const addrs = rows.map((r) => textValue(r.addr)).filter((a) => a !== '');
+
+    if (addrs.length === 0) {
+        return '-';
+    }
+
+    const port = textValue(record.backend_port);
+    const head = port !== '' ? `${addrs[0]}:${port}` : addrs[0];
+
+    return addrs.length === 1 ? head : `${head} +${addrs.length - 1}`;
 }
 
 function requiredNumber(value: string, label: string): number {

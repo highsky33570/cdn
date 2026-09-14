@@ -9,7 +9,7 @@ import {
     Send,
 } from 'lucide-vue-next';
 import { computed, onMounted, reactive, ref } from 'vue';
-import { toast } from 'vue-sonner'
+import { toast } from 'vue-sonner';
 import ConsolePageHeader from '@/components/console/ConsolePageHeader.vue';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
@@ -26,12 +26,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
-import {
-    formatDate,
-    getErrorMessage,
-    jsonText,
-    textValue,
-} from '@/lib/cdnRecord';
+import { formatDate, getErrorMessage, textValue } from '@/lib/cdnRecord';
 import {
     createUserJobs,
     extractCdnflyRows,
@@ -168,6 +163,49 @@ function typeLabel(value: unknown): string {
     const type = textValue(value);
 
     return JOB_TYPES.find((item) => item.value === type)?.label || type || '-';
+}
+
+/**
+ * A cache job's target list, readably.
+ *
+ * `data` is a JSON array of URLs/paths (or a plain string). Dumping the raw
+ * array showed customers `["https://…","https://…"]`; they want the targets,
+ * with a count when there are several.
+ */
+function jobDataText(value: unknown): string {
+    let parsed: unknown = value;
+
+    if (typeof value === 'string') {
+        const text = value.trim();
+
+        if (text === '') {
+            return '-';
+        }
+
+        if (!text.startsWith('[') && !text.startsWith('{')) {
+            return text;
+        }
+
+        try {
+            parsed = JSON.parse(text);
+        } catch {
+            return text;
+        }
+    }
+
+    if (!Array.isArray(parsed)) {
+        return textValue(value) || '-';
+    }
+
+    const items = parsed
+        .map((item) => textValue(item))
+        .filter((item) => item !== '');
+
+    if (items.length === 0) {
+        return '-';
+    }
+
+    return items.length === 1 ? items[0] : `${items[0]} 等 ${items.length} 项`;
 }
 
 function stateLabel(value: unknown): string {
@@ -395,7 +433,7 @@ function stateVariant(value: unknown): 'default' | 'outline' | 'secondary' {
                                         >
                                             {{
                                                 textValue(job.key2) ||
-                                                jsonText(job.data, '-')
+                                                jobDataText(job.data)
                                             }}
                                         </div>
                                     </td>

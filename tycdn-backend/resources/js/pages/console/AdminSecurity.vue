@@ -63,7 +63,7 @@ import {
     updateAdminCcMatcher,
     updateAdminCcRule,
 } from '@/lib/adminModulesApi';
-import { textValue, recordId, yesNo, jsonText } from '@/lib/cdnRecord';
+import { textValue, recordId, yesNo } from '@/lib/cdnRecord';
 import { extractCdnflyRows, extractCdnflyTotal } from '@/lib/cdnUserApi';
 import { formatDate, getErrorMessage } from '@/lib/formatters';
 import type { CdnflyRecord } from '@/lib/sharedTypes';
@@ -1178,9 +1178,9 @@ const displayedCcRows = computed(() => {
                                     }}</Badge>
                                 </td>
                                 <td class="px-4 py-3">
-                                    <div class="truncate font-mono text-xs">
-                                        {{ jsonText(record.data, '-') }}
-                                    </div>
+                                    <span class="text-muted-foreground">{{
+                                        dataCount(record.data)
+                                    }}</span>
                                 </td>
                                 <td class="px-4 py-3 text-center">
                                     <Badge variant="secondary">{{

@@ -11,7 +11,7 @@ import {
     X,
 } from 'lucide-vue-next';
 import { computed, onMounted, reactive, ref } from 'vue';
-import { toast } from 'vue-sonner'
+import { toast } from 'vue-sonner';
 import ConfirmDeleteDialog from '@/components/console/ConfirmDeleteDialog.vue';
 import ConsolePageHeader from '@/components/console/ConsolePageHeader.vue';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -42,7 +42,6 @@ import { DateRangePicker } from '@/components/ui/date-range-picker';
 import {
     formatDate,
     getErrorMessage,
-    jsonText,
     numberValue,
     recordId,
     textValue,
@@ -380,7 +379,12 @@ function openAclCreateDialog(): void {
     aclForm.default_action = 'reject';
     aclForm.des = '';
     aclForm.enable = '1';
-    aclEntries.value = [{ action: 'allow', conditions: [{ key: 'ip', operator: '=', value: '' }] }];
+    aclEntries.value = [
+        {
+            action: 'allow',
+            conditions: [{ key: 'ip', operator: '=', value: '' }],
+        },
+    ];
     formError.value = '';
     aclDialogOpen.value = true;
 }
@@ -458,7 +462,9 @@ async function confirmDelete(): Promise<void> {
             toast.success('ACL 删除请求已提交');
         } else {
             await ccDelete(deleteKind.value as CcKind, id);
-            toast.success(`${ccKindLabel(deleteKind.value as CcKind)}删除请求已提交`);
+            toast.success(
+                `${ccKindLabel(deleteKind.value as CcKind)}删除请求已提交`,
+            );
         }
         deleteOpen.value = false;
         if (deleteKind.value === 'acl') {
@@ -522,7 +528,9 @@ function parseMatcherData(data: Record<string, unknown>): MatcherCondition[] {
     }));
 }
 
-function buildMatcherObject(conditions: MatcherCondition[]): Record<string, unknown> {
+function buildMatcherObject(
+    conditions: MatcherCondition[],
+): Record<string, unknown> {
     const data: Record<string, unknown> = {};
     for (const c of conditions) {
         if (!c.key) continue;
@@ -530,7 +538,10 @@ function buildMatcherObject(conditions: MatcherCondition[]): Record<string, unkn
         data[c.key] = {
             operator: c.operator || '=',
             value: isArrayOp
-                ? c.value.split(',').map(s => s.trim()).filter(Boolean)
+                ? c.value
+                      .split(',')
+                      .map((s) => s.trim())
+                      .filter(Boolean)
                 : c.value,
         };
     }
@@ -538,7 +549,7 @@ function buildMatcherObject(conditions: MatcherCondition[]): Record<string, unkn
 }
 
 function buildAclData(): unknown[] {
-    return aclEntries.value.map(entry => ({
+    return aclEntries.value.map((entry) => ({
         acl_action: entry.action,
         acl_matcher: buildMatcherObject(entry.conditions),
     }));
@@ -547,7 +558,11 @@ function buildAclData(): unknown[] {
 function parseAclData(raw: unknown): AclEntry[] {
     let arr: unknown[];
     if (typeof raw === 'string') {
-        try { arr = JSON.parse(raw); } catch { arr = []; }
+        try {
+            arr = JSON.parse(raw);
+        } catch {
+            arr = [];
+        }
     } else {
         arr = Array.isArray(raw) ? raw : [];
     }
@@ -558,7 +573,10 @@ function parseAclData(raw: unknown): AclEntry[] {
 }
 
 function addAclEntry(): void {
-    aclEntries.value.push({ action: 'allow', conditions: [{ key: 'ip', operator: '=', value: '' }] });
+    aclEntries.value.push({
+        action: 'allow',
+        conditions: [{ key: 'ip', operator: '=', value: '' }],
+    });
 }
 
 function removeAclEntry(index: number): void {
@@ -566,7 +584,11 @@ function removeAclEntry(index: number): void {
 }
 
 function addAclCondition(entryIndex: number): void {
-    aclEntries.value[entryIndex].conditions.push({ key: 'uri', operator: 'contain', value: '' });
+    aclEntries.value[entryIndex].conditions.push({
+        key: 'uri',
+        operator: 'contain',
+        value: '',
+    });
 }
 
 function removeAclCondition(entryIndex: number, condIndex: number): void {
@@ -591,9 +613,15 @@ function buildExtra(): Record<string, unknown> {
 function parseExtra(extra: unknown): void {
     let raw = extra;
     if (typeof raw === 'string') {
-        try { raw = JSON.parse(raw); } catch { raw = {}; }
+        try {
+            raw = JSON.parse(raw);
+        } catch {
+            raw = {};
+        }
     }
-    const e = (raw && typeof raw === 'object' && !Array.isArray(raw) ? raw : {}) as Record<string, unknown>;
+    const e = (
+        raw && typeof raw === 'object' && !Array.isArray(raw) ? raw : {}
+    ) as Record<string, unknown>;
     extraForm.mode = String(e.mode ?? 'TypeA');
     extraForm.key = String(e.key ?? '');
     extraForm.sign_name = String(e.sign_name ?? 'sign');
@@ -609,11 +637,11 @@ async function loadRuleFormOptions(): Promise<void> {
             ccList('matcher', { limit: 200, internal_self: 1 }),
             ccList('filter', { limit: 200, internal_self: 1 }),
         ]);
-        matcherOptions.value = extractCdnflyRows(matchers).map(r => ({
+        matcherOptions.value = extractCdnflyRows(matchers).map((r) => ({
             id: String(r.id),
             name: textValue(r.name),
         }));
-        filterOptions.value = extractCdnflyRows(filters).map(r => ({
+        filterOptions.value = extractCdnflyRows(filters).map((r) => ({
             id: String(r.id),
             name: textValue(r.name),
         }));
@@ -625,7 +653,11 @@ async function loadRuleFormOptions(): Promise<void> {
 }
 
 function addCondition(): void {
-    matcherConditions.value.push({ key: 'uri', operator: 'contain', value: '' });
+    matcherConditions.value.push({
+        key: 'uri',
+        operator: 'contain',
+        value: '',
+    });
 }
 
 function removeCondition(index: number): void {
@@ -633,7 +665,13 @@ function removeCondition(index: number): void {
 }
 
 function addRuleEntry(): void {
-    ruleEntries.value.push({ action: 'ipset', matcher: '', filter1: '', filter2: '', state: true });
+    ruleEntries.value.push({
+        action: 'ipset',
+        matcher: '',
+        filter1: '',
+        filter2: '',
+        state: true,
+    });
 }
 
 function removeRuleEntry(index: number): void {
@@ -679,8 +717,16 @@ function openCcEditDialog(record: CdnflyRecord): void {
     if (activeCcKind.value === 'matcher') {
         let dataObj: Record<string, unknown>;
         if (typeof rawData === 'string') {
-            try { dataObj = JSON.parse(rawData); } catch { dataObj = {}; }
-        } else if (rawData && typeof rawData === 'object' && !Array.isArray(rawData)) {
+            try {
+                dataObj = JSON.parse(rawData);
+            } catch {
+                dataObj = {};
+            }
+        } else if (
+            rawData &&
+            typeof rawData === 'object' &&
+            !Array.isArray(rawData)
+        ) {
             dataObj = rawData as Record<string, unknown>;
         } else {
             dataObj = {};
@@ -690,7 +736,11 @@ function openCcEditDialog(record: CdnflyRecord): void {
     } else if (activeCcKind.value === 'rule') {
         let dataArr: unknown[];
         if (typeof rawData === 'string') {
-            try { dataArr = JSON.parse(rawData); } catch { dataArr = []; }
+            try {
+                dataArr = JSON.parse(rawData);
+            } catch {
+                dataArr = [];
+            }
         } else {
             dataArr = Array.isArray(rawData) ? rawData : [];
         }
@@ -796,7 +846,9 @@ async function loadBlackIps(targetPage = blackIpPage.value): Promise<void> {
     }
 }
 
-async function loadHistoryBlackIps(targetPage = historyBlackIpPage.value): Promise<void> {
+async function loadHistoryBlackIps(
+    targetPage = historyBlackIpPage.value,
+): Promise<void> {
     historyBlackIpLoading.value = true;
     errorMessage.value = '';
     try {
@@ -804,10 +856,14 @@ async function loadHistoryBlackIps(targetPage = historyBlackIpPage.value): Promi
             page: targetPage,
             limit: Number(historyBlackIpFilters.per_page),
         };
-        if (historyBlackIpFilters.ip.trim()) params.ip = historyBlackIpFilters.ip.trim();
-        if (historyBlackIpFilters.site_id.trim()) params.site_id = historyBlackIpFilters.site_id.trim();
-        if (historyBlackIpFilters.start.trim()) params.start = historyBlackIpFilters.start.trim();
-        if (historyBlackIpFilters.end.trim()) params.end = historyBlackIpFilters.end.trim();
+        if (historyBlackIpFilters.ip.trim())
+            params.ip = historyBlackIpFilters.ip.trim();
+        if (historyBlackIpFilters.site_id.trim())
+            params.site_id = historyBlackIpFilters.site_id.trim();
+        if (historyBlackIpFilters.start.trim())
+            params.start = historyBlackIpFilters.start.trim();
+        if (historyBlackIpFilters.end.trim())
+            params.end = historyBlackIpFilters.end.trim();
         const result = await listUserHistoryBlackIps(params);
         const rows = extractCdnflyRows(result);
         historyBlackIpRows.value = rows;
@@ -833,11 +889,16 @@ async function loadBlackIpCount(): Promise<void> {
     }
 }
 
-async function switchBlackIpTab(tab: 'current' | 'stats' | 'history'): Promise<void> {
+async function switchBlackIpTab(
+    tab: 'current' | 'stats' | 'history',
+): Promise<void> {
     blackIpTab.value = tab;
-    if (tab === 'current' && blackIpRows.value.length === 0) void loadBlackIps();
-    if (tab === 'stats' && blackIpCountRows.value.length === 0) void loadBlackIpCount();
-    if (tab === 'history' && historyBlackIpRows.value.length === 0) void loadHistoryBlackIps();
+    if (tab === 'current' && blackIpRows.value.length === 0)
+        void loadBlackIps();
+    if (tab === 'stats' && blackIpCountRows.value.length === 0)
+        void loadBlackIpCount();
+    if (tab === 'history' && historyBlackIpRows.value.length === 0)
+        void loadHistoryBlackIps();
 }
 
 async function unlockBlackIp(
@@ -873,9 +934,11 @@ async function unlockBlackIp(
 
     try {
         await unlockUserBlackIps(payload);
-        toast.success(ip.trim()
-            ? `已提交 ${ip.trim()} 解锁任务`
-            : `已提交站点 ${siteId.trim()} 全部黑名单解锁任务`);
+        toast.success(
+            ip.trim()
+                ? `已提交 ${ip.trim()} 解锁任务`
+                : `已提交站点 ${siteId.trim()} 全部黑名单解锁任务`,
+        );
         unlockForm.ip = '';
     } catch (error) {
         formError.value = getErrorMessage(error);
@@ -906,14 +969,14 @@ function buildCcPayload():
         if (ruleEntries.value.length === 0) {
             throw new Error('至少需要添加一条规则条目');
         }
-        const missingMatcher = ruleEntries.value.findIndex(e => !e.matcher);
+        const missingMatcher = ruleEntries.value.findIndex((e) => !e.matcher);
         if (missingMatcher !== -1) {
             throw new Error(`第 ${missingMatcher + 1} 条规则未选择匹配器`);
         }
         return {
             name: ccForm.name.trim(),
             sort: optionalNumber(ccForm.sort) ?? 100,
-            data: ruleEntries.value.map(e => ({
+            data: ruleEntries.value.map((e) => ({
                 action: e.action,
                 matcher: e.matcher,
                 filter1: e.filter1,
@@ -1391,9 +1454,9 @@ function omitEnable<TPayload extends { enable?: unknown }>(
                                     }}
                                 </td>
                                 <td class="px-4 py-3">
-                                    <div class="truncate font-mono text-xs">
-                                        {{ jsonText(record.data, '-') }}
-                                    </div>
+                                    <span class="text-muted-foreground">{{
+                                        dataCount(record.data)
+                                    }}</span>
                                 </td>
                                 <td class="px-4 py-3 text-center">
                                     <Badge variant="secondary">
@@ -1447,14 +1510,24 @@ function omitEnable<TPayload extends { enable?: unknown }>(
             <!-- 三个 Tab -->
             <div class="flex gap-1 border-b">
                 <button
-                    v-for="tab in [{ key: 'current', label: '当前拉黑' }, { key: 'stats', label: '拉黑统计' }, { key: 'history', label: '历史拉黑' }]"
+                    v-for="tab in [
+                        { key: 'current', label: '当前拉黑' },
+                        { key: 'stats', label: '拉黑统计' },
+                        { key: 'history', label: '历史拉黑' },
+                    ]"
                     :key="tab.key"
                     type="button"
-                    class="px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors"
-                    :class="blackIpTab === tab.key
-                        ? 'border-primary text-primary'
-                        : 'border-transparent text-muted-foreground hover:text-foreground'"
-                    @click="switchBlackIpTab(tab.key as 'current' | 'stats' | 'history')"
+                    class="-mb-px border-b-2 px-4 py-2 text-sm font-medium transition-colors"
+                    :class="
+                        blackIpTab === tab.key
+                            ? 'border-primary text-primary'
+                            : 'border-transparent text-muted-foreground hover:text-foreground'
+                    "
+                    @click="
+                        switchBlackIpTab(
+                            tab.key as 'current' | 'stats' | 'history',
+                        )
+                    "
                 >
                     {{ tab.label }}
                 </button>
@@ -1464,8 +1537,13 @@ function omitEnable<TPayload extends { enable?: unknown }>(
             <template v-if="blackIpTab === 'history'">
                 <!-- 筛选栏 -->
                 <div class="flex flex-wrap items-center gap-2">
-                    <div class="flex items-center gap-1.5 rounded-md border px-3 h-9">
-                        <span class="text-xs text-muted-foreground whitespace-nowrap">IP地址</span>
+                    <div
+                        class="flex h-9 items-center gap-1.5 rounded-md border px-3"
+                    >
+                        <span
+                            class="text-xs whitespace-nowrap text-muted-foreground"
+                            >IP地址</span
+                        >
                         <input
                             v-model="historyBlackIpFilters.ip"
                             class="w-36 bg-transparent text-sm outline-none placeholder:text-muted-foreground/60"
@@ -1473,8 +1551,13 @@ function omitEnable<TPayload extends { enable?: unknown }>(
                             @keydown.enter="loadHistoryBlackIps(1)"
                         />
                     </div>
-                    <div class="flex items-center gap-1.5 rounded-md border px-3 h-9">
-                        <span class="text-xs text-muted-foreground whitespace-nowrap">网站ID</span>
+                    <div
+                        class="flex h-9 items-center gap-1.5 rounded-md border px-3"
+                    >
+                        <span
+                            class="text-xs whitespace-nowrap text-muted-foreground"
+                            >网站ID</span
+                        >
                         <input
                             v-model="historyBlackIpFilters.site_id"
                             class="w-28 bg-transparent text-sm outline-none placeholder:text-muted-foreground/60"
@@ -1491,10 +1574,27 @@ function omitEnable<TPayload extends { enable?: unknown }>(
                     <button
                         type="button"
                         class="text-sm text-muted-foreground hover:text-foreground"
-                        @click="() => { historyBlackIpFilters.ip = ''; historyBlackIpFilters.site_id = ''; historyBlackIpFilters.start = ''; historyBlackIpFilters.end = ''; void loadHistoryBlackIps(1); }"
-                    >清除</button>
-                    <Button class="h-9 ml-auto" :disabled="historyBlackIpLoading" @click="loadHistoryBlackIps(1)">
-                        <Spinner v-if="historyBlackIpLoading" data-icon="inline-start" />
+                        @click="
+                            () => {
+                                historyBlackIpFilters.ip = '';
+                                historyBlackIpFilters.site_id = '';
+                                historyBlackIpFilters.start = '';
+                                historyBlackIpFilters.end = '';
+                                void loadHistoryBlackIps(1);
+                            }
+                        "
+                    >
+                        清除
+                    </button>
+                    <Button
+                        class="ml-auto h-9"
+                        :disabled="historyBlackIpLoading"
+                        @click="loadHistoryBlackIps(1)"
+                    >
+                        <Spinner
+                            v-if="historyBlackIpLoading"
+                            data-icon="inline-start"
+                        />
                         <Search v-else data-icon="inline-start" />
                         查询
                     </Button>
@@ -1507,42 +1607,128 @@ function omitEnable<TPayload extends { enable?: unknown }>(
                             <table class="w-full text-sm">
                                 <thead class="border-b bg-muted/30">
                                     <tr>
-                                        <th class="px-4 py-3 text-left font-medium text-muted-foreground">网站ID</th>
-                                        <th class="px-4 py-3 text-left font-medium text-muted-foreground">域名</th>
-                                        <th class="px-4 py-3 text-left font-medium text-muted-foreground">IP</th>
-                                        <th class="px-4 py-3 text-left font-medium text-muted-foreground">位置</th>
-                                        <th class="px-4 py-3 text-left font-medium text-muted-foreground">过滤器</th>
-                                        <th class="px-4 py-3 text-left font-medium text-muted-foreground">拉黑时间</th>
-                                        <th class="px-4 py-3 text-left font-medium text-muted-foreground">手动解锁?</th>
+                                        <th
+                                            class="px-4 py-3 text-left font-medium text-muted-foreground"
+                                        >
+                                            网站ID
+                                        </th>
+                                        <th
+                                            class="px-4 py-3 text-left font-medium text-muted-foreground"
+                                        >
+                                            域名
+                                        </th>
+                                        <th
+                                            class="px-4 py-3 text-left font-medium text-muted-foreground"
+                                        >
+                                            IP
+                                        </th>
+                                        <th
+                                            class="px-4 py-3 text-left font-medium text-muted-foreground"
+                                        >
+                                            位置
+                                        </th>
+                                        <th
+                                            class="px-4 py-3 text-left font-medium text-muted-foreground"
+                                        >
+                                            过滤器
+                                        </th>
+                                        <th
+                                            class="px-4 py-3 text-left font-medium text-muted-foreground"
+                                        >
+                                            拉黑时间
+                                        </th>
+                                        <th
+                                            class="px-4 py-3 text-left font-medium text-muted-foreground"
+                                        >
+                                            手动解锁?
+                                        </th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     <tr v-if="historyBlackIpLoading">
-                                        <td colspan="7" class="px-4 py-12 text-center"><Spinner class="mx-auto" /></td>
+                                        <td
+                                            colspan="7"
+                                            class="px-4 py-12 text-center"
+                                        >
+                                            <Spinner class="mx-auto" />
+                                        </td>
                                     </tr>
                                     <tr
-                                        v-for="(row, index) in historyBlackIpRows"
+                                        v-for="(
+                                            row, index
+                                        ) in historyBlackIpRows"
                                         :key="index"
-                                        class="border-b last:border-0 hover:bg-muted/20 transition-colors"
+                                        class="border-b transition-colors last:border-0 hover:bg-muted/20"
                                     >
-                                        <td class="px-4 py-3 text-muted-foreground">{{ textValue(row.site_id) || '-' }}</td>
-                                        <td class="px-4 py-3">{{ textValue(row.domain) || textValue(row.host) || '-' }}</td>
-                                        <td class="px-4 py-3 font-mono text-xs">{{ textValue(row.ip) || '-' }}</td>
-                                        <td class="px-4 py-3 text-muted-foreground">{{ textValue(row.position) || textValue(row.country) || '-' }}</td>
+                                        <td
+                                            class="px-4 py-3 text-muted-foreground"
+                                        >
+                                            {{ textValue(row.site_id) || '-' }}
+                                        </td>
                                         <td class="px-4 py-3">
-                                            <span class="inline-flex items-center rounded-md bg-muted px-2 py-0.5 text-xs font-medium">
-                                                {{ textValue(row.name) || textValue(row.filter) || '-' }}
+                                            {{
+                                                textValue(row.domain) ||
+                                                textValue(row.host) ||
+                                                '-'
+                                            }}
+                                        </td>
+                                        <td class="px-4 py-3 font-mono text-xs">
+                                            {{ textValue(row.ip) || '-' }}
+                                        </td>
+                                        <td
+                                            class="px-4 py-3 text-muted-foreground"
+                                        >
+                                            {{
+                                                textValue(row.position) ||
+                                                textValue(row.country) ||
+                                                '-'
+                                            }}
+                                        </td>
+                                        <td class="px-4 py-3">
+                                            <span
+                                                class="inline-flex items-center rounded-md bg-muted px-2 py-0.5 text-xs font-medium"
+                                            >
+                                                {{
+                                                    textValue(row.name) ||
+                                                    textValue(row.filter) ||
+                                                    '-'
+                                                }}
                                             </span>
                                         </td>
-                                        <td class="px-4 py-3 text-muted-foreground text-xs tabular-nums">
-                                            {{ formatDate(row.create_time ?? row.created_at ?? row.time) }}
+                                        <td
+                                            class="px-4 py-3 text-xs text-muted-foreground tabular-nums"
+                                        >
+                                            {{
+                                                formatDate(
+                                                    row.create_time ??
+                                                        row.created_at ??
+                                                        row.time,
+                                                )
+                                            }}
                                         </td>
-                                        <td class="px-4 py-3 text-muted-foreground">
-                                            {{ (row.manual_unlock === true || row.manual_unlock === 1) ? '是' : '否' }}
+                                        <td
+                                            class="px-4 py-3 text-muted-foreground"
+                                        >
+                                            {{
+                                                row.manual_unlock === true ||
+                                                row.manual_unlock === 1
+                                                    ? '是'
+                                                    : '否'
+                                            }}
                                         </td>
                                     </tr>
-                                    <tr v-if="!historyBlackIpLoading && historyBlackIpRows.length === 0">
-                                        <td colspan="7" class="px-4 py-16 text-center text-muted-foreground">暂无历史拉黑记录</td>
+                                    <tr
+                                        v-if="
+                                            !historyBlackIpLoading &&
+                                            historyBlackIpRows.length === 0
+                                        "
+                                    >
+                                        <td
+                                            colspan="7"
+                                            class="px-4 py-16 text-center text-muted-foreground"
+                                        >
+                                            暂无历史拉黑记录
+                                        </td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -1551,12 +1737,32 @@ function omitEnable<TPayload extends { enable?: unknown }>(
                 </Card>
 
                 <!-- 分页 -->
-                <div class="flex items-center justify-between text-sm text-muted-foreground">
+                <div
+                    class="flex items-center justify-between text-sm text-muted-foreground"
+                >
                     <span>共 {{ historyBlackIpTotal }} 条</span>
                     <div class="flex items-center gap-2">
-                        <Button variant="outline" size="sm" :disabled="historyBlackIpPage <= 1 || historyBlackIpLoading" @click="loadHistoryBlackIps(historyBlackIpPage - 1)">上一页</Button>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            :disabled="
+                                historyBlackIpPage <= 1 || historyBlackIpLoading
+                            "
+                            @click="loadHistoryBlackIps(historyBlackIpPage - 1)"
+                            >上一页</Button
+                        >
                         <span>第 {{ historyBlackIpPage }} 页</span>
-                        <Button variant="outline" size="sm" :disabled="historyBlackIpPage * Number(historyBlackIpFilters.per_page) >= historyBlackIpTotal || historyBlackIpLoading" @click="loadHistoryBlackIps(historyBlackIpPage + 1)">下一页</Button>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            :disabled="
+                                historyBlackIpPage *
+                                    Number(historyBlackIpFilters.per_page) >=
+                                    historyBlackIpTotal || historyBlackIpLoading
+                            "
+                            @click="loadHistoryBlackIps(historyBlackIpPage + 1)"
+                            >下一页</Button
+                        >
                     </div>
                 </div>
             </template>
@@ -1569,26 +1775,65 @@ function omitEnable<TPayload extends { enable?: unknown }>(
                             <table class="w-full text-sm">
                                 <thead class="border-b bg-muted/30">
                                     <tr>
-                                        <th class="px-4 py-3 text-left font-medium text-muted-foreground w-16">排行</th>
-                                        <th class="px-4 py-3 text-left font-medium text-muted-foreground">网站ID</th>
-                                        <th class="px-4 py-3 text-left font-medium text-muted-foreground">黑名单数量</th>
+                                        <th
+                                            class="w-16 px-4 py-3 text-left font-medium text-muted-foreground"
+                                        >
+                                            排行
+                                        </th>
+                                        <th
+                                            class="px-4 py-3 text-left font-medium text-muted-foreground"
+                                        >
+                                            网站ID
+                                        </th>
+                                        <th
+                                            class="px-4 py-3 text-left font-medium text-muted-foreground"
+                                        >
+                                            黑名单数量
+                                        </th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     <tr v-if="blackIpCountLoading">
-                                        <td colspan="3" class="px-4 py-12 text-center"><Spinner class="mx-auto" /></td>
+                                        <td
+                                            colspan="3"
+                                            class="px-4 py-12 text-center"
+                                        >
+                                            <Spinner class="mx-auto" />
+                                        </td>
                                     </tr>
                                     <tr
                                         v-for="(row, index) in blackIpCountRows"
                                         :key="index"
                                         class="border-b last:border-0 hover:bg-muted/20"
                                     >
-                                        <td class="px-4 py-3 text-muted-foreground">{{ index + 1 }}</td>
-                                        <td class="px-4 py-3">{{ textValue(row.site_id) || '-' }}</td>
-                                        <td class="px-4 py-3 tabular-nums">{{ textValue(row.count) || textValue(row.total) || '-' }}</td>
+                                        <td
+                                            class="px-4 py-3 text-muted-foreground"
+                                        >
+                                            {{ index + 1 }}
+                                        </td>
+                                        <td class="px-4 py-3">
+                                            {{ textValue(row.site_id) || '-' }}
+                                        </td>
+                                        <td class="px-4 py-3 tabular-nums">
+                                            {{
+                                                textValue(row.count) ||
+                                                textValue(row.total) ||
+                                                '-'
+                                            }}
+                                        </td>
                                     </tr>
-                                    <tr v-if="!blackIpCountLoading && blackIpCountRows.length === 0">
-                                        <td colspan="3" class="px-4 py-16 text-center text-muted-foreground">暂无数据</td>
+                                    <tr
+                                        v-if="
+                                            !blackIpCountLoading &&
+                                            blackIpCountRows.length === 0
+                                        "
+                                    >
+                                        <td
+                                            colspan="3"
+                                            class="px-4 py-16 text-center text-muted-foreground"
+                                        >
+                                            暂无数据
+                                        </td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -1601,25 +1846,73 @@ function omitEnable<TPayload extends { enable?: unknown }>(
             <template v-else>
                 <!-- 解锁操作栏 -->
                 <div class="flex gap-2">
-                    <Button size="sm" variant="outline" @click="unlockBlackIp(unlockForm.site_id, unlockForm.ip, 'batch')">
+                    <Button
+                        size="sm"
+                        variant="outline"
+                        @click="
+                            unlockBlackIp(
+                                unlockForm.site_id,
+                                unlockForm.ip,
+                                'batch',
+                            )
+                        "
+                    >
                         <UnlockKeyhole data-icon="inline-start" />解锁IP
                     </Button>
-                    <Button size="sm" variant="outline" @click="unlockBlackIp(unlockForm.site_id, '', 'site')">
+                    <Button
+                        size="sm"
+                        variant="outline"
+                        @click="unlockBlackIp(unlockForm.site_id, '', 'site')"
+                    >
                         解锁网站
                     </Button>
                 </div>
                 <!-- 筛选栏 -->
                 <div class="flex flex-wrap items-center gap-2">
-                    <div class="flex items-center gap-1.5 rounded-md border px-3 h-9">
-                        <span class="text-xs text-muted-foreground">IP地址</span>
-                        <input v-model="blackIpFilters.ip" class="w-36 bg-transparent text-sm outline-none placeholder:text-muted-foreground/60" placeholder="请输入IP地址" @keydown.enter="loadBlackIps(1)" />
+                    <div
+                        class="flex h-9 items-center gap-1.5 rounded-md border px-3"
+                    >
+                        <span class="text-xs text-muted-foreground"
+                            >IP地址</span
+                        >
+                        <input
+                            v-model="blackIpFilters.ip"
+                            class="w-36 bg-transparent text-sm outline-none placeholder:text-muted-foreground/60"
+                            placeholder="请输入IP地址"
+                            @keydown.enter="loadBlackIps(1)"
+                        />
                     </div>
-                    <div class="flex items-center gap-1.5 rounded-md border px-3 h-9">
-                        <span class="text-xs text-muted-foreground">网站ID</span>
-                        <input v-model="blackIpFilters.site_id" class="w-28 bg-transparent text-sm outline-none placeholder:text-muted-foreground/60" placeholder="请输入网站ID" @keydown.enter="loadBlackIps(1)" />
+                    <div
+                        class="flex h-9 items-center gap-1.5 rounded-md border px-3"
+                    >
+                        <span class="text-xs text-muted-foreground"
+                            >网站ID</span
+                        >
+                        <input
+                            v-model="blackIpFilters.site_id"
+                            class="w-28 bg-transparent text-sm outline-none placeholder:text-muted-foreground/60"
+                            placeholder="请输入网站ID"
+                            @keydown.enter="loadBlackIps(1)"
+                        />
                     </div>
-                    <button type="button" class="text-sm text-muted-foreground hover:text-foreground" @click="() => { blackIpFilters.ip = ''; blackIpFilters.site_id = ''; void loadBlackIps(1); }">清除</button>
-                    <Button class="h-9 ml-auto" :disabled="loading" @click="loadBlackIps(1)">
+                    <button
+                        type="button"
+                        class="text-sm text-muted-foreground hover:text-foreground"
+                        @click="
+                            () => {
+                                blackIpFilters.ip = '';
+                                blackIpFilters.site_id = '';
+                                void loadBlackIps(1);
+                            }
+                        "
+                    >
+                        清除
+                    </button>
+                    <Button
+                        class="ml-auto h-9"
+                        :disabled="loading"
+                        @click="loadBlackIps(1)"
+                    >
                         <Spinner v-if="loading" data-icon="inline-start" />
                         <Search v-else data-icon="inline-start" />
                         查询
@@ -1631,58 +1924,173 @@ function omitEnable<TPayload extends { enable?: unknown }>(
                             <table class="w-full text-sm">
                                 <thead class="border-b bg-muted/30">
                                     <tr>
-                                        <th class="px-4 py-3 text-left font-medium text-muted-foreground">网站ID</th>
-                                        <th class="px-4 py-3 text-left font-medium text-muted-foreground">域名</th>
-                                        <th class="px-4 py-3 text-left font-medium text-muted-foreground">IP</th>
-                                        <th class="px-4 py-3 text-left font-medium text-muted-foreground">位置</th>
-                                        <th class="px-4 py-3 text-left font-medium text-muted-foreground">过滤器</th>
-                                        <th class="px-4 py-3 text-left font-medium text-muted-foreground">拉黑时间</th>
-                                        <th class="px-4 py-3 text-left font-medium text-muted-foreground">解锁时间</th>
-                                        <th class="px-4 py-3 text-right font-medium text-muted-foreground">操作</th>
+                                        <th
+                                            class="px-4 py-3 text-left font-medium text-muted-foreground"
+                                        >
+                                            网站ID
+                                        </th>
+                                        <th
+                                            class="px-4 py-3 text-left font-medium text-muted-foreground"
+                                        >
+                                            域名
+                                        </th>
+                                        <th
+                                            class="px-4 py-3 text-left font-medium text-muted-foreground"
+                                        >
+                                            IP
+                                        </th>
+                                        <th
+                                            class="px-4 py-3 text-left font-medium text-muted-foreground"
+                                        >
+                                            位置
+                                        </th>
+                                        <th
+                                            class="px-4 py-3 text-left font-medium text-muted-foreground"
+                                        >
+                                            过滤器
+                                        </th>
+                                        <th
+                                            class="px-4 py-3 text-left font-medium text-muted-foreground"
+                                        >
+                                            拉黑时间
+                                        </th>
+                                        <th
+                                            class="px-4 py-3 text-left font-medium text-muted-foreground"
+                                        >
+                                            解锁时间
+                                        </th>
+                                        <th
+                                            class="px-4 py-3 text-right font-medium text-muted-foreground"
+                                        >
+                                            操作
+                                        </th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <tr v-if="loading"><td colspan="8" class="px-4 py-12 text-center"><Spinner class="mx-auto" /></td></tr>
-                                    <tr v-for="row in blackIpRows" :key="`${textValue(row.site_id)}-${textValue(row.ip)}`" class="border-b last:border-0 hover:bg-muted/20 transition-colors">
-                                        <td class="px-4 py-3 text-muted-foreground">{{ textValue(row.site_id) || '-' }}</td>
-                                        <td class="px-4 py-3">{{ textValue(row.domain) || '-' }}</td>
-                                        <td class="px-4 py-3 font-mono text-xs">{{ textValue(row.ip) || '-' }}</td>
-                                        <td class="px-4 py-3 text-muted-foreground">{{ textValue(row.position) || '-' }}</td>
+                                    <tr v-if="loading">
+                                        <td
+                                            colspan="8"
+                                            class="px-4 py-12 text-center"
+                                        >
+                                            <Spinner class="mx-auto" />
+                                        </td>
+                                    </tr>
+                                    <tr
+                                        v-for="row in blackIpRows"
+                                        :key="`${textValue(row.site_id)}-${textValue(row.ip)}`"
+                                        class="border-b transition-colors last:border-0 hover:bg-muted/20"
+                                    >
+                                        <td
+                                            class="px-4 py-3 text-muted-foreground"
+                                        >
+                                            {{ textValue(row.site_id) || '-' }}
+                                        </td>
                                         <td class="px-4 py-3">
-                                            <span class="inline-flex items-center rounded-md bg-muted px-2 py-0.5 text-xs font-medium">
+                                            {{ textValue(row.domain) || '-' }}
+                                        </td>
+                                        <td class="px-4 py-3 font-mono text-xs">
+                                            {{ textValue(row.ip) || '-' }}
+                                        </td>
+                                        <td
+                                            class="px-4 py-3 text-muted-foreground"
+                                        >
+                                            {{ textValue(row.position) || '-' }}
+                                        </td>
+                                        <td class="px-4 py-3">
+                                            <span
+                                                class="inline-flex items-center rounded-md bg-muted px-2 py-0.5 text-xs font-medium"
+                                            >
                                                 {{ textValue(row.name) || '-' }}
                                             </span>
                                         </td>
-                                        <td class="px-4 py-3 text-muted-foreground text-xs tabular-nums">{{ formatDate(row.create_time ?? row.time) }}</td>
-                                        <td class="px-4 py-3 text-muted-foreground text-xs tabular-nums">{{ textValue(row.exp) || '-' }}</td>
+                                        <td
+                                            class="px-4 py-3 text-xs text-muted-foreground tabular-nums"
+                                        >
+                                            {{
+                                                formatDate(
+                                                    row.create_time ?? row.time,
+                                                )
+                                            }}
+                                        </td>
+                                        <td
+                                            class="px-4 py-3 text-xs text-muted-foreground tabular-nums"
+                                        >
+                                            {{ textValue(row.exp) || '-' }}
+                                        </td>
                                         <td class="px-4 py-3 text-right">
-                                            <Button variant="outline" size="sm"
-                                                :disabled="unlocking && unlockingId === `${textValue(row.site_id)}-${textValue(row.ip)}`"
-                                                @click="unlockBlackIp(textValue(row.site_id), textValue(row.ip), `${textValue(row.site_id)}-${textValue(row.ip)}`)"
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                :disabled="
+                                                    unlocking &&
+                                                    unlockingId ===
+                                                        `${textValue(row.site_id)}-${textValue(row.ip)}`
+                                                "
+                                                @click="
+                                                    unlockBlackIp(
+                                                        textValue(row.site_id),
+                                                        textValue(row.ip),
+                                                        `${textValue(row.site_id)}-${textValue(row.ip)}`,
+                                                    )
+                                                "
                                             >
-                                                <Spinner v-if="unlocking && unlockingId === `${textValue(row.site_id)}-${textValue(row.ip)}`" data-icon="inline-start" />
-                                                <UnlockKeyhole v-else data-icon="inline-start" />
+                                                <Spinner
+                                                    v-if="
+                                                        unlocking &&
+                                                        unlockingId ===
+                                                            `${textValue(row.site_id)}-${textValue(row.ip)}`
+                                                    "
+                                                    data-icon="inline-start"
+                                                />
+                                                <UnlockKeyhole
+                                                    v-else
+                                                    data-icon="inline-start"
+                                                />
                                                 解锁
                                             </Button>
                                         </td>
                                     </tr>
-                                    <tr v-if="!loading && blackIpRows.length === 0"><td colspan="8" class="px-4 py-16 text-center text-muted-foreground">暂无黑名单</td></tr>
+                                    <tr
+                                        v-if="
+                                            !loading && blackIpRows.length === 0
+                                        "
+                                    >
+                                        <td
+                                            colspan="8"
+                                            class="px-4 py-16 text-center text-muted-foreground"
+                                        >
+                                            暂无黑名单
+                                        </td>
+                                    </tr>
                                 </tbody>
                             </table>
                         </div>
                     </CardContent>
                 </Card>
-                <div class="flex items-center justify-between text-sm text-muted-foreground">
+                <div
+                    class="flex items-center justify-between text-sm text-muted-foreground"
+                >
                     <span>共 {{ blackIpTotal }} 条</span>
                     <div class="flex items-center gap-2">
-                        <Button variant="outline" size="sm" :disabled="!hasBlackIpPreviousPage || loading" @click="prevBlackIpPage">上一页</Button>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            :disabled="!hasBlackIpPreviousPage || loading"
+                            @click="prevBlackIpPage"
+                            >上一页</Button
+                        >
                         <span>第 {{ blackIpPage }} 页</span>
-                        <Button variant="outline" size="sm" :disabled="!hasBlackIpNextPage || loading" @click="nextBlackIpPage">下一页</Button>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            :disabled="!hasBlackIpNextPage || loading"
+                            @click="nextBlackIpPage"
+                            >下一页</Button
+                        >
                     </div>
                 </div>
             </template>
         </div>
-
 
         <div
             v-if="props.view === 'acls'"
@@ -1783,63 +2191,134 @@ function omitEnable<TPayload extends { enable?: unknown }>(
                     <div class="grid gap-2">
                         <div class="flex items-center justify-between">
                             <Label>规则条目</Label>
-                            <Button type="button" variant="outline" size="sm" @click="addAclEntry">
-                                <Plus data-icon="inline-start" class="size-3.5" /> 添加规则
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                @click="addAclEntry"
+                            >
+                                <Plus
+                                    data-icon="inline-start"
+                                    class="size-3.5"
+                                />
+                                添加规则
                             </Button>
                         </div>
-                        <p v-if="aclEntries.length === 0" class="text-xs text-muted-foreground">
+                        <p
+                            v-if="aclEntries.length === 0"
+                            class="text-xs text-muted-foreground"
+                        >
                             未添加任何规则条目
                         </p>
-                        <div v-for="(entry, ei) in aclEntries" :key="ei" class="border rounded-md p-3 space-y-2">
-                            <div class="flex items-center justify-between gap-2">
+                        <div
+                            v-for="(entry, ei) in aclEntries"
+                            :key="ei"
+                            class="space-y-2 rounded-md border p-3"
+                        >
+                            <div
+                                class="flex items-center justify-between gap-2"
+                            >
                                 <div class="flex items-center gap-2">
-                                    <Label class="text-xs whitespace-nowrap">动作</Label>
+                                    <Label class="text-xs whitespace-nowrap"
+                                        >动作</Label
+                                    >
                                     <Select v-model="entry.action">
-                                        <SelectTrigger class="h-8 w-24 text-xs"><SelectValue /></SelectTrigger>
+                                        <SelectTrigger class="h-8 w-24 text-xs"
+                                            ><SelectValue
+                                        /></SelectTrigger>
                                         <SelectContent>
                                             <SelectGroup>
-                                                <SelectItem value="allow">允许</SelectItem>
-                                                <SelectItem value="reject">拒绝</SelectItem>
+                                                <SelectItem value="allow"
+                                                    >允许</SelectItem
+                                                >
+                                                <SelectItem value="reject"
+                                                    >拒绝</SelectItem
+                                                >
                                             </SelectGroup>
                                         </SelectContent>
                                     </Select>
                                 </div>
                                 <div class="flex items-center gap-1">
-                                    <Button type="button" variant="ghost" size="sm" class="h-7 text-xs" @click="addAclCondition(ei)">
+                                    <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="sm"
+                                        class="h-7 text-xs"
+                                        @click="addAclCondition(ei)"
+                                    >
                                         <Plus class="size-3" /> 条件
                                     </Button>
-                                    <Button type="button" variant="ghost" size="icon" class="size-7" @click="removeAclEntry(ei)">
+                                    <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="icon"
+                                        class="size-7"
+                                        @click="removeAclEntry(ei)"
+                                    >
                                         <X class="size-3.5" />
                                     </Button>
                                 </div>
                             </div>
-                            <div v-for="(cond, ci) in entry.conditions" :key="ci" class="grid grid-cols-[1fr_120px_1fr_auto] gap-2">
+                            <div
+                                v-for="(cond, ci) in entry.conditions"
+                                :key="ci"
+                                class="grid grid-cols-[1fr_120px_1fr_auto] gap-2"
+                            >
                                 <Select v-model="cond.key">
-                                    <SelectTrigger><SelectValue placeholder="选择字段" /></SelectTrigger>
+                                    <SelectTrigger
+                                        ><SelectValue placeholder="选择字段"
+                                    /></SelectTrigger>
                                     <SelectContent>
                                         <SelectGroup>
-                                            <SelectItem v-for="mk in MATCHER_KEYS" :key="mk.value" :value="mk.value">
+                                            <SelectItem
+                                                v-for="mk in MATCHER_KEYS"
+                                                :key="mk.value"
+                                                :value="mk.value"
+                                            >
                                                 {{ mk.label }}
                                             </SelectItem>
                                         </SelectGroup>
                                     </SelectContent>
                                 </Select>
                                 <Select v-model="cond.operator">
-                                    <SelectTrigger><SelectValue /></SelectTrigger>
+                                    <SelectTrigger
+                                        ><SelectValue
+                                    /></SelectTrigger>
                                     <SelectContent>
                                         <SelectGroup>
-                                            <SelectItem v-for="op in OPERATORS" :key="op.value" :value="op.value">
+                                            <SelectItem
+                                                v-for="op in OPERATORS"
+                                                :key="op.value"
+                                                :value="op.value"
+                                            >
                                                 {{ op.label }}
                                             </SelectItem>
                                         </SelectGroup>
                                     </SelectContent>
                                 </Select>
-                                <Input v-model="cond.value" :placeholder="cond.operator === 'AC' || cond.operator === '!AC' ? '逗号分隔多个值' : '输入值'" />
-                                <Button type="button" variant="ghost" size="icon" class="size-9" @click="removeAclCondition(ei, ci)">
+                                <Input
+                                    v-model="cond.value"
+                                    :placeholder="
+                                        cond.operator === 'AC' ||
+                                        cond.operator === '!AC'
+                                            ? '逗号分隔多个值'
+                                            : '输入值'
+                                    "
+                                />
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    class="size-9"
+                                    @click="removeAclCondition(ei, ci)"
+                                >
                                     <X class="size-4" />
                                 </Button>
                             </div>
-                            <p v-if="entry.conditions.length === 0" class="text-xs text-muted-foreground pl-1">
+                            <p
+                                v-if="entry.conditions.length === 0"
+                                class="pl-1 text-xs text-muted-foreground"
+                            >
                                 无匹配条件 = 匹配所有请求
                             </p>
                         </div>
@@ -1981,19 +2460,41 @@ function omitEnable<TPayload extends { enable?: unknown }>(
                     <div v-if="activeCcKind === 'matcher'" class="grid gap-2">
                         <div class="flex items-center justify-between">
                             <Label>匹配条件</Label>
-                            <Button type="button" variant="outline" size="sm" @click="addCondition">
-                                <Plus data-icon="inline-start" class="size-3.5" /> 添加条件
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                @click="addCondition"
+                            >
+                                <Plus
+                                    data-icon="inline-start"
+                                    class="size-3.5"
+                                />
+                                添加条件
                             </Button>
                         </div>
-                        <p v-if="matcherConditions.length === 0" class="text-xs text-muted-foreground">
+                        <p
+                            v-if="matcherConditions.length === 0"
+                            class="text-xs text-muted-foreground"
+                        >
                             不添加任何条件 = 匹配所有请求（data 为 {}）
                         </p>
-                        <div v-for="(cond, index) in matcherConditions" :key="index" class="grid grid-cols-[1fr_120px_1fr_auto] gap-2">
+                        <div
+                            v-for="(cond, index) in matcherConditions"
+                            :key="index"
+                            class="grid grid-cols-[1fr_120px_1fr_auto] gap-2"
+                        >
                             <Select v-model="cond.key">
-                                <SelectTrigger><SelectValue placeholder="选择字段" /></SelectTrigger>
+                                <SelectTrigger
+                                    ><SelectValue placeholder="选择字段"
+                                /></SelectTrigger>
                                 <SelectContent>
                                     <SelectGroup>
-                                        <SelectItem v-for="mk in MATCHER_KEYS" :key="mk.value" :value="mk.value">
+                                        <SelectItem
+                                            v-for="mk in MATCHER_KEYS"
+                                            :key="mk.value"
+                                            :value="mk.value"
+                                        >
                                             {{ mk.label }}
                                         </SelectItem>
                                     </SelectGroup>
@@ -2003,14 +2504,32 @@ function omitEnable<TPayload extends { enable?: unknown }>(
                                 <SelectTrigger><SelectValue /></SelectTrigger>
                                 <SelectContent>
                                     <SelectGroup>
-                                        <SelectItem v-for="op in OPERATORS" :key="op.value" :value="op.value">
+                                        <SelectItem
+                                            v-for="op in OPERATORS"
+                                            :key="op.value"
+                                            :value="op.value"
+                                        >
                                             {{ op.label }}
                                         </SelectItem>
                                     </SelectGroup>
                                 </SelectContent>
                             </Select>
-                            <Input v-model="cond.value" :placeholder="cond.operator === 'AC' || cond.operator === '!AC' ? '逗号分隔多个值' : '输入值'" />
-                            <Button type="button" variant="ghost" size="icon" class="size-9" @click="removeCondition(index)">
+                            <Input
+                                v-model="cond.value"
+                                :placeholder="
+                                    cond.operator === 'AC' ||
+                                    cond.operator === '!AC'
+                                        ? '逗号分隔多个值'
+                                        : '输入值'
+                                "
+                            />
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                class="size-9"
+                                @click="removeCondition(index)"
+                            >
                                 <X class="size-4" />
                             </Button>
                         </div>
@@ -2020,21 +2539,44 @@ function omitEnable<TPayload extends { enable?: unknown }>(
                     <div v-if="activeCcKind === 'rule'" class="grid gap-2">
                         <div class="flex items-center justify-between">
                             <Label>规则条目</Label>
-                            <Button type="button" variant="outline" size="sm" :disabled="loadingRuleOptions" @click="addRuleEntry">
-                                <Plus data-icon="inline-start" class="size-3.5" /> 添加条目
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                :disabled="loadingRuleOptions"
+                                @click="addRuleEntry"
+                            >
+                                <Plus
+                                    data-icon="inline-start"
+                                    class="size-3.5"
+                                />
+                                添加条目
                             </Button>
                         </div>
-                        <div v-if="loadingRuleOptions" class="flex items-center gap-2 text-sm text-muted-foreground py-2">
+                        <div
+                            v-if="loadingRuleOptions"
+                            class="flex items-center gap-2 py-2 text-sm text-muted-foreground"
+                        >
                             <Spinner class="size-4" /> 加载匹配器和过滤器列表...
                         </div>
-                        <div v-for="(entry, index) in ruleEntries" :key="index" class="grid grid-cols-[110px_1fr_1fr_1fr_60px_auto] gap-1.5 items-end">
+                        <div
+                            v-for="(entry, index) in ruleEntries"
+                            :key="index"
+                            class="grid grid-cols-[110px_1fr_1fr_1fr_60px_auto] items-end gap-1.5"
+                        >
                             <div class="grid gap-1">
                                 <Label class="text-[10px]">动作</Label>
                                 <Select v-model="entry.action">
-                                    <SelectTrigger class="h-9 text-xs"><SelectValue /></SelectTrigger>
+                                    <SelectTrigger class="h-9 text-xs"
+                                        ><SelectValue
+                                    /></SelectTrigger>
                                     <SelectContent>
                                         <SelectGroup>
-                                            <SelectItem v-for="a in RULE_ACTIONS" :key="a.value" :value="a.value">
+                                            <SelectItem
+                                                v-for="a in RULE_ACTIONS"
+                                                :key="a.value"
+                                                :value="a.value"
+                                            >
                                                 {{ a.label }}
                                             </SelectItem>
                                         </SelectGroup>
@@ -2044,10 +2586,16 @@ function omitEnable<TPayload extends { enable?: unknown }>(
                             <div class="grid gap-1">
                                 <Label class="text-[10px]">匹配器</Label>
                                 <Select v-model="entry.matcher">
-                                    <SelectTrigger class="h-9 text-xs"><SelectValue placeholder="选择匹配器" /></SelectTrigger>
+                                    <SelectTrigger class="h-9 text-xs"
+                                        ><SelectValue placeholder="选择匹配器"
+                                    /></SelectTrigger>
                                     <SelectContent>
                                         <SelectGroup>
-                                            <SelectItem v-for="m in matcherOptions" :key="m.id" :value="m.id">
+                                            <SelectItem
+                                                v-for="m in matcherOptions"
+                                                :key="m.id"
+                                                :value="m.id"
+                                            >
                                                 #{{ m.id }} {{ m.name }}
                                             </SelectItem>
                                         </SelectGroup>
@@ -2057,11 +2605,19 @@ function omitEnable<TPayload extends { enable?: unknown }>(
                             <div class="grid gap-1">
                                 <Label class="text-[10px]">过滤器 1</Label>
                                 <Select v-model="entry.filter1">
-                                    <SelectTrigger class="h-9 text-xs"><SelectValue placeholder="选择过滤器" /></SelectTrigger>
+                                    <SelectTrigger class="h-9 text-xs"
+                                        ><SelectValue placeholder="选择过滤器"
+                                    /></SelectTrigger>
                                     <SelectContent>
                                         <SelectGroup>
-                                            <SelectItem value="">(无)</SelectItem>
-                                            <SelectItem v-for="f in filterOptions" :key="f.id" :value="f.id">
+                                            <SelectItem value=""
+                                                >(无)</SelectItem
+                                            >
+                                            <SelectItem
+                                                v-for="f in filterOptions"
+                                                :key="f.id"
+                                                :value="f.id"
+                                            >
                                                 #{{ f.id }} {{ f.name }}
                                             </SelectItem>
                                         </SelectGroup>
@@ -2071,11 +2627,19 @@ function omitEnable<TPayload extends { enable?: unknown }>(
                             <div class="grid gap-1">
                                 <Label class="text-[10px]">过滤器 2</Label>
                                 <Select v-model="entry.filter2">
-                                    <SelectTrigger class="h-9 text-xs"><SelectValue placeholder="(可选)" /></SelectTrigger>
+                                    <SelectTrigger class="h-9 text-xs"
+                                        ><SelectValue placeholder="(可选)"
+                                    /></SelectTrigger>
                                     <SelectContent>
                                         <SelectGroup>
-                                            <SelectItem value="">(无)</SelectItem>
-                                            <SelectItem v-for="f in filterOptions" :key="f.id" :value="f.id">
+                                            <SelectItem value=""
+                                                >(无)</SelectItem
+                                            >
+                                            <SelectItem
+                                                v-for="f in filterOptions"
+                                                :key="f.id"
+                                                :value="f.id"
+                                            >
                                                 #{{ f.id }} {{ f.name }}
                                             </SelectItem>
                                         </SelectGroup>
@@ -2083,27 +2647,52 @@ function omitEnable<TPayload extends { enable?: unknown }>(
                                 </Select>
                             </div>
                             <div class="grid gap-1">
-                                <Label class="text-[10px] text-center">启用</Label>
-                                <div class="flex items-center justify-center h-9">
-                                    <Switch :checked="entry.state" @update:checked="entry.state = $event" />
+                                <Label class="text-center text-[10px]"
+                                    >启用</Label
+                                >
+                                <div
+                                    class="flex h-9 items-center justify-center"
+                                >
+                                    <Switch
+                                        :checked="entry.state"
+                                        @update:checked="entry.state = $event"
+                                    />
                                 </div>
                             </div>
-                            <Button type="button" variant="ghost" size="icon" class="size-9 self-end" @click="removeRuleEntry(index)">
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                class="size-9 self-end"
+                                @click="removeRuleEntry(index)"
+                            >
                                 <X class="size-4" />
                             </Button>
                         </div>
                     </div>
-                    <div v-if="activeCcKind === 'filter' && ccForm.type === 'url_auth'" class="border rounded-md p-4 space-y-3">
+                    <div
+                        v-if="
+                            activeCcKind === 'filter' &&
+                            ccForm.type === 'url_auth'
+                        "
+                        class="space-y-3 rounded-md border p-4"
+                    >
                         <Label class="font-medium">URL 鉴权配置</Label>
                         <div class="grid gap-3 md:grid-cols-2">
                             <div class="grid gap-2">
                                 <Label for="extra-mode">模式</Label>
                                 <Select v-model="extraForm.mode">
-                                    <SelectTrigger id="extra-mode"><SelectValue /></SelectTrigger>
+                                    <SelectTrigger id="extra-mode"
+                                        ><SelectValue
+                                    /></SelectTrigger>
                                     <SelectContent>
                                         <SelectGroup>
-                                            <SelectItem value="TypeA">TypeA</SelectItem>
-                                            <SelectItem value="TypeB">TypeB</SelectItem>
+                                            <SelectItem value="TypeA"
+                                                >TypeA</SelectItem
+                                            >
+                                            <SelectItem value="TypeB"
+                                                >TypeB</SelectItem
+                                            >
                                         </SelectGroup>
                                     </SelectContent>
                                 </Select>
@@ -2114,19 +2703,36 @@ function omitEnable<TPayload extends { enable?: unknown }>(
                             </div>
                             <div class="grid gap-2">
                                 <Label for="extra-sign">sign 参数名</Label>
-                                <Input id="extra-sign" v-model="extraForm.sign_name" />
+                                <Input
+                                    id="extra-sign"
+                                    v-model="extraForm.sign_name"
+                                />
                             </div>
-                            <div v-if="extraForm.mode === 'TypeA'" class="grid gap-2">
+                            <div
+                                v-if="extraForm.mode === 'TypeA'"
+                                class="grid gap-2"
+                            >
                                 <Label for="extra-time">time 参数名</Label>
-                                <Input id="extra-time" v-model="extraForm.time_name" />
+                                <Input
+                                    id="extra-time"
+                                    v-model="extraForm.time_name"
+                                />
                             </div>
                             <div class="grid gap-2">
                                 <Label for="extra-diff">时间差 (秒)</Label>
-                                <Input id="extra-diff" v-model="extraForm.time_diff" inputmode="numeric" />
+                                <Input
+                                    id="extra-diff"
+                                    v-model="extraForm.time_diff"
+                                    inputmode="numeric"
+                                />
                             </div>
                             <div class="grid gap-2">
                                 <Label for="extra-times">签名可用次数</Label>
-                                <Input id="extra-times" v-model="extraForm.sign_use_times" inputmode="numeric" />
+                                <Input
+                                    id="extra-times"
+                                    v-model="extraForm.sign_use_times"
+                                    inputmode="numeric"
+                                />
                             </div>
                         </div>
                     </div>

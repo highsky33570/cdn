@@ -250,6 +250,41 @@ function messageStatus(record: CdnflyRecord): string {
 function subscriptionType(record: CdnflyRecord): string {
     return textValue(record.msg_type ?? record.type ?? record.name) || '-';
 }
+
+/**
+ * A message's readable body.
+ *
+ * The dialog used to print the whole record as raw JSON; a customer wants the
+ * text of the notice, not its storage shape.
+ */
+function messageBody(record: CdnflyRecord | null): string {
+    if (!record) {
+        return '';
+    }
+
+    return (
+        textValue(
+            record.content ??
+                record.message ??
+                record.body ??
+                record.text ??
+                record.des,
+        ) || ''
+    );
+}
+
+function messageTime(record: CdnflyRecord | null): string {
+    if (!record) {
+        return '-';
+    }
+
+    return formatDate(
+        record.create_at2 ??
+            record.create_at ??
+            record.created_at ??
+            record.send_at,
+    );
+}
 </script>
 
 <template>
@@ -596,10 +631,45 @@ function subscriptionType(record: CdnflyRecord): string {
                     <DialogTitle>消息详情</DialogTitle>
                     <DialogDescription> 消息详情内容。 </DialogDescription>
                 </DialogHeader>
-                <pre
-                    class="max-h-[520px] overflow-auto rounded-md border bg-muted/30 p-3 text-xs"
-                    >{{ jsonText(detailRecord, '{}') }}</pre
-                >
+                <div class="grid max-h-[520px] gap-4 overflow-auto">
+                    <div class="grid gap-1">
+                        <div class="text-base font-medium">
+                            {{
+                                detailRecord ? messageTitle(detailRecord) : '-'
+                            }}
+                        </div>
+                        <div class="text-xs text-muted-foreground">
+                            {{ messageTime(detailRecord) }}
+                        </div>
+                    </div>
+
+                    <p
+                        v-if="messageBody(detailRecord)"
+                        class="text-sm whitespace-pre-wrap"
+                    >
+                        {{ messageBody(detailRecord) }}
+                    </p>
+                    <p v-else class="text-sm text-muted-foreground">
+                        （无正文内容）
+                    </p>
+
+                    <!--
+                        The full record stays available for anything the fields
+                        above do not model, but folded away rather than being the
+                        default view.
+                    -->
+                    <details class="rounded-md border">
+                        <summary
+                            class="cursor-pointer px-3 py-2 text-xs text-muted-foreground"
+                        >
+                            原始数据
+                        </summary>
+                        <pre
+                            class="max-h-64 overflow-auto border-t bg-muted/30 p-3 text-xs"
+                            >{{ jsonText(detailRecord, '{}') }}</pre
+                        >
+                    </details>
+                </div>
                 <DialogFooter>
                     <Button @click="detailDialogOpen = false">关闭</Button>
                 </DialogFooter>

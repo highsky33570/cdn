@@ -1001,8 +1001,55 @@ async function confirmDelete() {
 function siteName(s: CdnflyRecord) {
     return textValue(s.domain) || `#${textValue(s.id)}`;
 }
-function backendText(s: CdnflyRecord) {
-    return jsonText(s.backend, '-').replace(/\s+/g, ' ');
+/**
+ * Readable origin list.
+ *
+ * `backend` arrives as a JSON string of [{addr, state, weight}]. Printing it
+ * raw showed customers `[{"addr":"1.2.3.4","state":"up","weight":1}]`; they
+ * only want the address, with a mark when it is down or one of several.
+ */
+function backendText(s: CdnflyRecord): string {
+    const raw = s.backend;
+
+    let list: unknown = raw;
+
+    if (typeof raw === 'string') {
+        try {
+            list = JSON.parse(raw);
+        } catch {
+            return textValue(raw) || '-';
+        }
+    }
+
+    if (!Array.isArray(list) || list.length === 0) {
+        return '-';
+    }
+
+    const addrs = list
+        .map((b) => {
+            const row = b as Record<string, unknown>;
+            const addr = textValue(row.addr);
+
+            if (addr === '') {
+                return '';
+            }
+
+            // A backend that is not "up" is worth flagging; a healthy one needs
+            // no decoration.
+            const state = textValue(row.state);
+
+            return state !== '' && state !== 'up'
+                ? `${addr}（${state}）`
+                : addr;
+        })
+        .filter((a) => a !== '');
+
+    if (addrs.length === 0) {
+        return '-';
+    }
+
+    // One address reads cleanest bare; several as "first +N".
+    return addrs.length === 1 ? addrs[0] : `${addrs[0]} +${addrs.length - 1}`;
 }
 // Truncating to 16 chars left '2026-09-14T10:03'. The shared formatter
 // renders the viewer's local time and keeps seconds.

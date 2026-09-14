@@ -14,7 +14,7 @@ import {
     Zap,
 } from 'lucide-vue-next';
 import { computed, onMounted, reactive, ref } from 'vue';
-import { toast } from 'vue-sonner'
+import { toast } from 'vue-sonner';
 import ConsolePageHeader from '@/components/console/ConsolePageHeader.vue';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
@@ -63,7 +63,12 @@ import type {
     LocalBillingServiceInstance,
 } from '@/lib/localBillingApi';
 
-type BillingView = 'packages' | 'subscriptions' | 'orders' | 'traffic-packs' | 'usage';
+type BillingView =
+    | 'packages'
+    | 'subscriptions'
+    | 'orders'
+    | 'traffic-packs'
+    | 'usage';
 
 const props = defineProps<{
     view: BillingView;
@@ -127,7 +132,8 @@ const title = computed(() => {
 const description = computed(() => {
     const map: Record<BillingView, string> = {
         packages: '使用本地商品目录创建 EPUSDT 订单，并跳转到支付收银台。',
-        subscriptions: '展示本地服务实例状态，已支付但未开通的套餐会显示为待同步。',
+        subscriptions:
+            '展示本地服务实例状态，已支付但未开通的套餐会显示为待同步。',
         orders: '展示本地下单、EPUSDT 支付状态与套餐开通进度。',
         'traffic-packs': '流量包仍保持只读，等待确认真实购买字段后再开放。',
         usage: '查看套餐流量、带宽等资源用量。选择套餐后可查看详细使用数据。',
@@ -341,7 +347,9 @@ async function loadUserPackages(targetPage = page.value): Promise<void> {
     }
 }
 
-async function openUpgradeDialog(service: LocalBillingServiceInstance): Promise<void> {
+async function openUpgradeDialog(
+    service: LocalBillingServiceInstance,
+): Promise<void> {
     const pkgId = Number(service.cdnfly_service_id);
 
     if (!pkgId) {
@@ -400,7 +408,11 @@ async function openUsageDialog(record: CdnflyRecord): Promise<void> {
         const result = await getUserPackageUsage(pkgId);
         usageData.value = extractCdnflyRows(result);
 
-        if (usageData.value.length === 0 && result && typeof result === 'object') {
+        if (
+            usageData.value.length === 0 &&
+            result &&
+            typeof result === 'object'
+        ) {
             const flat = { ...result } as CdnflyRecord;
             delete flat.code;
             delete flat.msg;
@@ -418,16 +430,52 @@ async function openUsageDialog(record: CdnflyRecord): Promise<void> {
 
 function usageLabel(key: string): string {
     const labels: Record<string, string> = {
-        traffic: '流量', flow: '流量', bandwidth: '带宽', bw: '带宽',
-        connection: '连接数', conn: '连接数', domain: '域名数',
-        site: '站点数', sites: '站点数', request: '请求数',
-        used_traffic: '已用流量', total_traffic: '总流量',
-        used_bandwidth: '已用带宽', total_bandwidth: '总带宽',
-        used_connection: '已用连接数', total_connection: '总连接数',
-        used_domain: '已用域名数', total_domain: '总域名数',
-        expire_time: '到期时间', start_time: '开始时间',
+        traffic: '流量',
+        flow: '流量',
+        bandwidth: '带宽',
+        bw: '带宽',
+        connection: '连接数',
+        conn: '连接数',
+        domain: '域名数',
+        site: '站点数',
+        sites: '站点数',
+        request: '请求数',
+        used_traffic: '已用流量',
+        total_traffic: '总流量',
+        used_bandwidth: '已用带宽',
+        total_bandwidth: '总带宽',
+        used_connection: '已用连接数',
+        total_connection: '总连接数',
+        used_domain: '已用域名数',
+        total_domain: '总域名数',
+        expire_time: '到期时间',
+        start_time: '开始时间',
     };
     return labels[key] ?? key;
+}
+
+/**
+ * A usage page should lead with how much of the allowance is left. `traffic` is
+ * the GB allowance (-1 = unlimited); `traffic_usage` is GB consumed.
+ */
+function usageTrafficText(pkg: CdnflyRecord): string {
+    const used = Number(pkg.traffic_usage ?? 0);
+    const limit = pkg.traffic;
+
+    if (limit === undefined || limit === null || limit === '') {
+        return `${used.toFixed(2)} GB`;
+    }
+
+    if (String(limit) === '-1') {
+        return `${used.toFixed(2)} GB / 不限`;
+    }
+
+    return `${used.toFixed(2)} / ${limit} GB`;
+}
+
+/** CDNfly marks an active package with enable=1. */
+function usageActive(pkg: CdnflyRecord): boolean {
+    return pkg.enable === 1 || pkg.enable === '1';
 }
 
 function maybeOpenProductFromQuery(): void {
@@ -551,11 +599,11 @@ async function retryProvision(order: LocalBillingOrder): Promise<void> {
         const result = await provisionBillingOrder(order.order_no);
         const nextStatus = textValue(result.status) || 'queued';
         toast.success(`订单已创建并开通成功`);
-            nextStatus === 'success'
-                ? '已提交开通请求'
-                : nextStatus === 'queued'
-                  ? '已记录待开通状态，系统将稍后自动同步'
-                  : '已触发开通重试';
+        nextStatus === 'success'
+            ? '已提交开通请求'
+            : nextStatus === 'queued'
+              ? '已记录待开通状态，系统将稍后自动同步'
+              : '已触发开通重试';
         await loadOrders(page.value);
 
         if (props.view === 'subscriptions') {
@@ -859,20 +907,44 @@ function trafficPackMetric(record: CdnflyRecord): string {
                                 </th>
                             </tr>
                             <tr v-else-if="props.view === 'subscriptions'">
-                                <th class="px-4 py-3 text-left font-medium">实例</th>
-                                <th class="px-4 py-3 text-left font-medium">商品</th>
-                                <th class="px-4 py-3 text-left font-medium">订单</th>
-                                <th class="px-4 py-3 text-left font-medium">状态</th>
-                                <th class="px-4 py-3 text-left font-medium">最近更新时间</th>
-                                <th class="px-4 py-3 text-right font-medium">操作</th>
+                                <th class="px-4 py-3 text-left font-medium">
+                                    实例
+                                </th>
+                                <th class="px-4 py-3 text-left font-medium">
+                                    商品
+                                </th>
+                                <th class="px-4 py-3 text-left font-medium">
+                                    订单
+                                </th>
+                                <th class="px-4 py-3 text-left font-medium">
+                                    状态
+                                </th>
+                                <th class="px-4 py-3 text-left font-medium">
+                                    最近更新时间
+                                </th>
+                                <th class="px-4 py-3 text-right font-medium">
+                                    操作
+                                </th>
                             </tr>
                             <tr v-else-if="props.view === 'usage'">
-                                <th class="px-4 py-3 text-left font-medium">套餐</th>
-                                <th class="px-4 py-3 text-left font-medium">分组</th>
-                                <th class="px-4 py-3 text-left font-medium">周期</th>
-                                <th class="px-4 py-3 text-left font-medium">到期时间</th>
-                                <th class="px-4 py-3 text-left font-medium">状态</th>
-                                <th class="px-4 py-3 text-right font-medium">操作</th>
+                                <th class="px-4 py-3 text-left font-medium">
+                                    套餐
+                                </th>
+                                <th class="px-4 py-3 text-left font-medium">
+                                    流量
+                                </th>
+                                <th class="px-4 py-3 text-left font-medium">
+                                    带宽
+                                </th>
+                                <th class="px-4 py-3 text-left font-medium">
+                                    到期时间
+                                </th>
+                                <th class="px-4 py-3 text-left font-medium">
+                                    状态
+                                </th>
+                                <th class="px-4 py-3 text-right font-medium">
+                                    操作
+                                </th>
                             </tr>
                             <tr v-else>
                                 <th class="px-4 py-3 text-left font-medium">
@@ -1085,10 +1157,15 @@ function trafficPackMetric(record: CdnflyRecord): string {
                                     <td class="px-4 py-3">
                                         <div class="flex justify-end gap-1.5">
                                             <Button
-                                                v-if="service.cdnfly_service_id && service.status === 'active'"
+                                                v-if="
+                                                    service.cdnfly_service_id &&
+                                                    service.status === 'active'
+                                                "
                                                 variant="outline"
                                                 size="sm"
-                                                @click="openUpgradeDialog(service)"
+                                                @click="
+                                                    openUpgradeDialog(service)
+                                                "
                                             >
                                                 <Zap data-icon="inline-start" />
                                                 升级
@@ -1097,12 +1174,23 @@ function trafficPackMetric(record: CdnflyRecord): string {
                                                 v-if="service.product_id"
                                                 variant="outline"
                                                 size="sm"
-                                                @click="openRenewDialog(service)"
+                                                @click="
+                                                    openRenewDialog(service)
+                                                "
                                             >
-                                                <ShoppingCart data-icon="inline-start" />
+                                                <ShoppingCart
+                                                    data-icon="inline-start"
+                                                />
                                                 续费
                                             </Button>
-                                            <Badge v-if="!service.product_id && !service.cdnfly_service_id" variant="outline">只读</Badge>
+                                            <Badge
+                                                v-if="
+                                                    !service.product_id &&
+                                                    !service.cdnfly_service_id
+                                                "
+                                                variant="outline"
+                                                >只读</Badge
+                                            >
                                         </div>
                                     </td>
                                 </tr>
@@ -1164,24 +1252,44 @@ function trafficPackMetric(record: CdnflyRecord): string {
                                 >
                                     <td class="px-4 py-3">
                                         <div class="truncate font-medium">
-                                            {{ textValue(pkg.name ?? pkg.package_name) || '-' }}
+                                            {{
+                                                textValue(pkg.package_name) ||
+                                                textValue(pkg.name) ||
+                                                '-'
+                                            }}
                                         </div>
-                                        <div class="text-xs text-muted-foreground">
+                                        <div
+                                            class="text-xs text-muted-foreground"
+                                        >
                                             #{{ textValue(pkg.id) }}
                                         </div>
                                     </td>
                                     <td class="px-4 py-3">
-                                        {{ textValue(pkg.package_group_name ?? pkg.group_name) || '-' }}
-                                    </td>
-                                    <td class="px-4 py-3">
-                                        {{ textValue(pkg.duration) || '-' }}
+                                        {{ usageTrafficText(pkg) }}
                                     </td>
                                     <td class="px-4 py-3 text-muted-foreground">
-                                        {{ formatDate(pkg.expire_time ?? pkg.expired_at) }}
+                                        {{ textValue(pkg.bandwidth) || '-' }}
+                                    </td>
+                                    <td class="px-4 py-3 text-muted-foreground">
+                                        {{
+                                            formatDate(
+                                                pkg.end_at2 ?? pkg.end_at,
+                                            )
+                                        }}
                                     </td>
                                     <td class="px-4 py-3">
-                                        <Badge variant="secondary">
-                                            {{ textValue(pkg.status ?? pkg.enable) || '-' }}
+                                        <Badge
+                                            :variant="
+                                                usageActive(pkg)
+                                                    ? 'secondary'
+                                                    : 'destructive'
+                                            "
+                                        >
+                                            {{
+                                                usageActive(pkg)
+                                                    ? '生效中'
+                                                    : '已停用'
+                                            }}
                                         </Badge>
                                     </td>
                                     <td class="px-4 py-3 text-right">
@@ -1190,7 +1298,9 @@ function trafficPackMetric(record: CdnflyRecord): string {
                                             size="sm"
                                             @click="openUsageDialog(pkg)"
                                         >
-                                            <BarChart3 data-icon="inline-start" />
+                                            <BarChart3
+                                                data-icon="inline-start"
+                                            />
                                             查看用量
                                         </Button>
                                     </td>
@@ -1364,7 +1474,11 @@ function trafficPackMetric(record: CdnflyRecord): string {
                 <DialogHeader>
                     <DialogTitle>套餐升级</DialogTitle>
                     <DialogDescription>
-                        为「{{ upgradeTarget?.service_name || upgradeTarget?.product_name || '-' }}」选择一个升级包。
+                        为「{{
+                            upgradeTarget?.service_name ||
+                            upgradeTarget?.product_name ||
+                            '-'
+                        }}」选择一个升级包。
                     </DialogDescription>
                 </DialogHeader>
                 <div class="grid gap-4">
@@ -1378,7 +1492,10 @@ function trafficPackMetric(record: CdnflyRecord): string {
                         <Spinner />
                     </div>
 
-                    <div v-else-if="upgrades.length === 0" class="py-8 text-center text-muted-foreground">
+                    <div
+                        v-else-if="upgrades.length === 0"
+                        class="py-8 text-center text-muted-foreground"
+                    >
                         暂无可用的升级包
                     </div>
 
@@ -1390,30 +1507,68 @@ function trafficPackMetric(record: CdnflyRecord): string {
                         >
                             <div class="min-w-0 flex-1">
                                 <div class="truncate font-medium">
-                                    {{ textValue(up.name ?? up.package_up_name) || `升级包 #${textValue(up.id)}` }}
+                                    {{
+                                        textValue(
+                                            up.name ?? up.package_up_name,
+                                        ) || `升级包 #${textValue(up.id)}`
+                                    }}
                                 </div>
-                                <div class="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
-                                    <span v-if="up.price">价格: {{ textValue(up.price) }}</span>
-                                    <span v-if="up.traffic || up.flow">流量: {{ textValue(up.traffic ?? up.flow) }}</span>
-                                    <span v-if="up.bandwidth || up.bw">带宽: {{ textValue(up.bandwidth ?? up.bw) }}</span>
-                                    <span v-if="up.connection || up.conn">连接数: {{ textValue(up.connection ?? up.conn) }}</span>
-                                    <span v-if="up.domain">域名数: {{ textValue(up.domain) }}</span>
+                                <div
+                                    class="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground"
+                                >
+                                    <span v-if="up.price"
+                                        >价格: {{ textValue(up.price) }}</span
+                                    >
+                                    <span v-if="up.traffic || up.flow"
+                                        >流量:
+                                        {{
+                                            textValue(up.traffic ?? up.flow)
+                                        }}</span
+                                    >
+                                    <span v-if="up.bandwidth || up.bw"
+                                        >带宽:
+                                        {{
+                                            textValue(up.bandwidth ?? up.bw)
+                                        }}</span
+                                    >
+                                    <span v-if="up.connection || up.conn"
+                                        >连接数:
+                                        {{
+                                            textValue(up.connection ?? up.conn)
+                                        }}</span
+                                    >
+                                    <span v-if="up.domain"
+                                        >域名数:
+                                        {{ textValue(up.domain) }}</span
+                                    >
                                 </div>
                             </div>
                             <Button
                                 size="sm"
                                 :disabled="upgradeSubmitting"
-                                @click="submitUpgrade(Number(up.id ?? up.package_up_id))"
+                                @click="
+                                    submitUpgrade(
+                                        Number(up.id ?? up.package_up_id),
+                                    )
+                                "
                             >
-                                <Spinner v-if="upgradeSubmitting" data-icon="inline-start" />
-                                <ArrowUpCircle v-else data-icon="inline-start" />
+                                <Spinner
+                                    v-if="upgradeSubmitting"
+                                    data-icon="inline-start"
+                                />
+                                <ArrowUpCircle
+                                    v-else
+                                    data-icon="inline-start"
+                                />
                                 购买
                             </Button>
                         </div>
                     </div>
                 </div>
                 <DialogFooter>
-                    <Button variant="outline" @click="upgradeDialogOpen = false">关闭</Button>
+                    <Button variant="outline" @click="upgradeDialogOpen = false"
+                        >关闭</Button
+                    >
                 </DialogFooter>
             </DialogScrollContent>
         </Dialog>
@@ -1424,7 +1579,11 @@ function trafficPackMetric(record: CdnflyRecord): string {
                 <DialogHeader>
                     <DialogTitle>用量详情</DialogTitle>
                     <DialogDescription>
-                        「{{ textValue(usageTarget?.name ?? usageTarget?.package_name) || '-' }}」的资源使用情况
+                        「{{
+                            textValue(
+                                usageTarget?.name ?? usageTarget?.package_name,
+                            ) || '-'
+                        }}」的资源使用情况
                     </DialogDescription>
                 </DialogHeader>
                 <div class="grid gap-4">
@@ -1438,7 +1597,10 @@ function trafficPackMetric(record: CdnflyRecord): string {
                         <Spinner />
                     </div>
 
-                    <div v-else-if="usageData.length === 0" class="py-8 text-center text-muted-foreground">
+                    <div
+                        v-else-if="usageData.length === 0"
+                        class="py-8 text-center text-muted-foreground"
+                    >
                         暂无用量数据
                     </div>
 
@@ -1455,7 +1617,10 @@ function trafficPackMetric(record: CdnflyRecord): string {
                                         :key="String(key)"
                                         class="border-b last:border-b-0"
                                     >
-                                        <td class="whitespace-nowrap px-4 py-2 font-medium text-muted-foreground" style="width: 40%">
+                                        <td
+                                            class="px-4 py-2 font-medium whitespace-nowrap text-muted-foreground"
+                                            style="width: 40%"
+                                        >
                                             {{ usageLabel(String(key)) }}
                                         </td>
                                         <td class="px-4 py-2">
@@ -1468,7 +1633,9 @@ function trafficPackMetric(record: CdnflyRecord): string {
                     </div>
                 </div>
                 <DialogFooter>
-                    <Button variant="outline" @click="usageDialogOpen = false">关闭</Button>
+                    <Button variant="outline" @click="usageDialogOpen = false"
+                        >关闭</Button
+                    >
                 </DialogFooter>
             </DialogScrollContent>
         </Dialog>
