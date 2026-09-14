@@ -9,6 +9,20 @@ use Illuminate\Support\Facades\Log;
 
 class EpusdtService
 {
+    /**
+     * GMPay request/callback signature.
+     *
+     * Non-empty params sorted by name (ASCII), joined as `k=v` with `&`,
+     * then HMAC-SHA256 keyed by the merchant secret, lowercase hex.
+     *
+     * Epusdt v2 hard-switched from the old MD5-with-appended-token scheme and
+     * explicitly refuses it — 「已硬切至 HMAC-SHA256，不再接受旧版 MD5 签名，
+     * 也不提供算法协商或回退」 (wiki/API.md). Signing the old way produced a
+     * well-formed request the gateway rejected as unauthenticated.
+     *
+     * Verified against the vendor's published test vector; see
+     * EpusdtSignatureTest.
+     */
     public function sign(array $params): string
     {
         unset($params['signature']);
@@ -32,20 +46,44 @@ class EpusdtService
 
         ksort($filtered, SORT_STRING);
 
-        return strtolower(md5(implode('&', Arr::map($filtered, fn (string $value, string $key) => $key.'='.$value)).$this->apiToken()));
+        $canonical = implode('&', Arr::map(
+            $filtered,
+            fn (string $value, string $key): string => $key.'='.$value,
+        ));
+
+        return hash_hmac('sha256', $canonical, $this->apiToken());
     }
 
     public function createTransaction(array $params): array
     {
+        // Required by the gateway: pid, order_id, currency, amount,
+        // notify_url (wiki/API.md 请求参数).
         $payload = [
             'pid' => $this->pid(),
             'order_id' => (string) $params['order_id'],
             'amount' => round((float) $params['amount'], 2),
-            'notify_url' => (string) ($params['notify_url'] ?? config('services.epusdt.notify_url')),
             'currency' => strtolower((string) ($params['currency'] ?? config('services.epusdt.default_currency', 'usd'))),
-            'token' => strtolower((string) ($params['token'] ?? config('services.epusdt.default_token', 'usdt'))),
-            'network' => strtoupper((string) ($params['network'] ?? config('services.epusdt.default_network', 'TRON'))),
+            'notify_url' => (string) ($params['notify_url'] ?? config('services.epusdt.notify_url')),
         ];
+
+        // token and network are "conditionally required": both together select
+        // a chain, both absent creates a status-4 placeholder the checkout page
+        // resolves later. Sending exactly one is a parameter error, so the pair
+        // is kept together rather than defaulted independently.
+        $token = strtolower(trim((string) ($params['token'] ?? config('services.epusdt.default_token', ''))));
+        $network = strtolower(trim((string) ($params['network'] ?? config('services.epusdt.default_network', ''))));
+
+        if (($token === '') !== ($network === '')) {
+            throw new \RuntimeException(
+                'EPUSDT token and network must be set together or left blank together; '
+                ."got token='{$token}', network='{$network}'."
+            );
+        }
+
+        if ($token !== '') {
+            $payload['token'] = $token;
+            $payload['network'] = $network;
+        }
 
         $redirectUrl = $params['redirect_url'] ?? config('services.epusdt.redirect_url');
         if ($redirectUrl !== null && $redirectUrl !== '') {
@@ -83,6 +121,13 @@ class EpusdtService
         return $this->parseCreateTransactionResponse($response);
     }
 
+    /**
+     * Authenticate a callback.
+     *
+     * The signature is what proves the caller holds our secret. The pid is
+     * checked too so a callback minted for a different merchant on the same
+     * gateway cannot be replayed at us.
+     */
     public function verifySignature(array $params): bool
     {
         $signature = $params['signature'] ?? '';
@@ -104,6 +149,12 @@ class EpusdtService
         return (string) config('services.epusdt.create_order_path', '/payments/gmpay/v1/order/create-transaction');
     }
 
+    /**
+     * The merchant id the gateway uses to look up our secret key.
+     *
+     * Mandatory on every GMPay request and present on every callback, so a
+     * blank value is a misconfiguration rather than a supported mode.
+     */
     private function pid(): string
     {
         $pid = trim((string) config('services.epusdt.pid'));

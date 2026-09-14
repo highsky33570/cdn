@@ -213,18 +213,12 @@ class PaymentSettlementTest extends TestCase
      */
     private function epusdtSignature(array $payload, string $secret): string
     {
-        unset($payload['signature']);
-        ksort($payload, SORT_STRING);
+        // Delegate to the production signer rather than reimplementing it.
+        // A hand-rolled copy silently kept passing after GMPay switched from
+        // MD5 to HMAC-SHA256, so these tests went green while every real
+        // callback would have been rejected as unauthenticated.
+        config(['services.epusdt.api_token' => $secret]);
 
-        $parts = [];
-        foreach ($payload as $key => $value) {
-            if ($value === '' || $value === null || ! is_scalar($value)) {
-                continue;
-            }
-
-            $parts[] = $key.'='.(is_bool($value) ? ($value ? '1' : '0') : (string) $value);
-        }
-
-        return strtolower(md5(implode('&', $parts).$secret));
+        return app(EpusdtService::class)->sign($payload);
     }
 }

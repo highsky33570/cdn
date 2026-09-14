@@ -40,6 +40,8 @@ class EpusdtController extends Controller
         }
 
         $validated = validator($payload, [
+            // Upstream self-hosted epusdt sends no pid; a merchant gateway
+            // does, and verifySignature() checks it when one is configured.
             'pid' => ['required', 'string', 'max:128'],
             'trade_id' => ['required', 'string', 'max:64'],
             'order_id' => ['required', 'string', 'max:32'],
@@ -49,7 +51,9 @@ class EpusdtController extends Controller
             'token' => ['required', 'string', 'max:32'],
             'block_transaction_id' => ['nullable', 'string', 'max:128'],
             'status' => ['required', Rule::in([1, 2, 3, '1', '2', '3'])],
-            'signature' => ['required', 'string', 'size:32'],
+            // 64-char lowercase hex HMAC-SHA256; the old MD5 length would
+            // have rejected every v2 callback before verification ran.
+            'signature' => ['required', 'string', 'size:64'],
         ])->validate();
 
         $order = Order::where('order_no', $validated['order_id'])->first();
