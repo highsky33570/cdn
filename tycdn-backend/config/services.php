@@ -96,6 +96,16 @@ return [
         'admin_secret_header' => env('CDNFLY_ADMIN_SECRET_HEADER', 'api-secret'),
         'cname_domain_options' => env('CDNFLY_CNAME_DOMAIN_OPTIONS', ''),
 
+        // Balance-funded auto-renewal. CDNfly is a prepaid system: buying or
+        // renewing a package deducts the customer's CDNfly balance at the
+        // package's price, and refuses with 余额不足 when the balance is short.
+        // CDNfly renews manually only, so this drives the renewal itself.
+        'auto_renew_enabled' => env('CDNFLY_AUTO_RENEW_ENABLED', true),
+        // Renew a package this many days before it expires.
+        'auto_renew_days' => env('CDNFLY_AUTO_RENEW_DAYS', 3),
+        // Cycle to extend by: month | quarter | year.
+        'auto_renew_duration' => env('CDNFLY_AUTO_RENEW_DURATION', 'month'),
+
         // 旧的 provision 配置（CdnflyProvisionService 仍在使用）
         'provision_url' => env('CDNFLY_PROVISION_URL'),
         'auth_type' => env('CDNFLY_AUTH_TYPE', 'bearer'),

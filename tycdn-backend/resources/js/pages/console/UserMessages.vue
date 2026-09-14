@@ -64,7 +64,6 @@ const errorMessage = ref('');
 const formError = ref('');
 const detailDialogOpen = ref(false);
 const detailRecord = ref<CdnflyRecord | null>(null);
-const rawSubscriptions = ref('');
 const page = ref(1);
 const total = ref(0);
 const messages = ref<CdnflyRecord[]>([]);
@@ -148,7 +147,6 @@ async function loadSubscriptions(): Promise<void> {
 
         subscriptions.value = nextRows;
         total.value = nextRows.length;
-        rawSubscriptions.value = jsonText(result, '{}');
     } catch (error) {
         errorMessage.value = getErrorMessage(error);
     } finally {
@@ -249,6 +247,11 @@ function messageStatus(record: CdnflyRecord): string {
 
 function subscriptionType(record: CdnflyRecord): string {
     return textValue(record.msg_type ?? record.type ?? record.name) || '-';
+}
+
+/** CDNfly stores a notification toggle as 1/0. */
+function notifyOn(value: unknown): boolean {
+    return value === 1 || value === '1' || value === true;
 }
 
 /**
@@ -381,19 +384,16 @@ function messageTime(record: CdnflyRecord | null): string {
                                     类型
                                 </th>
                                 <th class="px-4 py-3 text-left font-medium">
-                                    手机
+                                    手机通知
                                 </th>
                                 <th class="px-4 py-3 text-left font-medium">
-                                    邮箱
-                                </th>
-                                <th class="px-4 py-3 text-left font-medium">
-                                    状态
+                                    邮箱通知
                                 </th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr v-if="loading">
-                                <td class="px-6 py-16 text-center" colspan="4">
+                                <td class="px-6 py-16 text-center" colspan="3">
                                     <Spinner class="mx-auto" />
                                 </td>
                             </tr>
@@ -406,21 +406,40 @@ function messageTime(record: CdnflyRecord | null): string {
                                     {{ subscriptionType(item) }}
                                 </td>
                                 <td class="px-4 py-3">
-                                    {{ textValue(item.phone) || '-' }}
+                                    <Badge
+                                        :variant="
+                                            notifyOn(item.phone)
+                                                ? 'secondary'
+                                                : 'outline'
+                                        "
+                                    >
+                                        {{
+                                            notifyOn(item.phone)
+                                                ? '开启'
+                                                : '关闭'
+                                        }}
+                                    </Badge>
                                 </td>
                                 <td class="px-4 py-3">
-                                    {{ textValue(item.email) || '-' }}
-                                </td>
-                                <td class="px-4 py-3">
-                                    <Badge variant="secondary">
-                                        {{ textValue(item.status) || '-' }}
+                                    <Badge
+                                        :variant="
+                                            notifyOn(item.email)
+                                                ? 'secondary'
+                                                : 'outline'
+                                        "
+                                    >
+                                        {{
+                                            notifyOn(item.email)
+                                                ? '开启'
+                                                : '关闭'
+                                        }}
                                     </Badge>
                                 </td>
                             </tr>
                             <tr v-if="!loading && activeRows.length === 0">
                                 <td
                                     class="px-6 py-16 text-center text-muted-foreground"
-                                    colspan="4"
+                                    colspan="3"
                                 >
                                     暂无订阅记录
                                 </td>
@@ -428,15 +447,6 @@ function messageTime(record: CdnflyRecord | null): string {
                         </tbody>
                     </table>
                 </div>
-                <details v-if="rawSubscriptions" class="text-sm">
-                    <summary class="cursor-pointer text-muted-foreground">
-                        详情数据
-                    </summary>
-                    <pre
-                        class="mt-3 max-h-72 overflow-auto rounded-md border bg-muted/30 p-3 text-xs"
-                        >{{ rawSubscriptions }}</pre
-                    >
-                </details>
             </CardContent>
         </Card>
 

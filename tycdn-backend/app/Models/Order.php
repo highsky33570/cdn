@@ -29,6 +29,7 @@ class Order extends Model
         'expire_at',
         'paid_at',
         'provisioned_at',
+        'balance_credited_at',
         'cancelled_at',
 
         'gateway_provider',
@@ -48,6 +49,7 @@ class Order extends Model
         'expire_at' => 'datetime',
         'paid_at' => 'datetime',
         'provisioned_at' => 'datetime',
+        'balance_credited_at' => 'datetime',
         'cancelled_at' => 'datetime',
         'gateway_expired_at' => 'datetime',
         'gateway_notify_payload' => 'array',

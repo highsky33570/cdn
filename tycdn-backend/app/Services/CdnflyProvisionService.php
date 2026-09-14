@@ -159,6 +159,18 @@ class CdnflyProvisionService
 
         $this->markProvisioning($freshOrder, $mapping, $serviceInstance, $payload, $provisionAction);
 
+        // CDNfly is prepaid: buying or renewing a package deducts the customer's
+        // CDNfly balance at the package's real price. The customer paid us in
+        // USDT, not into that balance — so top the balance up by what they paid
+        // before CDNfly deducts it. Net balance change is zero; the balance is
+        // just the intermediary CDNfly's purchase enforces.
+        //
+        // Guarded by balance_credited_at so a purchase that fails after a
+        // successful top-up is retried without crediting twice.
+        if ($topUpFailure = $this->topUpBalanceForPurchase($freshOrder, $mapping, $serviceInstance, $payload, $provisionAction)) {
+            return $topUpFailure;
+        }
+
         try {
             $responseBody = $provisionAction === 'renew'
                 ? $this->cdnflyApiService->renewUserPackage($freshOrder->user, (string) $serviceInstance->cdnfly_service_id, $payload)
@@ -633,6 +645,86 @@ class CdnflyProvisionService
      *
      * @return array<string, mixed>
      */
+    /**
+     * Credit the customer's CDNfly balance with what they paid, so the package
+     * purchase that follows can deduct it at CDNfly's real price.
+     *
+     * Returns a queue/fail result to abort provisioning when the top-up cannot
+     * happen; returns null when the balance is ready (already credited, or
+     * credited just now, or nothing to credit).
+     *
+     * @param  array<string, mixed>  $payload
+     */
+    private function topUpBalanceForPurchase(
+        Order $order,
+        ProductCdnflyMapping $mapping,
+        ServiceInstance $serviceInstance,
+        array $payload,
+        string $provisionAction
+    ): ?array {
+        // Already topped up on an earlier attempt — do not credit again.
+        if ($order->balance_credited_at !== null) {
+            return null;
+        }
+
+        $amount = round((float) ($order->actual_paid_amount ?? $order->fiat_amount ?? 0), 2);
+
+        // A zero-priced package (e.g. a free tier, or CDNfly prices still at 0)
+        // needs no balance; let the purchase proceed and mark the step done so a
+        // retry does not reconsider it.
+        if ($amount <= 0) {
+            $order->update(['balance_credited_at' => now()]);
+
+            return null;
+        }
+
+        $cdnflyUserId = (int) ($order->user?->cdnfly_user_id ?? 0);
+
+        if ($cdnflyUserId <= 0) {
+            return $this->queueProvisioning(
+                $order,
+                $mapping,
+                'User has no CDNfly account to credit before purchase.',
+                $serviceInstance,
+                ['request_payload' => $payload, 'provision_action' => $provisionAction],
+                'configuration',
+                'missing_cdnfly_user'
+            );
+        }
+
+        try {
+            $this->cdnflyApiService->rechargeUser($cdnflyUserId, $amount);
+        } catch (\Throwable $e) {
+            Log::warning('cdnfly pre-purchase balance top-up failed', [
+                'order_no' => $order->order_no,
+                'cdnfly_user_id' => $cdnflyUserId,
+                'amount' => $amount,
+                'error' => $e->getMessage(),
+            ]);
+
+            return $this->handleProvisionException(
+                $order,
+                $mapping,
+                $serviceInstance,
+                $payload,
+                $provisionAction,
+                $e
+            );
+        }
+
+        // Persist immediately: the credit has landed in CDNfly, so a later
+        // failure must never re-credit.
+        $order->update(['balance_credited_at' => now()]);
+
+        Log::info('cdnfly balance topped up before purchase', [
+            'order_no' => $order->order_no,
+            'cdnfly_user_id' => $cdnflyUserId,
+            'amount' => $amount,
+        ]);
+
+        return null;
+    }
+
     private function creditBalance(Order $order): array
     {
         $cdnflyUserId = (int) ($order->user?->cdnfly_user_id ?? 0);
