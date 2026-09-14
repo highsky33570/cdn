@@ -1341,7 +1341,7 @@ function formatInputDate(date: Date): string {
                                         class="border-b hover:bg-muted/30"
                                     >
                                         <td class="px-3 py-2.5 text-muted-foreground whitespace-nowrap tabular-nums text-xs">
-                                            {{ textValue(row.time ?? row.timestamp ?? row.create_at2) || '-' }}
+                                            {{ formatDate(row.time ?? row.timestamp ?? row.create_at2) }}
                                         </td>
                                         <td class="px-3 py-2.5 max-w-[160px]">
                                             <div class="truncate">{{ textValue(row.host ?? row.domain) || '-' }}</div>
@@ -1424,7 +1424,7 @@ function formatInputDate(date: Date): string {
                                         <td class="px-4 py-3 tabular-nums">{{ textValue(row.id ?? row.job_id) || '-' }}</td>
                                         <td class="px-4 py-3 tabular-nums text-muted-foreground">{{ textValue(row.task_id ?? row.tid) || '-' }}</td>
                                         <td class="px-4 py-3 whitespace-nowrap text-xs text-muted-foreground">
-                                            {{ textValue(row.create_at ?? row.created_at ?? row.create_time) || '-' }}
+                                            {{ formatDate(row.create_at ?? row.created_at ?? row.create_time) }}
                                         </td>
                                         <td class="px-4 py-3 text-xs text-muted-foreground">
                                             <div class="whitespace-nowrap">{{ textValue((row.data as Record<string,unknown>)?.start ?? row.log_start) || '-' }}</div>

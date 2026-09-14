@@ -201,7 +201,49 @@ const deleting = ref(false);
 const deleteError = ref('');
 const deleteTarget = ref<CdnflyRecord | null>(null);
 
-const userPackages = ref<{ id: number; name: string; uid: number }[]>([]);
+const userPackages = ref<
+    { id: number; label: string; hint: string; uid: number }[]
+>([]);
+
+/**
+ * A readable label for a purchased package.
+ *
+ * The record's own `name` is a bare sequence number — "1" — so the picker read
+ * "1 (#2)" and told the operator nothing about which tier it is, whose it is,
+ * or whether it is still valid. Those three facts are what the choice turns on.
+ */
+function userPackageLabel(r: Record<string, unknown>): string {
+    const tier = String(r.package_name ?? '').trim();
+    const owner = String(r.user_name ?? '').trim();
+
+    const parts = [
+        tier !== '' ? tier : `套餐 #${r.id ?? '?'}`,
+        owner !== '' ? owner : r.uid ? `UID ${r.uid}` : '',
+    ].filter((part) => part !== '');
+
+    return parts.join(' · ');
+}
+
+/** Expiry and state, shown beside the label rather than inside it. */
+function userPackageHint(r: Record<string, unknown>): string {
+    const parts: string[] = [];
+
+    // end_at2 is the master's already-formatted local time; the ISO end_at
+    // would need re-parsing to say the same thing.
+    const expires = String(r.end_at2 ?? r.end_at ?? '').slice(0, 10);
+
+    if (expires !== '') {
+        parts.push(`到期 ${expires}`);
+    }
+
+    if (String(r.enable ?? '1') === '0') {
+        parts.push('已停用');
+    }
+
+    parts.push(`#${r.id ?? '?'}`);
+
+    return parts.join(' · ');
+}
 
 async function loadUserPackages(): Promise<void> {
     try {
@@ -210,7 +252,8 @@ async function loadUserPackages(): Promise<void> {
         userPackages.value = Array.isArray(rows)
             ? rows.map((r) => ({
                   id: Number(r.id ?? 0),
-                  name: String(r.name ?? r.package_name ?? r.id ?? '-'),
+                  label: userPackageLabel(r),
+                  hint: userPackageHint(r),
                   uid: Number(r.uid ?? r.user_id ?? 0),
               }))
             : [];
@@ -954,7 +997,16 @@ async function confirmCertDelete(): Promise<void> {
                                         :key="pkg.id"
                                         :value="String(pkg.id)"
                                     >
-                                        {{ pkg.name }} (#{{ pkg.id }})
+                                        <span
+                                            class="flex w-full items-center justify-between gap-3"
+                                        >
+                                            <span>{{ pkg.label }}</span>
+                                            <span
+                                                class="text-xs text-muted-foreground"
+                                            >
+                                                {{ pkg.hint }}
+                                            </span>
+                                        </span>
                                     </SelectItem>
                                 </SelectGroup>
                             </SelectContent>
@@ -1049,7 +1101,16 @@ async function confirmCertDelete(): Promise<void> {
                                         :key="pkg.id"
                                         :value="String(pkg.id)"
                                     >
-                                        {{ pkg.name }} (#{{ pkg.id }})
+                                        <span
+                                            class="flex w-full items-center justify-between gap-3"
+                                        >
+                                            <span>{{ pkg.label }}</span>
+                                            <span
+                                                class="text-xs text-muted-foreground"
+                                            >
+                                                {{ pkg.hint }}
+                                            </span>
+                                        </span>
                                     </SelectItem>
                                 </SelectGroup>
                             </SelectContent>

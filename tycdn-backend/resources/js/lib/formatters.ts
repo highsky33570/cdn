@@ -92,6 +92,19 @@ export function parseJsonArray(value: string): unknown[] {
  * outside the panel's own zone. Anything unparseable passes through unchanged,
  * so a surprising format degrades to the raw string rather than "Invalid Date".
  */
+/**
+ * A timestamp people can read: `2026-09-14 15:19:58`, in the viewer's own
+ * timezone.
+ *
+ * This used to emit full RFC 3339 — `2026-09-14T15:19:58+08:00` — which is
+ * correct and unambiguous but not something a customer parses at a glance. The
+ * `T` and the offset read as noise, and the offset is redundant anyway when
+ * the value is already rendered in the reader's local time.
+ *
+ * A value that arrives without a zone is shown as-is rather than reinterpreted:
+ * CDNfly returns server-local times, and treating one as UTC would silently
+ * shift every row by the offset.
+ */
 export function formatDate(value: unknown): string {
     const text = textValue(value);
 
@@ -101,11 +114,19 @@ export function formatDate(value: unknown): string {
 
     const pad = (n: number) => String(n).padStart(2, '0');
 
-    // zone-less "YYYY-MM-DD HH:mm:ss" — normalise the separator, add no offset
-    if (/^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}(:\d{2})?$/.test(text)) {
-        const iso = text.replace(' ', 'T');
+    // Date only — nothing to convert, and adding 00:00:00 would invent
+    // precision the source never had.
+    if (/^\d{4}-\d{2}-\d{2}$/.test(text)) {
+        return text;
+    }
 
-        return iso.length === 16 ? `${iso}:00` : iso;
+    // Zone-less "YYYY-MM-DD HH:mm[:ss]": already local, so only tidy it.
+    const zoneless = text.match(
+        /^(\d{4}-\d{2}-\d{2})[ T](\d{2}:\d{2})(:\d{2})?$/,
+    );
+
+    if (zoneless) {
+        return `${zoneless[1]} ${zoneless[2]}${zoneless[3] ?? ':00'}`;
     }
 
     const parsed = new Date(text);
@@ -114,16 +135,9 @@ export function formatDate(value: unknown): string {
         return text;
     }
 
-    // getTimezoneOffset() counts minutes *behind* UTC, so the sign flips.
-    const offset = -parsed.getTimezoneOffset();
-    const zone =
-        offset === 0
-            ? 'Z'
-            : `${offset < 0 ? '-' : '+'}${pad(Math.trunc(Math.abs(offset) / 60))}:${pad(Math.abs(offset) % 60)}`;
-
     return (
         `${parsed.getFullYear()}-${pad(parsed.getMonth() + 1)}-${pad(parsed.getDate())}` +
-        `T${pad(parsed.getHours())}:${pad(parsed.getMinutes())}:${pad(parsed.getSeconds())}${zone}`
+        ` ${pad(parsed.getHours())}:${pad(parsed.getMinutes())}:${pad(parsed.getSeconds())}`
     );
 }
 

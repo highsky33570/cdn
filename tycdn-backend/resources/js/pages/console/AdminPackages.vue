@@ -679,7 +679,10 @@ const detailSections = computed(() => {
                     label: '提前续费天数',
                     value: limitText('before_exp_days_renew', ' 天'),
                 },
-                { label: '可购买截止时间', value: plainText('expire') },
+                {
+                    label: '可购买截止时间',
+                    value: formatDate(detailValue('expire')),
+                },
                 // These are CDNfly's internal prices, billed against the
                 // customer's CDNfly balance. 0 is correct for portal selling.
                 { label: 'CDNfly 月付', value: plainText('month_price') },
