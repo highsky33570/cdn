@@ -236,8 +236,11 @@ class AdminSiteController extends Controller
         ]);
 
         try {
+            // CDNfly names this enable, not status. Sending status left the
+            // site disabled while the request reported success, which also
+            // made the master silently skip certificate issuance.
             $data = $this->cdnfly->updateAdminSite($id, [
-                'status' => ((bool) $validated['enable']) ? 1 : 0,
+                'enable' => ((bool) $validated['enable']) ? 1 : 0,
             ]);
 
             return response()->json(['ok' => true, 'data' => $data]);

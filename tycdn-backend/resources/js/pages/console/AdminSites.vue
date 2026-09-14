@@ -68,32 +68,56 @@ const STATUS_ALL = 'all';
 const STATUS_RUNNING = '1';
 const STATUS_STOPPED = '0';
 
+/**
+ * Field names verified against the master's own panel (chunk-0871c1ec).
+ *
+ * These were guessed — name/user_id/status/package_id/created_at — and CDNfly
+ * uses none of them, so the list showed the site's internal name under 域名 and
+ * a dash everywhere else.
+ */
 const siteColumns: ColumnDef[] = [
     { key: 'id', label: 'ID', width: '70px' },
-    { key: 'name', label: '域名' },
-    { key: 'user_id', label: '用户 ID', width: '90px' },
+    { key: 'domain', label: '域名' },
+    { key: 'uid', label: '用户 ID', width: '90px' },
     {
-        key: 'status',
+        key: 'enable',
         label: '状态',
         width: '100px',
         badge: true,
-        format: (v) =>
-            v === 1 || v === '1'
-                ? '运行中'
-                : v === 0 || v === '0'
-                  ? '已停用'
-                  : String(v ?? '-'),
+        format: (v) => (v === 1 || v === '1' ? '运行中' : '已停用'),
         badgeVariant: (v) =>
             v === 1 || v === '1' ? 'secondary' : 'destructive',
     },
-    { key: 'package_id', label: '套餐 ID', width: '90px' },
+    // Whether the node has actually received this config. A site can look
+    // healthy here and be serving nothing.
     {
-        key: 'created_at',
+        key: 'sync_state',
+        label: '同步',
+        width: '100px',
+        badge: true,
+        format: (v) => SYNC_STATE_LABELS[String(v ?? '')] ?? '-',
+        badgeVariant: (v) =>
+            String(v) === 'done'
+                ? 'secondary'
+                : String(v) === 'error'
+                  ? 'destructive'
+                  : 'outline',
+    },
+    { key: 'user_package', label: '套餐 ID', width: '90px' },
+    {
+        key: 'create_at',
         label: '创建时间',
         width: '160px',
         format: (v) => formatDate(v as string | null | undefined),
     },
 ];
+
+const SYNC_STATE_LABELS: Record<string, string> = {
+    done: '已同步',
+    process: '同步中',
+    pending: '待同步',
+    error: '同步失败',
+};
 
 const certColumns: ColumnDef[] = [
     { key: 'id', label: 'ID', width: '70px' },
@@ -221,7 +245,9 @@ const searchParams = computed(() => {
 });
 
 function isSiteRunning(row: CdnflyRecord): boolean {
-    return row.status === 1 || row.status === '1';
+    // CDNfly uses enable, not status; reading the wrong key made every site
+    // look stopped and the toggle send the wrong new value.
+    return row.enable === 1 || row.enable === '1';
 }
 
 async function toggleSiteEnabled(row: CdnflyRecord): Promise<void> {

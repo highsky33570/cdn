@@ -146,6 +146,31 @@ class AdminSiteCertificateTest extends TestCase
             ->assertJsonPath('ok', false);
     }
 
+    /**
+     * The toggle sent status, which CDNfly ignores — the site stayed disabled
+     * while the request reported success, and the master then skipped
+     * certificate issuance without saying why.
+     */
+    public function test_enabling_a_site_sends_the_field_cdnfly_reads(): void
+    {
+        $received = null;
+
+        $cdnfly = $this->mock(CdnflyApiService::class);
+        $cdnfly->shouldReceive('updateAdminSite')
+            ->once()
+            ->andReturnUsing(function (int $id, array $payload) use (&$received) {
+                $received = $payload;
+
+                return [];
+            });
+
+        $this->actingAs($this->admin())
+            ->putJson('/api/admin/sites/1/enable', ['enable' => true])
+            ->assertOk();
+
+        $this->assertSame(['enable' => 1], $received);
+    }
+
     public function test_a_non_admin_cannot_issue_certificates(): void
     {
         $this->actingAs(User::factory()->create(['role' => 'user']))
