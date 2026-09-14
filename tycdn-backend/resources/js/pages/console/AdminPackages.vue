@@ -348,8 +348,6 @@ const dialogMode = ref<DialogMode>('create');
  * provisioned. Creating them separately is what used to require editing .env
  * and re-running a seeder.
  */
-/** CDNfly internal prices stay collapsed: 0 is the right answer. */
-const cdnflyPriceOpen = ref(false);
 
 const portalProducts = ref<Record<string, AdminPackageProduct>>({});
 
@@ -844,11 +842,43 @@ async function openDetailDialog(record: PackageRecord): Promise<void> {
     }
 }
 
+/**
+ * CDNfly is the real, prepaid price: buying or renewing deducts the customer's
+ * balance at the package's month_price/quarter_price/year_price. So the single
+ * price the admin types (门户售价) drives those CDNfly fields directly — the
+ * currency is 1:1 (portal $5 = CDNfly ¥5, symbol only). The portal product
+ * stores the same numbers for the storefront, so the two never diverge.
+ *
+ * A blank quarter/year mirrors the product's rule: ×3 and ×12, no assumed
+ * discount.
+ */
+function syncCdnflyPricesFromPortal(): void {
+    const monthly = Number(portalForm.price_monthly) || 0;
+    const quarterly =
+        portalForm.price_quarterly === ''
+            ? monthly * 3
+            : Number(portalForm.price_quarterly) || 0;
+    const yearly =
+        portalForm.price_yearly === ''
+            ? monthly * 12
+            : Number(portalForm.price_yearly) || 0;
+
+    form.month_price = String(monthly);
+    form.quarter_price = String(quarterly);
+    form.year_price = String(yearly);
+}
+
 async function submitPackage(): Promise<void> {
     saving.value = true;
     formError.value = '';
 
     try {
+        // The price the admin entered must reach CDNfly, not just the portal
+        // product — otherwise the master keeps charging its old (or zero) price.
+        if (portalForm.sell) {
+            syncCdnflyPricesFromPortal();
+        }
+
         const payload = buildPackagePayload(
             form,
             dialogMode.value === 'create',
@@ -989,7 +1019,6 @@ function openBatchDialog(): void {
 }
 
 function closePackageAdvancedSections(): void {
-    cdnflyPriceOpen.value = false;
     packageCnameOpen.value = false;
     packagePurchaseLimitOpen.value = false;
     packageOtherOpen.value = false;
@@ -2208,77 +2237,15 @@ async function confirmPuDelete(): Promise<void> {
                     </div>
 
                     <!--
-                        CDNfly's internal prices. Collapsed because the correct
-                        value is 0 for a portal-driven sale and changing it
-                        breaks provisioning on an empty CDNfly balance.
+                        CDNfly is the real, prepaid price. The 门户售价 above is
+                        written straight to the package's month/quarter/year
+                        price in CDNfly on save (1:1, symbol only), so there is
+                        no separate CDNfly price to keep in step.
                     -->
-                    <Collapsible
-                        v-model:open="cdnflyPriceOpen"
-                        class="rounded-lg border md:col-span-3"
-                    >
-                        <CollapsibleTrigger
-                            class="flex w-full items-center justify-between gap-3 p-4 text-left"
-                        >
-                            <div>
-                                <div class="font-medium">
-                                    CDNfly 内部价格（通常保持 0）
-                                </div>
-                                <div class="text-xs text-muted-foreground">
-                                    仅在让客户用 CDNfly
-                                    余额自助购买时才需要填写。
-                                </div>
-                            </div>
-                            <ChevronDown
-                                class="size-4 shrink-0 transition-transform"
-                                :class="cdnflyPriceOpen ? 'rotate-180' : ''"
-                            />
-                        </CollapsibleTrigger>
-                        <CollapsibleContent class="border-t p-4">
-                            <Alert class="mb-4">
-                                <AlertCircle />
-                                <AlertTitle>为什么保持 0</AlertTitle>
-                                <AlertDescription>
-                                    门户下单时以客户自己的 CDNfly 账号调用
-                                    <code>POST /v1/user-packages</code>，CDNfly
-                                    会按这里的价格扣该账号的 CDNfly
-                                    余额。门户订单并不会为该余额充值，所以非 0
-                                    的价格会让开通因余额不足而失败。
-                                </AlertDescription>
-                            </Alert>
-                            <div class="grid gap-4 md:grid-cols-3">
-                                <div class="flex flex-col gap-2">
-                                    <Label for="package-month-price">
-                                        月付价格
-                                    </Label>
-                                    <Input
-                                        id="package-month-price"
-                                        v-model="form.month_price"
-                                        inputmode="decimal"
-                                    />
-                                </div>
-                                <div class="flex flex-col gap-2">
-                                    <Label for="package-quarter-price">
-                                        季付价格
-                                    </Label>
-                                    <Input
-                                        id="package-quarter-price"
-                                        v-model="form.quarter_price"
-                                        inputmode="decimal"
-                                    />
-                                </div>
-                                <div class="flex flex-col gap-2">
-                                    <Label for="package-year-price">
-                                        年付价格
-                                    </Label>
-                                    <Input
-                                        id="package-year-price"
-                                        v-model="form.year_price"
-                                        inputmode="decimal"
-                                    />
-                                </div>
-                            </div>
-                        </CollapsibleContent>
-                    </Collapsible>
+                    <p class="text-xs text-muted-foreground md:col-span-3">
+                        套餐价格以「门户售价」为准，保存时会自动同步写入 CDNfly
+                        主控的套餐价格（数字 1:1，仅货币符号不同）。
+                    </p>
                     <div class="grid gap-4 md:col-span-3 md:grid-cols-3">
                         <div
                             v-for="field in limitFieldConfigs"
