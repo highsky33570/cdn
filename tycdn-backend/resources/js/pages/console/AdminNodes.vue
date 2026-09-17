@@ -593,7 +593,13 @@ function toOptions(records: CdnflyRecord[]): NodeOption[] {
 
             return {
                 id: String(id),
-                label: textValue(record.name ?? record.title) || `#${id}`,
+                // Lines label themselves with `line_name` (默认/电信/联通…),
+                // while regions and node groups use `name`. Without the
+                // line_name fallback the 线路 dropdown shows "#1".
+                label:
+                    textValue(
+                        record.name ?? record.title ?? record.line_name,
+                    ) || `#${id}`,
             };
         })
         .filter((option): option is NodeOption => option !== null);
