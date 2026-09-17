@@ -183,9 +183,9 @@ const goCompare = () => scrollTo('#compare')
   height: 34px;
   padding: 0 16px;
   border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(255, 255, 255, 0.04);
-  color: rgba(255, 255, 255, 0.86);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
   font-size: 13px;
   font-weight: 600;
   font-family: inherit;
@@ -221,7 +221,7 @@ const goCompare = () => scrollTo('#compare')
   margin: 26px 0 0;
   font-size: clamp(15px, 1.5vw, 18px);
   font-weight: 700;
-  color: rgba(255, 255, 255, 0.55);
+  color: var(--text-2);
 }
 
 .hero-kicker-mark {
@@ -234,12 +234,12 @@ const goCompare = () => scrollTo('#compare')
   font-size: clamp(34px, 4.4vw, 58px);
   line-height: 1.15;
   font-weight: 800;
-  color: #fff;
+  color: var(--text);
   letter-spacing: -0.03em;
 }
 
 .hero-h1-accent {
-  background: linear-gradient(96deg, #7fb0ff, #4ade80);
+  background: linear-gradient(96deg, var(--accent-2), #4ade80);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -270,9 +270,9 @@ const goCompare = () => scrollTo('#compare')
 }
 
 :deep(.hero-btn-ghost.arco-btn) {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  color: #eaf1ff;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
 }
 
 .hero-tg {
@@ -281,12 +281,12 @@ const goCompare = () => scrollTo('#compare')
   gap: 7px;
   font-size: 15px;
   font-weight: 700;
-  color: #7fb0ff;
+  color: var(--accent-2);
   transition: color 0.2s;
 }
 
 .hero-tg:hover {
-  color: #a9caff;
+  color: var(--accent-3);
 }
 
 /* ── stats ────────────────────────────────────────────── */
@@ -295,14 +295,14 @@ const goCompare = () => scrollTo('#compare')
   flex-wrap: wrap;
   margin: 40px 0 0;
   padding: 24px 0;
-  border-top: 1px solid rgba(255, 255, 255, 0.09);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.09);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
 }
 
 .hero-stat {
   padding-right: 40px;
   margin-right: 40px;
-  border-right: 1px solid rgba(255, 255, 255, 0.09);
+  border-right: 1px solid var(--border);
 }
 
 .hero-stat:last-child {
@@ -315,7 +315,7 @@ const goCompare = () => scrollTo('#compare')
   margin: 0;
   font-size: 30px;
   font-weight: 800;
-  color: #fff;
+  color: var(--text);
   line-height: 1.1;
   letter-spacing: -0.02em;
   font-variant-numeric: tabular-nums;
@@ -329,13 +329,13 @@ const goCompare = () => scrollTo('#compare')
 
 /* dashes are deliberate — never a fabricated figure */
 .hero-stat-value.is-pending {
-  color: rgba(245, 247, 255, 0.28);
+  color: var(--text-3);
 }
 
 .hero-stat-label {
   margin-top: 7px;
   font-size: 13px;
-  color: rgba(245, 247, 255, 0.48);
+  color: var(--text-3);
 }
 
 /* ── scenarios ────────────────────────────────────────── */
@@ -349,7 +349,7 @@ const goCompare = () => scrollTo('#compare')
 
 .hero-scenarios-label {
   font-size: 13px;
-  color: rgba(245, 247, 255, 0.42);
+  color: var(--text-3);
   white-space: nowrap;
 }
 
@@ -365,10 +365,10 @@ const goCompare = () => scrollTo('#compare')
 .hero-scenario {
   padding: 6px 13px;
   border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.09);
-  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border);
+  background: var(--surface);
   font-size: 13px;
-  color: rgba(245, 247, 255, 0.72);
+  color: var(--text-2);
   transition:
     border-color 0.2s,
     color 0.2s;
@@ -376,7 +376,7 @@ const goCompare = () => scrollTo('#compare')
 
 .hero-scenario:hover {
   border-color: rgba(127, 176, 255, 0.4);
-  color: #cfe0ff;
+  color: var(--accent-3);
 }
 
 /* ── visual ───────────────────────────────────────────── */
@@ -389,14 +389,14 @@ const goCompare = () => scrollTo('#compare')
   position: relative;
   padding: 34px 26px;
   border-radius: 22px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--border);
   background:
     radial-gradient(
       ellipse at 60% 40%,
       rgba(77, 140, 255, 0.12),
       transparent 65%
     ),
-    rgba(9, 15, 29, 0.6);
+    var(--panel);
 }
 
 .hero-map {
@@ -446,8 +446,8 @@ const goCompare = () => scrollTo('#compare')
   gap: 12px;
   padding: 13px 16px;
   border-radius: 13px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(12, 20, 38, 0.92);
+  border: 1px solid var(--border);
+  background: var(--panel);
   backdrop-filter: blur(10px);
   box-shadow: 0 16px 40px -20px rgba(0, 0, 0, 0.9);
   opacity: 0;
@@ -472,20 +472,20 @@ const goCompare = () => scrollTo('#compare')
   flex: none;
   width: 3px;
   border-radius: 3px;
-  background: linear-gradient(180deg, #7fb0ff, #4ade80);
+  background: linear-gradient(180deg, var(--accent-2), #4ade80);
 }
 
 .hero-float-title {
   margin: 0;
   font-size: 14px;
   font-weight: 700;
-  color: #eaf1ff;
+  color: var(--text);
 }
 
 .hero-float-desc {
   margin: 4px 0 0;
   font-size: 12px;
-  color: rgba(245, 247, 255, 0.55);
+  color: var(--text-2);
   line-height: 1.5;
 }
 

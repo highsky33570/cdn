@@ -37,10 +37,10 @@
 <style scoped>
 .site-footer {
   padding: 72px 0 34px;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  border-top: 1px solid var(--surface);
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.015) 0%, rgba(255, 255, 255, 0.01) 100%),
-    #0c1220;
+    linear-gradient(180deg, var(--surface) 0%, var(--surface) 100%),
+    var(--panel);
 }
 
 .footer-top {
@@ -66,8 +66,8 @@
   display: grid;
   place-items: center;
   border-radius: 14px;
-  background: linear-gradient(180deg, #2f6bff 0%, #2152d8 100%);
-  color: #fff;
+  background: linear-gradient(180deg, var(--accent) 0%, var(--accent) 100%);
+  color: var(--text);
   font-size: 22px;
   font-weight: 800;
   box-shadow: 0 12px 28px rgba(35, 88, 227, 0.28);
@@ -76,12 +76,12 @@
 .footer-brand__name {
   font-size: 20px;
   font-weight: 800;
-  color: rgba(255, 255, 255, 0.96);
+  color: var(--text);
 }
 
 .footer-brand__desc {
   margin: 24px 0 0;
-  color: rgba(255, 255, 255, 0.54);
+  color: var(--text-2);
   font-size: 16px;
   line-height: 1.9;
 }
@@ -103,7 +103,7 @@
 
 .footer-title {
   margin-bottom: 22px;
-  color: rgba(255, 255, 255, 0.96);
+  color: var(--text);
   font-size: 18px;
   font-weight: 700;
 }
@@ -112,14 +112,14 @@
   display: inline-flex;
   align-items: center;
   min-height: 32px;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--text-3);
   font-size: 16px;
   transition: color 0.2s ease;
   margin-bottom: 12px; /* 与下方的按钮拉开距离 */
 }
 
 .footer-link:hover {
-  color: rgba(255, 255, 255, 0.88);
+  color: var(--text);
 }
 
 .footer-bottom {
@@ -127,8 +127,8 @@
   justify-content: space-between;
   gap: 18px;
   padding-top: 24px;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
-  color: rgba(255, 255, 255, 0.36);
+  border-top: 1px solid var(--surface);
+  color: var(--text-3);
   font-size: 14px;
   line-height: 1.8;
 }

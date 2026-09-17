@@ -59,7 +59,7 @@ const goRegister = () => {
       rgba(77, 140, 255, 0.22),
       transparent 60%
     ),
-    #0b1224;
+    var(--panel);
   opacity: 0;
   transform: translateY(16px);
   transition:
@@ -109,12 +109,12 @@ const goRegister = () => {
   gap: 8px;
   font-size: 15px;
   font-weight: 700;
-  color: #7fb0ff;
+  color: var(--accent-2);
   transition: color 0.2s;
 }
 
 .cta-tg:hover {
-  color: #a9caff;
+  color: var(--accent-3);
 }
 
 @media (max-width: 768px) {

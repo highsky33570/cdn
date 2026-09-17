@@ -123,7 +123,7 @@ onUnmounted(() => {
 .dot {
   width: 12px;
   height: 12px;
-  background: #90b8ff;
+  background: var(--accent-2);
   box-shadow:
     0 0 0 6px rgba(95, 143, 255, 0.14),
     0 0 14px rgba(95, 143, 255, 0.45),
@@ -146,7 +146,7 @@ onUnmounted(() => {
   padding: 6px 12px;
   border-radius: 999px;
   background: none;
-  color: #fff;
+  color: var(--text);
   font-size: 13px;
   line-height: 1;
 }

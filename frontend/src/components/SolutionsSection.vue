@@ -121,7 +121,7 @@ onUnmounted(() => {
   font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.24em;
-  color: #6ea8ff;
+  color: var(--accent-2);
 }
 
 .why-cdn-heading h2 {
@@ -129,7 +129,7 @@ onUnmounted(() => {
   font-size: clamp(34px, 4.2vw, 58px);
   line-height: 1.18;
   font-weight: 800;
-  color: #f4f7ff;
+  color: var(--text);
 }
 
 .why-cdn-subtitle {
@@ -137,7 +137,7 @@ onUnmounted(() => {
   max-width: 860px;
   font-size: 18px;
   line-height: 1.9;
-  color: rgba(220, 230, 255, 0.72);
+  color: var(--text-2);
 }
 
 .why-cdn-grid {
@@ -154,8 +154,8 @@ onUnmounted(() => {
   border-radius: 8px;
   background: linear-gradient(
     180deg,
-    rgba(24, 34, 60, 0.68) 0%,
-    rgba(16, 24, 42, 0.74) 100%
+    var(--panel) 0%,
+    var(--panel) 100%
   );
   box-shadow: none;
   overflow: hidden;
@@ -186,7 +186,7 @@ onUnmounted(() => {
 .why-cdn-card__icon span {
   font-size: 14px;
   font-weight: 700;
-  color: rgba(235, 240, 250, 0.88);
+  color: var(--text);
 }
 
 .why-cdn-card h3 {
@@ -194,14 +194,14 @@ onUnmounted(() => {
   font-size: 26px;
   line-height: 1.3;
   font-weight: 800;
-  color: rgba(240, 244, 252, 0.9);
+  color: var(--text);
 }
 
 .why-cdn-card p {
   margin: 0;
   font-size: 17px;
   line-height: 1.9;
-  color: rgba(205, 215, 232, 0.62);
+  color: var(--text-3);
 }
 
 @media (max-width: 991px) {

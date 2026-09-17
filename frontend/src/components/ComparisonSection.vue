@@ -123,7 +123,7 @@ const { sectionRef, isVisible } = useReveal(0.08)
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.18em;
-  color: #4d8cff;
+  color: var(--accent);
   margin-bottom: 16px;
 }
 
@@ -142,10 +142,10 @@ const { sectionRef, isVisible } = useReveal(0.08)
 }
 
 .cmp-table-wrap {
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--border);
   border-radius: 20px;
   overflow: hidden;
-  background: #0b1120;
+  background: var(--panel);
 }
 
 .cmp-table {
@@ -159,8 +159,8 @@ const { sectionRef, isVisible } = useReveal(0.08)
   text-align: left;
   font-size: 13px;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.42);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--text-3);
+  border-bottom: 1px solid var(--border);
 }
 
 .cmp-col-head {
@@ -169,14 +169,14 @@ const { sectionRef, isVisible } = useReveal(0.08)
   font-weight: 700;
   color: var(--text-2);
   text-align: left;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid var(--border);
   vertical-align: bottom;
   width: 21.25%;
 }
 
 /* a continuous tinted spine down our column, so the eye follows one line */
 .cmp-col-head.is-us {
-  color: #fff;
+  color: var(--text);
   font-size: 17px;
   background: linear-gradient(
     180deg,
@@ -201,13 +201,13 @@ const { sectionRef, isVisible } = useReveal(0.08)
   font-size: 14px;
   font-weight: 600;
   color: var(--text);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid var(--surface);
   white-space: nowrap;
 }
 
 .cmp-cell {
   padding: 14px 18px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid var(--surface);
   vertical-align: middle;
 }
 
@@ -222,7 +222,7 @@ const { sectionRef, isVisible } = useReveal(0.08)
 
 .cmp-table tbody tr:hover .cmp-cell,
 .cmp-table tbody tr:hover .cmp-row-head {
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--surface);
 }
 
 .cmp-table tbody tr:hover .cmp-cell.is-us {
@@ -261,9 +261,9 @@ const { sectionRef, isVisible } = useReveal(0.08)
 }
 
 .pill-muted {
-  color: rgba(255, 255, 255, 0.38);
-  background: rgba(255, 255, 255, 0.04);
-  border-color: rgba(255, 255, 255, 0.1);
+  color: var(--text-3);
+  background: var(--surface);
+  border-color: var(--border);
 }
 
 .pill-check {
@@ -291,7 +291,7 @@ const { sectionRef, isVisible } = useReveal(0.08)
   margin: 20px 0 0;
   text-align: center;
   font-size: 13px;
-  color: rgba(255, 255, 255, 0.38);
+  color: var(--text-3);
 }
 
 /* ── mobile ───────────────────────────────────────────── */
@@ -301,9 +301,9 @@ const { sectionRef, isVisible } = useReveal(0.08)
 }
 
 .cmp-card {
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--border);
   border-radius: 16px;
-  background: #0b1120;
+  background: var(--panel);
   padding: 20px;
 }
 
@@ -331,7 +331,7 @@ const { sectionRef, isVisible } = useReveal(0.08)
 
 .cmp-card-col {
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.42);
+  color: var(--text-3);
 }
 
 .cmp-card-row:first-child .cmp-card-col {

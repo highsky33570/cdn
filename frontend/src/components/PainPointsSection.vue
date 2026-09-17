@@ -84,7 +84,7 @@ const { sectionRef, isVisible } = useReveal()
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.18em;
-  color: #4d8cff;
+  color: var(--accent);
   margin-bottom: 20px;
 }
 
@@ -109,7 +109,7 @@ const { sectionRef, isVisible } = useReveal()
   list-style: none;
   margin: 0;
   padding: 0;
-  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  border-top: 1px solid var(--border);
 }
 
 .pain-item {
@@ -117,7 +117,7 @@ const { sectionRef, isVisible } = useReveal()
   grid-template-columns: 56px minmax(0, 1fr);
   gap: 20px;
   padding: 26px 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  border-bottom: 1px solid var(--border);
   opacity: 0;
   transform: translateY(14px);
 }
@@ -138,7 +138,7 @@ const { sectionRef, isVisible } = useReveal()
   font-size: 13px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
-  color: rgba(255, 255, 255, 0.3);
+  color: var(--text-3);
   padding-top: 4px;
   letter-spacing: 0.06em;
 }

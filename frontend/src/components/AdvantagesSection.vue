@@ -53,7 +53,7 @@ const { sectionRef, isVisible } = useReveal()
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.18em;
-  color: #4d8cff;
+  color: var(--accent);
   margin-bottom: 16px;
 }
 
@@ -65,8 +65,8 @@ const { sectionRef, isVisible } = useReveal()
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 1px;
-  background: rgba(255, 255, 255, 0.07);
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: var(--border);
+  border: 1px solid var(--border);
   border-radius: 18px;
   overflow: hidden;
 }
@@ -78,7 +78,7 @@ const { sectionRef, isVisible } = useReveal()
 */
 .adv-card {
   position: relative;
-  background: #0c1426;
+  background: var(--panel);
   padding: 40px 36px 44px;
   opacity: 0;
   transform: translateY(16px);
@@ -98,14 +98,14 @@ const { sectionRef, isVisible } = useReveal()
 }
 
 .adv-card:hover {
-  background: #101a30;
+  background: var(--panel);
 }
 
 .adv-tag {
   display: inline-block;
   font-size: 12px;
   font-weight: 700;
-  color: #7fb0ff;
+  color: var(--accent-2);
   background: rgba(77, 140, 255, 0.12);
   border: 1px solid rgba(77, 140, 255, 0.28);
   border-radius: 999px;
@@ -136,7 +136,7 @@ const { sectionRef, isVisible } = useReveal()
   bottom: 0;
   height: 2px;
   width: 28px;
-  background: #4d8cff;
+  background: var(--accent);
   border-radius: 2px 2px 0 0;
   transition: width 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
 }

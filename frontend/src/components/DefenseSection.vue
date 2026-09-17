@@ -120,7 +120,7 @@ const { sectionRef, isVisible } = useReveal()
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.18em;
-  color: #4d8cff;
+  color: var(--accent);
   margin-bottom: 18px;
 }
 
@@ -154,14 +154,14 @@ const { sectionRef, isVisible } = useReveal()
   grid-template-columns: 78px minmax(0, 1fr);
   gap: 18px;
   padding: 18px 0;
-  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  border-top: 1px solid var(--border);
 }
 
 .def-layer {
   font-size: 12px;
   font-weight: 800;
   letter-spacing: 0.08em;
-  color: #7fb0ff;
+  color: var(--accent-2);
   padding-top: 3px;
 }
 
@@ -194,7 +194,7 @@ const { sectionRef, isVisible } = useReveal()
 }
 
 .def-band rect {
-  fill: #0e1830;
+  fill: var(--panel);
   stroke: rgba(127, 176, 255, 0.35);
   stroke-width: 1;
   opacity: 0;
@@ -214,24 +214,24 @@ const { sectionRef, isVisible } = useReveal()
 }
 
 .def-origin {
-  fill: #0e1830;
+  fill: var(--panel);
   stroke: rgba(74, 222, 128, 0.5);
   stroke-width: 1;
 }
 
 .svg-l {
-  fill: #eaf1ff;
+  fill: var(--text);
   font-size: 13px;
   font-weight: 700;
 }
 
 .svg-s {
-  fill: rgba(245, 247, 255, 0.55);
+  fill: var(--text-2);
   font-size: 11px;
 }
 
 .svg-cap {
-  fill: rgba(245, 247, 255, 0.5);
+  fill: var(--text-3);
   font-size: 11px;
   letter-spacing: 0.1em;
 }

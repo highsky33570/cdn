@@ -65,7 +65,7 @@ const { sectionRef } = useReveal()
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.18em;
-  color: #4d8cff;
+  color: var(--accent);
   margin-bottom: 18px;
 }
 
@@ -93,20 +93,20 @@ const { sectionRef } = useReveal()
   margin-top: 20px;
   font-size: 15px;
   font-weight: 700;
-  color: #7fb0ff;
+  color: var(--accent-2);
   transition: color 0.2s;
 }
 
 .faq-contact:hover {
-  color: #a9caff;
+  color: var(--accent-3);
 }
 
 .faq-list {
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-top: 1px solid var(--border);
 }
 
 .faq-item {
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid var(--border);
 }
 
 .faq-q {
@@ -128,11 +128,11 @@ const { sectionRef } = useReveal()
 }
 
 .faq-q:hover {
-  color: #a9caff;
+  color: var(--accent-3);
 }
 
 .faq-q:focus-visible {
-  outline: 2px solid #4d8cff;
+  outline: 2px solid var(--accent);
   outline-offset: 4px;
   border-radius: 4px;
 }
@@ -149,7 +149,7 @@ const { sectionRef } = useReveal()
 .faq-icon::after {
   content: '';
   position: absolute;
-  background: #7fb0ff;
+  background: var(--accent-2);
   border-radius: 1px;
   transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
 }

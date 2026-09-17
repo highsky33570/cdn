@@ -35,7 +35,7 @@
         >
           <span v-if="item.slug === featuredSlug" class="plan-badge">推荐</span>
 
-          <h3 class="plan-name">{{ item.title }}</h3>
+          <h3 class="plan-name">{{ nameOf(item) }}</h3>
 
           <p class="plan-price">
             <span class="plan-cur">{{ priceOf(item).symbol }}</span>
@@ -79,6 +79,7 @@ import {
   useLivePricing,
   formatPlanPrice,
   resolvePlanSpecs,
+  resolvePlanName,
 } from '../composables/useLivePricing'
 import { useReveal } from '../composables/useReveal'
 
@@ -92,7 +93,10 @@ const featuredSlug = 'jpn-plus'
 // Prices and limits come from /api/products so the homepage cannot drift from
 // checkout or from the package that enforces them; data/plans.js values are
 // only a fallback when the catalogue is unreachable.
-const { priceBySlug, limitsBySlug } = useLivePricing()
+const { priceBySlug, limitsBySlug, nameBySlug } = useLivePricing()
+
+/** Live portal name, falling back to the static title. */
+const nameOf = (item) => resolvePlanName(item, nameBySlug.value)
 
 /**
  * The card sets the symbol, the number and the period at three different sizes,
@@ -137,7 +141,7 @@ const goPlan = (slug) => {
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.18em;
-  color: #4d8cff;
+  color: var(--accent);
   margin-bottom: 16px;
 }
 
@@ -168,7 +172,7 @@ const goPlan = (slug) => {
   border-radius: 999px;
   border: 1px solid rgba(77, 140, 255, 0.32);
   background: rgba(77, 140, 255, 0.1);
-  color: #cfe0ff;
+  color: var(--accent-3);
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
@@ -196,8 +200,8 @@ const goPlan = (slug) => {
   flex-direction: column;
   padding: 32px 26px 28px;
   border-radius: 18px;
-  border: 1px solid rgba(255, 255, 255, 0.09);
-  background: #0b1120;
+  border: 1px solid var(--border);
+  background: var(--panel);
   opacity: 0;
   transform: translateY(18px);
   transition:
@@ -234,7 +238,7 @@ const goPlan = (slug) => {
       rgba(77, 140, 255, 0.16),
       transparent 62%
     ),
-    #0b1120;
+    var(--panel);
   box-shadow: 0 18px 50px -24px rgba(77, 140, 255, 0.65);
 }
 
@@ -244,8 +248,8 @@ const goPlan = (slug) => {
   right: 20px;
   padding: 5px 12px;
   border-radius: 0 0 8px 8px;
-  background: #4d8cff;
-  color: #06122c;
+  background: var(--accent);
+  color: var(--panel);
   font-size: 11px;
   font-weight: 800;
   letter-spacing: 0.08em;
@@ -264,13 +268,13 @@ const goPlan = (slug) => {
   align-items: baseline;
   gap: 3px;
   margin: 14px 0 0;
-  color: #fff;
+  color: var(--text);
 }
 
 .plan-cur {
   font-size: 18px;
   font-weight: 700;
-  color: rgba(255, 255, 255, 0.55);
+  color: var(--text-2);
   align-self: flex-start;
   padding-top: 8px;
 }
@@ -285,7 +289,7 @@ const goPlan = (slug) => {
 
 .plan-per {
   font-size: 14px;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--text-3);
   margin-left: 3px;
 }
 
@@ -293,7 +297,7 @@ const goPlan = (slug) => {
   list-style: none;
   margin: 26px 0 0;
   padding: 22px 0 0;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-top: 1px solid var(--border);
   display: grid;
   gap: 12px;
   flex: 1;
@@ -315,11 +319,11 @@ const goPlan = (slug) => {
 }
 
 .spec-label {
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--text-3);
 }
 
 .spec-value {
-  color: #eaf1ff;
+  color: var(--text);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
@@ -336,19 +340,19 @@ const goPlan = (slug) => {
   margin: 26px 0 0;
   padding: 16px 22px;
   border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border);
+  background: var(--surface);
   font-size: 14px;
   line-height: 1.75;
   color: var(--text-2);
 }
 
 .plans-note strong {
-  color: #eaf1ff;
+  color: var(--text);
 }
 
 .plans-note a {
-  color: #7fb0ff;
+  color: var(--accent-2);
   font-weight: 700;
 }
 

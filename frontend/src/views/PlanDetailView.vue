@@ -14,13 +14,11 @@
           <div class="detail-grid">
             <section class="detail-panel detail-panel--main">
               <div class="detail-badge">{{ group?.shortName }} 套餐</div>
-              <h1>{{ plan.title }}</h1>
+              <h1>{{ displayName }}</h1>
               <p class="detail-desc">{{ plan.description }}</p>
 
               <a-descriptions :column="1" bordered class="detail-descriptions">
-                <a-descriptions-item label="套餐名称">{{
-                  plan.title
-                }}</a-descriptions-item>
+                <a-descriptions-item label="套餐名称">{{ displayName }}</a-descriptions-item>
                 <a-descriptions-item label="地区">{{
                   group?.name
                 }}</a-descriptions-item>
@@ -78,6 +76,7 @@ import {
   useLivePricing,
   resolvePlanSpecs,
   formatPlanPrice,
+  resolvePlanName,
 } from "../composables/useLivePricing";
 import {
   buildAuthPageUrl,
@@ -91,7 +90,12 @@ const router = useRouter();
 const plan = computed(() => getPlanBySlug(route.params.slug));
 
 // Live catalogue price, falling back to the static entry.
-const { priceBySlug, limitsBySlug } = useLivePricing();
+const { priceBySlug, limitsBySlug, nameBySlug } = useLivePricing();
+
+// Live portal name, falling back to the static title.
+const displayName = computed(() =>
+  plan.value ? resolvePlanName(plan.value, nameBySlug.value) : "",
+);
 
 // Limits come from the CDNfly package that enforces them, falling back per
 // field to the static entry when a plan has no package behind it.

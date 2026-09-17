@@ -15,6 +15,7 @@ import { fetchProducts } from "../api/plans";
 
 const priceBySlug = ref({});
 const limitsBySlug = ref({});
+const nameBySlug = ref({});
 let inflight = null;
 
 export function useLivePricing() {
@@ -23,9 +24,17 @@ export function useLivePricing() {
       .then((products) => {
         const map = {};
         const limits = {};
+        const names = {};
 
         for (const product of products) {
           if (!product || !product.slug) continue;
+
+          // The display name is edited in the portal (门户售价 → 商品名称);
+          // read it live so renaming a product updates the marketing cards
+          // instead of leaving the static data/plans.js title in place.
+          if (typeof product.name === "string" && product.name.trim() !== "") {
+            names[product.slug] = product.name.trim();
+          }
 
           // A product with no CDNfly package behind it has no enforced
           // limits; its static values stay in charge.
@@ -45,16 +54,28 @@ export function useLivePricing() {
 
         priceBySlug.value = map;
         limitsBySlug.value = limits;
+        nameBySlug.value = names;
       })
       .catch(() => {
         // Marketing pages must still render if the API is down; the static
-        // prices in data/plans.js remain as the fallback.
+        // values in data/plans.js remain as the fallback.
         priceBySlug.value = {};
         limitsBySlug.value = {};
+        nameBySlug.value = {};
       });
   }
 
-  return { priceBySlug, limitsBySlug, ready: inflight };
+  return { priceBySlug, limitsBySlug, nameBySlug, ready: inflight };
+}
+
+/**
+ * The display name for a plan card, preferring the live portal product name
+ * and falling back to the static title from data/plans.js.
+ */
+export function resolvePlanName(plan, nameMap) {
+  const live = plan && plan.slug ? nameMap[plan.slug] : null;
+
+  return live || plan?.title || "";
 }
 
 /**

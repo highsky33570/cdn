@@ -1,15 +1,100 @@
+/*
+ * Theme tokens.
+ *
+ * The site is dark-first: bare :root carries the dark palette, and
+ * [data-theme="light"] overrides the same tokens for light. The theme is
+ * chosen by useTheme.js, which stamps data-theme on <html> and arco-theme on
+ * <body>; an inline script in index.html sets both before first paint so there
+ * is no flash. Components must read colors through these tokens (never a raw
+ * hex/rgba) so the toggle reaches every surface.
+ */
 :root {
+  /* page */
   --bg: #090f1d;
+  --bg-grad-1: #0a1020;
+  --bg-grad-2: #0a1020;
+
+  /* text */
   --text: #f5f7ff;
   --text-2: rgba(245, 247, 255, 0.72);
+  --text-3: rgba(245, 247, 255, 0.55);
+  --text-strong: #ffffff;
+
+  /* surfaces / lines */
+  --surface: rgba(255, 255, 255, 0.04);
+  --surface-strong: rgba(255, 255, 255, 0.06);
+  --border: rgba(255, 255, 255, 0.09);
+  --border-strong: rgba(255, 255, 255, 0.14);
+
+  /* opaque cards / panels (were flat dark hexes) */
+  --panel: #0e1830;
+  --panel-2: #0b1224;
+
+  /* header (translucent over the page) */
+  --header-bg: rgba(10, 16, 32, 0.42);
+  --header-border: rgba(255, 255, 255, 0.06);
+
+  /* accents */
+  --accent: #4d8cff;
+  --accent-2: #7fb0ff;
+  --accent-3: #a9caff;
+  --accent-ink: #ffffff;
+  --accent-glow: rgba(77, 140, 255, 0.16);
+  --accent-soft: rgba(77, 140, 255, 0.12);
+
+  /* status */
+  --ok: #4ade80;
+  --ok-2: #86efac;
+  --warn: #ff8f6b;
+  --danger: #ff5f6d;
+
+  --shadow: rgba(0, 0, 0, 0.4) 0 18px 40px -18px;
 
   --header-h: 64px;
-
   /* header 和 hero 用，宽一些 */
   --hero-max-width: 1560px;
-
   /* 下面内容区用，窄一些 */
   --page-max-width: 1320px;
+
+  color-scheme: dark;
+}
+
+:root[data-theme='light'] {
+  --bg: #f6f8fc;
+  --bg-grad-1: #eef3fb;
+  --bg-grad-2: #f6f8fc;
+
+  --text: #0f1729;
+  --text-2: rgba(15, 23, 41, 0.68);
+  --text-3: rgba(15, 23, 41, 0.52);
+  --text-strong: #0b1120;
+
+  --surface: rgba(12, 30, 66, 0.03);
+  --surface-strong: rgba(12, 30, 66, 0.05);
+  --border: rgba(12, 30, 66, 0.12);
+  --border-strong: rgba(12, 30, 66, 0.18);
+
+  --panel: #ffffff;
+  --panel-2: #f1f5fb;
+
+  --header-bg: rgba(255, 255, 255, 0.72);
+  --header-border: rgba(12, 30, 66, 0.08);
+
+  --accent: #2563eb;
+  --accent-2: #3b82f6;
+  --accent-3: #1d4ed8;
+  --accent-ink: #ffffff;
+  --accent-glow: rgba(37, 99, 235, 0.12);
+  --accent-soft: rgba(37, 99, 235, 0.08);
+
+  --ok: #16a34a;
+  --ok-2: #15803d;
+  --warn: #ea580c;
+  --danger: #e11d48;
+
+  --shadow: rgba(15, 23, 41, 0.14) 0 18px 40px -18px;
+
+  color-scheme: light;
 }
 
 * {
@@ -28,10 +113,13 @@ html {
 }
 
 body {
-  background: linear-gradient(180deg, #0a1020 0%, #0a1020 100%);
+  background: linear-gradient(180deg, var(--bg-grad-1) 0%, var(--bg-grad-2) 100%);
   color: var(--text);
   font-family: 'PingFang SC', 'Microsoft YaHei', 'Segoe UI', sans-serif;
   font-size: 14px;
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease;
 }
 
 a {
@@ -60,6 +148,7 @@ a {
   font-weight: 800;
   text-align: center;
   margin: 0;
+  color: var(--text-strong);
 }
 
 .section-desc {
