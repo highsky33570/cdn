@@ -120,7 +120,6 @@ const nodes = ref<CdnflyRecord[]>([]);
 const pendingNodes = ref<CdnflyRecord[]>([]);
 const nodeGroups = ref<CdnflyRecord[]>([]);
 const regions = ref<CdnflyRecord[]>([]);
-const lines = ref<CdnflyRecord[]>([]);
 const installInfo = ref<AdminNodeInstallCommand | null>(null);
 
 const filters = reactive({
@@ -136,9 +135,7 @@ const pendingFilters = reactive({
 const form = reactive({
     name: '',
     ip: '',
-    node_group_id: '',
     region_id: '',
-    line_id: '',
     status: '1',
     weight: '',
     bandwidth: '',
@@ -154,9 +151,20 @@ const initForm = reactive({
 
 const rows = computed(() => nodes.value);
 const pendingRows = computed(() => pendingNodes.value);
-const groupOptions = computed(() => toOptions(nodeGroups.value));
 const regionOptions = computed(() => toOptions(regions.value));
-const lineOptions = computed(() => toOptions(lines.value));
+
+/** Region id → its name for the node list (falls back to the id, then "-"). */
+function regionLabel(regionId: unknown): string {
+    const id = asNumber(regionId);
+
+    if (!id) {
+        return '-';
+    }
+
+    const match = regions.value.find((r) => asNumber(r.id) === id);
+
+    return textValue(match?.name) || String(id);
+}
 const installCommand = computed(() => installInfo.value?.command ?? '');
 const installCommandAvailable = computed(() => installCommand.value !== '');
 const hasPreviousPage = computed(() => page.value > 1);
@@ -285,15 +293,13 @@ async function loadReferenceData(): Promise<void> {
     referenceError.value = '';
 
     try {
-        const [groupsResult, regionsResult, linesResult] = await Promise.all([
+        const [groupsResult, regionsResult] = await Promise.all([
             listAdminNodeGroups({ page: 1, limit: 200 }),
             listAdminRegions({ limit: 0 }),
-            listAdminLines({ page: 1, limit: 200 }),
         ]);
 
         nodeGroups.value = extractRows(groupsResult);
         regions.value = extractRows(regionsResult);
-        lines.value = extractRows(linesResult);
     } catch (error) {
         referenceError.value = getErrorMessage(error);
     } finally {
@@ -337,9 +343,7 @@ function openEditDialog(node: CdnflyRecord): void {
     editingNode.value = node;
     form.name = textValue(node.name);
     form.ip = textValue(node.ip);
-    form.node_group_id = idField(node.node_group_id ?? node.group_id);
     form.region_id = idField(node.region_id);
-    form.line_id = idField(node.line_id);
     form.status = idField(node.status) || '1';
     form.weight = idField(node.weight);
     form.bandwidth = idField(node.bandwidth);
@@ -516,9 +520,7 @@ function buildPayload(): AdminNodePayload {
     return {
         name: form.name.trim(),
         ip: form.ip.trim(),
-        node_group_id: nullableNumber(form.node_group_id),
         region_id: nullableNumber(form.region_id),
-        line_id: nullableNumber(form.line_id),
         status: nullableNumber(form.status),
         weight: nullableNumber(form.weight),
         bandwidth: nullableNumber(form.bandwidth),
@@ -1441,19 +1443,7 @@ function regionNameById(id: unknown): string {
                                         状态
                                     </th>
                                     <th class="px-4 py-3 text-left font-medium">
-                                        节点组
-                                    </th>
-                                    <th class="px-4 py-3 text-left font-medium">
                                         区域
-                                    </th>
-                                    <th class="px-4 py-3 text-left font-medium">
-                                        线路
-                                    </th>
-                                    <th class="px-4 py-3 text-left font-medium">
-                                        权重
-                                    </th>
-                                    <th class="px-4 py-3 text-left font-medium">
-                                        带宽
                                     </th>
                                     <th class="px-4 py-3 text-left font-medium">
                                         创建时间
@@ -1469,7 +1459,7 @@ function regionNameById(id: unknown): string {
                                 <tr v-if="loading && rows.length === 0">
                                     <td
                                         class="px-6 py-16 text-center"
-                                        colspan="9"
+                                        colspan="5"
                                     >
                                         <Spinner />
                                     </td>
@@ -1498,24 +1488,7 @@ function regionNameById(id: unknown): string {
                                         </Badge>
                                     </td>
                                     <td class="px-4 py-4 text-muted-foreground">
-                                        {{
-                                            textValue(
-                                                node.node_group_id ??
-                                                    node.group_id,
-                                            ) || '-'
-                                        }}
-                                    </td>
-                                    <td class="px-4 py-4 text-muted-foreground">
-                                        {{ textValue(node.region_id) || '-' }}
-                                    </td>
-                                    <td class="px-4 py-4 text-muted-foreground">
-                                        {{ textValue(node.line_id) || '-' }}
-                                    </td>
-                                    <td class="px-4 py-4">
-                                        {{ textValue(node.weight) || '-' }}
-                                    </td>
-                                    <td class="px-4 py-4">
-                                        {{ textValue(node.bandwidth) || '-' }}
+                                        {{ regionLabel(node.region_id) }}
                                     </td>
                                     <td class="px-4 py-4 text-muted-foreground">
                                         {{
@@ -1594,7 +1567,7 @@ function regionNameById(id: unknown): string {
                                 <tr v-if="!loading && rows.length === 0">
                                     <td
                                         class="px-6 py-16 text-center text-muted-foreground"
-                                        colspan="9"
+                                        colspan="5"
                                     >
                                         暂无节点
                                     </td>
@@ -2674,25 +2647,6 @@ function regionNameById(id: unknown): string {
                             />
                         </div>
                         <div class="grid gap-2">
-                            <Label>节点组</Label>
-                            <Select v-model="form.node_group_id">
-                                <SelectTrigger :disabled="referencesLoading">
-                                    <SelectValue placeholder="未选择" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectGroup>
-                                        <SelectItem
-                                            v-for="option in groupOptions"
-                                            :key="option.id"
-                                            :value="option.id"
-                                        >
-                                            {{ option.label }}
-                                        </SelectItem>
-                                    </SelectGroup>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        <div class="grid gap-2">
                             <Label>区域</Label>
                             <Select v-model="form.region_id">
                                 <SelectTrigger :disabled="referencesLoading">
@@ -2702,25 +2656,6 @@ function regionNameById(id: unknown): string {
                                     <SelectGroup>
                                         <SelectItem
                                             v-for="option in regionOptions"
-                                            :key="option.id"
-                                            :value="option.id"
-                                        >
-                                            {{ option.label }}
-                                        </SelectItem>
-                                    </SelectGroup>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        <div class="grid gap-2">
-                            <Label>线路</Label>
-                            <Select v-model="form.line_id">
-                                <SelectTrigger :disabled="referencesLoading">
-                                    <SelectValue placeholder="未选择" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectGroup>
-                                        <SelectItem
-                                            v-for="option in lineOptions"
                                             :key="option.id"
                                             :value="option.id"
                                         >
