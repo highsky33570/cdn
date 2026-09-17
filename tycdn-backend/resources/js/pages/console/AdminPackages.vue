@@ -137,6 +137,9 @@ type LimitFieldKey =
 
 const SELECT_KEEP_VALUE = 'keep';
 const CNAME_DEFAULT_VALUE = '__default__';
+// 备用线路组 is optional. Select components can't hold an empty-string value,
+// so "no backup line" is carried by this sentinel and dropped on submit.
+const BACKUP_NONE_VALUE = '__none__';
 
 /**
  * Tier presets for a single-node Tokyo deployment.
@@ -1100,7 +1103,7 @@ function emptyPackageForm(batch = false): PackageForm {
         des: '',
         region_id: '',
         node_group_id: '',
-        backup_node_group: '',
+        backup_node_group: batch ? SELECT_KEEP_VALUE : BACKUP_NONE_VALUE,
         groups: '',
         month_price: batch ? '' : '0',
         quarter_price: batch ? '' : '0',
@@ -1144,7 +1147,9 @@ function formFromRecord(record: PackageRecord): PackageForm {
         ),
         region_id: getDisplayValue(record, ['region_id'], ''),
         node_group_id: getDisplayValue(record, ['node_group_id'], ''),
-        backup_node_group: getDisplayValue(record, ['backup_node_group'], ''),
+        backup_node_group: normalizeBackupNodeGroup(
+            getDisplayValue(record, ['backup_node_group'], ''),
+        ),
         groups: getDisplayValue(record, ['groups', 'group'], ''),
         month_price: getDisplayValue(record, ['month_price'], ''),
         quarter_price: getDisplayValue(record, ['quarter_price'], ''),
@@ -1215,7 +1220,21 @@ function buildPackagePayload(
     appendText(payload, 'des', source.des.trim());
     appendNumber(payload, 'region_id', source.region_id, '区域 ID');
     appendNumber(payload, 'node_group_id', source.node_group_id, '线路组 ID');
-    appendText(payload, 'backup_node_group', source.backup_node_group.trim());
+    const backupNodeGroup = source.backup_node_group.trim();
+
+    if (
+        backupNodeGroup !== '' &&
+        backupNodeGroup !== BACKUP_NONE_VALUE &&
+        backupNodeGroup !== SELECT_KEEP_VALUE
+    ) {
+        appendNumber(
+            payload,
+            'backup_node_group',
+            backupNodeGroup,
+            '备用线路组 ID',
+        );
+    }
+
     appendText(payload, 'groups', source.groups.trim());
     appendNumber(payload, 'month_price', source.month_price, '月付价格');
     appendNumber(payload, 'quarter_price', source.quarter_price, '季付价格');
@@ -1374,6 +1393,14 @@ function requirePayloadKeys(
             throw new Error(message);
         }
     }
+}
+
+/** CDNfly stores "no backup line" as an empty value or 0; the Select needs a
+ * real sentinel to show it as 「无」. */
+function normalizeBackupNodeGroup(value: string): string {
+    const trimmed = value.trim();
+
+    return trimmed === '' || trimmed === '0' ? BACKUP_NONE_VALUE : trimmed;
 }
 
 function optionValue(option: AdminPackageOption): string {
@@ -2653,14 +2680,33 @@ async function confirmPuDelete(): Promise<void> {
                                     </Select>
                                 </div>
                                 <div class="flex flex-col gap-2">
-                                    <Label for="package-backup-node-group">
-                                        备用线路组
-                                    </Label>
-                                    <Input
-                                        id="package-backup-node-group"
+                                    <Label>备用线路组</Label>
+                                    <Select
                                         v-model="form.backup_node_group"
-                                        placeholder="按 CDNfly 要求填写"
-                                    />
+                                        :disabled="loadingOptions"
+                                    >
+                                        <SelectTrigger class="w-full">
+                                            <SelectValue
+                                                placeholder="无（不使用备用）"
+                                            />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectGroup>
+                                                <SelectItem
+                                                    :value="BACKUP_NONE_VALUE"
+                                                >
+                                                    无（不使用备用）
+                                                </SelectItem>
+                                                <SelectItem
+                                                    v-for="option in packageOptions.node_groups"
+                                                    :key="optionValue(option)"
+                                                    :value="optionValue(option)"
+                                                >
+                                                    {{ optionLabel(option) }}
+                                                </SelectItem>
+                                            </SelectGroup>
+                                        </SelectContent>
+                                    </Select>
                                 </div>
                                 <div class="flex flex-col gap-2">
                                     <Label for="package-before-renew">
@@ -3078,14 +3124,36 @@ async function confirmPuDelete(): Promise<void> {
                                     </Select>
                                 </div>
                                 <div class="flex flex-col gap-2">
-                                    <Label for="batch-backup-node-group">
-                                        备用线路组
-                                    </Label>
-                                    <Input
-                                        id="batch-backup-node-group"
+                                    <Label>备用线路组</Label>
+                                    <Select
                                         v-model="batchForm.backup_node_group"
-                                        placeholder="按 CDNfly 要求填写"
-                                    />
+                                        :disabled="loadingOptions"
+                                    >
+                                        <SelectTrigger class="w-full">
+                                            <SelectValue placeholder="不修改" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectGroup>
+                                                <SelectItem
+                                                    :value="SELECT_KEEP_VALUE"
+                                                >
+                                                    不修改
+                                                </SelectItem>
+                                                <SelectItem
+                                                    :value="BACKUP_NONE_VALUE"
+                                                >
+                                                    无（不使用备用）
+                                                </SelectItem>
+                                                <SelectItem
+                                                    v-for="option in packageOptions.node_groups"
+                                                    :key="optionValue(option)"
+                                                    :value="optionValue(option)"
+                                                >
+                                                    {{ optionLabel(option) }}
+                                                </SelectItem>
+                                            </SelectGroup>
+                                        </SelectContent>
+                                    </Select>
                                 </div>
                                 <div class="flex flex-col gap-2">
                                     <Label for="batch-before-renew">
