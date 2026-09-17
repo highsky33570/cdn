@@ -18,6 +18,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { DateRangePicker } from '@/components/ui/date-range-picker';
 import {
     Dialog,
     DialogDescription,
@@ -38,7 +39,6 @@ import {
 } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
 import Switch from '@/components/ui/switch/Switch.vue';
-import { DateRangePicker } from '@/components/ui/date-range-picker';
 import {
     formatDate,
     getErrorMessage,
@@ -148,9 +148,12 @@ const CC_FILTER_TYPES = [
 ] as const;
 
 const ccKinds: Array<{ key: CcKind; label: string }> = [
+    // 规则组 first: it is the resource CDNfly seeds with system protection
+    // templates (关闭/宽松/JS验证/5秒盾/验证码…), so it is where users actually
+    // find data. 匹配器/过滤器 are the building blocks and start empty.
+    { key: 'rule', label: '规则组' },
     { key: 'matcher', label: '匹配器' },
     { key: 'filter', label: '过滤器' },
-    { key: 'rule', label: '规则组' },
 ];
 
 const loading = ref(false);
@@ -182,7 +185,7 @@ const aclForm = reactive({
 });
 const aclEntries = ref<AclEntry[]>([]);
 
-const activeCcKind = ref<CcKind>('matcher');
+const activeCcKind = ref<CcKind>('rule');
 const ccDialogOpen = ref(false);
 const editingCc = ref<CdnflyRecord | null>(null);
 const ccPage = ref(1);
@@ -340,6 +343,7 @@ async function reloadCurrentView(): Promise<void> {
 
     if (props.view === 'blackip') {
         await loadHistoryBlackIps();
+
         return;
     }
 
@@ -402,8 +406,10 @@ function openAclEditDialog(record: CdnflyRecord): void {
 
 async function submitAcl(): Promise<void> {
     const name = aclForm.name.trim();
+
     if (name === '') {
         formError.value = 'ACL 名称不能为空';
+
         return;
     }
 
@@ -453,9 +459,13 @@ function openDeleteAcl(record: CdnflyRecord): void {
 
 async function confirmDelete(): Promise<void> {
     const id = recordId(deleteTarget.value!);
-    if (!id) return;
+
+    if (!id) {
+        return;
+    }
 
     deleting.value = true;
+
     try {
         if (deleteKind.value === 'acl') {
             await deleteUserAcl(id);
@@ -466,7 +476,9 @@ async function confirmDelete(): Promise<void> {
                 `${ccKindLabel(deleteKind.value as CcKind)}删除请求已提交`,
             );
         }
+
         deleteOpen.value = false;
+
         if (deleteKind.value === 'acl') {
             await loadAclRows();
         } else {
@@ -518,7 +530,10 @@ function buildMatcherData(): Record<string, unknown> {
 }
 
 function parseMatcherData(data: Record<string, unknown>): MatcherCondition[] {
-    if (!data || typeof data !== 'object') return [];
+    if (!data || typeof data !== 'object') {
+        return [];
+    }
+
     return Object.entries(data).map(([key, rule]) => ({
         key,
         operator: (rule as any).operator ?? '=',
@@ -532,8 +547,12 @@ function buildMatcherObject(
     conditions: MatcherCondition[],
 ): Record<string, unknown> {
     const data: Record<string, unknown> = {};
+
     for (const c of conditions) {
-        if (!c.key) continue;
+        if (!c.key) {
+            continue;
+        }
+
         const isArrayOp = c.operator === 'AC' || c.operator === '!AC';
         data[c.key] = {
             operator: c.operator || '=',
@@ -545,6 +564,7 @@ function buildMatcherObject(
                 : c.value,
         };
     }
+
     return data;
 }
 
@@ -557,6 +577,7 @@ function buildAclData(): unknown[] {
 
 function parseAclData(raw: unknown): AclEntry[] {
     let arr: unknown[];
+
     if (typeof raw === 'string') {
         try {
             arr = JSON.parse(raw);
@@ -566,6 +587,7 @@ function parseAclData(raw: unknown): AclEntry[] {
     } else {
         arr = Array.isArray(raw) ? raw : [];
     }
+
     return arr.map((item: any) => ({
         action: String(item.acl_action ?? 'reject'),
         conditions: parseMatcherData(item.acl_matcher ?? {}),
@@ -596,7 +618,10 @@ function removeAclCondition(entryIndex: number, condIndex: number): void {
 }
 
 function buildExtra(): Record<string, unknown> {
-    if (ccForm.type !== 'url_auth') return {};
+    if (ccForm.type !== 'url_auth') {
+        return {};
+    }
+
     const obj: Record<string, unknown> = {
         mode: extraForm.mode,
         key: extraForm.key,
@@ -604,14 +629,17 @@ function buildExtra(): Record<string, unknown> {
         time_diff: Number(extraForm.time_diff),
         sign_use_times: Number(extraForm.sign_use_times),
     };
+
     if (extraForm.mode === 'TypeA') {
         obj.time_name = extraForm.time_name;
     }
+
     return obj;
 }
 
 function parseExtra(extra: unknown): void {
     let raw = extra;
+
     if (typeof raw === 'string') {
         try {
             raw = JSON.parse(raw);
@@ -619,6 +647,7 @@ function parseExtra(extra: unknown): void {
             raw = {};
         }
     }
+
     const e = (
         raw && typeof raw === 'object' && !Array.isArray(raw) ? raw : {}
     ) as Record<string, unknown>;
@@ -632,6 +661,7 @@ function parseExtra(extra: unknown): void {
 
 async function loadRuleFormOptions(): Promise<void> {
     loadingRuleOptions.value = true;
+
     try {
         const [matchers, filters] = await Promise.all([
             ccList('matcher', { limit: 200, internal_self: 1 }),
@@ -693,9 +723,11 @@ function openCcCreateDialog(): void {
     matcherConditions.value = [];
     ruleEntries.value = [];
     parseExtra(null);
+
     if (activeCcKind.value === 'rule') {
         void loadRuleFormOptions();
     }
+
     ccDialogOpen.value = true;
 }
 
@@ -714,8 +746,10 @@ function openCcEditDialog(record: CdnflyRecord): void {
     formError.value = '';
 
     const rawData = record.data;
+
     if (activeCcKind.value === 'matcher') {
         let dataObj: Record<string, unknown>;
+
         if (typeof rawData === 'string') {
             try {
                 dataObj = JSON.parse(rawData);
@@ -731,10 +765,12 @@ function openCcEditDialog(record: CdnflyRecord): void {
         } else {
             dataObj = {};
         }
+
         matcherConditions.value = parseMatcherData(dataObj);
         ruleEntries.value = [];
     } else if (activeCcKind.value === 'rule') {
         let dataArr: unknown[];
+
         if (typeof rawData === 'string') {
             try {
                 dataArr = JSON.parse(rawData);
@@ -744,6 +780,7 @@ function openCcEditDialog(record: CdnflyRecord): void {
         } else {
             dataArr = Array.isArray(rawData) ? rawData : [];
         }
+
         ruleEntries.value = dataArr.map((entry: any) => ({
             action: String(entry.action ?? 'ipset'),
             matcher: String(entry.matcher ?? ''),
@@ -851,19 +888,29 @@ async function loadHistoryBlackIps(
 ): Promise<void> {
     historyBlackIpLoading.value = true;
     errorMessage.value = '';
+
     try {
         const params: Record<string, string | number> = {
             page: targetPage,
             limit: Number(historyBlackIpFilters.per_page),
         };
-        if (historyBlackIpFilters.ip.trim())
+
+        if (historyBlackIpFilters.ip.trim()) {
             params.ip = historyBlackIpFilters.ip.trim();
-        if (historyBlackIpFilters.site_id.trim())
+        }
+
+        if (historyBlackIpFilters.site_id.trim()) {
             params.site_id = historyBlackIpFilters.site_id.trim();
-        if (historyBlackIpFilters.start.trim())
+        }
+
+        if (historyBlackIpFilters.start.trim()) {
             params.start = historyBlackIpFilters.start.trim();
-        if (historyBlackIpFilters.end.trim())
+        }
+
+        if (historyBlackIpFilters.end.trim()) {
             params.end = historyBlackIpFilters.end.trim();
+        }
+
         const result = await listUserHistoryBlackIps(params);
         const rows = extractCdnflyRows(result);
         historyBlackIpRows.value = rows;
@@ -879,6 +926,7 @@ async function loadHistoryBlackIps(
 async function loadBlackIpCount(): Promise<void> {
     blackIpCountLoading.value = true;
     errorMessage.value = '';
+
     try {
         const result = await getUserBlackIpCount();
         blackIpCountRows.value = extractCdnflyRows(result);
@@ -893,12 +941,18 @@ async function switchBlackIpTab(
     tab: 'current' | 'stats' | 'history',
 ): Promise<void> {
     blackIpTab.value = tab;
-    if (tab === 'current' && blackIpRows.value.length === 0)
+
+    if (tab === 'current' && blackIpRows.value.length === 0) {
         void loadBlackIps();
-    if (tab === 'stats' && blackIpCountRows.value.length === 0)
+    }
+
+    if (tab === 'stats' && blackIpCountRows.value.length === 0) {
         void loadBlackIpCount();
-    if (tab === 'history' && historyBlackIpRows.value.length === 0)
+    }
+
+    if (tab === 'history' && historyBlackIpRows.value.length === 0) {
         void loadHistoryBlackIps();
+    }
 }
 
 async function unlockBlackIp(
@@ -969,10 +1023,13 @@ function buildCcPayload():
         if (ruleEntries.value.length === 0) {
             throw new Error('至少需要添加一条规则条目');
         }
+
         const missingMatcher = ruleEntries.value.findIndex((e) => !e.matcher);
+
         if (missingMatcher !== -1) {
             throw new Error(`第 ${missingMatcher + 1} 条规则未选择匹配器`);
         }
+
         return {
             name: ccForm.name.trim(),
             sort: optionalNumber(ccForm.sort) ?? 100,

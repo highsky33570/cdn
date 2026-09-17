@@ -109,6 +109,7 @@ type PackageForm = {
     ddos_protect: string;
     websocket: string;
     http3: string;
+    waf_protect: string;
     l2_state: string;
     id_verify: string;
     cname_domain: string;
@@ -250,7 +251,11 @@ const TIER_PRESETS = [
 type TierPreset = (typeof TIER_PRESETS)[number];
 
 /** The portal charges in USD (products.currency defaults to USD). */
+// Stored as the ISO code USD (the product column is validated size:3), but the
+// customer pays in the USD-pegged stablecoin USDT — so that is what the UI
+// shows. 1:1 with the number, symbol only.
 const PORTAL_CURRENCY = 'USD';
+const PORTAL_CURRENCY_LABEL = 'USDT';
 const cnameModeOptions = [
     { value: 'site', label: '按网站生成（推荐）' },
     { value: 'package', label: '按套餐生成' },
@@ -383,6 +388,8 @@ function applyTierPreset(preset: TierPreset): void {
     form.cc_protect = '支持';
     form.websocket = '1';
     form.http3 = '1';
+    // WAF needs the module/rules running on the node; off until it actually is.
+    form.waf_protect = '0';
     // One node means no L2 tier to fall back to.
     form.l2_state = '0';
     // Real-name verification blocks checkout unless you actually police it.
@@ -633,6 +640,7 @@ const detailSections = computed(() => {
                 { label: 'DDoS 防护', value: plainText('ddos_protect') },
                 { label: 'WebSocket', value: flagText('websocket') },
                 { label: 'HTTP3', value: flagText('http3') },
+                { label: 'WAF 防护', value: flagText('waf_protect') },
                 {
                     label: 'L2 节点回源',
                     value:
@@ -681,8 +689,9 @@ const detailSections = computed(() => {
                     label: '可购买截止时间',
                     value: formatDate(detailValue('expire')),
                 },
-                // These are CDNfly's internal prices, billed against the
-                // customer's CDNfly balance. 0 is correct for portal selling.
+                // The real prepaid prices charged against the customer's CDNfly
+                // balance. Synced from 门户售价 on save, so these should match it
+                // 1:1 (¥ = the same number as USDT).
                 { label: 'CDNfly 月付', value: plainText('month_price') },
                 { label: 'CDNfly 季付', value: plainText('quarter_price') },
                 { label: 'CDNfly 年付', value: plainText('year_price') },
@@ -710,7 +719,54 @@ function portalPriceOf(record: PackageRecord): string {
         return '';
     }
 
-    return `${product.currency} ${product.price_monthly}`;
+    // Paid in USDT (a USD-pegged stablecoin), so label it USDT rather than the
+    // stored ISO code — that is what the customer actually transfers.
+    return `${product.price_monthly} USDT`;
+}
+
+/**
+ * Website count over total domain count, e.g. "1 / 5".
+ *
+ * `main_domain` is the number of sites a tier includes — the figure the tiers
+ * and the landing page are sold on. `domain` is the larger total hostname cap.
+ * Showing only `domain` (5/15/30/60) read as wrong against a tier described as
+ * "1 个网站".
+ */
+function siteDomainText(record: PackageRecord): string {
+    const sites = getDisplayValue(record, ['main_domain'], '-');
+    const domains = getDisplayValue(
+        record,
+        ['domain', 'domain_limit', 'domain_num'],
+        '-',
+    );
+
+    const fmt = (v: string) => (v === '-1' ? '不限' : v);
+
+    return `${fmt(sites)} / ${fmt(domains)}`;
+}
+
+/**
+ * The six capability flags CDNfly shows on a package, as list badges.
+ * WS/H3/WAF/L2 are stored 1/0; CC and DDoS are free text (支持 / 不支持 /
+ * a scrubbing size like "500G"), so `on` is derived per field rather than a
+ * plain 1-check.
+ */
+function capabilityBadges(
+    record: PackageRecord,
+): Array<{ label: string; on: boolean }> {
+    const flag = (keys: string[]) =>
+        String(getDisplayValue(record, keys, '0')) === '1';
+    const cc = getDisplayValue(record, ['cc_protect'], '');
+    const ddos = getDisplayValue(record, ['ddos_protect'], '');
+
+    return [
+        { label: 'WS', on: flag(['websocket']) },
+        { label: 'H3', on: flag(['http3']) },
+        { label: 'WAF', on: flag(['waf_protect']) },
+        { label: 'L2', on: flag(['l2_state']) },
+        { label: 'CC', on: cc === '支持' || cc === '1' },
+        { label: 'DDoS', on: ddos !== '' && ddos !== '不支持' && ddos !== '0' },
+    ];
 }
 
 /** The portal product this package is sold as, if any. */
@@ -1061,6 +1117,7 @@ function emptyPackageForm(batch = false): PackageForm {
         ddos_protect: '',
         websocket: batch ? SELECT_KEEP_VALUE : '1',
         http3: batch ? SELECT_KEEP_VALUE : '1',
+        waf_protect: batch ? SELECT_KEEP_VALUE : '0',
         l2_state: batch ? SELECT_KEEP_VALUE : '0',
         id_verify: batch ? SELECT_KEEP_VALUE : '1',
         cname_domain: batch ? SELECT_KEEP_VALUE : CNAME_DEFAULT_VALUE,
@@ -1120,6 +1177,7 @@ function formFromRecord(record: PackageRecord): PackageForm {
         ddos_protect: getDisplayValue(record, ['ddos_protect'], ''),
         websocket: getDisplayValue(record, ['websocket'], '0'),
         http3: getDisplayValue(record, ['http3'], '0'),
+        waf_protect: getDisplayValue(record, ['waf_protect'], '0'),
         l2_state: getDisplayValue(record, ['l2_state'], '0'),
         id_verify: getDisplayValue(record, ['id_verify'], '0'),
         cname_domain:
@@ -1174,6 +1232,7 @@ function buildPackagePayload(
     appendText(payload, 'ddos_protect', source.ddos_protect.trim());
     appendSelectBoolean(payload, 'websocket', source.websocket);
     appendSelectBoolean(payload, 'http3', source.http3);
+    appendSelectBoolean(payload, 'waf_protect', source.waf_protect);
     appendSelectBoolean(payload, 'l2_state', source.l2_state);
     appendSelectBoolean(payload, 'id_verify', source.id_verify);
     appendCnameDomain(payload, source.cname_domain);
@@ -1839,7 +1898,10 @@ async function confirmPuDelete(): Promise<void> {
                                     带宽
                                 </th>
                                 <th class="px-4 py-3 text-left font-medium">
-                                    域名数
+                                    网站 / 域名
+                                </th>
+                                <th class="px-4 py-3 text-left font-medium">
+                                    能力
                                 </th>
                                 <th class="px-4 py-3 text-left font-medium">
                                     状态
@@ -1851,7 +1913,7 @@ async function confirmPuDelete(): Promise<void> {
                         </thead>
                         <tbody>
                             <tr v-if="loading">
-                                <td colspan="8" class="px-6 py-10 text-center">
+                                <td colspan="9" class="px-6 py-10 text-center">
                                     <div
                                         class="inline-flex items-center gap-2 text-muted-foreground"
                                     >
@@ -1919,15 +1981,32 @@ async function confirmPuDelete(): Promise<void> {
                                         }}
                                     </td>
                                     <td class="px-4 py-4 text-muted-foreground">
-                                        {{
-                                            getDisplayValue(record, [
-                                                'domain',
-                                                'site_limit',
-                                                'site_num',
-                                                'sites',
-                                                'domain_limit',
-                                            ])
-                                        }}
+                                        {{ siteDomainText(record) }}
+                                    </td>
+                                    <td class="px-4 py-4">
+                                        <div class="flex flex-wrap gap-1">
+                                            <span
+                                                v-for="cap in capabilityBadges(
+                                                    record,
+                                                )"
+                                                :key="cap.label"
+                                                class="inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-xs font-medium"
+                                                :class="
+                                                    cap.on
+                                                        ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400'
+                                                        : 'bg-muted text-muted-foreground'
+                                                "
+                                                :title="
+                                                    cap.label +
+                                                    (cap.on
+                                                        ? '：支持'
+                                                        : '：不支持')
+                                                "
+                                            >
+                                                {{ cap.on ? '✓' : '✕' }}
+                                                {{ cap.label }}
+                                            </span>
+                                        </div>
                                     </td>
                                     <td class="px-4 py-4">
                                         <Badge variant="secondary">
@@ -1982,7 +2061,7 @@ async function confirmPuDelete(): Promise<void> {
                             </template>
                             <tr v-if="!loading && packages.length === 0">
                                 <td
-                                    colspan="8"
+                                    colspan="9"
                                     class="px-6 py-10 text-center text-muted-foreground"
                                 >
                                     暂无套餐数据
@@ -2136,7 +2215,7 @@ async function confirmPuDelete(): Promise<void> {
                                 <div class="font-medium">门户售价</div>
                                 <div class="text-xs text-muted-foreground">
                                     客户在本站看到并支付的价格（{{
-                                        PORTAL_CURRENCY
+                                        PORTAL_CURRENCY_LABEL
                                     }}）。保存后会自动创建对应商品，无需再改
                                     .env。
                                 </div>
@@ -2173,7 +2252,7 @@ async function confirmPuDelete(): Promise<void> {
                                 </div>
                                 <div class="flex flex-col gap-2">
                                     <Label for="portal-monthly">
-                                        月付价格（{{ PORTAL_CURRENCY }}）
+                                        月付价格（{{ PORTAL_CURRENCY_LABEL }}）
                                     </Label>
                                     <Input
                                         id="portal-monthly"
@@ -2344,6 +2423,20 @@ async function confirmPuDelete(): Promise<void> {
                     <div class="flex flex-col gap-2">
                         <Label>HTTP3</Label>
                         <Select v-model="form.http3">
+                            <SelectTrigger class="w-full">
+                                <SelectValue placeholder="选择支持状态" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectGroup>
+                                    <SelectItem value="1">支持</SelectItem>
+                                    <SelectItem value="0">不支持</SelectItem>
+                                </SelectGroup>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div class="flex flex-col gap-2">
+                        <Label>WAF 防护</Label>
+                        <Select v-model="form.waf_protect">
                             <SelectTrigger class="w-full">
                                 <SelectValue placeholder="选择支持状态" />
                             </SelectTrigger>
@@ -3087,8 +3180,8 @@ async function confirmPuDelete(): Promise<void> {
                             class="mt-2 flex flex-wrap items-baseline gap-x-6 gap-y-1"
                         >
                             <span class="text-2xl font-semibold">
-                                {{ detailProduct.currency }}
                                 {{ detailProduct.price_monthly }}
+                                {{ PORTAL_CURRENCY_LABEL }}
                                 <span
                                     class="text-sm font-normal text-muted-foreground"
                                 >

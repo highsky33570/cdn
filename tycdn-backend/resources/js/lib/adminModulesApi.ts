@@ -1,12 +1,12 @@
 import { apiRequest } from '@/lib/apiRequest';
-import { buildUrl } from '@/lib/urlHelpers';
-
-export type {
+import type {
     CdnflyRecord,
     CdnflyListData,
     Paginated,
 } from '@/lib/sharedTypes';
-import type {
+import { buildUrl } from '@/lib/urlHelpers';
+
+export type {
     CdnflyRecord,
     CdnflyListData,
     Paginated,
@@ -172,7 +172,12 @@ export type AdminNodeGroupPayload = {
     name: string;
     des?: string;
     backup_switch_type?: 'master_down' | 'interval';
-    backup_switch_policy?: string;
+    // CDNfly wants an object here, not a JSON string.
+    backup_switch_policy?: {
+        ip_num: number;
+        interval: number;
+        switch_order: 'rand' | 'seq';
+    };
 };
 
 export async function listAdminNodeGroups(

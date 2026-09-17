@@ -1001,21 +1001,21 @@ async function submitNodeGroup(): Promise<void> {
     }
 
     const switchType = ngForm.backup_switch_type || 'master_down';
-    const policyJson =
-        switchType === 'interval'
-            ? JSON.stringify({
-                  ip_num: Number(ngForm.backup_policy_ip_num) || 2,
-                  interval: Number(ngForm.backup_policy_interval) || 60,
-                  switch_order: ngForm.backup_policy_switch_order || 'rand',
-              })
-            : '{}';
+    // CDNfly expects backup_switch_policy as an object, not a JSON string —
+    // a string trips its "数据类型错误" type check. Mirror the master panel,
+    // which always submits the {ip_num, interval, switch_order} object.
+    const backupPolicy = {
+        ip_num: Number(ngForm.backup_policy_ip_num) || 2,
+        interval: Number(ngForm.backup_policy_interval) || 60,
+        switch_order: ngForm.backup_policy_switch_order || 'rand',
+    };
 
     const payload: AdminNodeGroupPayload = {
         region_id: regionId,
         name: ngForm.name.trim(),
         des: ngForm.des.trim(),
         backup_switch_type: switchType,
-        backup_switch_policy: policyJson,
+        backup_switch_policy: backupPolicy,
     };
 
     ngSaving.value = true;
@@ -1091,8 +1091,8 @@ function parseSwitchPolicy(raw: unknown): {
     const fallback = { ip_num: '2', interval: '60', switch_order: 'rand' };
 
     if (typeof raw !== 'string' || raw.trim() === '') {
-return fallback;
-}
+        return fallback;
+    }
 
     try {
         const parsed = JSON.parse(raw) as Record<string, unknown>;
@@ -1236,8 +1236,8 @@ function toggleIpSelection(row: CdnflyRecord): void {
     const id = Number(row.id);
 
     if (!id) {
-return;
-}
+        return;
+    }
 
     selectedIpIds.value = selectedIpIds.value.includes(id)
         ? selectedIpIds.value.filter((x) => x !== id)
@@ -1294,8 +1294,8 @@ async function removeAssignment(row: CdnflyRecord): Promise<void> {
     const id = Number(row.id);
 
     if (!id) {
-return;
-}
+        return;
+    }
 
     try {
         await unassignAdminLines([id]);
@@ -1310,8 +1310,8 @@ function regionNameById(id: unknown): string {
     const numId = asNumber(id);
 
     if (!numId) {
-return '-';
-}
+        return '-';
+    }
 
     const region = regions.value.find((r) => asNumber(r.id) === numId);
 

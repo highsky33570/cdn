@@ -397,8 +397,13 @@ class AdminNodeController extends Controller
             'sort' => ['sometimes', 'nullable', 'integer', 'min:0'],
             'l2_config_id' => ['sometimes', 'nullable', 'integer', 'min:1'],
             'backup_switch_type' => ['sometimes', 'nullable', 'string', Rule::in(['master_down', 'interval'])],
-            // A JSON string, e.g. {"ip_num":2,"interval":60,"switch_order":"rand"}.
-            'backup_switch_policy' => ['sometimes', 'nullable', 'string', 'max:2000'],
+            // An object, e.g. {"ip_num":2,"interval":60,"switch_order":"rand"}.
+            // CDNfly rejects a JSON string here ("数据类型错误") — it must be a map,
+            // matching what the master panel's node-group edit submits.
+            'backup_switch_policy' => ['sometimes', 'nullable', 'array'],
+            'backup_switch_policy.ip_num' => ['sometimes', 'nullable', 'integer', 'min:1'],
+            'backup_switch_policy.interval' => ['sometimes', 'nullable', 'integer', 'min:1'],
+            'backup_switch_policy.switch_order' => ['sometimes', 'nullable', 'string', Rule::in(['rand', 'seq'])],
         ]);
 
         $payload = $this->castIntegers(

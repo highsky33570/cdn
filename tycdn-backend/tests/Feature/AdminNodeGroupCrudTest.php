@@ -42,7 +42,7 @@ class AdminNodeGroupCrudTest extends TestCase
                 'region_id' => 3,
                 'des' => 'shared tier',
                 'backup_switch_type' => 'interval',
-                'backup_switch_policy' => '{"ip_num":2,"interval":60,"switch_order":"rand"}',
+                'backup_switch_policy' => ['ip_num' => 2, 'interval' => 60, 'switch_order' => 'rand'],
             ])
             ->assertCreated()
             ->assertJsonPath('ok', true);
@@ -71,7 +71,7 @@ class AdminNodeGroupCrudTest extends TestCase
                 'name' => 'Asia Edge',
                 'region_id' => 3,
                 'backup_switch_type' => 'master_down',
-                'backup_switch_policy' => '{}',
+                'backup_switch_policy' => [],
             ])
             ->assertCreated();
 
@@ -222,7 +222,7 @@ class AdminNodeGroupCrudTest extends TestCase
                 'region_id' => 1,
                 'des' => '',
                 'backup_switch_type' => 'master_down',
-                'backup_switch_policy' => '{}',
+                'backup_switch_policy' => [],
             ])
             ->assertCreated();
 
@@ -250,12 +250,12 @@ class AdminNodeGroupCrudTest extends TestCase
         $this->actingAs($this->admin())
             ->putJson('/api/admin/node-groups/9', [
                 'backup_switch_type' => 'interval',
-                'backup_switch_policy' => '{"ip_num":2,"interval":60,"switch_order":"rand"}',
+                'backup_switch_policy' => ['ip_num' => 2, 'interval' => 60, 'switch_order' => 'rand'],
             ])
             ->assertOk();
 
         $this->assertSame(
-            '{"ip_num":2,"interval":60,"switch_order":"rand"}',
+            ['ip_num' => 2, 'interval' => 60, 'switch_order' => 'rand'],
             $received['backup_switch_policy'],
         );
     }
