@@ -1371,6 +1371,83 @@ function toggleIpSelection(row: CdnflyRecord): void {
         : [...selectedIpIds.value, id];
 }
 
+type CandidateGroup = {
+    nodeId: number;
+    name: string;
+    ips: CdnflyRecord[];
+};
+
+// One CDNfly row per IP is noisy — the node name repeats on every line. Group
+// the candidate IPs under their node so each machine shows once with its main
+// IP + 附加 IP beneath it, and can be selected as a whole.
+const groupedCandidates = computed<CandidateGroup[]>(() => {
+    const groups = new Map<number, CandidateGroup>();
+
+    for (const row of lineCandidates.value) {
+        const pid = Number(row.pid) || 0;
+        const nodeId = pid !== 0 ? pid : Number(row.id);
+
+        if (!Number.isFinite(nodeId) || nodeId === 0) {
+            continue;
+        }
+
+        let group = groups.get(nodeId);
+
+        if (!group) {
+            group = { nodeId, name: '', ips: [] };
+            groups.set(nodeId, group);
+        }
+
+        group.ips.push(row);
+
+        // The main-IP row (pid 0) carries the node name; prefer it.
+        if (pid === 0) {
+            group.name = textValue(row.name);
+        }
+    }
+
+    for (const group of groups.values()) {
+        if (group.name === '' && group.ips[0]) {
+            group.name = textValue(group.ips[0].name);
+        }
+
+        // Main IP first, then the extras.
+        group.ips.sort((a, b) => (Number(a.pid) || 0) - (Number(b.pid) || 0));
+    }
+
+    return [...groups.values()];
+});
+
+function groupIpIds(group: CandidateGroup): number[] {
+    return group.ips
+        .map((ip) => Number(ip.id))
+        .filter((id) => Number.isFinite(id) && id !== 0);
+}
+
+function isGroupAllSelected(group: CandidateGroup): boolean {
+    const ids = groupIpIds(group);
+
+    return (
+        ids.length > 0 && ids.every((id) => selectedIpIds.value.includes(id))
+    );
+}
+
+function toggleGroupSelection(group: CandidateGroup): void {
+    const ids = groupIpIds(group);
+
+    if (isGroupAllSelected(group)) {
+        selectedIpIds.value = selectedIpIds.value.filter(
+            (id) => !ids.includes(id),
+        );
+
+        return;
+    }
+
+    const set = new Set(selectedIpIds.value);
+    ids.forEach((id) => set.add(id));
+    selectedIpIds.value = [...set];
+}
+
 async function submitLineAssignment(): Promise<void> {
     const group = currentLineGroup.value;
     const line = currentDnsLine.value;
@@ -2472,69 +2549,78 @@ function regionNameById(id: unknown): string {
                                 </Button>
                             </div>
 
-                            <div class="overflow-x-auto rounded-md border">
-                                <table class="w-full text-sm">
-                                    <thead
-                                        class="bg-muted/40 text-xs text-muted-foreground"
+                            <div
+                                v-if="lineCandidatesLoading"
+                                class="flex items-center justify-center gap-2 rounded-md border px-4 py-10 text-sm text-muted-foreground"
+                            >
+                                <Spinner /> 正在读取
+                            </div>
+
+                            <div
+                                v-else-if="groupedCandidates.length === 0"
+                                class="rounded-md border px-4 py-10 text-center text-sm text-muted-foreground"
+                            >
+                                该区域暂无可用 L1 节点
+                            </div>
+
+                            <div v-else class="space-y-3">
+                                <div
+                                    v-for="group in groupedCandidates"
+                                    :key="group.nodeId"
+                                    class="overflow-hidden rounded-lg border"
+                                >
+                                    <div
+                                        class="flex cursor-pointer items-center gap-3 border-b bg-muted/40 px-4 py-2.5"
+                                        @click="toggleGroupSelection(group)"
                                     >
-                                        <tr>
-                                            <th class="w-12 px-4 py-2"></th>
-                                            <th class="px-4 py-2 text-left">
-                                                节点
-                                            </th>
-                                            <th class="px-4 py-2 text-left">
-                                                IP
-                                            </th>
-                                            <th class="px-4 py-2 text-left">
-                                                类型
-                                            </th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr
-                                            v-for="n in lineCandidates"
-                                            :key="String(n.id)"
-                                            class="cursor-pointer border-t hover:bg-accent/40"
-                                            @click="toggleIpSelection(n)"
+                                        <Checkbox
+                                            :model-value="
+                                                isGroupAllSelected(group)
+                                            "
+                                        />
+                                        <Server
+                                            class="size-4 text-muted-foreground"
+                                        />
+                                        <span class="font-medium">{{
+                                            group.name
+                                        }}</span>
+                                        <Badge
+                                            variant="outline"
+                                            class="ml-auto font-normal"
                                         >
-                                            <td class="px-4 py-2">
-                                                <Checkbox
-                                                    :model-value="
-                                                        isIpSelected(n)
-                                                    "
-                                                />
-                                            </td>
-                                            <td class="px-4 py-2">
-                                                {{ textValue(n.name) }}
-                                            </td>
-                                            <td class="px-4 py-2">
-                                                {{ textValue(n.ip) }}
-                                            </td>
-                                            <td
-                                                class="px-4 py-2 text-muted-foreground"
+                                            {{ group.ips.length }} 个 IP
+                                        </Badge>
+                                    </div>
+                                    <ul>
+                                        <li
+                                            v-for="ip in group.ips"
+                                            :key="String(ip.id)"
+                                            class="flex cursor-pointer items-center gap-3 border-t px-4 py-2 pl-11 first:border-t-0 hover:bg-accent/40"
+                                            @click="toggleIpSelection(ip)"
+                                        >
+                                            <Checkbox
+                                                :model-value="isIpSelected(ip)"
+                                            />
+                                            <span class="font-mono text-sm">{{
+                                                textValue(ip.ip)
+                                            }}</span>
+                                            <Badge
+                                                :variant="
+                                                    Number(ip.pid) !== 0
+                                                        ? 'outline'
+                                                        : 'secondary'
+                                                "
+                                                class="ml-auto font-normal"
                                             >
                                                 {{
-                                                    Number(n.pid) !== 0
+                                                    Number(ip.pid) !== 0
                                                         ? '附加 IP'
                                                         : '主 IP'
                                                 }}
-                                            </td>
-                                        </tr>
-                                        <tr
-                                            v-if="
-                                                lineCandidates.length === 0 &&
-                                                !lineCandidatesLoading
-                                            "
-                                        >
-                                            <td
-                                                colspan="4"
-                                                class="px-4 py-8 text-center text-muted-foreground"
-                                            >
-                                                该区域暂无可用 L1 节点
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
+                                            </Badge>
+                                        </li>
+                                    </ul>
+                                </div>
                             </div>
                         </div>
                     </template>
