@@ -2,6 +2,8 @@
 import {
     AlertCircle,
     Check,
+    ChevronDown,
+    ChevronRight,
     ClipboardList,
     Copy,
     Pencil,
@@ -1510,6 +1512,81 @@ async function removeAssignment(row: CdnflyRecord): Promise<void> {
     }
 }
 
+type LineGroup = {
+    key: string;
+    name: string;
+    rows: CdnflyRecord[];
+};
+
+// Bindings come back one row per IP, repeating the node name. Group them under
+// their node so a machine with a /29 shows once with its IPs beneath it.
+const groupedLineRows = computed<LineGroup[]>(() => {
+    const groups = new Map<string, LineGroup>();
+
+    for (const row of lineRows.value) {
+        const nodeId = asNumber(row.node_id);
+        const name = textValue(row.node_name);
+        const key = nodeId ? String(nodeId) : name || String(row.id);
+
+        let group = groups.get(key);
+
+        if (!group) {
+            group = { key, name, rows: [] };
+            groups.set(key, group);
+        }
+
+        group.rows.push(row);
+
+        if (group.name === '' && name !== '') {
+            group.name = name;
+        }
+    }
+
+    return [...groups.values()];
+});
+
+async function removeGroupAssignment(group: LineGroup): Promise<void> {
+    const ids = group.rows
+        .map((row) => Number(row.id))
+        .filter((id) => Number.isFinite(id) && id !== 0);
+
+    if (ids.length === 0) {
+        return;
+    }
+
+    try {
+        await unassignAdminLines(ids);
+        toast.success('已移出线路');
+        await loadLines();
+    } catch (error) {
+        lineError.value = getErrorMessage(error);
+    }
+}
+
+// Collapsed group ids per section (default expanded = absent from the list).
+const collapsedAssigned = ref<string[]>([]);
+const collapsedCandidates = ref<number[]>([]);
+
+function isAssignedCollapsed(key: string): boolean {
+    return collapsedAssigned.value.includes(key);
+}
+
+function toggleAssignedCollapse(key: string): void {
+    collapsedAssigned.value = collapsedAssigned.value.includes(key)
+        ? collapsedAssigned.value.filter((x) => x !== key)
+        : [...collapsedAssigned.value, key];
+}
+
+function isCandidateCollapsed(id: number): boolean {
+    return collapsedCandidates.value.includes(id);
+}
+
+function toggleCandidateCollapse(id: number): void {
+    collapsedCandidates.value = collapsedCandidates.value.includes(id)
+        ? collapsedCandidates.value.filter((x) => x !== id)
+        : [...collapsedCandidates.value, id];
+}
+
 function regionNameById(id: unknown): string {
     const numId = asNumber(id);
 
@@ -2457,64 +2534,101 @@ function regionNameById(id: unknown): string {
                             <div class="text-sm font-medium">
                                 已在该线路上的节点
                             </div>
-                            <div class="overflow-x-auto rounded-md border">
-                                <table class="w-full text-sm">
-                                    <thead
-                                        class="bg-muted/40 text-xs text-muted-foreground"
+
+                            <div
+                                v-if="groupedLineRows.length === 0"
+                                class="rounded-md border px-4 py-10 text-center text-sm text-muted-foreground"
+                            >
+                                该线路暂无节点
+                            </div>
+
+                            <div v-else class="space-y-3">
+                                <div
+                                    v-for="group in groupedLineRows"
+                                    :key="group.key"
+                                    class="overflow-hidden rounded-lg border"
+                                >
+                                    <div
+                                        class="flex items-center gap-2 border-b bg-muted/40 px-3 py-2.5"
                                     >
-                                        <tr>
-                                            <th class="px-4 py-2 text-left">
-                                                节点
-                                            </th>
-                                            <th class="px-4 py-2 text-left">
-                                                IP
-                                            </th>
-                                            <th class="px-4 py-2 text-left">
-                                                线路
-                                            </th>
-                                            <th class="px-4 py-2 text-right">
-                                                操作
-                                            </th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr
-                                            v-for="l in lineRows"
-                                            :key="String(l.id)"
-                                            class="border-t"
+                                        <button
+                                            type="button"
+                                            class="flex size-6 items-center justify-center rounded text-muted-foreground hover:text-foreground"
+                                            @click="
+                                                toggleAssignedCollapse(
+                                                    group.key,
+                                                )
+                                            "
                                         >
-                                            <td class="px-4 py-2">
-                                                {{ textValue(l.node_name) }}
-                                            </td>
-                                            <td class="px-4 py-2">
-                                                {{ textValue(l.ip) }}
-                                            </td>
-                                            <td class="px-4 py-2">
-                                                {{ textValue(l.line_name) }}
-                                            </td>
-                                            <td class="px-4 py-2 text-right">
-                                                <Button
-                                                    variant="destructive"
-                                                    size="sm"
-                                                    @click="removeAssignment(l)"
-                                                >
-                                                    <Trash2
-                                                        data-icon="inline-start"
-                                                    />
-                                                    移出
-                                                </Button>
-                                            </td>
-                                        </tr>
-                                        <tr v-if="lineRows.length === 0">
-                                            <td
-                                                colspan="4"
-                                                class="px-4 py-8 text-center text-muted-foreground"
+                                            <ChevronDown
+                                                v-if="
+                                                    !isAssignedCollapsed(
+                                                        group.key,
+                                                    )
+                                                "
+                                                class="size-4"
+                                            />
+                                            <ChevronRight
+                                                v-else
+                                                class="size-4"
+                                            />
+                                        </button>
+                                        <Server
+                                            class="size-4 text-muted-foreground"
+                                        />
+                                        <span class="font-medium">{{
+                                            group.name
+                                        }}</span>
+                                        <Badge
+                                            variant="outline"
+                                            class="font-normal"
+                                        >
+                                            {{ group.rows.length }} 个 IP
+                                        </Badge>
+                                        <Button
+                                            variant="destructive"
+                                            size="sm"
+                                            class="ml-auto"
+                                            @click="
+                                                removeGroupAssignment(group)
+                                            "
+                                        >
+                                            <Trash2 data-icon="inline-start" />
+                                            移出全部
+                                        </Button>
+                                    </div>
+                                    <ul
+                                        v-show="!isAssignedCollapsed(group.key)"
+                                    >
+                                        <li
+                                            v-for="l in group.rows"
+                                            :key="String(l.id)"
+                                            class="flex items-center gap-3 border-t px-4 py-2 pl-11 first:border-t-0"
+                                        >
+                                            <span class="font-mono text-sm">{{
+                                                textValue(l.ip)
+                                            }}</span>
+                                            <Badge
+                                                v-if="Number(l.is_backup) === 1"
+                                                variant="outline"
+                                                class="font-normal"
                                             >
-                                                该线路暂无节点
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
+                                                备用
+                                            </Badge>
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                class="ml-auto"
+                                                @click="removeAssignment(l)"
+                                            >
+                                                <Trash2
+                                                    data-icon="inline-start"
+                                                />
+                                                移出
+                                            </Button>
+                                        </li>
+                                    </ul>
+                                </div>
                             </div>
                         </div>
 
@@ -2570,28 +2684,58 @@ function regionNameById(id: unknown): string {
                                     class="overflow-hidden rounded-lg border"
                                 >
                                     <div
-                                        class="flex cursor-pointer items-center gap-3 border-b bg-muted/40 px-4 py-2.5"
-                                        @click="toggleGroupSelection(group)"
+                                        class="flex items-center gap-2 border-b bg-muted/40 px-3 py-2.5"
                                     >
-                                        <Checkbox
-                                            :model-value="
-                                                isGroupAllSelected(group)
+                                        <button
+                                            type="button"
+                                            class="flex size-6 items-center justify-center rounded text-muted-foreground hover:text-foreground"
+                                            @click.stop="
+                                                toggleCandidateCollapse(
+                                                    group.nodeId,
+                                                )
                                             "
-                                        />
-                                        <Server
-                                            class="size-4 text-muted-foreground"
-                                        />
-                                        <span class="font-medium">{{
-                                            group.name
-                                        }}</span>
-                                        <Badge
-                                            variant="outline"
-                                            class="ml-auto font-normal"
                                         >
-                                            {{ group.ips.length }} 个 IP
-                                        </Badge>
+                                            <ChevronDown
+                                                v-if="
+                                                    !isCandidateCollapsed(
+                                                        group.nodeId,
+                                                    )
+                                                "
+                                                class="size-4"
+                                            />
+                                            <ChevronRight
+                                                v-else
+                                                class="size-4"
+                                            />
+                                        </button>
+                                        <div
+                                            class="flex flex-1 cursor-pointer items-center gap-3"
+                                            @click="toggleGroupSelection(group)"
+                                        >
+                                            <Checkbox
+                                                :model-value="
+                                                    isGroupAllSelected(group)
+                                                "
+                                            />
+                                            <Server
+                                                class="size-4 text-muted-foreground"
+                                            />
+                                            <span class="font-medium">{{
+                                                group.name
+                                            }}</span>
+                                            <Badge
+                                                variant="outline"
+                                                class="ml-auto font-normal"
+                                            >
+                                                {{ group.ips.length }} 个 IP
+                                            </Badge>
+                                        </div>
                                     </div>
-                                    <ul>
+                                    <ul
+                                        v-show="
+                                            !isCandidateCollapsed(group.nodeId)
+                                        "
+                                    >
                                         <li
                                             v-for="ip in group.ips"
                                             :key="String(ip.id)"
