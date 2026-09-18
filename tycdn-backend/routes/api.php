@@ -97,6 +97,9 @@ Route::middleware(['auth:sanctum', 'verified', 'admin', 'throttle:60,1'])->prefi
     Route::post('/nodes', [AdminNodeController::class, 'store'])->middleware('throttle:20,1');
     Route::get('/nodes/{id}', [AdminNodeController::class, 'show']);
     Route::put('/nodes/{id}/enable', [AdminNodeController::class, 'setEnabled'])->middleware('throttle:20,1');
+    // 子IP：一个节点的主 IP + 已登记的副 IP，以及登记 /29 里的备用 IP。
+    Route::get('/nodes/{id}/ips', [AdminNodeController::class, 'nodeIps']);
+    Route::post('/nodes/{id}/sub-ips', [AdminNodeController::class, 'storeSubIps'])->middleware('throttle:20,1');
     Route::put('/nodes/{id}', [AdminNodeController::class, 'update'])->middleware('throttle:20,1');
     Route::delete('/nodes/{id}', [AdminNodeController::class, 'destroy'])->middleware('throttle:10,1');
     // 节点组（线路）：套餐必须挂在某个节点组上，所以这里必须可写，

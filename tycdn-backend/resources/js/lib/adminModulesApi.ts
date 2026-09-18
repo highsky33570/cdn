@@ -166,6 +166,25 @@ export async function deleteAdminNode(id: number): Promise<CdnflyRecord> {
     });
 }
 
+/** A node's own IPs: the main IP plus every registered sub-IP. */
+export async function listAdminNodeIps(id: number): Promise<CdnflyRecord[]> {
+    // apiRequest already unwraps the envelope's `data`, which here is the array.
+    const rows = await apiRequest<unknown>(`/api/admin/nodes/${id}/ips`);
+
+    return Array.isArray(rows) ? (rows as CdnflyRecord[]) : [];
+}
+
+/** Register secondary IPs (one node record each) on an existing node. */
+export async function addAdminNodeSubIps(
+    id: number,
+    ips: string[],
+): Promise<CdnflyRecord> {
+    return apiRequest<CdnflyRecord>(`/api/admin/nodes/${id}/sub-ips`, {
+        method: 'POST',
+        body: JSON.stringify({ ips }),
+    });
+}
+
 // ─── Node Groups ──────────────────────────────────────
 export type AdminNodeGroupPayload = {
     region_id: number;

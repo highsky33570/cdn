@@ -47,10 +47,12 @@ import {
 } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
 import {
+    addAdminNodeSubIps,
     assignAdminLines,
     createAdminNodeGroup,
     createAdminRegion,
     listAdminDnsLines,
+    listAdminNodeIps,
     deleteAdminNode,
     deleteAdminNodeGroup,
     deleteAdminPendingNode,
@@ -514,6 +516,110 @@ function openDeletePendingNode(node: CdnflyRecord) {
         }
     };
     deleteConfirmOpen.value = true;
+}
+
+// ─── 子IP 管理 ────────────────────────────────────────
+// A node from a DDoS provider ships with a /29 (5 usable IPs). CDNfly does not
+// auto-detect the OS's secondary IPs — each extra IP must be registered as a
+// child record, after which it appears as a 副IP candidate in 线路分配 and the
+// IP-switch can rotate through them under attack.
+const subIpOpen = ref(false);
+const subIpNode = ref<CdnflyRecord | null>(null);
+const subIpRows = ref<CdnflyRecord[]>([]);
+const subIpLoading = ref(false);
+const subIpError = ref('');
+const subIpInput = ref('');
+const subIpSaving = ref(false);
+const subIpDeletingId = ref<number | null>(null);
+
+function isMainIp(row: CdnflyRecord): boolean {
+    return asNumber(row.id) === asNumber(subIpNode.value?.id);
+}
+
+async function openSubIpDialog(node: CdnflyRecord): Promise<void> {
+    subIpNode.value = node;
+    subIpInput.value = '';
+    subIpError.value = '';
+    subIpRows.value = [];
+    subIpOpen.value = true;
+    await loadSubIps();
+}
+
+async function loadSubIps(): Promise<void> {
+    const id = asNumber(subIpNode.value?.id);
+
+    if (!id) {
+        subIpError.value = '节点 ID 缺失';
+
+        return;
+    }
+
+    subIpLoading.value = true;
+    subIpError.value = '';
+
+    try {
+        subIpRows.value = await listAdminNodeIps(id);
+    } catch (error) {
+        subIpError.value = getErrorMessage(error);
+    } finally {
+        subIpLoading.value = false;
+    }
+}
+
+async function submitSubIps(): Promise<void> {
+    const id = asNumber(subIpNode.value?.id);
+
+    if (!id) {
+        subIpError.value = '节点 ID 缺失';
+
+        return;
+    }
+
+    const ips = subIpInput.value
+        .split('\n')
+        .map((line) => line.trim())
+        .filter((line) => line !== '');
+
+    if (ips.length === 0) {
+        subIpError.value = '请输入至少一个 IP（每行一个）';
+
+        return;
+    }
+
+    subIpSaving.value = true;
+    subIpError.value = '';
+
+    try {
+        await addAdminNodeSubIps(id, ips);
+        toast.success('子 IP 已添加');
+        subIpInput.value = '';
+        await loadSubIps();
+    } catch (error) {
+        subIpError.value = getErrorMessage(error);
+    } finally {
+        subIpSaving.value = false;
+    }
+}
+
+async function removeSubIp(row: CdnflyRecord): Promise<void> {
+    const id = asNumber(row.id);
+
+    if (!id) {
+        return;
+    }
+
+    subIpDeletingId.value = id;
+    subIpError.value = '';
+
+    try {
+        await deleteAdminNode(id);
+        toast.success('子 IP 已移除');
+        await loadSubIps();
+    } catch (error) {
+        subIpError.value = getErrorMessage(error);
+    } finally {
+        subIpDeletingId.value = null;
+    }
 }
 
 function buildPayload(): AdminNodePayload {
@@ -1540,6 +1646,16 @@ function regionNameById(id: unknown): string {
                                                         ? '禁用'
                                                         : '启用'
                                                 }}
+                                            </Button>
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                @click="openSubIpDialog(node)"
+                                            >
+                                                <Server
+                                                    data-icon="inline-start"
+                                                />
+                                                子IP
                                             </Button>
                                             <Button
                                                 variant="outline"
@@ -2929,6 +3045,118 @@ function regionNameById(id: unknown): string {
                         </Button>
                     </DialogFooter>
                 </form>
+            </DialogScrollContent>
+        </Dialog>
+
+        <!-- ─── 子IP Dialog ─── -->
+        <Dialog v-model:open="subIpOpen">
+            <DialogScrollContent class="sm:max-w-lg">
+                <DialogHeader>
+                    <DialogTitle>子 IP 管理</DialogTitle>
+                    <DialogDescription>
+                        为节点
+                        <span class="font-medium">{{
+                            subIpNode ? nodeName(subIpNode) : ''
+                        }}</span>
+                        登记 /29 里的备用
+                        IP。登记后会出现在「线路分配」的可加入节点中，可用于
+                        DDoS 攻击时自动切换。CDNfly 不会自动识别系统里的副
+                        IP，需要在此手动登记。
+                    </DialogDescription>
+                </DialogHeader>
+
+                <Alert v-if="subIpError" variant="destructive" class="mt-2">
+                    <AlertCircle />
+                    <AlertTitle>操作失败</AlertTitle>
+                    <AlertDescription>{{ subIpError }}</AlertDescription>
+                </Alert>
+
+                <div class="mt-4 space-y-4">
+                    <div>
+                        <Label class="mb-2 block">当前 IP</Label>
+                        <div
+                            v-if="subIpLoading"
+                            class="flex items-center gap-2 py-4 text-sm text-muted-foreground"
+                        >
+                            <Spinner /> 正在读取
+                        </div>
+                        <div
+                            v-else-if="subIpRows.length === 0"
+                            class="py-4 text-sm text-muted-foreground"
+                        >
+                            暂无 IP 记录
+                        </div>
+                        <ul v-else class="space-y-1">
+                            <li
+                                v-for="row in subIpRows"
+                                :key="textValue(row.id) || textValue(row.ip)"
+                                class="flex items-center justify-between rounded-md border px-3 py-2 text-sm"
+                            >
+                                <span class="flex items-center gap-2">
+                                    <span class="font-mono">{{
+                                        textValue(row.ip)
+                                    }}</span>
+                                    <Badge
+                                        :variant="
+                                            isMainIp(row)
+                                                ? 'secondary'
+                                                : 'outline'
+                                        "
+                                    >
+                                        {{ isMainIp(row) ? '主IP' : '副IP' }}
+                                    </Badge>
+                                </span>
+                                <Button
+                                    v-if="!isMainIp(row)"
+                                    variant="ghost"
+                                    size="sm"
+                                    :disabled="
+                                        subIpDeletingId === asNumber(row.id)
+                                    "
+                                    @click="removeSubIp(row)"
+                                >
+                                    <Spinner
+                                        v-if="
+                                            subIpDeletingId === asNumber(row.id)
+                                        "
+                                        data-icon="inline-start"
+                                    />
+                                    <Trash2 v-else data-icon="inline-start" />
+                                    移除
+                                </Button>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div>
+                        <Label for="sub-ip-input" class="mb-2 block"
+                            >添加子 IP（每行一个）</Label
+                        >
+                        <textarea
+                            id="sub-ip-input"
+                            v-model="subIpInput"
+                            rows="5"
+                            placeholder="156.234.124.163&#10;156.234.124.164&#10;156.234.124.165&#10;156.234.124.166"
+                            class="flex w-full rounded-md border border-input bg-transparent px-3 py-2 font-mono text-sm shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        ></textarea>
+                        <p class="mt-1 text-xs text-muted-foreground">
+                            在节点上执行
+                            <code>ip addr show</code> 可查看该机器的副 IP（标记
+                            secondary 的地址）。
+                        </p>
+                    </div>
+                </div>
+
+                <DialogFooter>
+                    <Button variant="outline" @click="subIpOpen = false"
+                        >关闭</Button
+                    >
+                    <Button :disabled="subIpSaving" @click="submitSubIps">
+                        <Spinner v-if="subIpSaving" data-icon="inline-start" />
+                        <Plus v-else data-icon="inline-start" />
+                        添加
+                    </Button>
+                </DialogFooter>
             </DialogScrollContent>
         </Dialog>
 

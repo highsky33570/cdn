@@ -153,6 +153,53 @@ class AdminNodeController extends Controller
         }
     }
 
+    /**
+     * The IPs belonging to one node: its main IP plus every registered sub-IP.
+     *
+     * CDNfly returns one row per IP when sub-ip=1; a row is this node's when its
+     * own id is the node (the main IP) or its pid points back to it (a sub-IP).
+     */
+    public function nodeIps(int $id): JsonResponse
+    {
+        try {
+            $result = $this->cdnfly->listNodes(['sub-ip' => 1, 'limit' => 0]);
+            $rows = is_array($result['data'] ?? null) ? $result['data'] : [];
+
+            $ips = array_values(array_filter($rows, static function ($row) use ($id): bool {
+                if (! is_array($row)) {
+                    return false;
+                }
+
+                return (int) ($row['id'] ?? 0) === $id || (int) ($row['pid'] ?? 0) === $id;
+            }));
+
+            return response()->json(['ok' => true, 'data' => $ips]);
+        } catch (\Throwable $e) {
+            return $this->cdnflyFailure($e, __FUNCTION__);
+        }
+    }
+
+    /**
+     * Register one or more secondary IPs on a node (the /29 block's spare IPs).
+     * Each becomes a child node record; afterwards they show up as 副IP
+     * candidates in 线路分配 and CDNfly's IP-switch can rotate through them.
+     */
+    public function storeSubIps(Request $request, int $id): JsonResponse
+    {
+        $validated = $request->validate([
+            'ips' => ['required', 'array', 'min:1', 'max:64'],
+            'ips.*' => ['required', 'ipv4', 'distinct'],
+        ]);
+
+        try {
+            $data = $this->cdnfly->addNodeSubIps($id, array_values($validated['ips']));
+
+            return response()->json(['ok' => true, 'data' => $data], 201);
+        } catch (\Throwable $e) {
+            return $this->cdnflyFailure($e, __FUNCTION__);
+        }
+    }
+
     public function nodeGroups(Request $request): JsonResponse
     {
         try {

@@ -998,6 +998,31 @@ class CdnflyApiService
         return $this->parseResponse($response, 'create node');
     }
 
+    /**
+     * Register secondary (sub) IPs on an existing node.
+     *
+     * CDNfly models each extra IP as a child node record: POST /v1/nodes with
+     * an array of {ip, pid}, where pid is the parent (main) node's id. Verified
+     * against the panel's own handleAddNodeIp (cdnfly-go/panel, chunk-e6c2cc20),
+     * which splits the "添加子IP" textarea and posts one {ip, pid} per line.
+     *
+     * @param  array<int, string>  $ips
+     * @return array<string, mixed>
+     */
+    public function addNodeSubIps(int $pid, array $ips): array
+    {
+        $this->ensureOutboundEnabled('add node sub ips');
+
+        $payload = array_values(array_map(
+            static fn (string $ip): array => ['ip' => $ip, 'pid' => $pid],
+            $ips,
+        ));
+
+        $response = $this->adminHttp()->post('/v1/nodes', $payload);
+
+        return $this->parseResponse($response, 'add node sub ips');
+    }
+
     public function getMasterUpgrade(): array
     {
         if (! $this->outboundEnabled()) {
