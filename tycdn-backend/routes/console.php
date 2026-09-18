@@ -12,6 +12,10 @@ Schedule::command('payments:reconcile')
     ->everyFiveMinutes()
     ->withoutOverlapping();
 
+Schedule::command('network:measure')
+    ->everyFifteenMinutes()
+    ->withoutOverlapping();
+
 // Prepaid renewal: once a day, extend packages near expiry by charging the
 // customer's CDNfly balance. Daily is enough — the window is measured in days.
 Schedule::command('cdnfly:auto-renew')

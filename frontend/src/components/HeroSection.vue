@@ -6,7 +6,7 @@
       <div class="hero-copy">
         <button class="hero-badge" type="button" @click="goPlans">
           <span class="hero-badge-dot"></span>
-          <span>TyCDN · 日本东京节点 · CN2 优化线路</span>
+          <span>TyCDN · 香港边缘节点 · 面向中国优化</span>
         </button>
 
         <p class="hero-kicker">别家一被打就<span class="hero-kicker-mark">绕路卡顿</span>？</p>
@@ -34,21 +34,19 @@
           </a>
         </div>
 
-        <!--
-          The reference site opens with hard numbers, and leading with facts is
-          the part worth copying. What we must not copy is *their* numbers:
-          these stay as dashes until real measurements exist, because inventing
-          throughput figures for a network with no nodes deployed would be
-          fabricating performance data. See PENDING_FACTS in data/landing.js.
-        -->
         <dl class="hero-stats">
           <div v-for="stat in stats" :key="stat.label" class="hero-stat">
             <dd class="hero-stat-value" :class="{ 'is-pending': stat.pending }">
               {{ stat.value }}<small v-if="stat.unit">{{ stat.unit }}</small>
             </dd>
             <dt class="hero-stat-label">{{ stat.label }}</dt>
+            <dd class="hero-stat-note">{{ stat.note }}</dd>
           </div>
         </dl>
+        <p class="hero-monitor-note" :title="measurementExplanation">
+          <span>{{ lastChecked ? `最近探测 ${lastChecked}` : '首轮探测完成后自动更新' }}</span>
+          <span>大陆探针抽样 · 每 15 分钟更新</span>
+        </p>
 
         <div class="hero-scenarios">
           <span class="hero-scenarios-label">适配场景</span>
@@ -68,22 +66,62 @@
 <script setup>
 import { computed } from 'vue'
 import NetworkMap from './NetworkMap.vue'
-import { contact, PENDING_FACTS, scenarios } from '../data/landing'
+import { contact, scenarios } from '../data/landing'
 import { useNetworkStats } from '../composables/useNetworkStats'
 
-const { onlineNodes } = useNetworkStats()
+const {
+  onlineNodes,
+  registeredNodes,
+  latency,
+  availability,
+  historyDays,
+  windowComplete,
+  status,
+  lastChecked
+} = useNetworkStats()
 
-// 在线边缘节点 is real now that nodes are deployed — pull the live count from
-// /api/network. Latency and uptime stay pending: publishing them without real
-// probe/monitoring data would be fabricating performance figures.
+const measurementExplanation =
+  '延迟为中国大陆探针至边缘节点的平均 ICMP 往返时间。可用性为有结果的探测中节点可达的比例，不等同于网站可用性或 SLA；探针服务异常不计为节点故障。'
+const pendingText = computed(() =>
+  ['stale', 'unavailable'].includes(status.value) ? '待更新' : '采集中'
+)
 const stats = computed(() => [
-  PENDING_FACTS.latency,
   {
-    ...PENDING_FACTS.nodes,
-    value: onlineNodes.value != null ? String(onlineNodes.value) : '—',
-    pending: onlineNodes.value == null
+    value:
+      latency.value === null
+        ? onlineNodes.value === 0
+          ? '未响应'
+          : pendingText.value
+        : latency.value.toFixed(1),
+    unit: latency.value === null ? '' : 'ms',
+    label: '中国大陆平均延迟',
+    note: '大陆探针 → 边缘节点',
+    pending: latency.value === null
   },
-  PENDING_FACTS.uptime
+  {
+    value: String(onlineNodes.value ?? registeredNodes.value),
+    label: onlineNodes.value === null ? '已接入边缘节点' : '在线边缘节点',
+    note: onlineNodes.value === null ? '在线状态探测中' : `共 ${registeredNodes.value} 个接入节点`,
+    pending: false
+  },
+  {
+    value: availability.value === null ? pendingText.value : availability.value.toFixed(2),
+    unit: availability.value === null ? '' : '%',
+    label: windowComplete.value
+      ? '近 30 天可用性'
+      : historyDays.value >= 30
+        ? '近 30 天抽样可用性'
+        : '监测以来可用性',
+    note:
+      status.value === 'stale'
+        ? '监测待更新 · 历史可达率'
+        : windowComplete.value
+          ? '探测可达率 · 滚动 30 天'
+          : historyDays.value
+            ? `已累计 ${historyDays.value} 天 · 探测可达率`
+            : '监测不足 1 天 · 探测可达率',
+    pending: availability.value === null
+  }
 ])
 
 const scrollTo = (id) => {
@@ -273,8 +311,8 @@ const goCompare = () => scrollTo('#compare')
 
 /* ── stats ────────────────────────────────────────────── */
 .hero-stats {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   margin: 40px 0 0;
   padding: 24px 0;
   border-top: 1px solid var(--border);
@@ -282,8 +320,8 @@ const goCompare = () => scrollTo('#compare')
 }
 
 .hero-stat {
-  padding-right: 40px;
-  margin-right: 40px;
+  padding-right: 14px;
+  margin-right: 14px;
   border-right: 1px solid var(--border);
 }
 
@@ -309,15 +347,30 @@ const goCompare = () => scrollTo('#compare')
   margin-left: 2px;
 }
 
-/* dashes are deliberate — never a fabricated figure */
 .hero-stat-value.is-pending {
   color: var(--text-3);
+  font-size: 23px;
 }
 
 .hero-stat-label {
   margin-top: 7px;
   font-size: 13px;
   color: var(--text-3);
+}
+
+.hero-stat-note {
+  margin: 6px 0 0;
+  color: var(--text-3);
+  font-size: 10px;
+  line-height: 1.6;
+}
+.hero-monitor-note {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  color: var(--text-3);
+  font-size: 10px;
+  margin: 10px 0 0;
 }
 
 /* ── scenarios ────────────────────────────────────────── */
@@ -390,12 +443,22 @@ const goCompare = () => scrollTo('#compare')
   }
 
   .hero-stat {
-    padding-right: 22px;
-    margin-right: 22px;
+    padding-right: 10px;
+    margin-right: 10px;
   }
 
   .hero-stat-value {
     font-size: 24px;
+  }
+
+  .hero-stat-value.is-pending {
+    font-size: 20px;
+  }
+  .hero-stat-label {
+    font-size: 11px;
+  }
+  .hero-stat-note {
+    font-size: 9px;
   }
 
   :deep(.hero-btn.arco-btn) {

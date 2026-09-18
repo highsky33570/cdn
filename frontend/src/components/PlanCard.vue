@@ -11,12 +11,14 @@
       <span v-else class="plan-cycle">{{ cycle.label }}</span>
     </div>
     <h3>{{ product.name }}</h3>
-    <p v-if="product.description" class="plan-description">{{ product.description }}</p>
+    <p v-if="product.description" class="plan-description">
+      {{ product.description }}
+    </p>
     <div class="plan-price">
       <strong>{{ priceText }}</strong
       ><span v-if="amount !== null">/ {{ cycle.unit }}</span>
     </div>
-    <p class="plan-currency">{{ product.currency || 'USD' }} · {{ cycle.label }}</p>
+    <p class="plan-currency">{{ displayCurrency(product.currency) }} · {{ cycle.label }}</p>
     <dl v-if="specs.length" class="plan-specs">
       <div v-for="spec in specs" :key="spec.label">
         <dt>{{ spec.label }}</dt>
@@ -48,7 +50,8 @@ import { computed } from 'vue'
 import {
   billingPeriods,
   productPrice,
-  formatMoney,
+  formatAmount,
+  displayCurrency,
   productSpecs,
   productFeatures
 } from '../utils/products'
@@ -62,7 +65,7 @@ const cycle = computed(
   () => billingPeriods.find((item) => item.key === props.period) || billingPeriods[0]
 )
 const amount = computed(() => productPrice(props.product, cycle.value.key))
-const priceText = computed(() => formatMoney(amount.value, props.product.currency || 'USD'))
+const priceText = computed(() => formatAmount(amount.value))
 const specs = computed(() => productSpecs(props.product))
 const features = computed(() => productFeatures(props.product))
 const checkoutUrl = computed(() =>

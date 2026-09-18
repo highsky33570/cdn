@@ -1,14 +1,22 @@
-// The supplied public edge IP inventory. Geography is assigned only when confirmed.
-export const edgeNodes = [
-  { ip: '156.234.124.162', locationKey: null },
-  { ip: '156.234.43.114', locationKey: null },
-  { ip: '156.234.2.74', locationKey: null },
-  { ip: '156.234.79.50', locationKey: null },
-  { ip: '156.234.199.130', locationKey: null }
+// Public region inventory only. Probe targets stay in backend config/network.php.
+// Coordinates follow the un-cropped 3933 × 2540 map asset.
+export const edgeLocations = [
+  {
+    key: 'hongkong',
+    label: '香港',
+    x: 80.5,
+    y: 63,
+    count: 5,
+    online_count: null
+  }
 ]
 
-// Coordinates are percentages of the un-cropped 3933 × 2540 map asset.
-export const edgeLocations = [
-  { key: 'jp-tokyo', label: '日本东京', x: 85.6, y: 54.3 },
-  { key: 'hongkong', label: '香港', x: 80.5, y: 63 }
+// Illustrative audience locations, not additional TyCDN nodes or measured routes.
+export const audienceLocations = [
+  { key: 'los-angeles', x: 17.5, y: 47 },
+  { key: 'frankfurt', x: 51, y: 37 },
+  { key: 'beijing', x: 80.7, y: 49 },
+  { key: 'tokyo', x: 85.6, y: 54.3 },
+  { key: 'singapore', x: 78, y: 74 },
+  { key: 'sydney', x: 91, y: 87 }
 ]

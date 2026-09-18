@@ -4,7 +4,9 @@
       <div class="map-heading">
         <span class="eyebrow">EDGE NETWORK</span>
         <h2 class="section-title">连接你的业务与用户</h2>
-        <p class="section-desc">查看边缘节点 IP 与网络分布，选择适合业务的接入方案。</p>
+        <p class="section-desc">
+          以香港为边缘接入点，连接各地用户。节点状态与中国大陆访问延迟，持续监测。
+        </p>
       </div>
       <NetworkMap />
     </div>

@@ -11,18 +11,19 @@ export function productPrice(product, period = 'monthly') {
   return Number.isFinite(amount) && amount >= 0 ? amount : null
 }
 
-export function formatMoney(value, currency = 'USD') {
+// The catalog's legacy USD code represents the operator's USDT-denominated plans.
+export function displayCurrency(currency = 'USDT') {
+  const code = String(currency || 'USDT').toUpperCase()
+  return ['US', 'USD', 'USDT'].includes(code) ? 'USDT' : code
+}
+
+export function formatAmount(value) {
   if (value === null) return '暂未提供'
-  try {
-    return new Intl.NumberFormat('zh-CN', {
-      style: 'currency',
-      currency,
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 2
-    }).format(value)
-  } catch {
-    return `${value} ${currency}`
-  }
+  return new Intl.NumberFormat('zh-CN', { maximumFractionDigits: 2 }).format(value)
+}
+
+export function formatMoney(value, currency = 'USDT') {
+  return value === null ? '暂未提供' : `${formatAmount(value)} ${displayCurrency(currency)}`
 }
 
 export function productSpecs(product) {

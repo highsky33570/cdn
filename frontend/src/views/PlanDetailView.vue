@@ -13,7 +13,9 @@
         <section class="detail-panel">
           <span class="eyebrow">PLAN DETAILS</span>
           <h1>{{ product.name }}</h1>
-          <p v-if="product.description" class="detail-description">{{ product.description }}</p>
+          <p v-if="product.description" class="detail-description">
+            {{ product.description }}
+          </p>
           <h2 v-if="specs.length">资源配置</h2>
           <dl class="detail-specs">
             <div v-for="spec in specs" :key="spec.label">
@@ -24,7 +26,9 @@
           <template v-if="features.length"
             ><h2>套餐特性</h2>
             <ul>
-              <li v-for="(feature, index) in features" :key="index">{{ feature }}</li>
+              <li v-for="(feature, index) in features" :key="index">
+                {{ feature }}
+              </li>
             </ul></template
           >
           <div class="detail-prices">
@@ -32,7 +36,7 @@
             <div v-for="cycle in availablePeriods" :key="cycle.key">
               <span>{{ cycle.label }}</span
               ><strong>{{
-                formatMoney(productPrice(product, cycle.key), product.currency || 'USD')
+                formatMoney(productPrice(product, cycle.key), product.currency)
               }}</strong>
             </div>
           </div>

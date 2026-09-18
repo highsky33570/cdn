@@ -1,26 +1,4 @@
-/**
- * Landing page copy, in one place.
- *
- * Kept out of the components so the marketing wording can be tuned without
- * touching layout, and so every unverified claim is visible in a single file
- * rather than scattered through six templates.
- *
- * NOTE ON NUMBERS — read before launch.
- * Anything in `PENDING_FACTS` is a placeholder. The competitor's site leads with
- * figures like "≤40ms" and "99.98% 可用性"; those are their measurements, not
- * ours, and publishing them as TyCDN's own would be inventing performance data
- * for a network that currently has no nodes deployed. Replace each one with a
- * real measurement before this page goes live, or delete the tile.
- */
-
-export const PENDING_FACTS = {
-  // 节点上线后用真实探测数据替换（建议取中国大陆到日本节点的 P95）
-  latency: { value: '—', unit: 'ms', label: '中国大陆平均延迟', pending: true },
-  // 取 CDNfly 面板「节点管理」实际在线节点数
-  nodes: { value: '—', unit: '', label: '在线边缘节点', pending: true },
-  // 取近 30 天可用性统计
-  uptime: { value: '—', unit: '', label: '近 30 天可用性', pending: true }
-}
+// Marketing copy. Network measurements come from /api/network.
 
 /** 用户当前的痛点 —— 结构对标参考站，措辞按自身定位重写。 */
 export const painPoints = [
