@@ -38,7 +38,11 @@
             </div>
           </div>
         </section>
-        <PlanCard :product="product" :period="availablePeriods[0]?.key || 'monthly'" />
+        <PlanCard
+          :product="product"
+          :number="products.indexOf(product) + 1"
+          :period="availablePeriods[0]?.key || 'monthly'"
+        />
       </div>
       <div v-else class="detail-state" role="status">
         <h1>未找到该套餐</h1>

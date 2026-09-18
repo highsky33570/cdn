@@ -33,11 +33,12 @@
         >联系咨询 ↗</a
       >
     </div>
-    <div v-else class="catalog-grid">
+    <div v-else class="catalog-grid" :style="{ '--catalog-columns': Math.min(products.length, 5) }">
       <PlanCard
-        v-for="product in products"
+        v-for="(product, index) in products"
         :key="product.id"
         :product="product"
+        :number="index + 1"
         :period="period"
         :selected="selectedSlug === product.slug"
       />
@@ -106,7 +107,7 @@ watch(
 .catalog-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
-  gap: 22px;
+  gap: 18px;
 }
 .catalog-state {
   display: flex;
@@ -149,6 +150,11 @@ watch(
 @keyframes spin {
   to {
     transform: rotate(360deg);
+  }
+}
+@media (min-width: 1200px) {
+  .catalog-grid {
+    grid-template-columns: repeat(var(--catalog-columns), minmax(0, 1fr));
   }
 }
 @media (max-width: 480px) {

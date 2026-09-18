@@ -1,29 +1,44 @@
 <template>
   <article class="plan-card" :class="{ 'is-selected': selected }">
     <div class="plan-card__heading">
-      <span class="plan-icon" aria-hidden="true"
-        ><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
-          <rect x="3" y="3" width="18" height="7" rx="2" />
-          <rect x="3" y="14" width="18" height="7" rx="2" />
-          <path d="M7 6.5h.01M7 17.5h.01M11 6.5h6M11 17.5h6" /></svg
-      ></span>
-      <h3>{{ product.name }}</h3>
+      <span v-if="number !== null" class="plan-number" aria-hidden="true">{{
+        String(number).padStart(2, '0')
+      }}</span>
+      <span class="plan-heading-line" aria-hidden="true"></span>
       <span v-if="selected" class="plan-selected">已选套餐</span>
       <span v-else class="plan-cycle">{{ cycle.label }}</span>
     </div>
+    <h3>{{ product.name }}</h3>
     <div class="plan-price">
       <strong>{{ priceText }}</strong
-      ><span v-if="amount !== null">{{ displayCurrency(product.currency) }} / {{ cycle.unit }}</span>
+      ><span v-if="amount !== null"
+        >{{ displayCurrency(product.currency) }} / {{ cycle.unit }}</span
+      >
     </div>
-    <dl v-if="specs.length" class="plan-specs">
-      <div v-for="spec in specs" :key="spec.label">
-        <dt>{{ spec.label }}</dt>
-        <dd>{{ spec.value }}</dd>
-      </div>
-    </dl>
+    <ul v-if="specs.length || features.length" class="plan-inclusions">
+      <li
+        v-for="spec in specs"
+        :key="spec.label"
+        :class="{ 'is-unavailable': spec.value === '不支持' }"
+      >
+        <span class="inclusion-mark" aria-hidden="true">{{
+          spec.value === '不支持' ? '−' : '✓'
+        }}</span>
+        <span
+          ><span class="inclusion-label">{{ spec.label }}：</span
+          ><strong :class="{ 'is-unlimited': spec.value === '不限' }">{{
+            spec.value
+          }}</strong></span
+        >
+      </li>
+      <li v-for="(feature, index) in features" :key="`feature-${index}`">
+        <span class="inclusion-mark" aria-hidden="true">✓</span
+        ><span class="inclusion-feature">{{ feature }}</span>
+      </li>
+    </ul>
     <div class="plan-actions">
       <a v-if="amount !== null" :href="checkoutUrl" class="button button--primary"
-        >选择套餐 <span aria-hidden="true">↗</span></a
+        >立即使用 <span aria-hidden="true">↗</span></a
       >
       <button v-else class="button" disabled>当前周期不可用</button>
       <router-link
@@ -43,12 +58,14 @@ import {
   productPrice,
   formatAmount,
   displayCurrency,
-  productSpecs
+  productSpecs,
+  productFeatures
 } from '../utils/products'
 import { buildAuthPageUrl, buildConsoleCheckoutPath, dashboardLoginUrl } from '../config/runtime'
 const props = defineProps({
   product: { type: Object, required: true },
   period: { type: String, default: 'monthly' },
+  number: { type: Number, default: null },
   selected: Boolean
 })
 const cycle = computed(
@@ -56,8 +73,15 @@ const cycle = computed(
 )
 const amount = computed(() => productPrice(props.product, cycle.value.key))
 const priceText = computed(() => formatAmount(amount.value))
-// Keep cards easy to compare; the detail page includes all specs and features.
-const specs = computed(() => productSpecs(props.product).slice(0, 4))
+const specs = computed(() => productSpecs(props.product))
+const features = computed(() => {
+  // Older catalog responses may provide prose specs without structured limits.
+  const fallback =
+    !specs.value.length && Array.isArray(props.product.specs)
+      ? props.product.specs.filter((item) => typeof item === 'string' && item.trim())
+      : []
+  return [...new Set([...fallback, ...productFeatures(props.product)])]
+})
 const checkoutUrl = computed(() =>
   buildAuthPageUrl(dashboardLoginUrl, buildConsoleCheckoutPath(props.product.id))
 )
@@ -65,10 +89,11 @@ const checkoutUrl = computed(() =>
 
 <style scoped>
 .plan-card {
+  position: relative;
   min-width: 0;
   display: flex;
   flex-direction: column;
-  padding: 22px;
+  padding: 24px;
   border: 1px solid var(--border);
   border-radius: 16px;
   background: var(--panel);
@@ -76,6 +101,16 @@ const checkoutUrl = computed(() =>
   transition:
     border-color 0.2s,
     transform 0.2s;
+}
+.plan-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 24px;
+  right: 24px;
+  height: 2px;
+  background: linear-gradient(90deg, var(--accent), var(--accent-border));
+  border-radius: 0 0 2px 2px;
 }
 .plan-card:hover {
   transform: translateY(-4px);
@@ -86,23 +121,22 @@ const checkoutUrl = computed(() =>
   box-shadow: 0 0 0 1px var(--accent);
 }
 .plan-card__heading {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
 }
-.plan-icon {
-  display: grid;
-  place-items: center;
-  width: 34px;
-  height: 34px;
-  border-radius: 10px;
-  background: var(--accent-soft);
+.plan-number {
   color: var(--accent);
+  font:
+    600 15px/1.5 'Cascadia Code',
+    Consolas,
+    monospace;
+  letter-spacing: 0.04em;
 }
-.plan-icon svg {
-  width: 20px;
-  height: 20px;
+.plan-heading-line {
+  flex: 1;
+  height: 1px;
+  background: var(--border);
 }
 .plan-cycle,
 .plan-selected {
@@ -118,8 +152,8 @@ const checkoutUrl = computed(() =>
   background: var(--accent-soft);
 }
 h3 {
-  margin: 0;
-  font-size: 17px;
+  margin: 18px 0 0;
+  font-size: 23px;
   line-height: 1.4;
   color: var(--text-strong);
   overflow-wrap: anywhere;
@@ -128,56 +162,73 @@ h3 {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
-  gap: 8px;
-  margin: 20px 0;
+  gap: 7px;
+  margin: 16px 0 22px;
 }
 .plan-price strong {
   color: var(--text-strong);
-  font-size: 34px;
+  font-size: 44px;
   letter-spacing: -0.045em;
   line-height: 1.2;
   overflow-wrap: anywhere;
 }
 .plan-price span {
   color: var(--text-3);
-  font-size: 13px;
+  font-size: 12px;
+  white-space: nowrap;
 }
-.plan-specs {
+.plan-inclusions {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px 12px;
+  gap: 9px;
+  list-style: none;
   margin: 0;
-  padding: 16px 0;
-  border-block: 1px solid var(--border);
+  padding: 20px 0 0;
+  border-top: 1px solid var(--border);
 }
-.plan-specs div {
+.plan-inclusions li {
   display: grid;
+  grid-template-columns: 14px minmax(0, 1fr);
   align-content: start;
-  gap: 3px;
+  gap: 8px;
   min-width: 0;
-}
-dt {
-  color: var(--text-3);
-  font-size: 11px;
-}
-dd {
-  margin: 0;
-  color: var(--text-strong);
-  font-size: 14px;
-  font-weight: 600;
+  font-size: 13px;
+  line-height: 1.65;
   overflow-wrap: anywhere;
+}
+.inclusion-mark {
+  color: var(--ok);
+  font-size: 12px;
+  font-weight: 600;
+}
+.inclusion-label {
+  color: var(--text-2);
+}
+.plan-inclusions strong {
+  color: var(--text);
+  font-weight: 600;
+}
+.plan-inclusions strong.is-unlimited {
+  color: var(--accent);
+}
+.inclusion-feature {
+  color: var(--text);
+}
+.is-unavailable .inclusion-mark,
+.is-unavailable strong {
+  color: var(--text-3);
+  font-weight: 400;
 }
 .plan-actions {
   display: grid;
   gap: 10px;
-  padding-top: 18px;
+  padding-top: 26px;
   margin-top: auto;
   text-align: center;
 }
 .plan-actions .button {
-  min-height: 40px;
-  padding: 9px 14px;
-  font-size: 13px;
+  min-height: 44px;
+  padding: 11px 14px;
+  font-size: 14px;
   border-radius: 9px;
 }
 .plan-details {
@@ -186,5 +237,14 @@ dd {
 }
 .plan-details:hover {
   color: var(--accent);
+}
+@media (min-width: 1200px) {
+  .plan-card {
+    padding-inline: 20px;
+  }
+  .plan-card::before {
+    left: 20px;
+    right: 20px;
+  }
 }
 </style>
