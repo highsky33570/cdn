@@ -18,6 +18,7 @@ use App\Http\Controllers\Api\CdnSiteController;
 use App\Http\Controllers\Api\EpusdtController;
 use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\ProductCatalogController;
+use App\Http\Controllers\Api\PublicNetworkController;
 use App\Http\Controllers\Api\ServiceInstanceController;
 use Illuminate\Support\Facades\Route;
 
@@ -29,6 +30,9 @@ Route::get('/ping', function () {
 });
 
 Route::get('/products', [ProductCatalogController::class, 'index']);
+
+// 公开的网络概况（在线边缘节点数 + 分布），营销站用，服务端算好并缓存
+Route::get('/network', [PublicNetworkController::class, 'index']);
 
 // ─── 认证（替代 Flask backend） ─────────────────────────
 Route::prefix('auth')->group(function () {

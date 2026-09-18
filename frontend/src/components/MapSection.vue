@@ -6,9 +6,7 @@
   >
     <div class="container-page">
       <h2 class="section-title">亚太节点</h2>
-      <p class="section-desc">
-        TyCDN目前接入日本东京高速节点，三网双程CN2线路，提供高达12Tbps+的DDoS防护能力
-      </p>
+      <p class="section-desc">{{ mapDesc }}</p>
 
       <div class="map-wrap">
         <img
@@ -18,13 +16,16 @@
         />
 
         <button
+          v-for="loc in activeRegions"
+          :key="loc.key"
           class="japan-hotspot"
+          :style="{ left: loc.x + '%', top: loc.y + '%' }"
+          :aria-label="loc.label + ' 节点'"
           @click="goDetail"
-          aria-label="日本节点"
         >
           <span class="pulse"></span>
           <span class="dot"></span>
-          <span class="label">Japan-tokyo</span>
+          <span class="label">{{ markerLabel(loc) }}</span>
         </button>
       </div>
     </div>
@@ -32,13 +33,41 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { edgeLocations } from '../data/landing'
+import { useNetworkStats, locationCount } from '../composables/useNetworkStats'
 
 const router = useRouter()
 const sectionRef = ref(null)
 const isVisible = ref(false)
 let observer = null
+
+const { onlineNodes, locations } = useNetworkStats()
+
+// Once the live data loads, show only regions that actually have online nodes;
+// before it loads, fall back to the full curated list.
+const activeRegions = computed(() => {
+  const withNodes = edgeLocations.filter(
+    (l) => locationCount(locations.value, l.key) > 0,
+  )
+
+  return withNodes.length ? withNodes : edgeLocations
+})
+
+const mapDesc = computed(() => {
+  const names = activeRegions.value.map((l) => l.label).join('、')
+  const count =
+    onlineNodes.value != null ? `${onlineNodes.value} 个在线边缘节点，` : ''
+
+  return `TyCDN 已接入 ${names} 边缘节点，${count}CN2 优化线路，就近接入、边缘清洗全程自动。`
+})
+
+const markerLabel = (loc) => {
+  const c = locationCount(locations.value, loc.key)
+
+  return c > 0 ? `${loc.label} · ${c}` : loc.label
+}
 
 const goDetail = () => {
   router.push('/plans?group=jpn')

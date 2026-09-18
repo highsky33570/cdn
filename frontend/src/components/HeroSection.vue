@@ -96,9 +96,24 @@
 </template>
 
 <script setup>
+import { computed } from 'vue'
 import { contact, mapHighlights, PENDING_FACTS, scenarios } from '../data/landing'
+import { useNetworkStats } from '../composables/useNetworkStats'
 
-const stats = [PENDING_FACTS.latency, PENDING_FACTS.nodes, PENDING_FACTS.uptime]
+const { onlineNodes } = useNetworkStats()
+
+// 在线边缘节点 is real now that nodes are deployed — pull the live count from
+// /api/network. Latency and uptime stay pending: publishing them without real
+// probe/monitoring data would be fabricating performance figures.
+const stats = computed(() => [
+  PENDING_FACTS.latency,
+  {
+    ...PENDING_FACTS.nodes,
+    value: onlineNodes.value != null ? String(onlineNodes.value) : '—',
+    pending: onlineNodes.value == null,
+  },
+  PENDING_FACTS.uptime,
+])
 
 const scrollTo = (id) => {
   document.querySelector(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })

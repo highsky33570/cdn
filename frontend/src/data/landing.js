@@ -202,6 +202,18 @@ export const mapHighlights = [
   { title: '实时报表', desc: '带宽 · 回源 · 攻击全可查' },
 ]
 
+/**
+ * 「亚太节点」地图上的边缘节点标记。
+ *
+ * 坐标是地图图片上的百分比位置（CDNfly 不提供节点经纬度，区域统一为「默认」），
+ * `key` 与节点名前缀对应（hongkong-05 → hongkong），用于把 /api/network 返回的
+ * 实时在线数量匹配到对应标记。新增地区时在此加一行即可。
+ */
+export const edgeLocations = [
+  { key: 'jp-tokyo', label: '日本东京', x: 85.6, y: 54.3 },
+  { key: 'hongkong', label: '香港', x: 80.5, y: 63 },
+]
+
 /** 防护能力 —— 描述机制，不承诺具体防御量级。 */
 export const defenseLayers = [
   {
