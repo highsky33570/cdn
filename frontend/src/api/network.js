@@ -8,5 +8,6 @@ import { http } from './http'
 export async function fetchNetwork() {
   const res = await http('/api/network')
 
-  return res && res.data ? res.data : { online_nodes: 0, locations: [] }
+  if (!res?.data || res.data.online_nodes == null) throw new Error('Invalid network response')
+  return res.data
 }

@@ -1,10 +1,5 @@
 <template>
-  <section
-    id="defense"
-    ref="sectionRef"
-    class="def-section"
-    :class="{ 'is-visible': isVisible }"
-  >
+  <section id="defense" ref="sectionRef" class="def-section" :class="{ 'is-visible': isVisible }">
     <div class="container-page def-inner">
       <div class="def-copy">
         <span class="eyebrow">防护</span>
@@ -35,35 +30,29 @@
         <svg viewBox="0 0 320 400" class="def-svg" role="presentation">
           <defs>
             <linearGradient id="defBeam" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stop-color="#ff5f6d" stop-opacity="0.55" />
-              <stop offset="100%" stop-color="#4d8cff" stop-opacity="0.1" />
+              <stop offset="0%" stop-color="var(--danger)" stop-opacity="0.55" />
+              <stop offset="100%" stop-color="var(--accent)" stop-opacity="0.1" />
             </linearGradient>
             <linearGradient id="defClean" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stop-color="#4ade80" stop-opacity="0.35" />
-              <stop offset="100%" stop-color="#4ade80" stop-opacity="0.05" />
+              <stop offset="0%" stop-color="var(--ok)" stop-opacity="0.35" />
+              <stop offset="100%" stop-color="var(--ok)" stop-opacity="0.05" />
             </linearGradient>
           </defs>
 
           <!-- incoming traffic, wide and hostile -->
           <path d="M20 26 L300 26 L232 120 L88 120 Z" fill="url(#defBeam)" />
-          <text x="160" y="16" class="svg-cap" text-anchor="middle">
-            混合流量
-          </text>
+          <text x="160" y="16" class="svg-cap" text-anchor="middle">混合流量</text>
 
           <!-- three filter bands -->
           <g class="def-band" style="--d: 0s">
             <rect x="78" y="120" width="164" height="52" rx="10" />
             <text x="160" y="144" class="svg-l" text-anchor="middle">L3 / L4</text>
-            <text x="160" y="161" class="svg-s" text-anchor="middle">
-              流量型攻击丢弃
-            </text>
+            <text x="160" y="161" class="svg-s" text-anchor="middle">流量型攻击丢弃</text>
           </g>
           <g class="def-band" style="--d: 0.12s">
             <rect x="94" y="186" width="132" height="52" rx="10" />
             <text x="160" y="210" class="svg-l" text-anchor="middle">L7 WAF</text>
-            <text x="160" y="227" class="svg-s" text-anchor="middle">
-              漏洞特征匹配
-            </text>
+            <text x="160" y="227" class="svg-s" text-anchor="middle">漏洞特征匹配</text>
           </g>
           <g class="def-band" style="--d: 0.24s">
             <rect x="110" y="252" width="100" height="52" rx="10" />
@@ -74,14 +63,7 @@
           <!-- what survives -->
           <path d="M126 304 L194 304 L178 352 L142 352 Z" fill="url(#defClean)" />
 
-          <rect
-            x="104"
-            y="352"
-            width="112"
-            height="36"
-            rx="10"
-            class="def-origin"
-          />
+          <rect x="104" y="352" width="112" height="36" rx="10" class="def-origin" />
           <text x="160" y="375" class="svg-l" text-anchor="middle">你的源站</text>
         </svg>
         <figcaption class="def-cap">正常请求</figcaption>
@@ -100,12 +82,7 @@ const { sectionRef, isVisible } = useReveal()
 <style scoped>
 .def-section {
   padding: 120px 0;
-  background:
-    radial-gradient(
-      ellipse at 78% 40%,
-      rgba(77, 140, 255, 0.1),
-      transparent 62%
-    );
+  background: radial-gradient(ellipse at 78% 40%, var(--accent-glow), transparent 62%);
 }
 
 .def-inner {
@@ -195,7 +172,7 @@ const { sectionRef, isVisible } = useReveal()
 
 .def-band rect {
   fill: var(--panel);
-  stroke: rgba(127, 176, 255, 0.35);
+  stroke: var(--accent-border);
   stroke-width: 1;
   opacity: 0;
   transform: translateY(10px);
@@ -215,7 +192,7 @@ const { sectionRef, isVisible } = useReveal()
 
 .def-origin {
   fill: var(--panel);
-  stroke: rgba(74, 222, 128, 0.5);
+  stroke: var(--ok-border);
   stroke-width: 1;
 }
 
@@ -239,7 +216,7 @@ const { sectionRef, isVisible } = useReveal()
 .def-cap {
   margin-top: 14px;
   font-size: 13px;
-  color: rgba(74, 222, 128, 0.85);
+  color: var(--ok);
   letter-spacing: 0.08em;
 }
 

@@ -1,10 +1,13 @@
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { useTheme } from '../composables/useTheme'
+import ThemeToggle from '../components/ThemeToggle.vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { Message } from '@arco-design/web-vue'
-import { IconEmail, IconLanguage } from '@arco-design/web-vue/es/icon'
+import { IconEmail } from '@arco-design/web-vue/es/icon'
 import { requestPasswordResetLink } from '../api/auth'
 
+const { theme } = useTheme()
 const router = useRouter()
 
 const recaptchaSiteKey = import.meta.env.VITE_RECAPTCHA_SITE_KEY || ''
@@ -15,6 +18,16 @@ const emailTouched = ref(false)
 const sent = ref(false)
 const recaptchaToken = ref('')
 const recaptchaWidgetId = ref(null)
+
+watch(
+  theme,
+  () => {
+    recaptchaToken.value = ''
+    recaptchaWidgetId.value = null
+    onRecaptchaLoad()
+  },
+  { flush: 'post' }
+)
 
 const emailError = computed(() => {
   const value = form.value.email.trim()
@@ -27,13 +40,19 @@ const validateEmail = () => {
 }
 
 function onRecaptchaLoad() {
-  if (!recaptchaSiteKey || !window.grecaptcha) return
+  if (!recaptchaSiteKey || !window.grecaptcha?.render) return
   recaptchaWidgetId.value = window.grecaptcha.render('recaptcha-container', {
     sitekey: recaptchaSiteKey,
-    theme: 'dark',
-    callback: (token) => { recaptchaToken.value = token },
-    'expired-callback': () => { recaptchaToken.value = '' },
-    'error-callback': () => { recaptchaToken.value = '' },
+    theme: theme.value,
+    callback: (token) => {
+      recaptchaToken.value = token
+    },
+    'expired-callback': () => {
+      recaptchaToken.value = ''
+    },
+    'error-callback': () => {
+      recaptchaToken.value = ''
+    }
   })
 }
 
@@ -79,7 +98,7 @@ const handleSubmit = async () => {
     loading.value = true
     const res = await requestPasswordResetLink({
       email,
-      captcha: recaptchaToken.value || 'no-captcha',
+      captcha: recaptchaToken.value || 'no-captcha'
     })
     sent.value = true
     Message.success(res.status || '重置密码邮件已发送，请检查邮箱')
@@ -106,17 +125,13 @@ const backToLogin = () => {
         <span class="brand__name">TyCDN</span>
       </RouterLink>
 
-      <button class="lang-btn" type="button" aria-label="language">
-        <IconLanguage />
-      </button>
+      <ThemeToggle />
     </header>
 
     <main class="forgot-main">
       <section class="forgot-panel">
         <h1 class="forgot-panel__title">找回密码</h1>
-        <p class="forgot-panel__subtitle">
-          输入注册邮箱，我们会向你的邮箱发送一封重置密码邮件。
-        </p>
+        <p class="forgot-panel__subtitle">输入注册邮箱，我们会向你的邮箱发送一封重置密码邮件。</p>
 
         <div v-if="sent" class="forgot-notice">
           重置邮件已发送。如果几分钟内没有收到，请检查垃圾邮件箱，或稍后再试。
@@ -143,7 +158,7 @@ const backToLogin = () => {
           </div>
 
           <div v-if="recaptchaSiteKey" class="forgot-field forgot-field--captcha">
-            <div id="recaptcha-container"></div>
+            <div id="recaptcha-container" :key="theme"></div>
           </div>
 
           <a-button
@@ -157,16 +172,12 @@ const backToLogin = () => {
             发送重置邮件
           </a-button>
 
-          <button class="text-link" type="button" @click="backToLogin">
-            返回登录
-          </button>
+          <button class="text-link" type="button" @click="backToLogin">返回登录</button>
         </div>
       </section>
     </main>
 
-    <footer class="forgot-footer">
-      Copyright © 2023-2026 TyCDN LTD.
-    </footer>
+    <footer class="forgot-footer">Copyright © 2023-2026 TyCDN LTD.</footer>
   </div>
 </template>
 
@@ -176,9 +187,9 @@ const backToLogin = () => {
   min-height: 100vh;
   overflow: hidden;
   background:
-    radial-gradient(circle at 50% 10%, rgba(77, 113, 255, 0.14), transparent 26%),
-    linear-gradient(180deg, #171b28 0%, #151a28 35%, #121723 100%);
-  color: #fff;
+    radial-gradient(circle at 50% 10%, var(--accent-glow), transparent 26%),
+    linear-gradient(180deg, var(--bg-grad-1), var(--bg-grad-2));
+  color: var(--text-strong);
 }
 
 .forgot-page__bg {
@@ -187,10 +198,10 @@ const backToLogin = () => {
   pointer-events: none;
   background: linear-gradient(
     90deg,
-    rgba(102, 129, 255, 0.06) 0%,
+    var(--accent-glow) 0%,
     transparent 35%,
     transparent 65%,
-    rgba(102, 129, 255, 0.04) 100%
+    var(--accent-glow) 100%
   );
 }
 
@@ -207,7 +218,7 @@ const backToLogin = () => {
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  color: #f5f7ff;
+  color: var(--text-strong);
   text-decoration: none;
   font-weight: 700;
   font-size: 18px;
@@ -221,19 +232,6 @@ const backToLogin = () => {
 
 .brand__name {
   letter-spacing: -0.01em;
-}
-
-.lang-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 34px;
-  height: 34px;
-  border: 0;
-  background: transparent;
-  color: rgba(255, 255, 255, 0.78);
-  font-size: 18px;
-  cursor: pointer;
 }
 
 .forgot-main {
@@ -256,23 +254,23 @@ const backToLogin = () => {
   font-size: 32px;
   line-height: 1.2;
   font-weight: 800;
-  color: rgba(255, 255, 255, 0.96);
+  color: var(--text-strong);
 }
 
 .forgot-panel__subtitle {
   margin: 0 0 24px;
   font-size: 15px;
   line-height: 1.7;
-  color: rgba(255, 255, 255, 0.52);
+  color: var(--text-3);
 }
 
 .forgot-notice {
   margin-bottom: 18px;
   padding: 14px 16px;
-  border: 1px solid rgba(78, 132, 255, 0.2);
+  border: 1px solid var(--accent-border);
   border-radius: 12px;
-  background: rgba(78, 132, 255, 0.12);
-  color: rgba(255, 255, 255, 0.86);
+  background: var(--accent-glow);
+  color: var(--text);
   font-size: 14px;
   line-height: 1.6;
 }
@@ -304,30 +302,30 @@ const backToLogin = () => {
   width: 100%;
   min-height: 56px;
   padding: 0 16px;
-  border: 1px solid rgba(255, 255, 255, 0.06) !important;
+  border: 1px solid var(--border) !important;
   border-radius: 8px !important;
-  background: rgba(255, 255, 255, 0.08) !important;
+  background: var(--surface) !important;
   box-shadow: none !important;
 }
 
 :deep(.forgot-input.arco-input-wrapper:hover),
 :deep(.forgot-input > .arco-input-wrapper:hover),
 :deep(.forgot-input .arco-input-wrapper:hover) {
-  border-color: rgba(63, 110, 255, 0.22) !important;
-  background: rgba(255, 255, 255, 0.1) !important;
+  border-color: var(--accent-border) !important;
+  background: var(--surface) !important;
 }
 
 :deep(.forgot-input.arco-input-wrapper.arco-input-focus),
 :deep(.forgot-input > .arco-input-wrapper.arco-input-focus),
 :deep(.forgot-input .arco-input-wrapper.arco-input-focus) {
-  border-color: rgba(63, 110, 255, 0.34) !important;
-  background: rgba(255, 255, 255, 0.1) !important;
-  box-shadow: 0 0 0 2px rgba(39, 98, 255, 0.08) !important;
+  border-color: var(--accent-border) !important;
+  background: var(--surface) !important;
+  box-shadow: 0 0 0 2px var(--accent-glow) !important;
 }
 
 :deep(.forgot-input .arco-input-prefix) {
   margin-right: 12px;
-  color: rgba(255, 255, 255, 0.34) !important;
+  color: var(--text-3) !important;
 }
 
 :deep(.forgot-input .arco-input),
@@ -339,13 +337,13 @@ const backToLogin = () => {
   padding: 0 !important;
   border: 0 !important;
   font-size: 16px;
-  color: rgba(255, 255, 255, 0.92) !important;
+  color: var(--text-strong) !important;
   background: transparent !important;
 }
 
 :deep(.forgot-input .arco-input::placeholder),
 :deep(.forgot-input input.arco-input::placeholder) {
-  color: rgba(255, 255, 255, 0.32) !important;
+  color: var(--text-3) !important;
 }
 
 .forgot-error {
@@ -353,7 +351,7 @@ const backToLogin = () => {
   padding-left: 2px;
   font-size: 13px;
   line-height: 1.4;
-  color: #ff6b6b;
+  color: var(--danger);
 }
 
 .forgot-submit {
@@ -370,7 +368,7 @@ const backToLogin = () => {
   border: 0;
   background: transparent;
   padding: 0;
-  color: #6ea8ff;
+  color: var(--accent-2);
   font-size: 14px;
   cursor: pointer;
 }
@@ -383,7 +381,7 @@ const backToLogin = () => {
   z-index: 2;
   text-align: center;
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.3);
+  color: var(--text-3);
 }
 
 @keyframes auth-field-fade-in {

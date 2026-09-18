@@ -1,160 +1,177 @@
 <script setup>
-import { computed, onMounted, ref } from "vue";
-import { useRoute, useRouter } from "vue-router";
-import { Message } from "@arco-design/web-vue";
-import { IconLanguage, IconLock, IconUser } from "@arco-design/web-vue/es/icon";
-import { login } from "../api/auth";
-import { resolvePostAuthRedirect } from "../config/runtime";
+import { useTheme } from '../composables/useTheme'
+import ThemeToggle from '../components/ThemeToggle.vue'
+import { computed, onMounted, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { Message } from '@arco-design/web-vue'
+import { IconLock, IconUser } from '@arco-design/web-vue/es/icon'
+import { login } from '../api/auth'
+import { resolvePostAuthRedirect } from '../config/runtime'
 
-const route = useRoute();
-const router = useRouter();
+const { theme } = useTheme()
+const route = useRoute()
+const router = useRouter()
 
-const recaptchaSiteKey = import.meta.env.VITE_RECAPTCHA_SITE_KEY || "";
+const recaptchaSiteKey = import.meta.env.VITE_RECAPTCHA_SITE_KEY || ''
 
 const form = ref({
-  account: "",
-  password: "",
-});
+  account: '',
+  password: ''
+})
 
-const loading = ref(false);
-const showPassword = ref(true);
-const accountTouched = ref(false);
-const passwordTouched = ref(false);
-const recaptchaToken = ref("");
-const recaptchaWidgetId = ref(null);
+const loading = ref(false)
+const showPassword = ref(true)
+const accountTouched = ref(false)
+const passwordTouched = ref(false)
+const recaptchaToken = ref('')
+const recaptchaWidgetId = ref(null)
+
+// reCAPTCHA resolves its skin at render time, so remount it after a theme change.
+watch(
+  theme,
+  () => {
+    recaptchaToken.value = ''
+    recaptchaWidgetId.value = null
+    onRecaptchaLoad()
+  },
+  { flush: 'post' }
+)
 
 const passwordError = computed(() => {
-  const value = form.value.password;
-  if (!passwordTouched.value || !value) return "";
+  const value = form.value.password
+  if (!passwordTouched.value || !value) return ''
 
-  return value.length >= 6 ? "" : "密码长度至少 6 位";
-});
+  return value.length >= 6 ? '' : '密码长度至少 6 位'
+})
 
 const redirectTarget = computed(() =>
-  typeof route.query.redirect === "string" ? route.query.redirect : "",
-);
+  typeof route.query.redirect === 'string' ? route.query.redirect : ''
+)
 
 const validateAccount = () => {
-  accountTouched.value = true;
-};
+  accountTouched.value = true
+}
 
 const validatePassword = () => {
-  passwordTouched.value = true;
-};
+  passwordTouched.value = true
+}
 
 function onRecaptchaLoad() {
-  if (!recaptchaSiteKey || !window.grecaptcha) return;
-  recaptchaWidgetId.value = window.grecaptcha.render("login-recaptcha", {
+  if (!recaptchaSiteKey || !window.grecaptcha?.render) return
+  recaptchaWidgetId.value = window.grecaptcha.render('login-recaptcha', {
     sitekey: recaptchaSiteKey,
-    theme: "dark",
-    callback: (token) => { recaptchaToken.value = token; },
-    "expired-callback": () => { recaptchaToken.value = ""; },
-    "error-callback": () => { recaptchaToken.value = ""; },
-  });
+    theme: theme.value,
+    callback: (token) => {
+      recaptchaToken.value = token
+    },
+    'expired-callback': () => {
+      recaptchaToken.value = ''
+    },
+    'error-callback': () => {
+      recaptchaToken.value = ''
+    }
+  })
 }
 
 function resetRecaptcha() {
-  recaptchaToken.value = "";
+  recaptchaToken.value = ''
   if (window.grecaptcha && recaptchaWidgetId.value !== null) {
-    window.grecaptcha.reset(recaptchaWidgetId.value);
+    window.grecaptcha.reset(recaptchaWidgetId.value)
   }
 }
 
 onMounted(() => {
-  if (!recaptchaSiteKey) return;
+  if (!recaptchaSiteKey) return
   if (window.grecaptcha && window.grecaptcha.render) {
-    onRecaptchaLoad();
-    return;
+    onRecaptchaLoad()
+    return
   }
-  window.__onRecaptchaLoad = onRecaptchaLoad;
-  const script = document.createElement("script");
-  script.src = "https://www.google.com/recaptcha/api.js?onload=__onRecaptchaLoad&render=explicit";
-  script.async = true;
-  script.defer = true;
-  document.head.appendChild(script);
-});
+  window.__onRecaptchaLoad = onRecaptchaLoad
+  const script = document.createElement('script')
+  script.src = 'https://www.google.com/recaptcha/api.js?onload=__onRecaptchaLoad&render=explicit'
+  script.async = true
+  script.defer = true
+  document.head.appendChild(script)
+})
 
 const handleLogin = async () => {
-  if (loading.value) return;
+  if (loading.value) return
 
-  accountTouched.value = true;
-  passwordTouched.value = true;
+  accountTouched.value = true
+  passwordTouched.value = true
 
-  const account = form.value.account.trim();
+  const account = form.value.account.trim()
 
   if (!account) {
-    Message.warning("请输入用户名或邮箱");
-    return;
+    Message.warning('请输入用户名或邮箱')
+    return
   }
 
   if (!form.value.password) {
-    Message.warning("请输入密码");
-    return;
+    Message.warning('请输入密码')
+    return
   }
 
-  if (passwordError.value) return;
+  if (passwordError.value) return
 
   if (recaptchaSiteKey && !recaptchaToken.value) {
-    Message.warning("请完成人机验证");
-    return;
+    Message.warning('请完成人机验证')
+    return
   }
 
   try {
-    loading.value = true;
+    loading.value = true
     const res = await login({
       account,
       password: form.value.password,
       captcha: recaptchaToken.value || undefined,
-      redirect: redirectTarget.value || undefined,
-    });
+      redirect: redirectTarget.value || undefined
+    })
 
     if (res.data?.two_factor) {
-      Message.info("请输入两步验证码继续登录");
+      Message.info('请输入两步验证码继续登录')
       router.push({
-        path: "/two-factor-challenge",
+        path: '/two-factor-challenge',
         query: {
           account,
-          ...(typeof route.query.redirect === "string"
-            ? { redirect: route.query.redirect }
-            : {}),
-        },
-      });
-      return;
+          ...(typeof route.query.redirect === 'string' ? { redirect: route.query.redirect } : {})
+        }
+      })
+      return
     }
 
     if (res.data?.email_verified) {
-      Message.success("登录成功");
-      window.location.href = res.data?.redirect || resolvePostAuthRedirect(redirectTarget.value);
-      return;
+      Message.success('登录成功')
+      window.location.href = res.data?.redirect || resolvePostAuthRedirect(redirectTarget.value)
+      return
     }
 
-    Message.warning("请先完成邮箱验证");
+    Message.warning('请先完成邮箱验证')
     router.push({
-      path: "/verify-email",
+      path: '/verify-email',
       query: {
         ...(res.data?.user?.email ? { email: res.data.user.email } : {}),
-        ...(redirectTarget.value ? { redirect: redirectTarget.value } : {}),
-      },
-    });
+        ...(redirectTarget.value ? { redirect: redirectTarget.value } : {})
+      }
+    })
   } catch (error) {
-    Message.error(error instanceof Error ? error.message : "登录失败");
+    Message.error(error instanceof Error ? error.message : '登录失败')
   } finally {
-    loading.value = false;
-    resetRecaptcha();
+    loading.value = false
+    resetRecaptcha()
   }
-};
+}
 
 const goRegister = () => {
   router.push({
-    path: "/register",
-    query: redirectTarget.value ? { redirect: redirectTarget.value } : {},
-  });
-};
+    path: '/register',
+    query: redirectTarget.value ? { redirect: redirectTarget.value } : {}
+  })
+}
 
 const goForgotPassword = () => {
-  router.push("/forgot-password");
-};
-
+  router.push('/forgot-password')
+}
 </script>
 
 <template>
@@ -167,9 +184,7 @@ const goForgotPassword = () => {
         <span class="brand__name">TyCDN</span>
       </RouterLink>
 
-      <button class="lang-btn" type="button" aria-label="language">
-        <IconLanguage />
-      </button>
+      <ThemeToggle />
     </header>
 
     <main class="login-main">
@@ -193,10 +208,7 @@ const goForgotPassword = () => {
               </template>
             </a-input>
 
-            <div
-              v-if="accountTouched && !form.account.trim()"
-              class="login-error"
-            >
+            <div v-if="accountTouched && !form.account.trim()" class="login-error">
               请输入用户名或邮箱
             </div>
           </div>
@@ -225,17 +237,13 @@ const goForgotPassword = () => {
           </div>
 
           <div class="login-actions">
-            <button
-              class="text-link text-link--inline"
-              type="button"
-              @click="goForgotPassword"
-            >
+            <button class="text-link text-link--inline" type="button" @click="goForgotPassword">
               忘记密码？
             </button>
           </div>
 
           <div v-if="recaptchaSiteKey" class="login-field login-field--captcha">
-            <div id="login-recaptcha"></div>
+            <div id="login-recaptcha" :key="theme"></div>
           </div>
 
           <a-button
@@ -251,9 +259,7 @@ const goForgotPassword = () => {
 
           <div class="register-row">
             <span>没有账号?</span>
-            <button class="text-link" type="button" @click="goRegister">
-              立即注册
-            </button>
+            <button class="text-link" type="button" @click="goRegister">立即注册</button>
           </div>
         </form>
       </section>
@@ -269,13 +275,9 @@ const goForgotPassword = () => {
   min-height: 100vh;
   overflow: hidden;
   background:
-    radial-gradient(
-      circle at 50% 10%,
-      rgba(77, 113, 255, 0.14),
-      transparent 26%
-    ),
-    linear-gradient(180deg, #171b28 0%, #151a28 35%, #121723 100%);
-  color: #fff;
+    radial-gradient(circle at 50% 10%, var(--accent-glow), transparent 26%),
+    linear-gradient(180deg, var(--bg-grad-1), var(--bg-grad-2));
+  color: var(--text-strong);
 }
 
 .login-page__bg {
@@ -284,10 +286,10 @@ const goForgotPassword = () => {
   pointer-events: none;
   background: linear-gradient(
     90deg,
-    rgba(102, 129, 255, 0.06) 0%,
+    var(--accent-glow) 0%,
     transparent 35%,
     transparent 65%,
-    rgba(102, 129, 255, 0.04) 100%
+    var(--accent-glow) 100%
   );
 }
 
@@ -304,7 +306,7 @@ const goForgotPassword = () => {
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  color: #f5f7ff;
+  color: var(--text-strong);
   text-decoration: none;
   font-weight: 700;
   font-size: 18px;
@@ -318,19 +320,6 @@ const goForgotPassword = () => {
 
 .brand__name {
   letter-spacing: -0.01em;
-}
-
-.lang-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 34px;
-  height: 34px;
-  border: 0;
-  background: transparent;
-  color: rgba(255, 255, 255, 0.78);
-  font-size: 18px;
-  cursor: pointer;
 }
 
 .login-main {
@@ -353,14 +342,14 @@ const goForgotPassword = () => {
   font-size: 32px;
   line-height: 1.2;
   font-weight: 800;
-  color: rgba(255, 255, 255, 0.96);
+  color: var(--text-strong);
 }
 
 .login-panel__subtitle {
   margin: 0 0 28px;
   font-size: 15px;
   line-height: 1.6;
-  color: rgba(255, 255, 255, 0.44);
+  color: var(--text-3);
 }
 
 .login-form {
@@ -403,25 +392,25 @@ const goForgotPassword = () => {
   width: 100%;
   min-height: 56px;
   padding: 0 16px;
-  border: 1px solid rgba(255, 255, 255, 0.06) !important;
+  border: 1px solid var(--border) !important;
   border-radius: 8px !important;
-  background: rgba(255, 255, 255, 0.08) !important;
+  background: var(--surface) !important;
   box-shadow: none !important;
 }
 
 :deep(.login-input.arco-input-wrapper:hover),
 :deep(.login-input > .arco-input-wrapper:hover),
 :deep(.login-input .arco-input-wrapper:hover) {
-  border-color: rgba(63, 110, 255, 0.22) !important;
-  background: rgba(255, 255, 255, 0.1) !important;
+  border-color: var(--accent-border) !important;
+  background: var(--surface) !important;
 }
 
 :deep(.login-input.arco-input-wrapper.arco-input-focus),
 :deep(.login-input > .arco-input-wrapper.arco-input-focus),
 :deep(.login-input .arco-input-wrapper.arco-input-focus) {
-  border-color: rgba(63, 110, 255, 0.34) !important;
-  background: rgba(255, 255, 255, 0.1) !important;
-  box-shadow: 0 0 0 2px rgba(39, 98, 255, 0.08) !important;
+  border-color: var(--accent-border) !important;
+  background: var(--surface) !important;
+  box-shadow: 0 0 0 2px var(--accent-glow) !important;
 }
 
 :deep(.login-input .arco-input-prefix),
@@ -431,7 +420,7 @@ const goForgotPassword = () => {
   justify-content: center;
   flex: 0 0 auto;
   height: 100%;
-  color: rgba(255, 255, 255, 0.34) !important;
+  color: var(--text-3) !important;
 }
 
 :deep(.login-input .arco-input-prefix) {
@@ -447,7 +436,7 @@ const goForgotPassword = () => {
   align-items: center;
   justify-content: center;
   font-size: 18px;
-  color: rgba(255, 255, 255, 0.34) !important;
+  color: var(--text-3) !important;
 }
 
 :deep(.login-input .arco-input),
@@ -460,14 +449,14 @@ const goForgotPassword = () => {
   border: 0 !important;
   font-size: 16px;
   white-space: nowrap !important;
-  color: rgba(255, 255, 255, 0.92) !important;
+  color: var(--text-strong) !important;
   background: transparent !important;
 }
 
 :deep(.login-input .arco-input::placeholder),
 :deep(.login-input input.arco-input::placeholder) {
   white-space: nowrap !important;
-  color: rgba(255, 255, 255, 0.32) !important;
+  color: var(--text-3) !important;
 }
 
 :deep(.login-input input.arco-input::-ms-reveal),
@@ -481,7 +470,7 @@ const goForgotPassword = () => {
   justify-content: center;
   width: 18px;
   height: 18px;
-  color: rgba(255, 255, 255, 0.34) !important;
+  color: var(--text-3) !important;
 }
 
 .login-error {
@@ -489,7 +478,7 @@ const goForgotPassword = () => {
   padding-left: 2px;
   font-size: 13px;
   line-height: 1.4;
-  color: #ff6b6b;
+  color: var(--danger);
 }
 
 .login-submit {
@@ -506,7 +495,7 @@ const goForgotPassword = () => {
   justify-content: center;
   gap: 6px;
   margin-top: 24px;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--text-3);
   font-size: 14px;
 }
 
@@ -514,13 +503,13 @@ const goForgotPassword = () => {
   border: 0;
   background: transparent;
   padding: 0;
-  color: #2468ff;
+  color: var(--accent);
   font-size: 14px;
   cursor: pointer;
 }
 
 .text-link--inline {
-  color: #6ea8ff;
+  color: var(--accent-2);
 }
 
 .login-footer {
@@ -531,7 +520,7 @@ const goForgotPassword = () => {
   z-index: 2;
   text-align: center;
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.3);
+  color: var(--text-3);
 }
 
 @keyframes auth-field-fade-in {

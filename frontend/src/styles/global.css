@@ -1,168 +1,280 @@
-/*
- * Theme tokens.
- *
- * The site is dark-first: bare :root carries the dark palette, and
- * [data-theme="light"] overrides the same tokens for light. The theme is
- * chosen by useTheme.js, which stamps data-theme on <html> and arco-theme on
- * <body>; an inline script in index.html sets both before first paint so there
- * is no flash. Components must read colors through these tokens (never a raw
- * hex/rgba) so the toggle reaches every surface.
- */
+/* Shared semantic palette. Every page follows the explicit theme selection. */
 :root {
-  /* page */
-  --bg: #090f1d;
-  --bg-grad-1: #0a1020;
-  --bg-grad-2: #0a1020;
-
-  /* text */
-  --text: #f5f7ff;
-  --text-2: rgba(245, 247, 255, 0.72);
-  --text-3: rgba(245, 247, 255, 0.55);
-  --text-strong: #ffffff;
-
-  /* surfaces / lines */
-  --surface: rgba(255, 255, 255, 0.04);
-  --surface-strong: rgba(255, 255, 255, 0.06);
-  --border: rgba(255, 255, 255, 0.09);
-  --border-strong: rgba(255, 255, 255, 0.14);
-
-  /* opaque cards / panels (were flat dark hexes) */
-  --panel: #0e1830;
-  --panel-2: #0b1224;
-
-  /* header (translucent over the page) */
-  --header-bg: rgba(10, 16, 32, 0.42);
-  --header-border: rgba(255, 255, 255, 0.06);
-
-  /* accents */
-  --accent: #4d8cff;
-  --accent-2: #7fb0ff;
-  --accent-3: #a9caff;
+  --bg: #0b1120;
+  --bg-grad-1: #0b1120;
+  --bg-grad-2: #0e1627;
+  --text: #e8edf5;
+  --text-2: #abb8cb;
+  --text-3: #94a3b8;
+  --text-strong: #f8fafc;
+  --surface: #141f32;
+  --surface-strong: #1d2b41;
+  --border: #26344b;
+  --border-strong: #40516b;
+  --panel: #111c2e;
+  --panel-2: #0e1829;
+  --header-bg: rgba(11, 17, 32, 0.92);
+  --header-border: #26344b;
+  --accent: #83b4ff;
+  --accent-2: #9bc3ff;
+  --accent-3: #bad6ff;
   --accent-ink: #ffffff;
-  --accent-glow: rgba(77, 140, 255, 0.16);
-  --accent-soft: rgba(77, 140, 255, 0.12);
-
-  /* status */
-  --ok: #4ade80;
-  --ok-2: #86efac;
-  --warn: #ff8f6b;
-  --danger: #ff5f6d;
-
-  --shadow: rgba(0, 0, 0, 0.4) 0 18px 40px -18px;
-
-  --header-h: 64px;
-  /* header 和 hero 用，宽一些 */
-  --hero-max-width: 1560px;
-  /* 下面内容区用，窄一些 */
-  --page-max-width: 1320px;
-
+  --accent-fill: #2563eb;
+  --accent-hover: #1d4ed8;
+  --accent-glow: rgba(59, 130, 246, 0.15);
+  --accent-soft: #192e4e;
+  --accent-border: #355a8f;
+  --ok: #5ee0b0;
+  --ok-2: #8be9c8;
+  --ok-soft: #142f2d;
+  --ok-border: #286455;
+  --warn: #f6c779;
+  --warn-soft: #34291c;
+  --warn-border: #73532d;
+  --danger: #fda4af;
+  --danger-soft: #35212d;
+  --danger-border: #784251;
+  --map-land: #3b506f;
+  --map-grid: rgba(148, 163, 184, 0.07);
+  --shadow: 0 16px 44px -24px rgba(0, 0, 0, 0.65);
+  --header-h: 76px;
+  --hero-max-width: 1440px;
+  --page-max-width: 1280px;
   color-scheme: dark;
 }
 
 :root[data-theme='light'] {
-  --bg: #f6f8fc;
-  --bg-grad-1: #eef3fb;
-  --bg-grad-2: #f6f8fc;
-
-  --text: #0f1729;
-  --text-2: rgba(15, 23, 41, 0.68);
-  --text-3: rgba(15, 23, 41, 0.52);
-  --text-strong: #0b1120;
-
-  --surface: rgba(12, 30, 66, 0.03);
-  --surface-strong: rgba(12, 30, 66, 0.05);
-  --border: rgba(12, 30, 66, 0.12);
-  --border-strong: rgba(12, 30, 66, 0.18);
-
+  --bg: #f8fafc;
+  --bg-grad-1: #f8fafc;
+  --bg-grad-2: #f1f5f9;
+  --text: #1e293b;
+  --text-2: #475569;
+  --text-3: #5b6b80;
+  --text-strong: #0f172a;
+  --surface: #f1f5f9;
+  --surface-strong: #e7edf5;
+  --border: #dce4ee;
+  --border-strong: #b8c6d9;
   --panel: #ffffff;
-  --panel-2: #f1f5fb;
-
-  --header-bg: rgba(255, 255, 255, 0.72);
-  --header-border: rgba(12, 30, 66, 0.08);
-
-  --accent: #2563eb;
-  --accent-2: #3b82f6;
-  --accent-3: #1d4ed8;
-  --accent-ink: #ffffff;
-  --accent-glow: rgba(37, 99, 235, 0.12);
-  --accent-soft: rgba(37, 99, 235, 0.08);
-
-  --ok: #16a34a;
-  --ok-2: #15803d;
-  --warn: #ea580c;
-  --danger: #e11d48;
-
-  --shadow: rgba(15, 23, 41, 0.14) 0 18px 40px -18px;
-
+  --panel-2: #f4f7fb;
+  --header-bg: rgba(255, 255, 255, 0.94);
+  --header-border: #e2e8f0;
+  --accent: #245bd6;
+  --accent-2: #1d4ed8;
+  --accent-3: #1e40af;
+  --accent-glow: rgba(37, 99, 235, 0.08);
+  --accent-soft: #edf4ff;
+  --accent-border: #b8cff8;
+  --ok: #087f5b;
+  --ok-2: #076849;
+  --ok-soft: #e8f7f0;
+  --ok-border: #b2decc;
+  --warn: #965408;
+  --warn-soft: #fff5e4;
+  --warn-border: #edd3a5;
+  --danger: #be2948;
+  --danger-soft: #fff0f2;
+  --danger-border: #f0bdc7;
+  --map-land: #b3c5df;
+  --map-grid: rgba(71, 85, 105, 0.06);
+  --shadow: 0 16px 44px -24px rgba(30, 58, 95, 0.22);
   color-scheme: light;
 }
 
 * {
   box-sizing: border-box;
 }
-
 html,
 body,
 #app {
   margin: 0;
   min-height: 100%;
 }
-
 html {
   scroll-behavior: smooth;
+  scroll-padding-top: calc(var(--header-h) + 20px);
 }
-
 body {
-  background: linear-gradient(180deg, var(--bg-grad-1) 0%, var(--bg-grad-2) 100%);
+  background: var(--bg);
   color: var(--text);
-  font-family: 'PingFang SC', 'Microsoft YaHei', 'Segoe UI', sans-serif;
+  font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
   font-size: 14px;
-  transition:
-    background-color 0.3s ease,
-    color 0.3s ease;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
 }
-
 a {
   color: inherit;
   text-decoration: none;
 }
-
-/* 给 header 和 hero 用 */
-.container-hero {
-  width: 100%;
-  max-width: var(--hero-max-width);
-  margin: 0 auto;
-  padding: 16px 48px;
+button,
+input,
+select,
+textarea {
+  font: inherit;
 }
-
-/* 给下面内容区用 */
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
+button:not(:disabled),
+a {
+  touch-action: manipulation;
+}
+:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 4px;
+}
+::selection {
+  background: var(--accent-fill);
+  color: var(--accent-ink);
+}
+.container-hero,
 .container-page {
   width: 100%;
-  max-width: var(--page-max-width);
   margin: 0 auto;
-  padding: 0 20px;
+  padding-inline: 32px;
 }
-
+.container-hero {
+  max-width: var(--hero-max-width);
+}
+.container-page {
+  max-width: var(--page-max-width);
+}
 .section-title {
-  font-size: clamp(28px, 3.2vw, 44px);
-  font-weight: 800;
-  text-align: center;
   margin: 0;
   color: var(--text-strong);
+  font-size: clamp(28px, 3.2vw, 42px);
+  font-weight: 800;
+  text-align: center;
+  letter-spacing: -0.03em;
 }
-
 .section-desc {
-  max-width: 900px;
-  margin: 14px auto 0;
+  max-width: 760px;
+  margin: 16px auto 0;
   text-align: center;
   color: var(--text-2);
   font-size: 16px;
   line-height: 1.8;
 }
+.eyebrow {
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+}
+
+/* Bridge Arco's custom theme to the same palette, including teleported UI. */
+html body,
+html body[arco-theme='dark'] {
+  --color-bg-1: var(--bg);
+  --color-bg-2: var(--panel);
+  --color-bg-3: var(--panel);
+  --color-bg-4: var(--panel);
+  --color-bg-5: var(--panel);
+  --color-text-1: var(--text-strong);
+  --color-text-2: var(--text-2);
+  --color-text-3: var(--text-3);
+  --color-text-4: var(--text-3);
+  --color-fill-1: var(--panel-2);
+  --color-fill-2: var(--surface);
+  --color-fill-3: var(--surface-strong);
+  --color-fill-4: var(--border-strong);
+  --color-border-1: var(--border);
+  --color-border-2: var(--border);
+  --color-border-3: var(--border-strong);
+  --color-primary-light-1: var(--accent-soft);
+  --color-primary-light-2: var(--accent-soft);
+  --primary-5: 59, 130, 246;
+  --primary-6: 37, 99, 235;
+  --primary-7: 29, 78, 216;
+}
+body .arco-btn {
+  border-radius: 10px;
+  font-weight: 600;
+}
+body .arco-btn-primary:not(.arco-btn-disabled) {
+  background: var(--accent-fill);
+  border-color: var(--accent-fill);
+  color: var(--accent-ink);
+}
+body .arco-btn-primary:not(.arco-btn-disabled):hover {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+}
+body .arco-btn-secondary:not(.arco-btn-disabled),
+body .arco-btn-outline:not(.arco-btn-disabled) {
+  background: var(--panel);
+  border: 1px solid var(--border-strong);
+  color: var(--text);
+}
+body .arco-btn-secondary:not(.arco-btn-disabled):hover,
+body .arco-btn-outline:not(.arco-btn-disabled):hover {
+  background: var(--surface);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+body .arco-btn-text:not(.arco-btn-disabled) {
+  color: var(--text-2);
+}
+body .arco-btn-text:not(.arco-btn-disabled):hover {
+  color: var(--text);
+  background: var(--surface);
+}
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 10px 18px;
+  border: 1px solid var(--border-strong);
+  border-radius: 10px;
+  background: var(--panel);
+  color: var(--text);
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background 0.2s,
+    border-color 0.2s,
+    box-shadow 0.2s;
+}
+.button:hover {
+  background: var(--surface);
+  border-color: var(--accent);
+}
+.button--primary {
+  border-color: var(--accent-fill);
+  background: var(--accent-fill);
+  color: var(--accent-ink);
+}
+.button--primary:hover {
+  border-color: var(--accent-hover);
+  background: var(--accent-hover);
+}
+.button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
 
 @media (max-width: 768px) {
+  :root {
+    --header-h: 68px;
+  }
   .container-hero,
   .container-page {
-    padding: 0 10px;
+    padding-inline: 20px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }

@@ -16,12 +16,12 @@
         <div class="footer-links">
           <div class="footer-column">
             <div class="footer-title">产品</div>
-            <router-link to="/plans?group=jpn" class="footer-link">JPN</router-link>
+            <router-link to="/plans" class="footer-link">CDN 套餐</router-link>
           </div>
 
           <div class="footer-column">
             <div class="footer-title">资源与支持</div>
-            <a href="/#about" class="footer-link">关于我们</a>
+            <a href="/#why" class="footer-link">关于我们</a>
           </div>
         </div>
       </div>
@@ -38,9 +38,7 @@
 .site-footer {
   padding: 72px 0 34px;
   border-top: 1px solid var(--surface);
-  background:
-    linear-gradient(180deg, var(--surface) 0%, var(--surface) 100%),
-    var(--panel);
+  background: linear-gradient(180deg, var(--surface) 0%, var(--surface) 100%), var(--panel);
 }
 
 .footer-top {
@@ -66,11 +64,11 @@
   display: grid;
   place-items: center;
   border-radius: 14px;
-  background: linear-gradient(180deg, var(--accent) 0%, var(--accent) 100%);
-  color: var(--text);
+  background: var(--accent-fill);
+  color: var(--accent-ink);
   font-size: 22px;
   font-weight: 800;
-  box-shadow: 0 12px 28px rgba(35, 88, 227, 0.28);
+  box-shadow: var(--shadow);
 }
 
 .footer-brand__name {

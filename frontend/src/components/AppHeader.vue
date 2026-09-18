@@ -1,198 +1,236 @@
 <template>
-  <header class="site-header">
+  <header class="site-header" @keydown.esc="closeMenu">
     <div class="container-hero header-inner">
-      <div class="header-left">
-        <router-link to="/" class="brand">TyCDN</router-link>
-
-        <nav class="desktop-nav">
-          <router-link to="/" class="nav-link">首页</router-link>
-          <a href="/#why" class="nav-link">为什么选我们</a>
-          <router-link to="/plans" class="nav-link">套餐价格</router-link>
-          <a href="/#compare" class="nav-link">方案对比</a>
-          <a href="/#faq" class="nav-link">常见问题</a>
-        </nav>
-      </div>
-
+      <router-link to="/" class="brand" aria-label="TyCDN 首页"
+        ><span class="brand-mark" aria-hidden="true">T</span>TyCDN</router-link
+      >
+      <nav class="desktop-nav" aria-label="主导航">
+        <router-link
+          v-for="link in links"
+          :key="link.to"
+          :to="link.to"
+          class="nav-link"
+          :class="{ 'is-active': isActive(link.to) }"
+          :aria-current="isActive(link.to) ? 'page' : undefined"
+          >{{ link.label }}</router-link
+        >
+      </nav>
       <div class="header-right">
+        <ThemeToggle />
+        <a :href="dashboardLoginUrl" class="header-login">登录</a>
+        <a :href="dashboardRegisterUrl" class="button button--primary header-register"
+          >注册 <span aria-hidden="true">↗</span></a
+        >
         <button
+          ref="menuButton"
           type="button"
-          class="theme-toggle"
-          :aria-label="isDark ? '切换到浅色模式' : '切换到深色模式'"
-          :title="isDark ? '浅色模式' : '深色模式'"
-          @click="toggleTheme"
+          class="menu-toggle"
+          :aria-expanded="menuOpen"
+          aria-controls="mobile-navigation"
+          :aria-label="menuOpen ? '关闭导航' : '打开导航'"
+          @click="menuOpen = !menuOpen"
         >
           <svg
-            v-if="isDark"
-            class="theme-icon"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
+            stroke-width="1.8"
             aria-hidden="true"
           >
-            <circle cx="12" cy="12" r="4" />
-            <path
-              d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"
-            />
-          </svg>
-          <svg
-            v-else
-            class="theme-icon"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            aria-hidden="true"
-          >
-            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+            <path v-if="menuOpen" d="m6 6 12 12M18 6 6 18" />
+            <path v-else d="M4 6h16M4 12h16M4 18h16" />
           </svg>
         </button>
-        <a-button type="text" shape="round" class="header-action">文A</a-button>
-        <a-button type="text" @click="goLogin" class="header-action"
-          >登录</a-button
-        >
-        <a-button type="primary" @click="goRegister" size="medium"
-          >注册</a-button
-        >
       </div>
     </div>
+    <nav v-if="menuOpen" id="mobile-navigation" class="mobile-nav" aria-label="移动端导航">
+      <router-link
+        v-for="link in links"
+        :key="link.to"
+        :to="link.to"
+        class="nav-link"
+        :class="{ 'is-active': isActive(link.to) }"
+        @click="menuOpen = false"
+        >{{ link.label }}</router-link
+      >
+    </nav>
   </header>
 </template>
-
 <script setup>
-import { useTheme } from '../composables/useTheme'
-
-const { isDark, toggleTheme } = useTheme()
-
-const goLogin = () => {
-  window.location.href = '/login'
+import { ref, watch } from 'vue'
+import { useRoute } from 'vue-router'
+import ThemeToggle from './ThemeToggle.vue'
+import { dashboardLoginUrl, dashboardRegisterUrl } from '../config/runtime'
+const route = useRoute()
+const menuOpen = ref(false)
+const menuButton = ref(null)
+const links = [
+  { to: '/', label: '首页' },
+  { to: '/#why', label: '为什么选我们' },
+  { to: '/plans', label: '套餐价格' },
+  { to: '/#compare', label: '方案对比' },
+  { to: '/#faq', label: '常见问题' }
+]
+const isActive = (to) =>
+  to === '/plans'
+    ? route.path.startsWith('/plans')
+    : to === '/'
+      ? route.path === '/' && !route.hash
+      : route.fullPath === to
+const closeMenu = () => {
+  menuOpen.value = false
+  menuButton.value?.focus()
 }
-
-const goRegister = () => {
-  window.location.href = '/register'
-}
+watch(
+  () => route.fullPath,
+  () => {
+    menuOpen.value = false
+  }
+)
 </script>
-
 <style scoped>
 .site-header {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
+  inset: 0 0 auto;
   z-index: 1000;
   height: var(--header-h);
   background: var(--header-bg);
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   border-bottom: 1px solid var(--header-border);
 }
-
 .header-inner {
+  display: flex;
   height: 100%;
-  display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 24px;
+  gap: 36px;
 }
-
-.header-left {
-  display: flex;
-  align-items: center;
-  gap: 24px;
-  min-width: 0;
-}
-
 .brand {
-  font-size: 18px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 21px;
   font-weight: 800;
-  white-space: nowrap;
   color: var(--text-strong);
+  letter-spacing: -0.04em;
+  white-space: nowrap;
 }
-
+.brand-mark {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  color: var(--accent-ink);
+  background: var(--accent-fill);
+  font-size: 21px;
+}
 .desktop-nav {
   display: flex;
   align-items: center;
-  gap: 18px;
-  flex-wrap: nowrap;
+  gap: 4px;
 }
-
 .nav-link {
-  font-size: 15px;
+  padding: 9px 12px;
+  border-radius: 8px;
   color: var(--text-2);
+  font-size: 14px;
+  font-weight: 500;
   white-space: nowrap;
-  transition: color 0.2s;
+  transition:
+    background 0.2s,
+    color 0.2s;
 }
-
 .nav-link:hover {
-  color: var(--text-strong);
+  color: var(--text);
+  background: var(--surface);
 }
-
+.nav-link.is-active {
+  color: var(--accent);
+  background: var(--accent-soft);
+}
 .header-right {
-  margin-left: auto;
   display: flex;
   align-items: center;
-  gap: 8px;
-  flex-wrap: nowrap;
+  gap: 12px;
+  margin-left: auto;
 }
-
-.theme-toggle {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 36px;
-  padding: 0;
-  border-radius: 10px;
-  border: 1px solid var(--border);
+.header-login {
+  padding: 10px 12px;
+  color: var(--text);
+  font-weight: 600;
+  border-radius: 9px;
+}
+.header-login:hover {
+  color: var(--accent);
   background: var(--surface);
-  color: var(--text-2);
-  cursor: pointer;
-  transition:
-    color 0.2s,
-    border-color 0.2s,
-    background 0.2s;
 }
-
-.theme-toggle:hover {
-  color: var(--text-strong);
-  border-color: var(--border-strong);
-  background: var(--surface-strong);
+.header-register {
+  min-height: 40px;
+  padding: 9px 17px;
 }
-
-.theme-icon {
-  width: 18px;
-  height: 18px;
-}
-
-:deep(.header-action.arco-btn) {
-  font-size: 14px;
-  padding: 0 8px;
-}
-
-:deep(.arco-btn) {
-  height: 36px;
+.menu-toggle {
+  display: none;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 1px solid var(--border);
   border-radius: 10px;
+  color: var(--text);
+  background: var(--panel);
+  cursor: pointer;
 }
-
-@media (max-width: 768px) {
-  .header-left {
-    gap: 16px;
-  }
-
+.menu-toggle svg {
+  width: 20px;
+  height: 20px;
+}
+.mobile-nav {
+  display: none;
+}
+@media (max-width: 1060px) {
   .desktop-nav {
+    display: none;
+  }
+  .menu-toggle {
+    display: grid;
+  }
+  .mobile-nav {
+    display: grid;
+    gap: 6px;
+    padding: 16px 20px 20px;
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+    box-shadow: var(--shadow);
+  }
+}
+@media (max-width: 480px) {
+  .header-inner {
+    padding-inline: 16px;
     gap: 12px;
   }
-
-  .nav-link {
-    font-size: 14px;
-  }
-
   .header-right {
-    gap: 4px;
+    gap: 7px;
+  }
+  .brand {
+    font-size: 18px;
+    gap: 7px;
+  }
+  .brand-mark {
+    width: 30px;
+    height: 30px;
+    font-size: 18px;
+  }
+  .header-login {
+    padding-inline: 5px;
+    font-size: 13px;
+  }
+  .header-register {
+    padding-inline: 10px;
+    font-size: 13px;
+  }
+  .header-register span {
+    display: none;
   }
 }
 </style>

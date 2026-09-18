@@ -29,12 +29,15 @@ const isVisible = ref(false)
 let observer = null
 
 onMounted(() => {
-  observer = new IntersectionObserver(([entry]) => {
-    if (entry.isIntersecting) {
-      isVisible.value = true
-      if (sectionRef.value) observer.unobserve(sectionRef.value)
-    }
-  }, { threshold: 0.15 })
+  observer = new IntersectionObserver(
+    ([entry]) => {
+      if (entry.isIntersecting) {
+        isVisible.value = true
+        if (sectionRef.value) observer.unobserve(sectionRef.value)
+      }
+    },
+    { threshold: 0.15 }
+  )
 
   if (sectionRef.value) {
     observer.observe(sectionRef.value)
@@ -47,12 +50,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <section 
-    id="about" 
-    class="why-cdn-section" 
-    ref="sectionRef" 
-    :class="{ 'is-visible': isVisible }"
-  >
+  <section id="about" class="why-cdn-section" ref="sectionRef" :class="{ 'is-visible': isVisible }">
     <div class="why-cdn-container">
       <div class="why-cdn-heading">
         <p class="why-cdn-kicker">WHY TY CDN</p>
@@ -63,11 +61,7 @@ onUnmounted(() => {
       </div>
 
       <div class="why-cdn-grid">
-        <article
-          v-for="item in features"
-          :key="item.title"
-          class="why-cdn-card"
-        >
+        <article v-for="item in features" :key="item.title" class="why-cdn-card">
           <div class="why-cdn-card__icon">
             <span>{{ item.icon }}</span>
           </div>
@@ -150,13 +144,9 @@ onUnmounted(() => {
   position: relative;
   min-height: 240px;
   padding: 26px 28px 24px;
-  border: 1px solid rgba(120, 150, 220, 0.08);
+  border: 1px solid var(--border);
   border-radius: 8px;
-  background: linear-gradient(
-    180deg,
-    var(--panel) 0%,
-    var(--panel) 100%
-  );
+  background: linear-gradient(180deg, var(--panel) 0%, var(--panel) 100%);
   box-shadow: none;
   overflow: hidden;
 }
@@ -165,8 +155,13 @@ onUnmounted(() => {
   content: '';
   position: absolute;
   inset: 0;
-  background:
-    linear-gradient(90deg, rgba(92, 132, 255, 0.14) 0%, transparent 34%, transparent 66%, rgba(92, 132, 255, 0.08) 100%);
+  background: linear-gradient(
+    90deg,
+    var(--accent-glow) 0%,
+    transparent 34%,
+    transparent 66%,
+    var(--accent-glow) 100%
+  );
   pointer-events: none;
 }
 
@@ -178,8 +173,8 @@ onUnmounted(() => {
   height: 64px;
   margin-bottom: 24px;
   border-radius: 50%;
-  border: 1px solid rgba(138, 168, 255, 0.12);
-  background: rgba(78, 103, 165, 0.18);
+  border: 1px solid var(--accent-border);
+  background: var(--accent-soft);
   box-shadow: none;
 }
 

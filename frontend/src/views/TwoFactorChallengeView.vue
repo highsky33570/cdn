@@ -1,95 +1,88 @@
 <script setup>
-import { computed, ref } from "vue";
-import { useRoute, useRouter } from "vue-router";
-import { Message } from "@arco-design/web-vue";
-import { IconLanguage, IconLock, IconSafe } from "@arco-design/web-vue/es/icon";
-import { submitTwoFactorChallenge } from "../api/auth";
-import { resolvePostAuthRedirect } from "../config/runtime";
+import ThemeToggle from '../components/ThemeToggle.vue'
+import { computed, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { Message } from '@arco-design/web-vue'
+import { IconLock, IconSafe } from '@arco-design/web-vue/es/icon'
+import { submitTwoFactorChallenge } from '../api/auth'
+import { resolvePostAuthRedirect } from '../config/runtime'
 
-const route = useRoute();
-const router = useRouter();
+const route = useRoute()
+const router = useRouter()
 
-const mode = ref("code");
-const code = ref("");
-const recoveryCode = ref("");
-const loading = ref(false);
+const mode = ref('code')
+const code = ref('')
+const recoveryCode = ref('')
+const loading = ref(false)
 
 const redirectTarget = computed(() =>
-  typeof route.query.redirect === "string" ? route.query.redirect : "",
-);
+  typeof route.query.redirect === 'string' ? route.query.redirect : ''
+)
 
 const accountLabel = computed(() =>
-  typeof route.query.account === "string" && route.query.account
+  typeof route.query.account === 'string' && route.query.account
     ? route.query.account
-    : "当前登录账号",
-);
+    : '当前登录账号'
+)
 
-const currentValue = computed(() =>
-  mode.value === "code" ? code.value : recoveryCode.value,
-);
+const currentValue = computed(() => (mode.value === 'code' ? code.value : recoveryCode.value))
 
-const pageTitle = computed(() =>
-  mode.value === "code" ? "输入两步验证码" : "输入恢复代码",
-);
+const pageTitle = computed(() => (mode.value === 'code' ? '输入两步验证码' : '输入恢复代码'))
 
 const pageSubtitle = computed(() =>
-  mode.value === "code"
-    ? "当前账号已开启两步验证，请输入验证器中的 6 位动态码。"
-    : "如果你当前无法访问验证器，可以改用恢复代码完成登录。",
-);
+  mode.value === 'code'
+    ? '当前账号已开启两步验证，请输入验证器中的 6 位动态码。'
+    : '如果你当前无法访问验证器，可以改用恢复代码完成登录。'
+)
 
-const submitLabel = computed(() =>
-  mode.value === "code" ? "验证并登录" : "使用恢复代码登录",
-);
+const submitLabel = computed(() => (mode.value === 'code' ? '验证并登录' : '使用恢复代码登录'))
 
 const handleSubmit = async () => {
   if (!currentValue.value.trim()) {
-    Message.warning(
-      mode.value === "code" ? "请输入两步验证码" : "请输入恢复代码",
-    );
-    return;
+    Message.warning(mode.value === 'code' ? '请输入两步验证码' : '请输入恢复代码')
+    return
   }
 
   try {
-    loading.value = true;
+    loading.value = true
 
     const res = await submitTwoFactorChallenge({
-      code: mode.value === "code" ? code.value.trim() : "",
-      recoveryCode: mode.value === "recovery" ? recoveryCode.value.trim() : "",
-      redirect: redirectTarget.value || undefined,
-    });
+      code: mode.value === 'code' ? code.value.trim() : '',
+      recoveryCode: mode.value === 'recovery' ? recoveryCode.value.trim() : '',
+      redirect: redirectTarget.value || undefined
+    })
 
     if (res.data?.email_verified) {
-      Message.success("登录成功");
-      window.location.href = res.data?.redirect || resolvePostAuthRedirect(redirectTarget.value);
-      return;
+      Message.success('登录成功')
+      window.location.href = res.data?.redirect || resolvePostAuthRedirect(redirectTarget.value)
+      return
     }
 
-    Message.warning("请先完成邮箱验证");
+    Message.warning('请先完成邮箱验证')
     router.push({
-      path: "/verify-email",
+      path: '/verify-email',
       query: {
         ...(res.data?.user?.email ? { email: res.data.user.email } : {}),
-        ...(redirectTarget.value ? { redirect: redirectTarget.value } : {}),
-      },
-    });
+        ...(redirectTarget.value ? { redirect: redirectTarget.value } : {})
+      }
+    })
   } catch (error) {
-    Message.error(error instanceof Error ? error.message : "两步验证失败");
+    Message.error(error instanceof Error ? error.message : '两步验证失败')
   } finally {
-    loading.value = false;
+    loading.value = false
   }
-};
+}
 
 const switchMode = (nextMode) => {
-  mode.value = nextMode;
-};
+  mode.value = nextMode
+}
 
 const handleBackToLogin = () => {
   router.push({
-    path: "/login",
-    query: redirectTarget.value ? { redirect: redirectTarget.value } : {},
-  });
-};
+    path: '/login',
+    query: redirectTarget.value ? { redirect: redirectTarget.value } : {}
+  })
+}
 </script>
 
 <template>
@@ -102,9 +95,7 @@ const handleBackToLogin = () => {
         <span class="brand__name">TyCDN</span>
       </RouterLink>
 
-      <button class="lang-btn" type="button" aria-label="language">
-        <IconLanguage />
-      </button>
+      <ThemeToggle />
     </header>
 
     <main class="challenge-main">
@@ -176,9 +167,7 @@ const handleBackToLogin = () => {
             {{ submitLabel }}
           </a-button>
 
-          <button class="text-link" type="button" @click="handleBackToLogin">
-            返回登录
-          </button>
+          <button class="text-link" type="button" @click="handleBackToLogin">返回登录</button>
         </div>
       </section>
     </main>
@@ -193,13 +182,9 @@ const handleBackToLogin = () => {
   min-height: 100vh;
   overflow: hidden;
   background:
-    radial-gradient(
-      circle at 50% 10%,
-      rgba(77, 113, 255, 0.14),
-      transparent 26%
-    ),
-    linear-gradient(180deg, #171b28 0%, #151a28 35%, #121723 100%);
-  color: #fff;
+    radial-gradient(circle at 50% 10%, var(--accent-glow), transparent 26%),
+    linear-gradient(180deg, var(--bg-grad-1), var(--bg-grad-2));
+  color: var(--text-strong);
 }
 
 .challenge-page__bg {
@@ -208,10 +193,10 @@ const handleBackToLogin = () => {
   pointer-events: none;
   background: linear-gradient(
     90deg,
-    rgba(102, 129, 255, 0.06) 0%,
+    var(--accent-glow) 0%,
     transparent 35%,
     transparent 65%,
-    rgba(102, 129, 255, 0.04) 100%
+    var(--accent-glow) 100%
   );
 }
 
@@ -228,7 +213,7 @@ const handleBackToLogin = () => {
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  color: #f5f7ff;
+  color: var(--text-strong);
   text-decoration: none;
   font-weight: 700;
   font-size: 18px;
@@ -242,19 +227,6 @@ const handleBackToLogin = () => {
 
 .brand__name {
   letter-spacing: -0.01em;
-}
-
-.lang-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 34px;
-  height: 34px;
-  border: 0;
-  background: transparent;
-  color: rgba(255, 255, 255, 0.78);
-  font-size: 18px;
-  cursor: pointer;
 }
 
 .challenge-main {
@@ -279,9 +251,9 @@ const handleBackToLogin = () => {
   height: 30px;
   padding: 0 12px;
   border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(255, 255, 255, 0.08);
-  color: rgba(255, 255, 255, 0.82);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -293,34 +265,34 @@ const handleBackToLogin = () => {
   font-size: 32px;
   line-height: 1.2;
   font-weight: 800;
-  color: rgba(255, 255, 255, 0.96);
+  color: var(--text-strong);
 }
 
 .challenge-panel__subtitle {
   margin: 0 0 24px;
   font-size: 15px;
   line-height: 1.7;
-  color: rgba(255, 255, 255, 0.54);
+  color: var(--text-3);
 }
 
 .challenge-card {
   padding: 18px 18px 16px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--border);
   border-radius: 16px;
-  background: rgba(255, 255, 255, 0.06);
-  box-shadow: 0 24px 60px rgba(8, 12, 22, 0.28);
+  background: var(--surface);
+  box-shadow: var(--shadow);
 }
 
 .challenge-card__label {
   margin-bottom: 10px;
-  color: rgba(255, 255, 255, 0.48);
+  color: var(--text-3);
   font-size: 13px;
 }
 
 .challenge-card__value {
   font-size: 20px;
   font-weight: 700;
-  color: rgba(255, 255, 255, 0.96);
+  color: var(--text-strong);
   word-break: break-word;
 }
 
@@ -328,7 +300,7 @@ const handleBackToLogin = () => {
   margin: 10px 0 0;
   font-size: 14px;
   line-height: 1.6;
-  color: rgba(255, 255, 255, 0.46);
+  color: var(--text-3);
 }
 
 .challenge-switcher {
@@ -340,19 +312,19 @@ const handleBackToLogin = () => {
 
 .challenge-switcher__item {
   height: 42px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--border);
   border-radius: 10px;
-  background: rgba(255, 255, 255, 0.05);
-  color: rgba(255, 255, 255, 0.72);
+  background: var(--surface);
+  color: var(--text-2);
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
 }
 
 .challenge-switcher__item--active {
-  border-color: rgba(72, 120, 255, 0.35);
-  background: rgba(72, 120, 255, 0.18);
-  color: #fff;
+  border-color: var(--accent-border);
+  background: var(--accent-soft);
+  color: var(--text-strong);
 }
 
 .challenge-form {
@@ -375,25 +347,25 @@ const handleBackToLogin = () => {
 
 :deep(.challenge-input.arco-input-wrapper),
 :deep(.challenge-textarea.arco-textarea-wrapper) {
-  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid var(--border) !important;
   border-radius: 10px !important;
-  background: rgba(255, 255, 255, 0.08) !important;
+  background: var(--surface) !important;
   box-shadow: none !important;
 }
 
 :deep(.challenge-input .arco-input),
 :deep(.challenge-textarea .arco-textarea) {
-  color: rgba(255, 255, 255, 0.92) !important;
+  color: var(--text-strong) !important;
   background: transparent !important;
 }
 
 :deep(.challenge-input .arco-input::placeholder),
 :deep(.challenge-textarea .arco-textarea::placeholder) {
-  color: rgba(255, 255, 255, 0.34) !important;
+  color: var(--text-3) !important;
 }
 
 :deep(.challenge-input .arco-input-prefix) {
-  color: rgba(255, 255, 255, 0.34) !important;
+  color: var(--text-3) !important;
 }
 
 .challenge-submit {
@@ -407,7 +379,7 @@ const handleBackToLogin = () => {
   border: 0;
   background: transparent;
   padding: 0;
-  color: #6ea8ff;
+  color: var(--accent-2);
   font-size: 14px;
   cursor: pointer;
 }
@@ -420,7 +392,7 @@ const handleBackToLogin = () => {
   z-index: 2;
   text-align: center;
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.3);
+  color: var(--text-3);
 }
 
 @keyframes auth-field-fade-in {

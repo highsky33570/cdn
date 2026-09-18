@@ -1,10 +1,5 @@
 <template>
-  <section
-    id="pain"
-    ref="sectionRef"
-    class="pain-section"
-    :class="{ 'is-visible': isVisible }"
-  >
+  <section id="pain" ref="sectionRef" class="pain-section" :class="{ 'is-visible': isVisible }">
     <div class="container-page pain-inner">
       <!--
         Deliberately not the reference site's six identical icon cards. A uniform
@@ -15,18 +10,11 @@
       <div class="pain-lede">
         <span class="eyebrow">现状</span>
         <h2 class="pain-title">你现在用的 CDN，<br />是不是这样？</h2>
-        <p class="pain-sub">
-          这六件事，几乎是每个从别家迁过来的客户开口就提的。
-        </p>
+        <p class="pain-sub">这六件事，几乎是每个从别家迁过来的客户开口就提的。</p>
       </div>
 
       <ol class="pain-list">
-        <li
-          v-for="(item, i) in painPoints"
-          :key="item.n"
-          class="pain-item"
-          :style="{ '--i': i }"
-        >
+        <li v-for="(item, i) in painPoints" :key="item.n" class="pain-item" :style="{ '--i': i }">
           <span class="pain-n">{{ item.n }}</span>
           <div class="pain-body">
             <h3 class="pain-item-title">{{ item.title }}</h3>
@@ -58,11 +46,7 @@ const { sectionRef, isVisible } = useReveal()
   inset: 0 auto auto 0;
   width: 46%;
   height: 60%;
-  background: radial-gradient(
-    ellipse at top left,
-    rgba(77, 140, 255, 0.09),
-    transparent 70%
-  );
+  background: radial-gradient(ellipse at top left, var(--accent-glow), transparent 70%);
   pointer-events: none;
 }
 
@@ -164,7 +148,7 @@ const { sectionRef, isVisible } = useReveal()
 }
 
 .pain-item:hover {
-  border-bottom-color: rgba(77, 140, 255, 0.5);
+  border-bottom-color: var(--accent-border);
 }
 
 @media (max-width: 1024px) {

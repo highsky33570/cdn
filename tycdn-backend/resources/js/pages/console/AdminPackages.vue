@@ -1117,7 +1117,7 @@ function emptyPackageForm(batch = false): PackageForm {
         stream_port: batch ? '' : '-1',
         custom_cc_rule: batch ? SELECT_KEEP_VALUE : '1',
         cc_protect: batch ? SELECT_KEEP_VALUE : '支持',
-        ddos_protect: '',
+        ddos_protect: batch ? SELECT_KEEP_VALUE : '不支持',
         websocket: batch ? SELECT_KEEP_VALUE : '1',
         http3: batch ? SELECT_KEEP_VALUE : '1',
         waf_protect: batch ? SELECT_KEEP_VALUE : '0',
@@ -1179,7 +1179,11 @@ function formFromRecord(record: PackageRecord): PackageForm {
         stream_port: getDisplayValue(record, ['stream_port'], '-1'),
         custom_cc_rule: getDisplayValue(record, ['custom_cc_rule'], '0'),
         cc_protect: getDisplayValue(record, ['cc_protect'], '支持'),
-        ddos_protect: getDisplayValue(record, ['ddos_protect'], ''),
+        // Now a 支持/不支持 select; any legacy free-text (e.g. "500G") means
+        // DDoS is offered, so it normalizes to 支持.
+        ddos_protect: normalizeDdosProtect(
+            getDisplayValue(record, ['ddos_protect'], ''),
+        ),
         websocket: getDisplayValue(record, ['websocket'], '0'),
         http3: getDisplayValue(record, ['http3'], '0'),
         waf_protect: getDisplayValue(record, ['waf_protect'], '0'),
@@ -1248,7 +1252,7 @@ function buildPackagePayload(
     appendNumber(payload, 'stream_port', source.stream_port, '四层端口数');
     appendSelectBoolean(payload, 'custom_cc_rule', source.custom_cc_rule);
     appendTextOrKeep(payload, 'cc_protect', source.cc_protect.trim());
-    appendText(payload, 'ddos_protect', source.ddos_protect.trim());
+    appendTextOrKeep(payload, 'ddos_protect', source.ddos_protect.trim());
     appendSelectBoolean(payload, 'websocket', source.websocket);
     appendSelectBoolean(payload, 'http3', source.http3);
     appendSelectBoolean(payload, 'waf_protect', source.waf_protect);
@@ -1401,6 +1405,13 @@ function normalizeBackupNodeGroup(value: string): string {
     const trimmed = value.trim();
 
     return trimmed === '' || trimmed === '0' ? BACKUP_NONE_VALUE : trimmed;
+}
+
+/** DDoS 防护 is a 支持/不支持 select; map legacy/empty values onto those two. */
+function normalizeDdosProtect(value: string): string {
+    const trimmed = value.trim();
+
+    return trimmed === '' || trimmed === '不支持' ? '不支持' : '支持';
 }
 
 function optionValue(option: AdminPackageOption): string {
@@ -2426,12 +2437,20 @@ async function confirmPuDelete(): Promise<void> {
                         </Select>
                     </div>
                     <div class="flex flex-col gap-2">
-                        <Label for="package-ddos-protect">DDoS 防护</Label>
-                        <Input
-                            id="package-ddos-protect"
-                            v-model="form.ddos_protect"
-                            placeholder="如 500G / 不支持"
-                        />
+                        <Label>DDoS 防护</Label>
+                        <Select v-model="form.ddos_protect">
+                            <SelectTrigger class="w-full">
+                                <SelectValue placeholder="选择支持状态" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectGroup>
+                                    <SelectItem value="支持">支持</SelectItem>
+                                    <SelectItem value="不支持"
+                                        >不支持</SelectItem
+                                    >
+                                </SelectGroup>
+                            </SelectContent>
+                        </Select>
                     </div>
                     <div class="flex flex-col gap-2">
                         <Label>WebSocket</Label>
@@ -2932,12 +2951,23 @@ async function confirmPuDelete(): Promise<void> {
                         </Select>
                     </div>
                     <div class="flex flex-col gap-2">
-                        <Label for="batch-ddos-protect">DDoS 防护</Label>
-                        <Input
-                            id="batch-ddos-protect"
-                            v-model="batchForm.ddos_protect"
-                            placeholder="如 500G / 不支持"
-                        />
+                        <Label>DDoS 防护</Label>
+                        <Select v-model="batchForm.ddos_protect">
+                            <SelectTrigger class="w-full">
+                                <SelectValue placeholder="不修改" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectGroup>
+                                    <SelectItem :value="SELECT_KEEP_VALUE">
+                                        不修改
+                                    </SelectItem>
+                                    <SelectItem value="支持">支持</SelectItem>
+                                    <SelectItem value="不支持"
+                                        >不支持</SelectItem
+                                    >
+                                </SelectGroup>
+                            </SelectContent>
+                        </Select>
                     </div>
                     <div class="flex flex-col gap-2">
                         <Label>WebSocket</Label>

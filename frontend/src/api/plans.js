@@ -1,7 +1,8 @@
-import { http } from "./http";
+import { http } from './http'
 
 export async function fetchProducts() {
-  const res = await http("/api/products");
+  const res = await http('/api/products')
 
-  return Array.isArray(res.data) ? res.data : [];
+  if (!Array.isArray(res.data)) throw new Error('Invalid product catalog response')
+  return res.data
 }

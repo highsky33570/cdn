@@ -1,288 +1,168 @@
 <template>
   <div class="detail-page">
-    <AppHeader transparent />
-
-    <main class="detail-main section-inner">
-      <div class="container-page">
-        <template v-if="plan">
-          <div class="detail-topbar">
-            <router-link to="/plans" class="back-link"
-              >← 返回 JPN 套餐页</router-link
-            >
+    <AppHeader />
+    <main class="detail-main container-page" :aria-busy="loading">
+      <router-link to="/plans" class="back-link">← 返回套餐列表</router-link>
+      <div v-if="loading" class="detail-state" role="status">正在加载套餐…</div>
+      <div v-else-if="error" class="detail-state" role="alert">
+        <h1>套餐加载失败</h1>
+        <p>{{ error }}</p>
+        <button class="button" @click="reload">重新加载</button>
+      </div>
+      <div v-else-if="product" class="detail-grid">
+        <section class="detail-panel">
+          <span class="eyebrow">PLAN DETAILS</span>
+          <h1>{{ product.name }}</h1>
+          <p v-if="product.description" class="detail-description">{{ product.description }}</p>
+          <h2 v-if="specs.length">资源配置</h2>
+          <dl class="detail-specs">
+            <div v-for="spec in specs" :key="spec.label">
+              <dt>{{ spec.label }}</dt>
+              <dd>{{ spec.value }}</dd>
+            </div>
+          </dl>
+          <template v-if="features.length"
+            ><h2>套餐特性</h2>
+            <ul>
+              <li v-for="(feature, index) in features" :key="index">{{ feature }}</li>
+            </ul></template
+          >
+          <div class="detail-prices">
+            <h2>计费方案</h2>
+            <div v-for="cycle in availablePeriods" :key="cycle.key">
+              <span>{{ cycle.label }}</span
+              ><strong>{{
+                formatMoney(productPrice(product, cycle.key), product.currency || 'USD')
+              }}</strong>
+            </div>
           </div>
-
-          <div class="detail-grid">
-            <section class="detail-panel detail-panel--main">
-              <div class="detail-badge">{{ group?.shortName }} 套餐</div>
-              <h1>{{ displayName }}</h1>
-              <p class="detail-desc">{{ plan.description }}</p>
-
-              <a-descriptions :column="1" bordered class="detail-descriptions">
-                <a-descriptions-item label="套餐名称">{{ displayName }}</a-descriptions-item>
-                <a-descriptions-item label="地区">{{
-                  group?.name
-                }}</a-descriptions-item>
-                <a-descriptions-item label="适用场景">{{
-                  plan.scene
-                }}</a-descriptions-item>
-                <a-descriptions-item
-                  v-for="spec in liveSpecs"
-                  :key="spec.label"
-                  :label="spec.label"
-                  >{{ spec.value }}</a-descriptions-item
-                >
-              </a-descriptions>
-            </section>
-
-            <aside class="detail-panel detail-panel--side">
-              <div class="summary-title">套餐价格</div>
-              <div class="summary-price">
-                <span>{{ displayPrice }}</span>
-                <small>{{ plan.currency }}</small>
-              </div>
-              <div class="summary-cycle">{{ plan.billingCycle }}</div>
-
-              <div class="summary-note">适合：{{ plan.scene }}</div>
-
-              <a-space direction="vertical" fill>
-                <a-button type="primary" long size="large" @click="goLogin"
-                  >立即订购</a-button
-                >
-                <a-button long size="large" @click="goPlans"
-                  >返回套餐列表</a-button
-                >
-              </a-space>
-            </aside>
-          </div>
-        </template>
-
-        <a-empty v-else description="未找到该套餐">
-          <a-button type="primary" @click="goPlans">返回套餐页</a-button>
-        </a-empty>
+        </section>
+        <PlanCard :product="product" :period="availablePeriods[0]?.key || 'monthly'" />
+      </div>
+      <div v-else class="detail-state" role="status">
+        <h1>未找到该套餐</h1>
+        <p>该套餐可能已下架，请查看其他可选方案。</p>
+        <router-link to="/plans" class="button button--primary">查看可选套餐</router-link>
       </div>
     </main>
-
     <AppFooter />
   </div>
 </template>
-
 <script setup>
-import { computed } from "vue";
-import { useRoute, useRouter } from "vue-router";
-import AppHeader from "../components/AppHeader.vue";
-import AppFooter from "../components/AppFooter.vue";
-import { getGroupByKey, getPlanBySlug } from "../data/plans";
+import { computed } from 'vue'
+import { useRoute } from 'vue-router'
+import AppHeader from '../components/AppHeader.vue'
+import AppFooter from '../components/AppFooter.vue'
+import PlanCard from '../components/PlanCard.vue'
+import { useProductCatalog } from '../composables/useProductCatalog'
 import {
-  useLivePricing,
-  resolvePlanSpecs,
-  formatPlanPrice,
-  resolvePlanName,
-} from "../composables/useLivePricing";
-import {
-  buildAuthPageUrl,
-  buildConsoleCheckoutPath,
-  dashboardLoginUrl,
-} from "../config/runtime";
-
-const route = useRoute();
-const router = useRouter();
-
-const plan = computed(() => getPlanBySlug(route.params.slug));
-
-// Live catalogue price, falling back to the static entry.
-const { priceBySlug, limitsBySlug, nameBySlug } = useLivePricing();
-
-// Live portal name, falling back to the static title.
-const displayName = computed(() =>
-  plan.value ? resolvePlanName(plan.value, nameBySlug.value) : "",
-);
-
-// Limits come from the CDNfly package that enforces them, falling back per
-// field to the static entry when a plan has no package behind it.
-const liveSpecs = computed(() =>
-  plan.value ? resolvePlanSpecs(plan.value, limitsBySlug.value) : [],
-);
-const displayPrice = computed(() =>
-  plan.value ? formatPlanPrice(plan.value, priceBySlug.value) : "-",
-);
-const group = computed(() =>
-  plan.value ? getGroupByKey(plan.value.groupKey) : null,
-);
-
-const goPlans = () => {
-  router.push("/plans");
-};
-
-const goLogin = () => {
-  window.location.href = buildAuthPageUrl(
-    dashboardLoginUrl,
-    buildConsoleCheckoutPath(),
-  );
-};
+  billingPeriods,
+  productSpecs,
+  productFeatures,
+  productPrice,
+  formatMoney
+} from '../utils/products'
+const route = useRoute()
+const { products, loading, error, reload } = useProductCatalog()
+const product = computed(() => products.value.find((item) => item.slug === route.params.slug))
+const specs = computed(() => productSpecs(product.value))
+const features = computed(() => productFeatures(product.value))
+const availablePeriods = computed(() =>
+  billingPeriods.filter((cycle) => productPrice(product.value, cycle.key) !== null)
+)
 </script>
-
 <style scoped>
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
 .detail-page {
   min-height: 100vh;
-  background:
-    radial-gradient(
-      circle at top left,
-      rgba(29, 78, 216, 0.18),
-      transparent 26%
-    ),
-    radial-gradient(
-      circle at top right,
-      rgba(22, 163, 74, 0.12),
-      transparent 16%
-    ),
-    linear-gradient(180deg, #09101d 0%, #0d1322 46%, #111827 100%);
+  background: radial-gradient(ellipse at 20% 0%, var(--accent-glow), transparent 50%), var(--bg);
 }
-
 .detail-main {
-  padding-top: calc(var(--header-h) + 40px);
-  padding-bottom: 80px;
+  padding-top: calc(var(--header-h) + 44px);
+  padding-bottom: 88px;
+  min-height: 65vh;
 }
-
-.detail-topbar {
-  margin-bottom: 20px;
-}
-
 .back-link {
-  color: rgba(255, 255, 255, 0.72);
-  font-size: 15px;
+  display: inline-block;
+  margin-bottom: 28px;
+  color: var(--text-2);
 }
-
+.back-link:hover {
+  color: var(--accent);
+}
 .detail-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 320px;
-  gap: 24px;
-  opacity: 0;
-  animation: fadeInUp 0.8s ease-out forwards;
+  grid-template-columns: minmax(0, 1.6fr) minmax(300px, 1fr);
+  gap: 28px;
+  align-items: start;
 }
-
 .detail-panel {
-  border-radius: 24px;
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  background: linear-gradient(
-    180deg,
-    rgba(255, 255, 255, 0.04),
-    rgba(255, 255, 255, 0.02)
-  );
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.2);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
+  min-width: 0;
+  padding: 36px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  box-shadow: var(--shadow);
 }
-
-.detail-panel--main {
-  padding: 32px;
+h1 {
+  margin: 18px 0;
+  color: var(--text-strong);
+  font-size: clamp(28px, 3vw, 40px);
+  overflow-wrap: anywhere;
 }
-
-.detail-panel--side {
-  padding: 28px;
-  align-self: start;
+h2 {
+  margin: 30px 0 16px;
+  font-size: 17px;
+  color: var(--text-strong);
 }
-
-.detail-badge {
-  display: inline-flex;
-  padding: 8px 12px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.06);
-  color: rgba(255, 255, 255, 0.84);
-  font-weight: 700;
-  margin-bottom: 18px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+.detail-description,
+li {
+  color: var(--text-2);
+  line-height: 1.9;
+  overflow-wrap: anywhere;
 }
-
-.detail-panel h1 {
+.detail-specs {
   margin: 0;
-  font-size: clamp(34px, 4vw, 52px);
-  line-height: 1.1;
-  color: rgba(255, 255, 255, 0.96);
 }
-
-.detail-desc {
-  margin-top: 14px;
-  margin-bottom: 24px;
-  color: rgba(255, 255, 255, 0.6);
-  line-height: 1.8;
-  font-size: 16px;
-}
-
-.summary-title {
-  color: rgba(255, 255, 255, 0.56);
-  margin-bottom: 12px;
-}
-
-.summary-price {
+.detail-specs div,
+.detail-prices > div {
   display: flex;
-  align-items: baseline;
-  gap: 8px;
-  color: rgba(255, 255, 255, 0.96);
+  justify-content: space-between;
+  gap: 20px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border);
 }
-
-.summary-price span {
-  font-size: 42px;
-  font-weight: 800;
+dt,
+.detail-prices span {
+  color: var(--text-2);
 }
-
-.summary-price small {
-  font-size: 16px;
-  font-weight: 700;
+dd {
+  margin: 0;
+  font-weight: 600;
+  text-align: right;
 }
-
-.summary-cycle,
-.summary-note {
-  color: rgba(255, 255, 255, 0.56);
+ul {
+  padding-left: 20px;
 }
-
-.summary-cycle {
-  margin-top: 4px;
+li + li {
+  margin-top: 8px;
 }
-
-.summary-note {
-  margin: 22px 0 24px;
-  line-height: 1.8;
+.detail-state {
+  text-align: center;
+  padding: 64px 24px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: var(--panel);
 }
-
-.detail-descriptions {
-  overflow: hidden;
+.detail-state p {
+  margin-bottom: 24px;
+  color: var(--text-2);
 }
-
-:deep(.detail-descriptions .arco-descriptions) {
-  border-color: rgba(255, 255, 255, 0.08);
-}
-
-:deep(.detail-descriptions .arco-descriptions-item-label) {
-  background: rgba(255, 255, 255, 0.04);
-  color: rgba(255, 255, 255, 0.52);
-  border-color: rgba(255, 255, 255, 0.08);
-}
-
-:deep(.detail-descriptions .arco-descriptions-item-value) {
-  background: rgba(255, 255, 255, 0.02);
-  color: rgba(255, 255, 255, 0.88);
-  border-color: rgba(255, 255, 255, 0.08);
-}
-
-@media (max-width: 900px) {
+@media (max-width: 850px) {
   .detail-grid {
     grid-template-columns: 1fr;
   }
-
-  .detail-panel--main,
-  .detail-panel--side {
-    padding: 22px;
+  .detail-panel {
+    padding: 24px;
   }
 }
 </style>

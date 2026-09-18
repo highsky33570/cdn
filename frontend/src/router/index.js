@@ -16,7 +16,7 @@ const router = createRouter({
       return {
         el: to.hash,
         behavior: 'smooth',
-        top: 84,
+        top: 84
       }
     }
 
@@ -25,45 +25,45 @@ const router = createRouter({
   routes: [
     {
       path: '/',
-      component: HomeView,
+      component: HomeView
     },
     {
       path: '/plans',
-      component: PlansView,
+      component: PlansView
     },
     {
       path: '/plans/:slug',
-      component: PlanDetailView,
+      component: PlanDetailView
     },
     {
       path: '/plans/japan-cdn',
-      redirect: '/plans/jpn-pro',
+      redirect: '/plans'
     },
     {
       path: '/login',
-      component: LoginView,
+      component: LoginView
     },
     {
       path: '/forgot-password',
-      component: ForgotPasswordView,
+      component: ForgotPasswordView
     },
     {
       path: '/register',
-      component: RegisterView,
+      component: RegisterView
     },
     {
       path: '/reset-password/:token',
-      component: ResetPasswordView,
+      component: ResetPasswordView
     },
     {
       path: '/verify-email',
-      component: VerifyEmailView,
+      component: VerifyEmailView
     },
     {
       path: '/two-factor-challenge',
-      component: TwoFactorChallengeView,
-    },
-  ],
+      component: TwoFactorChallengeView
+    }
+  ]
 })
 
 export default router

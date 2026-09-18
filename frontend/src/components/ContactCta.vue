@@ -4,21 +4,14 @@
       <div class="cta-panel" :class="{ 'is-visible': isVisible }">
         <div class="cta-copy">
           <h2 class="cta-title">先用一个非核心域名试试</h2>
-          <p class="cta-sub">
-            接入只需要改一条 CNAME。线路和回源确认没问题，再迁主站也不迟。
-          </p>
+          <p class="cta-sub">接入只需要改一条 CNAME。线路和回源确认没问题，再迁主站也不迟。</p>
         </div>
 
         <div class="cta-actions">
           <a-button type="primary" size="large" class="cta-btn" @click="goRegister">
             注册并选购
           </a-button>
-          <a
-            class="cta-tg"
-            :href="contact.telegramUrl"
-            target="_blank"
-            rel="noopener"
-          >
+          <a class="cta-tg" :href="contact.telegramUrl" target="_blank" rel="noopener">
             Telegram 咨询
             <span aria-hidden="true">↗</span>
           </a>
@@ -52,14 +45,8 @@ const goRegister = () => {
   flex-wrap: wrap;
   padding: 52px 56px;
   border-radius: 22px;
-  border: 1px solid rgba(77, 140, 255, 0.28);
-  background:
-    radial-gradient(
-      ellipse at 12% 0%,
-      rgba(77, 140, 255, 0.22),
-      transparent 60%
-    ),
-    var(--panel);
+  border: 1px solid var(--accent-border);
+  background: radial-gradient(ellipse at 12% 0%, var(--accent-glow), transparent 60%), var(--panel);
   opacity: 0;
   transform: translateY(16px);
   transition:

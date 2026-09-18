@@ -1,17 +1,10 @@
 <template>
-  <section
-    id="why"
-    ref="sectionRef"
-    class="adv-section"
-    :class="{ 'is-visible': isVisible }"
-  >
+  <section id="why" ref="sectionRef" class="adv-section" :class="{ 'is-visible': isVisible }">
     <div class="container-page">
       <div class="adv-head">
         <span class="eyebrow">解法</span>
         <h2 class="section-title adv-title">同样是 CDN，为什么选 TyCDN</h2>
-        <p class="section-desc">
-          上面每一条，下面都有对应的答案。
-        </p>
+        <p class="section-desc">上面每一条，下面都有对应的答案。</p>
       </div>
 
       <div class="adv-grid">
@@ -106,8 +99,8 @@ const { sectionRef, isVisible } = useReveal()
   font-size: 12px;
   font-weight: 700;
   color: var(--accent-2);
-  background: rgba(77, 140, 255, 0.12);
-  border: 1px solid rgba(77, 140, 255, 0.28);
+  background: var(--accent-glow);
+  border: 1px solid var(--accent-border);
   border-radius: 999px;
   padding: 4px 12px;
   margin-bottom: 22px;

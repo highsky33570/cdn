@@ -1,10 +1,5 @@
 <template>
-  <section
-    id="compare"
-    ref="sectionRef"
-    class="cmp-section"
-    :class="{ 'is-visible': isVisible }"
-  >
+  <section id="compare" ref="sectionRef" class="cmp-section" :class="{ 'is-visible': isVisible }">
     <div class="container-page">
       <div class="cmp-head">
         <span class="eyebrow">对比</span>
@@ -42,11 +37,7 @@
             </tr>
           </thead>
           <tbody>
-            <tr
-              v-for="(row, ri) in comparison.rows"
-              :key="row.label"
-              :style="{ '--i': ri }"
-            >
+            <tr v-for="(row, ri) in comparison.rows" :key="row.label" :style="{ '--i': ri }">
               <th scope="row" class="cmp-row-head">{{ row.label }}</th>
               <td
                 v-for="(cell, ci) in row.cells"
@@ -54,12 +45,7 @@
                 :class="['cmp-cell', { 'is-us': ci === 0 }]"
               >
                 <span :class="['pill', `pill-${cell.tone}`]">
-                  <svg
-                    v-if="ci === 0"
-                    class="pill-check"
-                    viewBox="0 0 16 16"
-                    aria-hidden="true"
-                  >
+                  <svg v-if="ci === 0" class="pill-check" viewBox="0 0 16 16" aria-hidden="true">
                     <path
                       d="M3.5 8.5l3 3 6-7"
                       fill="none"
@@ -79,11 +65,7 @@
 
       <!-- mobile: transposed, one capability per card -->
       <div class="cmp-cards mobile-only">
-        <article
-          v-for="row in comparison.rows"
-          :key="`m-${row.label}`"
-          class="cmp-card"
-        >
+        <article v-for="row in comparison.rows" :key="`m-${row.label}`" class="cmp-card">
           <h3 class="cmp-card-title">{{ row.label }}</h3>
           <ul class="cmp-card-list">
             <li v-for="(cell, ci) in row.cells" :key="ci" class="cmp-card-row">
@@ -94,9 +76,7 @@
         </article>
       </div>
 
-      <p class="cmp-foot">
-        以上为结构性差异（计费方式、控制权、接入路径），不随机房与时段变化。
-      </p>
+      <p class="cmp-foot">以上为结构性差异（计费方式、控制权、接入路径），不随机房与时段变化。</p>
     </div>
   </section>
 </template>
@@ -178,12 +158,8 @@ const { sectionRef, isVisible } = useReveal(0.08)
 .cmp-col-head.is-us {
   color: var(--text);
   font-size: 17px;
-  background: linear-gradient(
-    180deg,
-    rgba(74, 222, 128, 0.16),
-    rgba(74, 222, 128, 0.04)
-  );
-  border-bottom-color: rgba(74, 222, 128, 0.4);
+  background: linear-gradient(180deg, var(--ok-soft), var(--ok-soft));
+  border-bottom-color: var(--ok-border);
 }
 
 .cmp-us-mark {
@@ -191,7 +167,7 @@ const { sectionRef, isVisible } = useReveal(0.08)
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.14em;
-  color: #4ade80;
+  color: var(--ok);
   margin-bottom: 7px;
 }
 
@@ -212,7 +188,7 @@ const { sectionRef, isVisible } = useReveal(0.08)
 }
 
 .cmp-cell.is-us {
-  background: rgba(74, 222, 128, 0.045);
+  background: var(--ok-soft);
 }
 
 .cmp-table tbody tr:last-child .cmp-row-head,
@@ -226,7 +202,7 @@ const { sectionRef, isVisible } = useReveal(0.08)
 }
 
 .cmp-table tbody tr:hover .cmp-cell.is-us {
-  background: rgba(74, 222, 128, 0.08);
+  background: var(--ok-soft);
 }
 
 /* ── pills ────────────────────────────────────────────── */
@@ -242,22 +218,22 @@ const { sectionRef, isVisible } = useReveal(0.08)
 }
 
 .pill-good {
-  color: #86efac;
-  background: rgba(74, 222, 128, 0.12);
-  border-color: rgba(74, 222, 128, 0.32);
+  color: var(--ok-2);
+  background: var(--ok-soft);
+  border-color: var(--ok-border);
   font-weight: 700;
 }
 
 .pill-bad {
-  color: #fca5a5;
-  background: rgba(248, 113, 113, 0.1);
-  border-color: rgba(248, 113, 113, 0.24);
+  color: var(--danger);
+  background: var(--danger-soft);
+  border-color: var(--danger-border);
 }
 
 .pill-warn {
-  color: #fcd34d;
-  background: rgba(251, 191, 36, 0.1);
-  border-color: rgba(251, 191, 36, 0.24);
+  color: var(--warn);
+  background: var(--warn-soft);
+  border-color: var(--warn-border);
 }
 
 .pill-muted {
@@ -335,7 +311,7 @@ const { sectionRef, isVisible } = useReveal(0.08)
 }
 
 .cmp-card-row:first-child .cmp-card-col {
-  color: #86efac;
+  color: var(--ok-2);
   font-weight: 700;
 }
 

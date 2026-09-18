@@ -9,9 +9,7 @@
           <span>TyCDN · 日本东京节点 · CN2 优化线路</span>
         </button>
 
-        <p class="hero-kicker">
-          别家一被打就<span class="hero-kicker-mark">绕路卡顿</span>？
-        </p>
+        <p class="hero-kicker">别家一被打就<span class="hero-kicker-mark">绕路卡顿</span>？</p>
 
         <h1 class="hero-h1">
           攻击时不绕路，<br />
@@ -30,12 +28,7 @@
           <a-button size="large" class="hero-btn hero-btn-ghost" @click="goCompare">
             为什么我们不绕路
           </a-button>
-          <a
-            class="hero-tg"
-            :href="contact.telegramUrl"
-            target="_blank"
-            rel="noopener"
-          >
+          <a class="hero-tg" :href="contact.telegramUrl" target="_blank" rel="noopener">
             Telegram 咨询
             <span aria-hidden="true">↗</span>
           </a>
@@ -67,37 +60,15 @@
         </div>
       </div>
 
-      <!-- right: coverage panel with the three capability cards -->
-      <div class="hero-visual" aria-hidden="true">
-        <div class="hero-map-panel">
-          <img class="hero-map" src="/images/world-map-japan.svg" alt="" />
-          <span class="hero-node">
-            <span class="hero-node-pulse"></span>
-            <span class="hero-node-dot"></span>
-          </span>
-
-          <div
-            v-for="(card, i) in mapHighlights"
-            :key="card.title"
-            class="hero-float"
-            :class="`hero-float-${i + 1}`"
-            :style="{ '--d': `${0.9 + i * 0.15}s` }"
-          >
-            <span class="hero-float-bar"></span>
-            <div>
-              <p class="hero-float-title">{{ card.title }}</p>
-              <p class="hero-float-desc">{{ card.desc }}</p>
-            </div>
-          </div>
-        </div>
-      </div>
+      <div class="hero-visual"><NetworkMap compact /></div>
     </div>
   </section>
 </template>
 
 <script setup>
 import { computed } from 'vue'
-import { contact, mapHighlights, PENDING_FACTS, scenarios } from '../data/landing'
+import NetworkMap from './NetworkMap.vue'
+import { contact, PENDING_FACTS, scenarios } from '../data/landing'
 import { useNetworkStats } from '../composables/useNetworkStats'
 
 const { onlineNodes } = useNetworkStats()
@@ -110,9 +81,9 @@ const stats = computed(() => [
   {
     ...PENDING_FACTS.nodes,
     value: onlineNodes.value != null ? String(onlineNodes.value) : '—',
-    pending: onlineNodes.value == null,
+    pending: onlineNodes.value == null
   },
-  PENDING_FACTS.uptime,
+  PENDING_FACTS.uptime
 ])
 
 const scrollTo = (id) => {
@@ -136,11 +107,7 @@ const goCompare = () => scrollTo('#compare')
   width: 70%;
   height: 90%;
   pointer-events: none;
-  background: radial-gradient(
-    ellipse at 70% 30%,
-    rgba(77, 140, 255, 0.16),
-    transparent 62%
-  );
+  background: radial-gradient(ellipse at 70% 30%, var(--accent-glow), transparent 62%);
 }
 
 .hero-inner {
@@ -148,7 +115,7 @@ const goCompare = () => scrollTo('#compare')
   z-index: 2;
   display: grid;
   grid-template-columns: minmax(0, 1.02fr) minmax(0, 0.98fr);
-  gap: 64px;
+  gap: 40px;
   align-items: center;
 }
 
@@ -211,19 +178,19 @@ const goCompare = () => scrollTo('#compare')
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: #4ade80;
+  background: var(--ok);
   animation: pulse-dot 2.2s infinite;
 }
 
 @keyframes pulse-dot {
   0% {
-    box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.6);
+    box-shadow: 0 0 0 0 var(--ok-border);
   }
   70% {
-    box-shadow: 0 0 0 7px rgba(74, 222, 128, 0);
+    box-shadow: 0 0 0 7px transparent;
   }
   100% {
-    box-shadow: 0 0 0 0 rgba(74, 222, 128, 0);
+    box-shadow: 0 0 0 0 transparent;
   }
 }
 
@@ -240,7 +207,7 @@ const goCompare = () => scrollTo('#compare')
 }
 
 .hero-kicker-mark {
-  color: #ff8f6b;
+  color: var(--warn);
   padding: 0 2px;
 }
 
@@ -254,7 +221,7 @@ const goCompare = () => scrollTo('#compare')
 }
 
 .hero-h1-accent {
-  background: linear-gradient(96deg, var(--accent-2), #4ade80);
+  background: linear-gradient(96deg, var(--accent-2), var(--ok));
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -390,7 +357,7 @@ const goCompare = () => scrollTo('#compare')
 }
 
 .hero-scenario:hover {
-  border-color: rgba(127, 176, 255, 0.4);
+  border-color: var(--accent-border);
   color: var(--accent-3);
 }
 
@@ -398,123 +365,6 @@ const goCompare = () => scrollTo('#compare')
 .hero-visual {
   opacity: 0;
   animation: rise 0.9s cubic-bezier(0.2, 0.8, 0.2, 1) 0.35s forwards;
-}
-
-.hero-map-panel {
-  position: relative;
-  padding: 34px 26px;
-  border-radius: 22px;
-  border: 1px solid var(--border);
-  background:
-    radial-gradient(
-      ellipse at 60% 40%,
-      rgba(77, 140, 255, 0.12),
-      transparent 65%
-    ),
-    var(--panel);
-}
-
-.hero-map {
-  display: block;
-  width: 100%;
-  height: auto;
-  opacity: 0.55;
-}
-
-.hero-node {
-  position: absolute;
-  top: 41%;
-  left: 79%;
-}
-
-.hero-node-dot {
-  display: block;
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
-  background: #4ade80;
-  box-shadow: 0 0 12px rgba(74, 222, 128, 0.9);
-}
-
-.hero-node-pulse {
-  position: absolute;
-  inset: -9px;
-  border-radius: 50%;
-  border: 1px solid rgba(74, 222, 128, 0.55);
-  animation: node-pulse 2.4s ease-out infinite;
-}
-
-@keyframes node-pulse {
-  0% {
-    transform: scale(0.6);
-    opacity: 0.9;
-  }
-  100% {
-    transform: scale(2.1);
-    opacity: 0;
-  }
-}
-
-.hero-float {
-  position: absolute;
-  display: flex;
-  gap: 12px;
-  padding: 13px 16px;
-  border-radius: 13px;
-  border: 1px solid var(--border);
-  background: var(--panel);
-  backdrop-filter: blur(10px);
-  box-shadow: 0 16px 40px -20px rgba(0, 0, 0, 0.9);
-  opacity: 0;
-  animation: rise 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) var(--d) forwards;
-  max-width: 232px;
-}
-
-.hero-float-1 {
-  top: 6%;
-  left: -4%;
-}
-.hero-float-2 {
-  top: 47%;
-  right: -5%;
-}
-.hero-float-3 {
-  bottom: 4%;
-  left: 8%;
-}
-
-.hero-float-bar {
-  flex: none;
-  width: 3px;
-  border-radius: 3px;
-  background: linear-gradient(180deg, var(--accent-2), #4ade80);
-}
-
-.hero-float-title {
-  margin: 0;
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--text);
-}
-
-.hero-float-desc {
-  margin: 4px 0 0;
-  font-size: 12px;
-  color: var(--text-2);
-  line-height: 1.5;
-}
-
-@media (max-width: 1180px) {
-  .hero-float {
-    max-width: 190px;
-  }
-
-  .hero-float-1 {
-    left: 0;
-  }
-  .hero-float-2 {
-    right: 0;
-  }
 }
 
 @media (max-width: 1024px) {
@@ -528,7 +378,9 @@ const goCompare = () => scrollTo('#compare')
   }
 
   .hero-visual {
-    display: none;
+    width: 100%;
+    max-width: 620px;
+    margin-inline: auto;
   }
 }
 
@@ -553,14 +405,12 @@ const goCompare = () => scrollTo('#compare')
 
 @media (prefers-reduced-motion: reduce) {
   .hero-copy > *,
-  .hero-visual,
-  .hero-float {
+  .hero-visual {
     animation: none;
     opacity: 1;
     transform: none;
   }
 
-  .hero-node-pulse,
   .hero-badge-dot {
     animation: none;
   }
