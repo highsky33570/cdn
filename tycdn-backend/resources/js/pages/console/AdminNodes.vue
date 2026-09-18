@@ -1384,6 +1384,22 @@ type CandidateGroup = {
 // One CDNfly row per IP is noisy — the node name repeats on every line. Group
 // the candidate IPs under their node so each machine shows once: its main IP
 // sits in the node header (selectable), with the 附加 IP listed beneath it.
+// IPs already bound to the current group + line, keyed by IP address — used to
+// hide them from the candidate list (a fully-assigned node then drops out).
+const assignedIps = computed<Set<string>>(() => {
+    const set = new Set<string>();
+
+    for (const row of lineRows.value) {
+        const ip = textValue(row.ip);
+
+        if (ip !== '') {
+            set.add(ip);
+        }
+    }
+
+    return set;
+});
+
 const groupedCandidates = computed<CandidateGroup[]>(() => {
     const groups = new Map<
         number,
@@ -1391,6 +1407,11 @@ const groupedCandidates = computed<CandidateGroup[]>(() => {
     >();
 
     for (const row of lineCandidates.value) {
+        // Skip IPs already on this line — no point offering them again.
+        if (assignedIps.value.has(textValue(row.ip))) {
+            continue;
+        }
+
         const pid = Number(row.pid) || 0;
         const nodeId = pid !== 0 ? pid : Number(row.id);
 
@@ -1495,13 +1516,29 @@ async function removeAssignment(row: CdnflyRecord): Promise<void> {
 type LineGroup = {
     key: string;
     name: string;
-    rows: CdnflyRecord[];
+    main: CdnflyRecord | null;
+    subs: CdnflyRecord[];
+    count: number;
 };
 
+// A binding is the node's MAIN IP when its ip-record id equals the node id —
+// the panel builds node_id = pid for a sub and node_id = its own id for the
+// main, so main ⟺ node_id === node_ip_id.
+function isMainLineRow(row: CdnflyRecord): boolean {
+    const nodeId = asNumber(row.node_id);
+    const ipId = asNumber(row.node_ip_id);
+
+    return nodeId !== null && ipId !== null && nodeId === ipId;
+}
+
 // Bindings come back one row per IP, repeating the node name. Group them under
-// their node so a machine with a /29 shows once with its IPs beneath it.
+// their node so a machine with a /29 shows once: main IP in the header, 附加 IP
+// beneath it.
 const groupedLineRows = computed<LineGroup[]>(() => {
-    const groups = new Map<string, LineGroup>();
+    const groups = new Map<
+        string,
+        { key: string; name: string; rows: CdnflyRecord[] }
+    >();
 
     for (const row of lineRows.value) {
         const nodeId = asNumber(row.node_id);
@@ -1522,11 +1559,23 @@ const groupedLineRows = computed<LineGroup[]>(() => {
         }
     }
 
-    return [...groups.values()];
+    return [...groups.values()].map((group) => {
+        const main = group.rows.find(isMainLineRow) ?? null;
+        const subs = group.rows.filter((row) => row !== main);
+
+        return {
+            key: group.key,
+            name: group.name,
+            main,
+            subs,
+            count: group.rows.length,
+        };
+    });
 });
 
 async function removeGroupAssignment(group: LineGroup): Promise<void> {
-    const ids = group.rows
+    const ids = [group.main, ...group.subs]
+        .filter((row): row is CdnflyRecord => row !== null)
         .map((row) => Number(row.id))
         .filter((id) => Number.isFinite(id) && id !== 0);
 
@@ -2559,16 +2608,29 @@ function regionNameById(id: unknown): string {
                                         <span class="font-medium">{{
                                             group.name
                                         }}</span>
+                                        <span
+                                            v-if="group.main"
+                                            class="font-mono text-sm"
+                                            >{{
+                                                textValue(group.main.ip)
+                                            }}</span
+                                        >
                                         <Badge
-                                            variant="outline"
+                                            v-if="group.main"
+                                            variant="secondary"
                                             class="font-normal"
                                         >
-                                            {{ group.rows.length }} 个 IP
+                                            主 IP
+                                        </Badge>
+                                        <Badge
+                                            variant="outline"
+                                            class="ml-auto font-normal"
+                                        >
+                                            {{ group.count }} 个 IP
                                         </Badge>
                                         <Button
                                             variant="destructive"
                                             size="sm"
-                                            class="ml-auto"
                                             @click="
                                                 removeGroupAssignment(group)
                                             "
@@ -2581,7 +2643,7 @@ function regionNameById(id: unknown): string {
                                         v-show="!isAssignedCollapsed(group.key)"
                                     >
                                         <li
-                                            v-for="l in group.rows"
+                                            v-for="l in group.subs"
                                             :key="String(l.id)"
                                             class="flex items-center gap-3 border-t px-4 py-2 pl-11 first:border-t-0"
                                         >
@@ -2595,6 +2657,13 @@ function regionNameById(id: unknown): string {
                                             >
                                                 备用
                                             </Badge>
+                                            <Badge
+                                                v-else
+                                                variant="outline"
+                                                class="font-normal"
+                                            >
+                                                附加 IP
+                                            </Badge>
                                             <Button
                                                 variant="ghost"
                                                 size="sm"
@@ -2606,6 +2675,12 @@ function regionNameById(id: unknown): string {
                                                 />
                                                 移出
                                             </Button>
+                                        </li>
+                                        <li
+                                            v-if="group.subs.length === 0"
+                                            class="border-t px-4 py-2 pl-11 text-xs text-muted-foreground"
+                                        >
+                                            无附加 IP
                                         </li>
                                     </ul>
                                 </div>
