@@ -1376,14 +1376,19 @@ function toggleIpSelection(row: CdnflyRecord): void {
 type CandidateGroup = {
     nodeId: number;
     name: string;
-    ips: CdnflyRecord[];
+    main: CdnflyRecord | null;
+    subs: CdnflyRecord[];
+    count: number;
 };
 
 // One CDNfly row per IP is noisy — the node name repeats on every line. Group
-// the candidate IPs under their node so each machine shows once with its main
-// IP + 附加 IP beneath it, and can be selected as a whole.
+// the candidate IPs under their node so each machine shows once: its main IP
+// sits in the node header (selectable), with the 附加 IP listed beneath it.
 const groupedCandidates = computed<CandidateGroup[]>(() => {
-    const groups = new Map<number, CandidateGroup>();
+    const groups = new Map<
+        number,
+        { nodeId: number; name: string; ips: CdnflyRecord[] }
+    >();
 
     for (const row of lineCandidates.value) {
         const pid = Number(row.pid) || 0;
@@ -1408,47 +1413,22 @@ const groupedCandidates = computed<CandidateGroup[]>(() => {
         }
     }
 
-    for (const group of groups.values()) {
-        if (group.name === '' && group.ips[0]) {
-            group.name = textValue(group.ips[0].name);
-        }
+    return [...groups.values()].map((group) => {
+        const name =
+            group.name || (group.ips[0] ? textValue(group.ips[0].name) : '');
+        const main =
+            group.ips.find((ip) => (Number(ip.pid) || 0) === 0) ?? null;
+        const subs = group.ips.filter((ip) => (Number(ip.pid) || 0) !== 0);
 
-        // Main IP first, then the extras.
-        group.ips.sort((a, b) => (Number(a.pid) || 0) - (Number(b.pid) || 0));
-    }
-
-    return [...groups.values()];
+        return {
+            nodeId: group.nodeId,
+            name,
+            main,
+            subs,
+            count: group.ips.length,
+        };
+    });
 });
-
-function groupIpIds(group: CandidateGroup): number[] {
-    return group.ips
-        .map((ip) => Number(ip.id))
-        .filter((id) => Number.isFinite(id) && id !== 0);
-}
-
-function isGroupAllSelected(group: CandidateGroup): boolean {
-    const ids = groupIpIds(group);
-
-    return (
-        ids.length > 0 && ids.every((id) => selectedIpIds.value.includes(id))
-    );
-}
-
-function toggleGroupSelection(group: CandidateGroup): void {
-    const ids = groupIpIds(group);
-
-    if (isGroupAllSelected(group)) {
-        selectedIpIds.value = selectedIpIds.value.filter(
-            (id) => !ids.includes(id),
-        );
-
-        return;
-    }
-
-    const set = new Set(selectedIpIds.value);
-    ids.forEach((id) => set.add(id));
-    selectedIpIds.value = [...set];
-}
 
 async function submitLineAssignment(): Promise<void> {
     const group = currentLineGroup.value;
@@ -2710,11 +2690,15 @@ function regionNameById(id: unknown): string {
                                         </button>
                                         <div
                                             class="flex flex-1 cursor-pointer items-center gap-3"
-                                            @click="toggleGroupSelection(group)"
+                                            @click="
+                                                group.main &&
+                                                toggleIpSelection(group.main)
+                                            "
                                         >
                                             <Checkbox
+                                                v-if="group.main"
                                                 :model-value="
-                                                    isGroupAllSelected(group)
+                                                    isIpSelected(group.main)
                                                 "
                                             />
                                             <Server
@@ -2723,11 +2707,25 @@ function regionNameById(id: unknown): string {
                                             <span class="font-medium">{{
                                                 group.name
                                             }}</span>
+                                            <span
+                                                v-if="group.main"
+                                                class="font-mono text-sm"
+                                                >{{
+                                                    textValue(group.main.ip)
+                                                }}</span
+                                            >
+                                            <Badge
+                                                v-if="group.main"
+                                                variant="secondary"
+                                                class="font-normal"
+                                            >
+                                                主 IP
+                                            </Badge>
                                             <Badge
                                                 variant="outline"
                                                 class="ml-auto font-normal"
                                             >
-                                                {{ group.ips.length }} 个 IP
+                                                {{ group.count }} 个 IP
                                             </Badge>
                                         </div>
                                     </div>
@@ -2737,7 +2735,7 @@ function regionNameById(id: unknown): string {
                                         "
                                     >
                                         <li
-                                            v-for="ip in group.ips"
+                                            v-for="ip in group.subs"
                                             :key="String(ip.id)"
                                             class="flex cursor-pointer items-center gap-3 border-t px-4 py-2 pl-11 first:border-t-0 hover:bg-accent/40"
                                             @click="toggleIpSelection(ip)"
@@ -2749,19 +2747,17 @@ function regionNameById(id: unknown): string {
                                                 textValue(ip.ip)
                                             }}</span>
                                             <Badge
-                                                :variant="
-                                                    Number(ip.pid) !== 0
-                                                        ? 'outline'
-                                                        : 'secondary'
-                                                "
+                                                variant="outline"
                                                 class="ml-auto font-normal"
                                             >
-                                                {{
-                                                    Number(ip.pid) !== 0
-                                                        ? '附加 IP'
-                                                        : '主 IP'
-                                                }}
+                                                附加 IP
                                             </Badge>
+                                        </li>
+                                        <li
+                                            v-if="group.subs.length === 0"
+                                            class="border-t px-4 py-2 pl-11 text-xs text-muted-foreground"
+                                        >
+                                            无附加 IP
                                         </li>
                                     </ul>
                                 </div>
