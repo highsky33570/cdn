@@ -213,6 +213,46 @@ class AdminLineAssignmentTest extends TestCase
             ->assertForbidden();
     }
 
+    /**
+     * CDNfly refuses to delete an enabled line binding ("请先禁用"), so removal
+     * disables each id first (enable=0, disable_by=admin) and only then deletes.
+     */
+    public function test_removing_a_line_disables_it_before_deleting(): void
+    {
+        $order = [];
+
+        $cdnfly = $this->mock(CdnflyApiService::class);
+        $cdnfly->shouldReceive('updateLines')
+            ->once()
+            ->andReturnUsing(function (array $lines) use (&$order) {
+                $order[] = 'update';
+                $order[] = $lines;
+
+                return ['code' => 0];
+            });
+        $cdnfly->shouldReceive('deleteLines')
+            ->once()
+            ->andReturnUsing(function (array $ids) use (&$order) {
+                $order[] = 'delete';
+                $order[] = $ids;
+
+                return ['code' => 0];
+            });
+
+        $this->actingAs($this->admin())
+            ->deleteJson('/api/admin/lines/2,5')
+            ->assertOk()
+            ->assertJsonPath('ok', true);
+
+        $this->assertSame('update', $order[0]);
+        $this->assertSame([
+            ['id' => 2, 'enable' => 0, 'disable_by' => 'admin'],
+            ['id' => 5, 'enable' => 0, 'disable_by' => 'admin'],
+        ], $order[1]);
+        $this->assertSame('delete', $order[2]);
+        $this->assertSame([2, 5], $order[3]);
+    }
+
     private function admin(): User
     {
         return User::factory()->create(['role' => 'admin']);

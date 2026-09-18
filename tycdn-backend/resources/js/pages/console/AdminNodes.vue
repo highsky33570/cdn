@@ -213,15 +213,28 @@ const pendingPaginationText = computed(() => {
 });
 
 onMounted(() => {
-    void Promise.all([
-        loadNodes(),
-        loadReferenceData(),
-        loadInstallCommand(),
-        loadRegions(),
-        loadNodeGroups(),
-        // the DNS line list, not assignments — those need a node group chosen first
-        loadDnsLines(),
-    ]);
+    void (async () => {
+        await Promise.all([
+            loadNodes(),
+            loadReferenceData(),
+            loadInstallCommand(),
+            loadRegions(),
+            loadNodeGroups(),
+            // the DNS line list, not assignments — those need a node group chosen first
+            loadDnsLines(),
+        ]);
+
+        // Default 线路分配 to the first node group so its bound nodes and
+        // candidate IPs load immediately, instead of an empty "选择节点组".
+        if (lineGroupId.value === '' && nodeGroups.value.length > 0) {
+            const firstId = asNumber(nodeGroups.value[0].id);
+
+            if (firstId) {
+                lineGroupId.value = String(firstId);
+                await onLineGroupChange();
+            }
+        }
+    })();
 });
 
 async function loadNodes(targetPage = page.value): Promise<void> {

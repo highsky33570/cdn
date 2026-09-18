@@ -364,8 +364,22 @@ class AdminNodeController extends Controller
             return response()->json(['ok' => false, 'message' => '缺少有效的线路 ID'], 422);
         }
 
+        $lineIds = array_map('intval', $ids);
+
         try {
-            $data = $this->cdnfly->deleteLines($ids);
+            // CDNfly refuses to delete an enabled line binding ("请先禁用"), so
+            // disable each one first (mirrors the panel's editLines enable=0),
+            // then remove it — the operator only clicks 移出 once.
+            $this->cdnfly->updateLines(array_map(
+                static fn (int $lineId): array => [
+                    'id' => $lineId,
+                    'enable' => 0,
+                    'disable_by' => 'admin',
+                ],
+                $lineIds,
+            ));
+
+            $data = $this->cdnfly->deleteLines($lineIds);
 
             return response()->json(['ok' => true, 'data' => $data]);
         } catch (\Throwable $e) {

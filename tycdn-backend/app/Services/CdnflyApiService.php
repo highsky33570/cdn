@@ -598,6 +598,24 @@ class CdnflyApiService
     }
 
     /**
+     * Update line assignments in bulk (enable/disable, weight, sort, backup).
+     *
+     * Mirrors the panel's editLines: PUT /v1/lines with an array of {id, ...}.
+     * The main use here is disabling a binding before removal — CDNfly refuses
+     * to delete an enabled line ("请先禁用"), so a remove is disable-then-delete.
+     *
+     * @param  array<int, array<string, mixed>>  $lines
+     * @return array<string, mixed>
+     */
+    public function updateLines(array $lines): array
+    {
+        $this->ensureOutboundEnabled('update lines');
+        $response = $this->adminHttp()->put('/v1/lines', array_values($lines));
+
+        return $this->parseResponse($response, 'update lines');
+    }
+
+    /**
      * Remove one or more line assignments.
      *
      * The panel deletes in bulk by joining ids with commas
