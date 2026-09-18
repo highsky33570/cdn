@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { cdnflyJsonRows as parseJsonArray, cdnflyJsonObject as parseJsonObject } from '@/lib/cdnflyResponse';
 import {
     AlertCircle,
     Check,
@@ -33,8 +34,6 @@ import {
     getErrorMessage,
     jsonText,
     numberValue,
-    parseJsonArray,
-    parseJsonObject,
     textValue,
 } from '@/lib/cdnRecord';
 import {
@@ -211,8 +210,8 @@ async function saveListen(): Promise<void> {
     successListen.value = '';
 
     for (const row of listenRows.value) {
-        if (!row.port.trim()) {
-            errorListen.value = '监听端口不能为空';
+        if (!Number.isInteger(Number(row.port)) || Number(row.port) < 1 || Number(row.port) > 65535) {
+            errorListen.value = '监听端口必须是 1–65535 的整数';
             return;
         }
     }
@@ -220,7 +219,7 @@ async function saveListen(): Promise<void> {
     savingListen.value = true;
     try {
         await updateUserStream(streamId.value, {
-            listen: listenRows.value.map((r) => ({ protocol: r.protocol, port: r.port.trim() })),
+            listen: listenRows.value.map((r) => ({ protocol: r.protocol, port: Number(r.port) })),
         });
         successListen.value = '已保存';
         void loadStream();
@@ -472,7 +471,7 @@ function goBack(): void {
                                             v-model="row.port"
                                             class="h-8"
                                             inputmode="numeric"
-                                            placeholder="如 80 或 80-90"
+                                            placeholder="1–65535"
                                         />
                                     </td>
                                     <td class="px-3 py-2 text-center">

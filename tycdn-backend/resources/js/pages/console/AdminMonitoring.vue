@@ -22,16 +22,16 @@ import { formatDate } from '@/lib/formatters';
 
 const loginLogColumns: ColumnDef[] = [
     { key: 'id', label: 'ID', width: '70px' },
-    { key: 'username', label: '账号' },
+    { key: 'uid', label: '用户 ID' },
     { key: 'ip', label: 'IP', width: '140px' },
     {
-        key: 'status',
-        altKeys: ['state', 'enable'],
+        key: 'success',
+        format: (v) => (v === 1 || v === '1' || v === true ? '成功' : '失败'),
         label: '状态',
         badge: true,
         width: '90px',
     },
-    { key: 'reason', label: '原因' },
+    { key: 'ip_location', label: 'IP 归属地' },
     {
         key: 'created_at',
         altKeys: ['create_at'],
@@ -43,9 +43,10 @@ const loginLogColumns: ColumnDef[] = [
 
 const opLogColumns: ColumnDef[] = [
     { key: 'id', label: 'ID', width: '70px' },
-    { key: 'username', label: '账号' },
-    { key: 'method', label: '方法', badge: true, width: '80px' },
-    { key: 'path', label: '路径' },
+    { key: 'uid', label: '用户 ID' },
+    { key: 'action', label: '操作', badge: true, width: '80px' },
+    { key: 'type', label: '资源类型' },
+    { key: 'content', label: '内容' },
     { key: 'ip', label: 'IP', width: '140px' },
     {
         key: 'created_at',
@@ -56,13 +57,11 @@ const opLogColumns: ColumnDef[] = [
     },
 ];
 
-// /v1/monitor/site/top?type=top-domain returns a domain ranking, not site rows:
-// {domain, req, traffic, backend_traffic}. The old ID/站点/状态 columns matched
-// nothing this endpoint returns, so even a successful call rendered as dashes.
+// CDNfly rankings use res/count/traffic/up_recv.
 const siteRealtimeColumns: ColumnDef[] = [
-    { key: 'domain', label: '域名' },
+    { key: 'res', label: '域名' },
     {
-        key: 'req',
+        key: 'count',
         label: '请求次数',
         width: '120px',
         align: 'right',
@@ -76,7 +75,7 @@ const siteRealtimeColumns: ColumnDef[] = [
         format: (v) => formatBytes(v),
     },
     {
-        key: 'backend_traffic',
+        key: 'up_recv',
         label: '回源流量',
         width: '130px',
         align: 'right',
@@ -85,16 +84,18 @@ const siteRealtimeColumns: ColumnDef[] = [
 ];
 
 const streamRealtimeColumns: ColumnDef[] = [
-    { key: 'port', label: '端口' },
+    { key: 'res', label: '端口' },
     {
-        key: 'conn',
+        key: 'new_connections',
+        altKeys: ['count'],
         label: '连接数',
         width: '120px',
         align: 'right',
         format: (v) => formatCount(v),
     },
     {
-        key: 'traffic',
+        key: 'outbound_traffic',
+        altKeys: ['traffic'],
         label: '流量',
         width: '130px',
         align: 'right',
@@ -150,11 +151,13 @@ function formatBytes(value: unknown): string {
         <ConsoleTabs v-model="activeTab" :tabs="monitorTabs" />
 
         <ConsoleDataTable
+            :key="activeTab"
             v-if="activeTab === 'sites'"
             title="站点排行（近 30 分钟）"
             :columns="siteRealtimeColumns"
             :fetch-fn="getAdminSiteRealtime"
             :page-size="15"
+            client-side
             search-placeholder="搜索站点"
         >
             <template #actions-col><col style="width: 0" /></template>
@@ -162,11 +165,13 @@ function formatBytes(value: unknown): string {
         </ConsoleDataTable>
 
         <ConsoleDataTable
+            :key="activeTab"
             v-else-if="activeTab === 'streams'"
             title="四层排行（近 30 分钟）"
             :columns="streamRealtimeColumns"
             :fetch-fn="getAdminStreamRealtime"
             :page-size="15"
+            client-side
             search-placeholder="搜索转发"
         >
             <template #actions-col><col style="width: 0" /></template>
@@ -174,22 +179,26 @@ function formatBytes(value: unknown): string {
         </ConsoleDataTable>
 
         <ConsoleDataTable
+            :key="activeTab"
             v-else-if="activeTab === 'login'"
             title="登录日志"
             :columns="loginLogColumns"
             :fetch-fn="listAdminLoginLogs"
-            search-placeholder="搜索账号 / IP"
+            search-key="ip"
+            search-placeholder="搜索 IP"
         >
             <template #actions-col><col style="width: 0" /></template>
             <template #actions-header><th /></template>
         </ConsoleDataTable>
 
         <ConsoleDataTable
+            :key="activeTab"
             v-else
             title="操作日志"
             :columns="opLogColumns"
             :fetch-fn="listAdminOpLogs"
-            search-placeholder="搜索账号 / 路径"
+            search-key="content"
+            search-placeholder="搜索操作内容"
         >
             <template #actions-col><col style="width: 0" /></template>
             <template #actions-header><th /></template>

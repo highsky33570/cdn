@@ -304,25 +304,20 @@ class AdminSiteController extends Controller
         }
     }
 
-    // ─── Admin ACL CRUD ────────────────────────────────────
-    //
-    // /v1/waf-rules exists only at user scope in CDNfly v6, so every one of these
-    // acts as the rule's owner via an SSO token rather than as the panel. The
-    // owner's CDNfly user id is therefore required on all three, including
-    // update and delete, where it was previously not asked for at all.
+    // Administrator WAF library management.
     public function storeAcl(Request $request): JsonResponse
     {
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'default_action' => ['required', 'string', 'in:reject,allow'],
-            'data' => ['required', 'array'],
+            'scope' => ['required', 'string', 'in:user,global'],
+            'data' => ['present', 'array'],
             'des' => ['nullable', 'string', 'max:500'],
             'enable' => ['nullable', 'integer', 'in:0,1'],
-            'user_id' => ['required', 'integer', 'min:1'],
+            'user_id' => ['required_if:scope,user', 'nullable', 'integer', 'min:1'],
         ]);
 
         try {
-            $result = $this->cdnfly->adminCreateAcl((int) $validated['user_id'], $validated);
+            $result = $this->cdnfly->adminCreateAcl(isset($validated['user_id']) ? (int) $validated['user_id'] : null, $validated);
 
             return response()->json(['ok' => true, 'data' => $result], 201);
         } catch (\Throwable $e) {
@@ -334,15 +329,15 @@ class AdminSiteController extends Controller
     {
         $validated = $request->validate([
             'name' => ['sometimes', 'string', 'max:255'],
-            'default_action' => ['sometimes', 'string', 'in:reject,allow'],
+            'scope' => ['sometimes', 'string', 'in:user,global'],
             'data' => ['sometimes', 'array'],
             'des' => ['nullable', 'string', 'max:500'],
             'enable' => ['sometimes', 'integer', 'in:0,1'],
-            'user_id' => ['required', 'integer', 'min:1'],
+            'user_id' => ['nullable', 'integer', 'min:1'],
         ]);
 
         try {
-            $result = $this->cdnfly->adminUpdateAcl((int) $validated['user_id'], $id, $validated);
+            $result = $this->cdnfly->adminUpdateAcl(isset($validated['user_id']) ? (int) $validated['user_id'] : null, $id, $validated);
 
             return response()->json(['ok' => true, 'data' => $result]);
         } catch (\Throwable $e) {
@@ -353,11 +348,11 @@ class AdminSiteController extends Controller
     public function destroyAcl(Request $request, int $id): JsonResponse
     {
         $validated = $request->validate([
-            'user_id' => ['required', 'integer', 'min:1'],
+            'user_id' => ['nullable', 'integer', 'min:1'],
         ]);
 
         try {
-            $this->cdnfly->adminDeleteAcl((int) $validated['user_id'], $id);
+            $this->cdnfly->adminDeleteAcl(isset($validated['user_id']) ? (int) $validated['user_id'] : null, $id);
 
             return response()->json(['ok' => true]);
         } catch (\Throwable $e) {

@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Spinner } from '@/components/ui/spinner';
+import { extractCdnflyRows, extractCdnflyTotal } from '@/lib/cdnflyResponse';
 
 export type ColumnDef = {
     key: string;
@@ -43,23 +44,8 @@ async function loadData(): Promise<void> {
             limit: effectivePageSize.value,
         })) as Record<string, unknown>;
 
-        // CDNfly responses vary: { data: [...], total } or just [...]
-        if (Array.isArray(result)) {
-            rows.value = result;
-            total.value = result.length;
-        } else if (result && typeof result === 'object') {
-            const list =
-                (result.data as Record<string, unknown>[]) ??
-                (result.items as Record<string, unknown>[]) ??
-                (result.list as Record<string, unknown>[]) ??
-                (result.rows as Record<string, unknown>[]) ??
-                [];
-            rows.value = Array.isArray(list) ? list : [];
-            total.value =
-                typeof result.total === 'number'
-                    ? result.total
-                    : rows.value.length;
-        }
+        rows.value = extractCdnflyRows(result);
+        total.value = extractCdnflyTotal(result, rows.value.length);
     } catch (error) {
         errorMessage.value =
             error instanceof Error ? error.message : '请求失败';

@@ -10,7 +10,7 @@ import {
     Search,
     Trash2,
 } from 'lucide-vue-next';
-import { computed, onMounted, reactive, ref } from 'vue';
+import { computed, nextTick, onMounted, reactive, ref } from 'vue';
 import { toast } from 'vue-sonner';
 import { router } from '@inertiajs/vue3';
 import ConsolePageHeader from '@/components/console/ConsolePageHeader.vue';
@@ -59,6 +59,8 @@ import {
 } from '@/lib/cdnUserApi';
 import type { CdnStreamPayload, CdnflyRecord } from '@/lib/cdnUserApi';
 
+import { cdnflyStreamSeries } from '@/lib/cdnflyResponse';
+
 type StreamsView = 'list' | 'analytics';
 
 const props = defineProps<{
@@ -96,6 +98,7 @@ const rtMinutes = ref(30);
 const rtStart = ref(defaultStart());
 const rtEnd = ref(defaultEnd());
 const rtPort = ref('');
+const rtInboundPoints = ref<[number, number][]>([]);
 const rtPoints = ref<[number, number][]>([]);
 const rtCanvasRef = ref<HTMLCanvasElement | null>(null);
 let rtChart: { destroy(): void } | null = null;
@@ -226,10 +229,10 @@ async function loadRealtime(): Promise<void> {
         if (rtPort.value.trim()) params.port = rtPort.value.trim();
 
         const result = await getUserStreamRealtime(params);
-        const raw = (result as { data?: unknown }).data;
-        rtPoints.value = Array.isArray(raw)
-            ? (raw as [number, number][]).filter(Array.isArray)
-            : [];
+        const series = cdnflyStreamSeries(result);
+        rtPoints.value = series.outbound;
+        rtInboundPoints.value = series.inbound;
+        await nextTick();
         await renderRtChart();
     } catch (error) {
         errorMessage.value = getErrorMessage(error);
@@ -271,37 +274,53 @@ async function renderRtChart(): Promise<void> {
     const existing = Chart.getChart(canvas);
     if (existing) existing.destroy();
 
-    const labels = rtPoints.value.map(([ts]) => {
+    const timestamps = [
+        ...new Set(
+            [...rtPoints.value, ...rtInboundPoints.value].map(([ts]) => ts),
+        ),
+    ].sort((a, b) => a - b);
+    const labels = timestamps.map((ts) => {
         const d = new Date(ts);
         return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
     });
-    const data = rtPoints.value.map(([, v]) => v / 1048576);
-
     const label = rtType.value === 'stream-bandwidth' ? '带宽' : '流量';
+    const datasets = [
+        { points: rtPoints.value, label: `出站${label}`, color: '#6366f1' },
+        {
+            points: rtInboundPoints.value,
+            label: `入站${label}`,
+            color: '#06b6d4',
+        },
+    ]
+        .filter((series) => series.points.length > 0)
+        .map((series) => {
+            const byTime = new Map(series.points);
+            return {
+                label: series.label,
+                data: timestamps.map((ts) =>
+                    byTime.has(ts) ? byTime.get(ts)! / 1048576 : null,
+                ),
+                borderColor: series.color,
+                backgroundColor: `${series.color}18`,
+                borderWidth: 2,
+                pointRadius: timestamps.length > 60 ? 0 : 2,
+                pointHoverRadius: 4,
+                fill: true,
+                tension: 0.3,
+            };
+        });
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     rtChart = new (Chart as any)(canvas, {
         type: 'line',
         data: {
             labels,
-            datasets: [
-                {
-                    label,
-                    data,
-                    borderColor: '#6366f1',
-                    backgroundColor: '#6366f118',
-                    borderWidth: 2,
-                    pointRadius: data.length > 60 ? 0 : 2,
-                    pointHoverRadius: 4,
-                    fill: true,
-                    tension: 0.3,
-                },
-            ],
+            datasets,
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
             interaction: { mode: 'index', intersect: false },
-            plugins: { legend: { display: false } },
+            plugins: { legend: { display: datasets.length > 1 } },
             scales: {
                 x: {
                     ticks: {
@@ -440,7 +459,7 @@ async function submitStream(): Promise<void> {
             listen: [
                 {
                     protocol: form.listen_protocol,
-                    port: form.listen_port.trim(),
+                    port: Number(form.listen_port),
                 },
             ],
             backend_port: backendPort,
@@ -783,13 +802,20 @@ function formatInputDate(date: Date): string {
                 </CardHeader>
                 <CardContent>
                     <div
-                        v-if="rtLoading && rtPoints.length === 0"
+                        v-if="
+                            rtLoading &&
+                            rtPoints.length === 0 &&
+                            rtInboundPoints.length === 0
+                        "
                         class="flex justify-center py-16"
                     >
                         <Spinner />
                     </div>
                     <div
-                        v-else-if="rtPoints.length === 0"
+                        v-else-if="
+                            rtPoints.length === 0 &&
+                            rtInboundPoints.length === 0
+                        "
                         class="py-16 text-center text-sm text-muted-foreground"
                     >
                         暂无数据
@@ -860,25 +886,11 @@ function formatInputDate(date: Date): string {
                         <table class="w-full text-sm">
                             <thead class="border-b text-muted-foreground">
                                 <tr>
-                                    <th
-                                        class="w-16 px-4 py-2.5 text-left font-medium"
-                                    >
-                                        排名
-                                    </th>
-                                    <th
-                                        class="px-4 py-2.5 text-left font-medium"
-                                    >
-                                        端口
-                                    </th>
-                                    <th
-                                        class="w-36 px-4 py-2.5 text-right font-medium"
-                                    >
-                                        数值
-                                    </th>
-                                    <th
-                                        class="w-32 px-4 py-2.5 text-right font-medium"
-                                    >
-                                        时间
+                                    <th class="px-4 py-3 text-left">排名</th>
+                                    <th class="px-4 py-3 text-left">端口</th>
+                                    <th class="px-4 py-3 text-right">连接数</th>
+                                    <th class="px-4 py-3 text-right">
+                                        出站流量
                                     </th>
                                 </tr>
                             </thead>
@@ -888,44 +900,31 @@ function formatInputDate(date: Date): string {
                                     :key="i"
                                     class="border-b last:border-b-0"
                                 >
-                                    <td
-                                        class="px-4 py-2.5 text-muted-foreground"
-                                    >
-                                        {{ i + 1 }}
+                                    <td class="px-4 py-3">{{ i + 1 }}</td>
+                                    <td class="px-4 py-3">
+                                        {{ row.res ?? row.port ?? '-' }}
                                     </td>
-                                    <td class="px-4 py-2.5 font-medium">
-                                        {{
-                                            textValue(row.port) ||
-                                            textValue(row.key) ||
-                                            textValue(row.name) ||
-                                            '-'
-                                        }}
-                                    </td>
-                                    <td
-                                        class="px-4 py-2.5 text-right tabular-nums"
-                                    >
+                                    <td class="px-4 py-3 text-right">
                                         {{
                                             formatMetric(
                                                 Number(
-                                                    textValue(row['value']) ||
-                                                        textValue(row.count) ||
-                                                        textValue(
-                                                            row.traffic,
-                                                        ) ||
+                                                    row.new_connections ??
+                                                        row.count ??
                                                         0,
                                                 ),
-                                                rtType === 'stream-traffic'
-                                                    ? 'bytes'
-                                                    : 'count',
+                                                'count',
                                             )
                                         }}
                                     </td>
-                                    <td
-                                        class="px-4 py-2.5 text-right text-muted-foreground"
-                                    >
+                                    <td class="px-4 py-3 text-right">
                                         {{
-                                            formatDate(
-                                                row.time ?? row.timestamp,
+                                            formatMetric(
+                                                Number(
+                                                    row.outbound_traffic ??
+                                                        row.traffic ??
+                                                        0,
+                                                ),
+                                                'bytes',
                                             )
                                         }}
                                     </td>

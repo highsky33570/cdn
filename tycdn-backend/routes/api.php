@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\AdminCcController;
 use App\Http\Controllers\Api\AdminConfigController;
 use App\Http\Controllers\Api\AdminController;
 use App\Http\Controllers\Api\AdminDnsController;
@@ -9,7 +10,9 @@ use App\Http\Controllers\Api\AdminNodeController;
 use App\Http\Controllers\Api\AdminSiteController;
 use App\Http\Controllers\Api\AdminStreamController;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\CdnApiKeyController;
 use App\Http\Controllers\Api\CdnCertController;
+use App\Http\Controllers\Api\CdnLogDownloadController;
 use App\Http\Controllers\Api\CdnProxyController;
 use App\Http\Controllers\Api\CdnSiteController;
 use App\Http\Controllers\Api\EpusdtController;
@@ -48,6 +51,10 @@ Route::prefix('auth')->group(function () {
     });
 });
 
+// Key management must remain reachable after a key is disabled.
+Route::match(['GET', 'POST', 'PUT', 'DELETE'], '/cdn/account/api-key', [CdnApiKeyController::class, 'handle'])
+    ->middleware(['auth:sanctum', 'verified', 'throttle:20,1']);
+
 // ─── CDN 用户端接口（需登录 + 需有 CDNfly API key） ──────
 Route::middleware(['auth:sanctum', 'verified', 'cdnfly.apikey'])->prefix('cdn')->group(function () {
     // 站点管理
@@ -55,6 +62,8 @@ Route::middleware(['auth:sanctum', 'verified', 'cdnfly.apikey'])->prefix('cdn')-
 
     // 证书管理
     Route::apiResource('certs', CdnCertController::class);
+
+    Route::get('access-log-downloads/{id}', CdnLogDownloadController::class)->whereNumber('id');
 
     // 通用代理（ACL、DNS API、站点分组等）
     Route::any('proxy/{path}', [CdnProxyController::class, 'handle'])->where('path', '.*');
@@ -134,6 +143,10 @@ Route::middleware(['auth:sanctum', 'verified', 'admin', 'throttle:60,1'])->prefi
     Route::put('/all-certs/{id}', [AdminSiteController::class, 'updateCert'])->middleware('throttle:20,1');
     Route::delete('/all-certs/{id}', [AdminSiteController::class, 'destroyCert'])->middleware('throttle:10,1');
     Route::get('/all-acls', [AdminSiteController::class, 'acls']);
+    Route::match(['GET', 'POST'], '/cc/{kind}', [AdminCcController::class, 'handle'])
+        ->whereIn('kind', ['matcher', 'filter', 'rule'])->middleware('throttle:60,1');
+    Route::match(['PUT', 'DELETE'], '/cc/{kind}/{id}', [AdminCcController::class, 'handle'])
+        ->whereIn('kind', ['matcher', 'filter', 'rule'])->whereNumber('id')->middleware('throttle:20,1');
 
     // 四层转发（管理端）
     Route::get('/streams', [AdminStreamController::class, 'index']);
@@ -195,6 +208,8 @@ Route::middleware(['auth:sanctum', 'verified', 'admin', 'throttle:60,1'])->prefi
     Route::get('/logs/op', [AdminMonitorController::class, 'opLogs']);
     Route::get('/monitor/site-realtime', [AdminMonitorController::class, 'siteRealtime']);
     Route::get('/monitor/stream-realtime', [AdminMonitorController::class, 'streamRealtime']);
+    Route::get('/monitor/site-top', [AdminMonitorController::class, 'siteTop']);
+    Route::get('/monitor/stream-top', [AdminMonitorController::class, 'streamTop']);
 
     // 系统配置
     Route::get('/configs', [AdminConfigController::class, 'index']);

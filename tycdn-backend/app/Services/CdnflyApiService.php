@@ -299,6 +299,61 @@ class CdnflyApiService
         ];
     }
 
+    /** Manage the mapped user's key and keep the portal's encrypted copy in sync. */
+    public function manageUserApiKey(User $user, string $method, array $payload = []): array
+    {
+        // v6 supports admin management by uid, including disabled keys and admin
+        // accounts for which the master refuses SSO. Never accept a client uid.
+        $http = $this->adminHttp();
+        $payload['uid'] = (int) $user->cdnfly_user_id;
+
+        // Check the upstream key as the local copy may be stale or missing.
+        // Changes to the server's own key/whitelist require a config update.
+        if (in_array($method, ['PUT', 'DELETE'], true)) {
+            $current = $this->parseResponse($http->get('/v1/api-key', ['uid' => $payload['uid']]), 'read current api key');
+            if (data_get($current, 'data.api_key') && hash_equals(
+                (string) config('services.cdnfly.admin_api_key'), (string) data_get($current, 'data.api_key'),
+            )) {
+                throw new \RuntimeException('此密钥用于主控集成，请在主控管理并同步更新服务器配置');
+            }
+        }
+        $result = $this->parseResponse(
+            // DELETE reads uid from the query, unlike POST/PUT JSON bodies.
+            $method === 'DELETE'
+                ? $http->delete('/v1/api-key?uid='.$payload['uid'])
+                : $this->sendRequest($http, $method, '/v1/api-key', $payload),
+            'manage user api key',
+        );
+
+        if ($method === 'DELETE') {
+            $user->update(['cdnfly_api_key' => null, 'cdnfly_api_secret' => null]);
+
+            return $result;
+        }
+
+        $key = data_get($result, 'data.api_key');
+        $secret = data_get($result, 'data.api_secret');
+        if ($key && $secret) {
+            $user->update(['cdnfly_api_key' => $key, 'cdnfly_api_secret' => $secret]);
+        } elseif ($method === 'GET' && data_get($result, 'data') === null) {
+            $user->update(['cdnfly_api_key' => null, 'cdnfly_api_secret' => null]);
+        }
+
+        // Save rotated credentials before another request can fail. Whitelist
+        // updates return no data, so read the complete configuration afterward.
+        if ($method === 'PUT' && ! ($key && $secret)) {
+            $result = $this->parseResponse($http->get('/v1/api-key', ['uid' => $payload['uid']]), 'read updated api key');
+            if (data_get($result, 'data.api_key') && data_get($result, 'data.api_secret')) {
+                $user->update([
+                    'cdnfly_api_key' => data_get($result, 'data.api_key'),
+                    'cdnfly_api_secret' => data_get($result, 'data.api_secret'),
+                ]);
+            }
+        }
+
+        return $result;
+    }
+
     public function getSsoToken(int $cdnflyUserId): string
     {
         $response = $this->adminHttp()->get("/v1/users/{$cdnflyUserId}", [
@@ -974,6 +1029,19 @@ class CdnflyApiService
         return $this->parseResponse($response, 'list dns apis');
     }
 
+    public function downloadUserAccessLog(User $user, int $id): Response
+    {
+        $response = $this->userHttp($user)->withOptions(['stream' => true])
+            ->get("/v1/monitor/site/download-access-log/{$id}");
+        $contentType = strtolower($response->header('Content-Type'));
+        if (! $response->successful() || ! preg_match('~application/(?:x-)?gzip|application/octet-stream~', $contentType)) {
+            $this->parseResponse($response, 'download access log');
+            throw new \RuntimeException('访问日志文件尚未生成或已过期');
+        }
+
+        return $response;
+    }
+
     public function proxyUserRequest(User $user, string $method, string $path, array $data = []): array
     {
         if (! $this->outboundEnabled() && strtoupper($method) === 'GET') {
@@ -1191,58 +1259,27 @@ class CdnflyApiService
         return $this->parseResponse($response, 'admin delete stream');
     }
 
-    // ─── Admin: ACLs ──────────────────────────────────────────
-    //
-    // CDNfly v6 documents /v1/waf-rules under the *user* scope only — the sole
-    // admin-scope WAF route is waf-rules/update-subscription. Sending the master
-    // api-key here is refused, which is why the console's 新增 ACL button failed.
-    //
-    // The console's form is nonetheless an admin one: it names the customer the
-    // rule is for. So act as that customer rather than as the panel: mint an SSO
-    // token for their CDNfly user and call the user endpoint as them. That keeps
-    // the operator's intent intact instead of quietly filing the rule under the
-    // operator's own account.
-
-    /**
-     * @param  array<string, mixed>  $data
-     * @return array<string, mixed>
-     */
-    public function adminCreateAcl(int $cdnflyUserId, array $data): array
+    // WAF endpoints accept administrator credentials for global and user libraries.
+    public function adminCreateAcl(?int $cdnflyUserId, array $data): array
     {
-        $this->ensureOutboundEnabled('admin create acl');
-        $token = $this->getSsoToken($cdnflyUserId);
-        // user_id is implied by the token; leaving it in the body would be an
-        // attempt to set ownership on an endpoint that does not accept it.
         unset($data['user_id']);
-        $response = $this->bearerHttp($token)->post('/v1/waf-rules', $data);
+        if ($cdnflyUserId !== null) {
+            $data['uid'] = $cdnflyUserId;
+        }
 
-        return $this->parseResponse($response, 'admin create acl');
+        return $this->parseResponse($this->adminHttp()->post('/v1/waf-rules', $data), 'admin create waf library');
     }
 
-    /**
-     * @param  array<string, mixed>  $data
-     * @return array<string, mixed>
-     */
-    public function adminUpdateAcl(int $cdnflyUserId, int $id, array $data): array
+    public function adminUpdateAcl(?int $cdnflyUserId, int $id, array $data): array
     {
-        $this->ensureOutboundEnabled('admin update acl');
-        $token = $this->getSsoToken($cdnflyUserId);
         unset($data['user_id']);
-        $response = $this->bearerHttp($token)->put("/v1/waf-rules/{$id}", $data);
 
-        return $this->parseResponse($response, 'admin update acl');
+        return $this->parseResponse($this->adminHttp()->put("/v1/waf-rules/{$id}", $data), 'admin update waf library');
     }
 
-    /**
-     * @return array<string, mixed>
-     */
-    public function adminDeleteAcl(int $cdnflyUserId, int $id): array
+    public function adminDeleteAcl(?int $cdnflyUserId, int $id): array
     {
-        $this->ensureOutboundEnabled('admin delete acl');
-        $token = $this->getSsoToken($cdnflyUserId);
-        $response = $this->bearerHttp($token)->delete("/v1/waf-rules/{$id}");
-
-        return $this->parseResponse($response, 'admin delete acl');
+        return $this->parseResponse($this->adminHttp()->delete("/v1/waf-rules/{$id}"), 'admin delete waf library');
     }
 
     // ───

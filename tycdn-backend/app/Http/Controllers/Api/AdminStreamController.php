@@ -56,6 +56,8 @@ class AdminStreamController extends Controller
 
     public function store(Request $request): JsonResponse
     {
+        $this->validateStream($request, true);
+
         try {
             $result = $this->cdnfly->adminCreateStream($request->all());
 
@@ -67,6 +69,8 @@ class AdminStreamController extends Controller
 
     public function update(Request $request, int $id): JsonResponse
     {
+        $this->validateStream($request, false);
+
         try {
             $result = $this->cdnfly->adminUpdateStream($id, $request->all());
 
@@ -85,6 +89,27 @@ class AdminStreamController extends Controller
         } catch (\Throwable $e) {
             return $this->cdnflyFailure($e, __FUNCTION__);
         }
+    }
+
+    private function validateStream(Request $request, bool $creating): void
+    {
+        $presence = $creating ? 'required' : 'sometimes';
+        $request->validate([
+            'uid' => [$presence, 'integer', 'min:1'],
+            'user_package' => [$presence, 'integer', 'min:1'],
+            'listen' => [$presence, 'array', 'min:1'],
+            'listen.*.port' => ['required', 'integer', 'between:1,65535'],
+            'listen.*.protocol' => ['required', 'in:tcp,udp'],
+            'backend' => [$presence, 'array', 'min:1'],
+            'backend.*.addr' => ['required', 'string'],
+            'backend.*.weight' => ['required', 'integer', 'min:1'],
+            'backend.*.state' => ['required', 'in:up,down,backup'],
+            'backend_port' => [$presence, 'integer', 'between:1,65535'],
+            'enable' => ['sometimes', 'integer', 'in:0,1'],
+            'proxy_protocol' => ['sometimes', 'integer', 'in:0,1'],
+            'balance_way' => ['sometimes', 'in:rr,ip_hash'],
+            'conn_limit' => ['sometimes', 'nullable', 'integer', 'min:0'],
+        ]);
     }
 
     public function storeGroup(Request $request): JsonResponse

@@ -55,63 +55,17 @@ import {
 import type {
     AdminStreamGroupPayload,
     AdminStreamPayload,
-    CdnflyListData,
     CdnflyRecord,
 } from '@/lib/adminModulesApi';
+import {
+    extractCdnflyRows as extractRows,
+    extractCdnflyTotal,
+    cdnflyJsonRows,
+    streamListenText,
+    streamBackendText,
+} from '@/lib/cdnflyResponse';
 
 // ─── Helpers ─────────────────────────────────────────
-function isRecord(value: unknown): value is CdnflyRecord {
-    return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
-}
-
-function extractRows(result: unknown): CdnflyRecord[] {
-    if (Array.isArray(result)) {
-        return result.filter(isRecord);
-    }
-
-    if (!isRecord(result)) {
-        return [];
-    }
-
-    for (const key of ['data', 'items', 'list', 'rows', 'records']) {
-        const value = result[key];
-
-        if (Array.isArray(value)) {
-            return value.filter(isRecord);
-        }
-
-        if (isRecord(value)) {
-            const nested = extractRows(value);
-
-            if (nested.length > 0) {
-                return nested;
-            }
-        }
-    }
-
-    return [];
-}
-
-function extractTotal(result: CdnflyListData): number | null {
-    if (typeof result.total === 'number') {
-        return result.total;
-    }
-
-    if (typeof result.count === 'number') {
-        return result.count;
-    }
-
-    if (isRecord(result.meta) && typeof result.meta.total === 'number') {
-        return result.meta.total;
-    }
-
-    if (isRecord(result.data) && typeof result.data.total === 'number') {
-        return result.data.total;
-    }
-
-    return null;
-}
-
 function asNumber(value: unknown): number | null {
     if (typeof value === 'number' && Number.isFinite(value)) {
         return value;
@@ -143,10 +97,13 @@ function getErrorMessage(error: unknown): string {
 // ─── Stream columns (unchanged) ─────────────────────
 const streamColumns: ColumnDef[] = [
     { key: 'id', label: 'ID', width: '70px' },
-    { key: 'name', label: '名称' },
-    { key: 'src_port', label: '源端口', width: '100px' },
-    { key: 'dst_addr', label: '目标地址' },
-    { key: 'protocol', label: '协议', width: '80px' },
+    { key: 'listen', label: '监听端口 / 协议', format: streamListenText },
+    {
+        key: 'backend',
+        label: '源站地址',
+        format: (_, row) => streamBackendText(row),
+    },
+    { key: 'user_package', label: '套餐 ID', width: '90px' },
     { key: 'user_id', altKeys: ['uid'], label: '用户 ID', width: '90px' },
     {
         key: 'enable',
@@ -219,6 +176,7 @@ const streamFormError = ref('');
 const editingStream = ref<CdnflyRecord | null>(null);
 
 const streamForm = reactive({
+    uid: '',
     user_package: '',
     listen_protocol: 'tcp',
     listen_port: '',
@@ -231,6 +189,7 @@ const streamForm = reactive({
 });
 
 function resetStreamForm(): void {
+    streamForm.uid = '';
     streamForm.user_package = '';
     streamForm.listen_protocol = 'tcp';
     streamForm.listen_port = '';
@@ -251,6 +210,7 @@ function openAddStream(): void {
 
 function openEditStream(row: CdnflyRecord): void {
     editingStream.value = row;
+    streamForm.uid = textValue(row.uid ?? row.user_id);
     streamForm.user_package = textValue(row.user_package);
 
     // Parse listen JSON
@@ -304,7 +264,7 @@ function openEditStream(row: CdnflyRecord): void {
 async function submitStream(): Promise<void> {
     const userPkg = asNumber(streamForm.user_package);
 
-    if (userPkg === null) {
+    if (userPkg === null || !Number.isInteger(userPkg) || userPkg < 1) {
         streamFormError.value = '用户套餐 ID 不能为空';
 
         return;
@@ -312,20 +272,64 @@ async function submitStream(): Promise<void> {
 
     const backendPort = asNumber(streamForm.backend_port);
 
-    if (backendPort === null) {
+    if (
+        backendPort === null ||
+        !Number.isInteger(backendPort) ||
+        backendPort < 1 ||
+        backendPort > 65535
+    ) {
         streamFormError.value = '后端端口不能为空';
 
         return;
     }
 
-    const listen = JSON.stringify([
-        { protocol: streamForm.listen_protocol, port: streamForm.listen_port },
-    ]);
-    const backend = JSON.stringify([
-        { addr: streamForm.backend_addr, weight: 1, state: 'up' },
-    ]);
+    const port = Number(streamForm.listen_port);
+    const uid = Number(streamForm.uid);
+
+    if (
+        !Number.isInteger(port) ||
+        port < 1 ||
+        port > 65535 ||
+        !streamForm.backend_addr.trim()
+    ) {
+        streamFormError.value = '请填写有效的监听端口和源站地址';
+
+        return;
+    }
+
+    if (!editingStream.value && (!Number.isInteger(uid) || uid < 1)) {
+        streamFormError.value = '请填写套餐所属用户 ID';
+
+        return;
+    }
+
+    const previousListen = cdnflyJsonRows(editingStream.value?.listen);
+    const previousBackend = cdnflyJsonRows(editingStream.value?.backend);
+    const listen = [
+        { ...previousListen[0], protocol: streamForm.listen_protocol, port },
+        ...previousListen.slice(1).map((entry) => ({
+            ...entry,
+            protocol: String(entry.protocol),
+            port: Number(entry.port),
+        })),
+    ];
+    const backend = [
+        {
+            ...previousBackend[0],
+            addr: streamForm.backend_addr.trim(),
+            weight: Number(previousBackend[0]?.weight ?? 1),
+            state: String(previousBackend[0]?.state ?? 'up'),
+        },
+        ...previousBackend.slice(1).map((entry) => ({
+            ...entry,
+            addr: String(entry.addr),
+            weight: Number(entry.weight ?? 1),
+            state: String(entry.state ?? 'up'),
+        })),
+    ];
 
     const payload: AdminStreamPayload = {
+        ...(!editingStream.value ? { uid } : {}),
         user_package: userPkg,
         listen,
         backend_port: backendPort,
@@ -334,6 +338,10 @@ async function submitStream(): Promise<void> {
         proxy_protocol: streamForm.proxy_protocol ? 1 : 0,
         enable: streamForm.enable ? 1 : 0,
     };
+
+    if (streamForm.conn_limit.trim() === '') {
+        payload.conn_limit = '';
+    }
 
     if (streamForm.conn_limit.trim() !== '') {
         payload.conn_limit = Number(streamForm.conn_limit) || 0;
@@ -424,7 +432,7 @@ async function loadStreamGroups(targetPage = sgPage.value): Promise<void> {
             limit: 20,
         });
         sgRows.value = extractRows(result);
-        sgTotal.value = extractTotal(result);
+        sgTotal.value = extractCdnflyTotal(result, sgRows.value.length);
         sgPage.value = targetPage;
     } catch (error) {
         sgError.value = getErrorMessage(error);
@@ -537,7 +545,8 @@ function openDeleteStreamGroup(record: CdnflyRecord): void {
             :icon="Network"
             :columns="streamColumns"
             :fetch-fn="listAdminStreams"
-            search-placeholder="搜索转发"
+            search-key="listen_port"
+            search-placeholder="搜索监听端口"
         >
             <template #toolbar-end="{ loading: tLoading, refresh: tRefresh }">
                 <div class="flex items-center gap-2">
@@ -766,6 +775,16 @@ function openDeleteStreamGroup(record: CdnflyRecord): void {
                     </Alert>
 
                     <div class="grid gap-4 md:grid-cols-2">
+                        <div v-if="!editingStream" class="grid gap-2">
+                            <Label for="stream-owner">所属用户 ID</Label>
+                            <Input
+                                id="stream-owner"
+                                v-model="streamForm.uid"
+                                type="number"
+                                min="1"
+                                required
+                            />
+                        </div>
                         <div class="grid gap-2">
                             <Label for="stream-user-package">用户套餐 ID</Label>
                             <Input
@@ -819,7 +838,7 @@ function openDeleteStreamGroup(record: CdnflyRecord): void {
                             </Select>
                         </div>
                         <div class="grid gap-2">
-                            <Label for="stream-listen-port">监听端口</Label>
+                            <Label for="stream-listen-port">首个监听端口</Label>
                             <Input
                                 id="stream-listen-port"
                                 v-model="streamForm.listen_port"

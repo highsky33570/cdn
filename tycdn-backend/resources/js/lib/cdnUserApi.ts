@@ -1,8 +1,8 @@
 import { apiRequest } from '@/lib/apiRequest';
+import type { CdnflyRecord, CdnflyListData } from '@/lib/sharedTypes';
 import { buildUrl } from '@/lib/urlHelpers';
 
 export type { CdnflyRecord, CdnflyListData } from '@/lib/sharedTypes';
-import type { CdnflyRecord, CdnflyListData } from '@/lib/sharedTypes';
 
 export type CdnSitePayload = {
     user_package?: number | null;
@@ -42,7 +42,6 @@ export type CdnDnsApiPayload = {
 
 export type CdnAclPayload = {
     name: string;
-    default_action: string;
     data: unknown[];
     des?: string | null;
     enable?: boolean | number | null;
@@ -50,7 +49,7 @@ export type CdnAclPayload = {
 
 export type CdnCcMatcherPayload = {
     name: string;
-    data: Record<string, unknown>;
+    data: Array<Record<string, unknown>>;
     des?: string | null;
     enable?: boolean | number | null;
 };
@@ -459,8 +458,8 @@ export async function createAccessLogJob(
     const data: Record<string, string> = { start, end };
 
     if (domain) {
-data.domain = domain;
-}
+        data.host = domain;
+    }
 
     return proxyRequest('/v1/jobs', 'POST', {
         type: 'down_http_access_log',
@@ -472,7 +471,7 @@ export function accessLogDownloadUrl(
     jobId: number | string,
     baseUrl: string,
 ): string {
-    return `${baseUrl}/monitor/site/download-access-log/${jobId}`;
+    return `${baseUrl}/api/cdn/access-log-downloads/${encodeURIComponent(jobId)}`;
 }
 
 export async function listUserPackages(
@@ -573,21 +572,27 @@ export async function updateUserMessageSubscription(
 }
 
 export async function getUserApiKey(): Promise<CdnflyRecord> {
-    return proxyRequest('/v1/api-key', 'GET');
+    return apiRequest('/api/cdn/account/api-key');
 }
 
 export async function createUserApiKey(): Promise<CdnflyRecord> {
-    return proxyRequest('/v1/api-key', 'POST', {});
+    return apiRequest('/api/cdn/account/api-key', {
+        method: 'POST',
+        body: '{}',
+    });
 }
 
 export async function updateUserApiKey(
     payload: CdnApiKeyPayload,
 ): Promise<CdnflyRecord> {
-    return proxyRequest('/v1/api-key', 'PUT', payload);
+    return apiRequest('/api/cdn/account/api-key', {
+        method: 'PUT',
+        body: JSON.stringify(payload),
+    });
 }
 
 export async function deleteUserApiKey(): Promise<CdnflyRecord> {
-    return proxyRequest('/v1/api-key', 'DELETE');
+    return apiRequest('/api/cdn/account/api-key', { method: 'DELETE' });
 }
 
 export async function listUserLoginLogs(
@@ -668,78 +673,11 @@ export async function submitUserCertify(
     return proxyRequest('/v1/user/certify', 'POST', payload);
 }
 
-/**
- * Unwrap a single-object CDNfly response.
- *
- * Every endpoint answers with an envelope — {data, msg, code} — and proxyRequest
- * returns it whole. extractCdnflyRows() handles the case where `data` is an
- * array, but there was nothing for the case where it is a single object, so
- * callers were reading fields off the envelope: `record.api_key` was undefined
- * while `record.data.api_key` held the value. Symptoms were pages rendering
- * `data`/`code`/`msg` as if they were fields, and boolean flags reading false
- * because the field simply was not at that level.
- */
-export function extractCdnflyRecord(result: unknown): CdnflyRecord | null {
-    if (!isRecord(result)) {
-        return null;
-    }
-
-    const inner = result.data;
-
-    if (isRecord(inner)) {
-        return inner;
-    }
-
-    // already unwrapped, or an envelope with no object payload
-    return result;
-}
-
-export function extractCdnflyRows(result: unknown): CdnflyRecord[] {
-    if (Array.isArray(result)) {
-        return result.filter(isRecord);
-    }
-
-    if (!isRecord(result)) {
-        return [];
-    }
-
-    for (const key of ['data', 'items', 'list', 'rows', 'records']) {
-        const value = result[key];
-
-        if (Array.isArray(value)) {
-            return value.filter(isRecord);
-        }
-
-        if (isRecord(value)) {
-            const nested = extractCdnflyRows(value);
-
-            if (nested.length > 0) {
-                return nested;
-            }
-        }
-    }
-
-    return [];
-}
-
-export function extractCdnflyTotal(
-    result: CdnflyListData,
-    fallback: number,
-): number {
-    if (typeof result.total === 'number') {
-        return result.total;
-    }
-
-    if (isRecord(result.meta) && typeof result.meta.total === 'number') {
-        return result.meta.total;
-    }
-
-    if (isRecord(result.data) && typeof result.data.total === 'number') {
-        return result.data.total;
-    }
-
-    return fallback;
-}
+export {
+    extractCdnflyRecord,
+    extractCdnflyRows,
+    extractCdnflyTotal,
+} from '@/lib/cdnflyResponse';
 
 function proxyPath(path: string): string {
     return `/api/cdn/proxy/${path.replace(/^\/+/, '')}`;
@@ -761,8 +699,4 @@ function proxyRequest<TPayload>(
         method,
         body: payload === undefined ? undefined : JSON.stringify(payload),
     });
-}
-
-function isRecord(value: unknown): value is CdnflyRecord {
-    return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 }

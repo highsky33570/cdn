@@ -16,6 +16,10 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
+import {
+    extractCdnflyRows as extractRows,
+    extractCdnflyTotal as extractTotal,
+} from '@/lib/cdnflyResponse';
 import type { CdnflyListData, CdnflyRecord } from '@/lib/sharedTypes';
 
 export type ColumnDef = {
@@ -55,6 +59,8 @@ const props = withDefaults(
         ) => Promise<CdnflyListData | CdnflyRecord[]>;
         searchPlaceholder?: string;
         searchParams?: Record<string, string | number>;
+        searchKey?: string;
+        clientSide?: boolean;
         selectable?: boolean;
         pageSize?: number;
         pageSizeOptions?: number[];
@@ -65,6 +71,8 @@ const props = withDefaults(
         icon: undefined,
         searchPlaceholder: '搜索',
         searchParams: undefined,
+        searchKey: 'search',
+        clientSide: false,
         selectable: false,
         pageSize: 20,
         pageSizeOptions: () => [20, 50],
@@ -105,7 +113,7 @@ onMounted(() => {
 });
 
 watch(
-    () => props.searchParams,
+    () => [props.searchParams, props.fetchFn],
     () => {
         currentPage.value = 1;
         void loadData();
@@ -119,22 +127,45 @@ async function loadData(targetPage = currentPage.value): Promise<void> {
 
     try {
         const params: Record<string, string | number> = {
-            page: targetPage,
-            limit: effectivePerPage.value,
+            ...(props.clientSide
+                ? {}
+                : { page: targetPage, limit: effectivePerPage.value }),
             ...(props.searchParams ?? {}),
         };
 
         const search = searchText.value.trim();
 
-        if (search !== '') {
-            params.search = search;
+        if (search !== '' && !props.clientSide) {
+            params[props.searchKey] = search;
         }
 
         const result = await props.fetchFn(params);
-        rows.value = extractRows(result);
-        total.value = extractTotal(result, rows.value.length);
+        const records = extractRows(result);
+
+        if (props.clientSide) {
+            const matches = records.filter(
+                (row) =>
+                    !search ||
+                    Object.values(row).some((value) =>
+                        String(value ?? '')
+                            .toLowerCase()
+                            .includes(search.toLowerCase()),
+                    ),
+            );
+            total.value = matches.length;
+            rows.value = matches.slice(
+                (targetPage - 1) * effectivePerPage.value,
+                targetPage * effectivePerPage.value,
+            );
+        } else {
+            rows.value = records;
+            total.value = extractTotal(result, records.length);
+        }
+
         currentPage.value = targetPage;
     } catch (error) {
+        rows.value = [];
+        total.value = 0;
         errorMessage.value =
             error instanceof Error ? error.message : '请求失败';
     } finally {
@@ -253,58 +284,6 @@ function colAlign(col: ColumnDef): string {
     }
 
     return 'text-left';
-}
-
-function extractRows(result: unknown): CdnflyRecord[] {
-    if (Array.isArray(result)) {
-        return result.filter(isRecord);
-    }
-
-    if (!isRecord(result)) {
-        return [];
-    }
-
-    for (const key of ['data', 'items', 'list', 'rows', 'records']) {
-        const value = result[key];
-
-        if (Array.isArray(value)) {
-            return value.filter(isRecord);
-        }
-
-        if (isRecord(value)) {
-            const nested = extractRows(value);
-
-            if (nested.length > 0) {
-                return nested;
-            }
-        }
-    }
-
-    return [];
-}
-
-function extractTotal(result: unknown, fallback: number): number {
-    if (!isRecord(result)) {
-        return fallback;
-    }
-
-    if (typeof result.total === 'number') {
-        return result.total;
-    }
-
-    if (isRecord(result.meta) && typeof result.meta.total === 'number') {
-        return result.meta.total;
-    }
-
-    if (isRecord(result.data) && typeof result.data.total === 'number') {
-        return result.data.total;
-    }
-
-    return fallback;
-}
-
-function isRecord(value: unknown): value is CdnflyRecord {
-    return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 }
 
 defineExpose({

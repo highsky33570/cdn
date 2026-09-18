@@ -63,21 +63,15 @@ import {
     updateAdminCcMatcher,
     updateAdminCcRule,
 } from '@/lib/adminModulesApi';
+import { cdnflyJsonObject } from '@/lib/cdnflyResponse';
+import type { MatcherCondition } from '@/lib/cdnflySecurity';
+import { buildCcMatcher, parseCcMatcher } from '@/lib/cdnflySecurity';
 import { textValue, recordId, yesNo } from '@/lib/cdnRecord';
 import { extractCdnflyRows, extractCdnflyTotal } from '@/lib/cdnUserApi';
 import { formatDate, getErrorMessage } from '@/lib/formatters';
 import type { CdnflyRecord } from '@/lib/sharedTypes';
 
-const DEFAULT_DATA_JSON = JSON.stringify(
-    [
-        {
-            acl_action: 'reject',
-            acl_matcher: { ip: { operator: '=', value: '' } },
-        },
-    ],
-    null,
-    2,
-);
+const DEFAULT_DATA_JSON = '[]';
 
 const stats = ref<{ admins: number; verified: number; apiKey: number }>({
     admins: 0,
@@ -146,11 +140,11 @@ const aclColumns: ColumnDef[] = [
     { key: 'id', label: 'ID', width: '70px' },
     { key: 'name', label: '规则名称' },
     {
-        key: 'default_action',
-        label: '默认动作',
+        key: 'scope',
+        label: '作用域',
         width: '90px',
         badge: true,
-        format: (v) => String(v ?? '-'),
+        format: (v) => (v === 'global' ? '全局' : '用户'),
     },
     { key: 'user_id', altKeys: ['uid'], label: '用户 ID', width: '90px' },
     {
@@ -176,7 +170,7 @@ const activeTab = ref<SecurityTab>('admins');
 
 const securityTabs: ConsoleTab[] = [
     { key: 'admins', label: '管理员', icon: ShieldCheck },
-    { key: 'acls', label: 'ACL 规则', icon: KeyRound },
+    { key: 'acls', label: 'WAF 规则', icon: KeyRound },
 ];
 
 const dialogOpen = ref(false);
@@ -186,32 +180,15 @@ const deleteTarget = ref<CdnflyRecord | null>(null);
 
 const form = reactive({
     name: '',
-    default_action: 'reject',
+    scope: 'user',
     data: DEFAULT_DATA_JSON,
     des: '',
     enable: '1',
     user_id: '',
 });
 
-/**
- * The CDNfly user that owns a rule.
- *
- * /v1/waf-rules is a user-scope endpoint, so writing to a rule means acting as
- * its owner. Built-in rules (已知漏洞防护 and friends) belong to the panel rather
- * than to any user and come back with no user_id — there is no one to act as, so
- * say that plainly instead of sending NaN and surfacing a validation error the
- * operator cannot act on.
- */
-function ownerId(row: CdnflyRecord | null): number | null {
-    const raw = Number(row?.user_id);
-
-    return Number.isFinite(raw) && raw > 0 ? raw : null;
-}
-
-const OWNERLESS = '这是系统内置规则，没有归属用户，只能在 CDNfly 面板中修改。';
-
 const dialogTitle = computed(() =>
-    editingRecord.value ? '编辑 ACL' : '新增 ACL',
+    editingRecord.value ? '编辑 WAF' : '新增 WAF',
 );
 
 async function toggleAclEnabled(
@@ -224,23 +201,13 @@ async function toggleAclEnabled(
         return;
     }
 
-    const owner = ownerId(row);
-
-    if (owner === null) {
-        toast.error(OWNERLESS);
-
-        return;
-    }
-
     togglingId.value = id;
 
     try {
         await updateAdminAcl(id, {
             enable: checked ? 1 : 0,
-            // user-scope endpoint: the server acts as this owner
-            user_id: owner,
         });
-        toast.success(checked ? 'ACL 已启用' : 'ACL 已停用');
+        toast.success(checked ? 'WAF 已启用' : 'WAF 已停用');
         aclTableRef.value?.refresh();
     } catch (error) {
         toast.error(getErrorMessage(error));
@@ -252,7 +219,7 @@ async function toggleAclEnabled(
 function openCreateDialog(): void {
     editingRecord.value = null;
     form.name = '';
-    form.default_action = 'reject';
+    form.scope = 'user';
     form.data = DEFAULT_DATA_JSON;
     form.des = '';
     form.enable = '1';
@@ -264,12 +231,12 @@ function openCreateDialog(): void {
 function openEditDialog(row: CdnflyRecord): void {
     editingRecord.value = row;
     form.name = String(row.name ?? '');
-    form.default_action = String(row.default_action ?? 'reject');
+    form.scope = String(row.scope ?? 'user');
     const d = row.data;
     form.data = typeof d === 'string' ? d : JSON.stringify(d || [], null, 2);
     form.des = String(row.des ?? '');
     form.enable = row.enable === 1 || row.enable === '1' ? '1' : '0';
-    form.user_id = String(row.user_id ?? '');
+    form.user_id = String(row.uid ?? row.user_id ?? '');
     formError.value = '';
     dialogOpen.value = true;
 }
@@ -291,30 +258,39 @@ async function submitAcl(): Promise<void> {
 
     const payload: Record<string, unknown> = {
         name: form.name.trim(),
-        default_action: form.default_action,
+        scope: form.scope,
         data: dataArr,
         des: form.des.trim() || undefined,
         enable: Number(form.enable),
     };
 
-    // Required on edits as well as creates now: the server mints an SSO token
-    // for this user because CDNfly exposes waf-rules only at user scope.
-    if (!form.user_id.trim()) {
-        formError.value = '用户 ID 不能为空';
+    if (!Array.isArray(dataArr)) {
+        formError.value = '规则必须是 JSON 数组';
         saving.value = false;
 
         return;
     }
 
-    payload.user_id = Number(form.user_id);
+    if (!editingRecord.value && form.scope === 'user') {
+        const uid = Number(form.user_id);
+
+        if (!Number.isInteger(uid) || uid <= 0) {
+            formError.value = '用户 ID 不能为空';
+            saving.value = false;
+
+            return;
+        }
+
+        payload.user_id = uid;
+    }
 
     try {
         if (editingRecord.value) {
             await updateAdminAcl(Number(editingRecord.value.id), payload);
-            toast.success('ACL 已更新');
+            toast.success('WAF 已更新');
         } else {
             await createAdminAcl(payload);
-            toast.success('ACL 已创建');
+            toast.success('WAF 已创建');
         }
 
         dialogOpen.value = false;
@@ -340,17 +316,9 @@ async function confirmDelete(): Promise<void> {
     deletingId.value = Number(deleteTarget.value.id);
 
     try {
-        const owner = ownerId(deleteTarget.value);
-
-        if (owner === null) {
-            formError.value = OWNERLESS;
-
-            return;
-        }
-
-        await deleteAdminAcl(Number(deleteTarget.value.id), owner);
+        await deleteAdminAcl(Number(deleteTarget.value.id));
         deleteOpen.value = false;
-        toast.success('ACL 已删除');
+        toast.success('WAF 已删除');
         aclTableRef.value?.refresh();
     } catch (error) {
         errorMessage.value = getErrorMessage(error);
@@ -361,8 +329,9 @@ async function confirmDelete(): Promise<void> {
 
 // ─── CC 防护 ─────────────────────────────────────────
 type CcKind = 'matcher' | 'filter' | 'rule';
-type MatcherCondition = { key: string; operator: string; value: string };
 type RuleEntry = {
+    raw?: Record<string, unknown>;
+    mode?: string;
     action: string;
     matcher: string;
     filter1: string;
@@ -401,13 +370,19 @@ const OPERATORS = [
     { value: '!=', label: '不等于' },
     { value: 'contain', label: '包含' },
     { value: '!contain', label: '不包含' },
-    { value: 'AC', label: '在列表中' },
-    { value: '!AC', label: '不在列表中' },
+    { value: 'ip_range', label: '在 IP 段' },
+    { value: '!ip_range', label: '不在 IP 段' },
+    { value: 'prefix', label: '前缀匹配' },
+    { value: 'suffix', label: '后缀匹配' },
+    { value: 'regex', label: '正则匹配' },
+    { value: '!regex', label: '正则不匹配' },
+    { value: '>', label: '大于' },
+    { value: 'exists', label: '存在' },
+    { value: '!exists', label: '不存在' },
 ] as const;
 
 const RULE_ACTIONS = [
-    { value: 'ipset', label: '加黑名单 (ipset)' },
-    { value: 'exit', label: '终止 (exit)' },
+    { value: 'block', label: '拦截并加黑名单' },
     { value: 'log', label: '仅记录 (log)' },
 ] as const;
 
@@ -459,7 +434,7 @@ const extraForm = reactive({
 
 // User list for uid dropdown
 const userOptions = ref<{ id: string; name: string; email: string }[]>([]);
-const ccUid = ref('');
+const ccUid = ref('__system__');
 
 const ccDialogTitle = computed(() =>
     editingCc.value
@@ -471,49 +446,17 @@ function ccKindLabel(kind: CcKind): string {
     return ccKinds.find((k) => k.key === kind)?.label ?? '资源';
 }
 
-function buildMatcherData(): Record<string, unknown> {
-    const data: Record<string, unknown> = {};
-
-    for (const c of matcherConditions.value) {
-        if (!c.key) {
-            continue;
-        }
-
-        const isArrayOp = c.operator === 'AC' || c.operator === '!AC';
-        data[c.key] = {
-            operator: c.operator || '=',
-            value: isArrayOp
-                ? c.value
-                      .split(',')
-                      .map((s) => s.trim())
-                      .filter(Boolean)
-                : c.value,
-        };
-    }
-
-    return data;
-}
-
-function parseMatcherData(data: Record<string, unknown>): MatcherCondition[] {
-    if (!data || typeof data !== 'object') {
-        return [];
-    }
-
-    return Object.entries(data).map(([key, rule]) => ({
-        key,
-        operator: (rule as any).operator ?? '=',
-        value: Array.isArray((rule as any).value)
-            ? (rule as any).value.join(', ')
-            : String((rule as any).value ?? ''),
-    }));
+function buildMatcherData(): Record<string, unknown>[] {
+    return buildCcMatcher(matcherConditions.value);
 }
 
 function buildExtra(): Record<string, unknown> {
     if (ccForm.type !== 'url_auth') {
-        return {};
+        return cdnflyJsonObject(editingCc.value?.extra);
     }
 
     const obj: Record<string, unknown> = {
+        ...cdnflyJsonObject(editingCc.value?.extra),
         mode: extraForm.mode,
         key: extraForm.key,
         sign_name: extraForm.sign_name,
@@ -576,14 +519,15 @@ async function loadRuleFormOptions(): Promise<void> {
 async function loadUserOptions(): Promise<void> {
     try {
         const data: Paginated<AdminUserRecord> = await listAdminUsers({
-            role: 'admin',
             per_page: 200,
         });
-        userOptions.value = (data.data ?? []).map((u) => ({
-            id: String(u.id),
-            name: u.name ?? u.email ?? '',
-            email: u.email ?? '',
-        }));
+        userOptions.value = (data.data ?? [])
+            .filter((u) => u.cdnfly_user_id)
+            .map((u) => ({
+                id: String(u.cdnfly_user_id),
+                name: u.name ?? u.email ?? '',
+                email: u.email ?? '',
+            }));
     } catch {
         /* non-critical */
     }
@@ -610,6 +554,10 @@ async function loadCcRows(targetPage = ccPage.value): Promise<void> {
             page: targetPage,
             limit: Number(ccFilters.per_page),
         };
+
+        if (ccFilters.search.trim()) {
+            params.name = ccFilters.search.trim();
+        }
 
         if (ccFilters.enable !== 'all') {
             params.enable = ccFilters.enable;
@@ -645,10 +593,10 @@ function removeCondition(index: number): void {
 }
 function addRuleEntry(): void {
     ruleEntries.value.push({
-        action: 'ipset',
+        action: 'block',
         matcher: '',
         filter1: '',
-        filter2: '',
+        filter2: '__none__',
         state: true,
     });
 }
@@ -671,7 +619,7 @@ function openCcCreateDialog(): void {
     ccFormError.value = '';
     matcherConditions.value = [];
     ruleEntries.value = [];
-    ccUid.value = '';
+    ccUid.value = '__system__';
     parseExtra(null);
 
     if (activeCcKind.value === 'rule') {
@@ -700,25 +648,7 @@ function openCcEditDialog(record: CdnflyRecord): void {
     const rawData = record.data;
 
     if (activeCcKind.value === 'matcher') {
-        let dataObj: Record<string, unknown>;
-
-        if (typeof rawData === 'string') {
-            try {
-                dataObj = JSON.parse(rawData);
-            } catch {
-                dataObj = {};
-            }
-        } else if (
-            rawData &&
-            typeof rawData === 'object' &&
-            !Array.isArray(rawData)
-        ) {
-            dataObj = rawData as Record<string, unknown>;
-        } else {
-            dataObj = {};
-        }
-
-        matcherConditions.value = parseMatcherData(dataObj);
+        matcherConditions.value = parseCcMatcher(rawData);
         ruleEntries.value = [];
     } else if (activeCcKind.value === 'rule') {
         let dataArr: unknown[];
@@ -734,10 +664,12 @@ function openCcEditDialog(record: CdnflyRecord): void {
         }
 
         ruleEntries.value = dataArr.map((entry: any) => ({
-            action: String(entry.action ?? 'ipset'),
+            raw: entry,
+            mode: String(entry.mode ?? 'continue'),
+            action: String(entry.action ?? 'block'),
             matcher: String(entry.matcher ?? ''),
             filter1: String(entry.filter1 ?? ''),
-            filter2: String(entry.filter2 ?? ''),
+            filter2: String(entry.filter2 ?? '__none__'),
             state: entry.state !== false,
         }));
         matcherConditions.value = [];
@@ -748,12 +680,22 @@ function openCcEditDialog(record: CdnflyRecord): void {
     }
 
     parseExtra(record.extra);
-    ccUid.value = String(record.uid ?? '');
+    ccUid.value = Number(record.uid) > 0 ? String(record.uid) : '__system__';
     void loadUserOptions();
     ccDialogOpen.value = true;
 }
 
 async function submitCc(): Promise<void> {
+    if (
+        activeCcKind.value === 'rule' &&
+        (ruleEntries.value.length === 0 ||
+            ruleEntries.value.some((e) => !e.matcher || !e.filter1))
+    ) {
+        ccFormError.value = '请为每条规则选择匹配器和第一过滤器';
+
+        return;
+    }
+
     const data: Record<string, unknown> = {};
     const base: Record<string, unknown> = {
         name: ccForm.name.trim(),
@@ -775,15 +717,23 @@ async function submitCc(): Promise<void> {
         base.sort = Number(ccForm.sort) || 100;
         base.is_show = Number(ccForm.is_show);
         base.data = ruleEntries.value.map((e) => ({
+            ...e.raw,
+            mode: e.mode ?? 'continue',
             action: e.action,
-            matcher: e.matcher,
-            filter1: e.filter1,
-            filter2: e.filter2 || '',
+            matcher: Number(e.matcher),
+            filter1: Number(e.filter1),
+            filter2:
+                e.filter2 && e.filter2 !== '__none__'
+                    ? Number(e.filter2)
+                    : null,
             state: e.state,
         }));
     }
 
-    if (ccUid.value) {
+    base.internal =
+        editingCc.value?.internal ?? (ccUid.value === '__system__' ? 1 : 0);
+
+    if (ccUid.value !== '__system__') {
         base.uid = Number(ccUid.value);
     }
 
@@ -992,11 +942,12 @@ const displayedCcRows = computed(() => {
         <ConsoleDataTable
             v-else
             ref="aclTableRef"
-            title="全部 ACL 规则"
+            title="全部 WAF 规则"
             :icon="ShieldCheck"
             :columns="aclColumns"
             :fetch-fn="listAdminAllAcls"
-            search-placeholder="搜索 ACL 规则"
+            search-key="name"
+            search-placeholder="搜索 WAF 规则"
         >
             <template #cell-enable="{ row }">
                 <Switch
@@ -1267,13 +1218,14 @@ const displayedCcRows = computed(() => {
             </CardContent>
         </Card>
 
-        <!-- Create/Edit ACL dialog -->
+        <!-- Create/Edit WAF dialog -->
         <Dialog v-model:open="dialogOpen">
             <DialogScrollContent class="max-w-xl">
                 <DialogHeader>
                     <DialogTitle>{{ dialogTitle }}</DialogTitle>
                     <DialogDescription>
-                        管理 ACL 访问控制规则，需指定规则条目和默认动作。
+                        管理 WAF 规则库。每条规则使用 action 和 matcher_groups
+                        定义动作及匹配条件。
                     </DialogDescription>
                 </DialogHeader>
 
@@ -1290,7 +1242,7 @@ const displayedCcRows = computed(() => {
                             <Input
                                 id="acl-name"
                                 v-model="form.name"
-                                placeholder="ACL 规则名称"
+                                placeholder="WAF 规则名称"
                             />
                         </div>
                         <div class="grid gap-2">
@@ -1300,22 +1252,27 @@ const displayedCcRows = computed(() => {
                                 v-model="form.user_id"
                                 inputmode="numeric"
                                 placeholder="绑定用户 ID"
-                                :disabled="!!editingRecord"
+                                :disabled="
+                                    !!editingRecord || form.scope === 'global'
+                                "
                             />
                         </div>
                     </div>
                     <div class="grid grid-cols-2 gap-3">
                         <div class="grid gap-2">
-                            <Label>默认动作</Label>
-                            <Select v-model="form.default_action">
+                            <Label>作用域</Label>
+                            <Select
+                                v-model="form.scope"
+                                :disabled="!!editingRecord"
+                            >
                                 <SelectTrigger><SelectValue /></SelectTrigger>
                                 <SelectContent>
                                     <SelectGroup>
-                                        <SelectItem value="reject"
-                                            >拒绝</SelectItem
+                                        <SelectItem value="user"
+                                            >用户</SelectItem
                                         >
-                                        <SelectItem value="allow"
-                                            >放行</SelectItem
+                                        <SelectItem value="global"
+                                            >全局</SelectItem
                                         >
                                     </SelectGroup>
                                 </SelectContent>
@@ -1372,7 +1329,7 @@ const displayedCcRows = computed(() => {
                 <DialogHeader>
                     <DialogTitle>确认删除</DialogTitle>
                     <DialogDescription>
-                        确定要删除 ACL 规则「{{ deleteTarget?.name }}」吗？
+                        确定要删除 WAF 规则「{{ deleteTarget?.name }}」吗？
                     </DialogDescription>
                 </DialogHeader>
                 <DialogFooter>
@@ -1531,7 +1488,7 @@ const displayedCcRows = computed(() => {
                             v-if="matcherConditions.length === 0"
                             class="text-xs text-muted-foreground"
                         >
-                            不添加任何条件 = 匹配所有请求（data 为 {}）
+                            不添加任何条件将匹配所有请求。
                         </p>
                         <div
                             v-for="(cond, index) in matcherConditions"
@@ -1660,9 +1617,6 @@ const displayedCcRows = computed(() => {
                                     /></SelectTrigger>
                                     <SelectContent>
                                         <SelectGroup>
-                                            <SelectItem value=""
-                                                >(无)</SelectItem
-                                            >
                                             <SelectItem
                                                 v-for="f in filterOptions"
                                                 :key="f.id"
@@ -1682,7 +1636,7 @@ const displayedCcRows = computed(() => {
                                     /></SelectTrigger>
                                     <SelectContent>
                                         <SelectGroup>
-                                            <SelectItem value=""
+                                            <SelectItem value="__none__"
                                                 >(无)</SelectItem
                                             >
                                             <SelectItem
@@ -1798,7 +1752,7 @@ const displayedCcRows = computed(() => {
                             /></SelectTrigger>
                             <SelectContent>
                                 <SelectGroup>
-                                    <SelectItem value=""
+                                    <SelectItem value="__system__"
                                         >不选 — 系统规则</SelectItem
                                     >
                                     <SelectItem

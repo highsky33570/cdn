@@ -39,9 +39,13 @@ import {
 } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
 import Switch from '@/components/ui/switch/Switch.vue';
+import { cdnflyJsonObject } from '@/lib/cdnflyResponse';
+import type { MatcherCondition } from '@/lib/cdnflySecurity';
+import { buildCcMatcher, parseCcMatcher } from '@/lib/cdnflySecurity';
 import {
     formatDate,
     getErrorMessage,
+    jsonText,
     numberValue,
     recordId,
     textValue,
@@ -83,18 +87,9 @@ import type {
 type SecurityView = 'acls' | 'cc' | 'blackip';
 type CcKind = 'matcher' | 'filter' | 'rule';
 
-type MatcherCondition = {
-    key: string;
-    operator: string;
-    value: string;
-};
-
-type AclEntry = {
-    action: string;
-    conditions: MatcherCondition[];
-};
-
 type RuleEntry = {
+    raw?: Record<string, unknown>;
+    mode?: string;
     action: string;
     matcher: string;
     filter1: string;
@@ -122,13 +117,19 @@ const OPERATORS = [
     { value: '!=', label: '不等于' },
     { value: 'contain', label: '包含' },
     { value: '!contain', label: '不包含' },
-    { value: 'AC', label: '在列表中' },
-    { value: '!AC', label: '不在列表中' },
+    { value: 'ip_range', label: '在 IP 段' },
+    { value: '!ip_range', label: '不在 IP 段' },
+    { value: 'prefix', label: '前缀匹配' },
+    { value: 'suffix', label: '后缀匹配' },
+    { value: 'regex', label: '正则匹配' },
+    { value: '!regex', label: '正则不匹配' },
+    { value: '>', label: '大于' },
+    { value: 'exists', label: '存在' },
+    { value: '!exists', label: '不存在' },
 ] as const;
 
 const RULE_ACTIONS = [
-    { value: 'ipset', label: '加黑名单 (ipset)' },
-    { value: 'exit', label: '终止 (exit)' },
+    { value: 'block', label: '拦截并加黑名单' },
     { value: 'log', label: '仅记录 (log)' },
 ] as const;
 
@@ -179,11 +180,10 @@ const aclFilters = reactive({
 });
 const aclForm = reactive({
     name: '',
-    default_action: 'reject',
+    data: '[]',
     des: '',
     enable: '1',
 });
-const aclEntries = ref<AclEntry[]>([]);
 
 const activeCcKind = ref<CcKind>('rule');
 const ccDialogOpen = ref(false);
@@ -268,7 +268,7 @@ const pageTitle = computed(() => {
         return '拉黑日志';
     }
 
-    return 'ACL 规则';
+    return 'WAF 规则';
 });
 const pageDescription = computed(() => {
     if (props.view === 'cc') {
@@ -281,9 +281,6 @@ const pageDescription = computed(() => {
 
     return '维护访问控制规则组。';
 });
-const aclDialogTitle = computed(() =>
-    editingAcl.value ? '编辑 ACL' : '新增 ACL',
-);
 const ccDialogTitle = computed(() =>
     editingCc.value
         ? `编辑${ccKindLabel(activeCcKind.value)}`
@@ -311,7 +308,7 @@ const displayedAclRows = computed(() => {
     }
 
     return aclRows.value.filter((row) =>
-        [row.name, row.des, row.default_action]
+        [row.name, row.des, row.scope]
             .map((value) => textValue(value).toLowerCase())
             .some((value) => value.includes(keyword)),
     );
@@ -360,6 +357,10 @@ async function loadAclRows(targetPage = aclPage.value): Promise<void> {
             limit: Number(aclFilters.per_page),
         };
 
+        if (aclFilters.search.trim()) {
+            params.name = aclFilters.search.trim();
+        }
+
         if (aclFilters.enable !== 'all') {
             params.enable = aclFilters.enable;
         }
@@ -380,15 +381,9 @@ async function loadAclRows(targetPage = aclPage.value): Promise<void> {
 function openAclCreateDialog(): void {
     editingAcl.value = null;
     aclForm.name = '';
-    aclForm.default_action = 'reject';
+    aclForm.data = '[]';
     aclForm.des = '';
     aclForm.enable = '1';
-    aclEntries.value = [
-        {
-            action: 'allow',
-            conditions: [{ key: 'ip', operator: '=', value: '' }],
-        },
-    ];
     formError.value = '';
     aclDialogOpen.value = true;
 }
@@ -396,10 +391,9 @@ function openAclCreateDialog(): void {
 function openAclEditDialog(record: CdnflyRecord): void {
     editingAcl.value = record;
     aclForm.name = textValue(record.name);
-    aclForm.default_action = textValue(record.default_action) || 'reject';
+    aclForm.data = jsonText(record.data, '[]');
     aclForm.des = textValue(record.des ?? record.remark);
     aclForm.enable = record.enable === 0 || record.enable === false ? '0' : '1';
-    aclEntries.value = parseAclData(record.data);
     formError.value = '';
     aclDialogOpen.value = true;
 }
@@ -408,15 +402,30 @@ async function submitAcl(): Promise<void> {
     const name = aclForm.name.trim();
 
     if (name === '') {
-        formError.value = 'ACL 名称不能为空';
+        formError.value = 'WAF 名称不能为空';
+
+        return;
+    }
+
+    let ruleData: unknown[];
+
+    try {
+        const parsed = JSON.parse(aclForm.data);
+
+        if (!Array.isArray(parsed)) {
+            throw new Error('规则必须是 JSON 数组');
+        }
+
+        ruleData = parsed;
+    } catch (error) {
+        formError.value = getErrorMessage(error);
 
         return;
     }
 
     const payload: CdnAclPayload = {
         name,
-        default_action: aclForm.default_action,
-        data: buildAclData(),
+        data: ruleData,
         des: nullableText(aclForm.des),
         enable: aclForm.enable === '1' ? 1 : 0,
     };
@@ -429,16 +438,16 @@ async function submitAcl(): Promise<void> {
             const id = recordId(editingAcl.value);
 
             if (!id) {
-                formError.value = 'ACL ID 缺失';
+                formError.value = 'WAF ID 缺失';
 
                 return;
             }
 
             await updateUserAcl(id, payload);
-            toast.success('ACL 更新请求已提交');
+            toast.success('WAF 更新请求已提交');
         } else {
-            await createUserAcl(omitEnable(payload));
-            toast.success('ACL 创建请求已提交');
+            await createUserAcl(payload);
+            toast.success('WAF 创建请求已提交');
         }
 
         aclDialogOpen.value = false;
@@ -469,7 +478,7 @@ async function confirmDelete(): Promise<void> {
     try {
         if (deleteKind.value === 'acl') {
             await deleteUserAcl(id);
-            toast.success('ACL 删除请求已提交');
+            toast.success('WAF 删除请求已提交');
         } else {
             await ccDelete(deleteKind.value as CcKind, id);
             toast.success(
@@ -502,6 +511,10 @@ async function loadCcRows(targetPage = ccPage.value): Promise<void> {
             internal_self: 1,
         };
 
+        if (ccFilters.search.trim()) {
+            params.name = ccFilters.search.trim();
+        }
+
         if (ccFilters.enable !== 'all') {
             params.enable = ccFilters.enable;
         }
@@ -525,104 +538,17 @@ function selectCcKind(kind: CcKind): void {
     void loadCcRows(1);
 }
 
-function buildMatcherData(): Record<string, unknown> {
-    return buildMatcherObject(matcherConditions.value);
-}
-
-function parseMatcherData(data: Record<string, unknown>): MatcherCondition[] {
-    if (!data || typeof data !== 'object') {
-        return [];
-    }
-
-    return Object.entries(data).map(([key, rule]) => ({
-        key,
-        operator: (rule as any).operator ?? '=',
-        value: Array.isArray((rule as any).value)
-            ? (rule as any).value.join(', ')
-            : String((rule as any).value ?? ''),
-    }));
-}
-
-function buildMatcherObject(
-    conditions: MatcherCondition[],
-): Record<string, unknown> {
-    const data: Record<string, unknown> = {};
-
-    for (const c of conditions) {
-        if (!c.key) {
-            continue;
-        }
-
-        const isArrayOp = c.operator === 'AC' || c.operator === '!AC';
-        data[c.key] = {
-            operator: c.operator || '=',
-            value: isArrayOp
-                ? c.value
-                      .split(',')
-                      .map((s) => s.trim())
-                      .filter(Boolean)
-                : c.value,
-        };
-    }
-
-    return data;
-}
-
-function buildAclData(): unknown[] {
-    return aclEntries.value.map((entry) => ({
-        acl_action: entry.action,
-        acl_matcher: buildMatcherObject(entry.conditions),
-    }));
-}
-
-function parseAclData(raw: unknown): AclEntry[] {
-    let arr: unknown[];
-
-    if (typeof raw === 'string') {
-        try {
-            arr = JSON.parse(raw);
-        } catch {
-            arr = [];
-        }
-    } else {
-        arr = Array.isArray(raw) ? raw : [];
-    }
-
-    return arr.map((item: any) => ({
-        action: String(item.acl_action ?? 'reject'),
-        conditions: parseMatcherData(item.acl_matcher ?? {}),
-    }));
-}
-
-function addAclEntry(): void {
-    aclEntries.value.push({
-        action: 'allow',
-        conditions: [{ key: 'ip', operator: '=', value: '' }],
-    });
-}
-
-function removeAclEntry(index: number): void {
-    aclEntries.value.splice(index, 1);
-}
-
-function addAclCondition(entryIndex: number): void {
-    aclEntries.value[entryIndex].conditions.push({
-        key: 'uri',
-        operator: 'contain',
-        value: '',
-    });
-}
-
-function removeAclCondition(entryIndex: number, condIndex: number): void {
-    aclEntries.value[entryIndex].conditions.splice(condIndex, 1);
+function buildMatcherData(): Record<string, unknown>[] {
+    return buildCcMatcher(matcherConditions.value);
 }
 
 function buildExtra(): Record<string, unknown> {
     if (ccForm.type !== 'url_auth') {
-        return {};
+        return cdnflyJsonObject(editingCc.value?.extra);
     }
 
     const obj: Record<string, unknown> = {
+        ...cdnflyJsonObject(editingCc.value?.extra),
         mode: extraForm.mode,
         key: extraForm.key,
         sign_name: extraForm.sign_name,
@@ -696,10 +622,10 @@ function removeCondition(index: number): void {
 
 function addRuleEntry(): void {
     ruleEntries.value.push({
-        action: 'ipset',
+        action: 'block',
         matcher: '',
         filter1: '',
-        filter2: '',
+        filter2: '__none__',
         state: true,
     });
 }
@@ -748,25 +674,7 @@ function openCcEditDialog(record: CdnflyRecord): void {
     const rawData = record.data;
 
     if (activeCcKind.value === 'matcher') {
-        let dataObj: Record<string, unknown>;
-
-        if (typeof rawData === 'string') {
-            try {
-                dataObj = JSON.parse(rawData);
-            } catch {
-                dataObj = {};
-            }
-        } else if (
-            rawData &&
-            typeof rawData === 'object' &&
-            !Array.isArray(rawData)
-        ) {
-            dataObj = rawData as Record<string, unknown>;
-        } else {
-            dataObj = {};
-        }
-
-        matcherConditions.value = parseMatcherData(dataObj);
+        matcherConditions.value = parseCcMatcher(rawData);
         ruleEntries.value = [];
     } else if (activeCcKind.value === 'rule') {
         let dataArr: unknown[];
@@ -782,10 +690,12 @@ function openCcEditDialog(record: CdnflyRecord): void {
         }
 
         ruleEntries.value = dataArr.map((entry: any) => ({
-            action: String(entry.action ?? 'ipset'),
+            raw: entry,
+            mode: String(entry.mode ?? 'continue'),
+            action: String(entry.action ?? 'block'),
             matcher: String(entry.matcher ?? ''),
             filter1: String(entry.filter1 ?? ''),
-            filter2: String(entry.filter2 ?? ''),
+            filter2: String(entry.filter2 ?? '__none__'),
             state: entry.state !== false,
         }));
         matcherConditions.value = [];
@@ -966,8 +876,8 @@ async function unlockBlackIp(
         return;
     }
 
-    const data: Record<string, string> = {
-        site_id: siteId.trim(),
+    const data: Record<string, string | number> = {
+        site_id: Number(siteId),
         key1: 'site_id',
     };
 
@@ -1024,20 +934,29 @@ function buildCcPayload():
             throw new Error('至少需要添加一条规则条目');
         }
 
-        const missingMatcher = ruleEntries.value.findIndex((e) => !e.matcher);
+        const missingMatcher = ruleEntries.value.findIndex(
+            (e) => !e.matcher || !e.filter1,
+        );
 
         if (missingMatcher !== -1) {
-            throw new Error(`第 ${missingMatcher + 1} 条规则未选择匹配器`);
+            throw new Error(
+                `第 ${missingMatcher + 1} 条规则未选择匹配器或第一过滤器`,
+            );
         }
 
         return {
             name: ccForm.name.trim(),
             sort: optionalNumber(ccForm.sort) ?? 100,
             data: ruleEntries.value.map((e) => ({
+                ...e.raw,
+                mode: e.mode ?? 'continue',
                 action: e.action,
-                matcher: e.matcher,
-                filter1: e.filter1,
-                filter2: e.filter2 || '',
+                matcher: Number(e.matcher),
+                filter1: Number(e.filter1),
+                filter2:
+                    e.filter2 && e.filter2 !== '__none__'
+                        ? Number(e.filter2)
+                        : null,
                 state: e.state,
             })),
             des: nullableText(ccForm.des),
@@ -1228,9 +1147,9 @@ function omitEnable<TPayload extends { enable?: unknown }>(
                 class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between"
             >
                 <div>
-                    <CardTitle>ACL 规则组</CardTitle>
+                    <CardTitle>WAF 规则组</CardTitle>
                     <p class="mt-1 text-sm text-muted-foreground">
-                        {{ aclTotal === 0 ? '暂无 ACL' : `${aclTotal} 个 ACL` }}
+                        {{ aclTotal === 0 ? '暂无 WAF' : `${aclTotal} 个 WAF` }}
                     </p>
                 </div>
                 <form
@@ -1286,7 +1205,7 @@ function omitEnable<TPayload extends { enable?: unknown }>(
                                     名称
                                 </th>
                                 <th class="px-4 py-3 text-left font-medium">
-                                    默认动作
+                                    作用域
                                 </th>
                                 <th class="px-4 py-3 text-left font-medium">
                                     规则
@@ -1324,10 +1243,9 @@ function omitEnable<TPayload extends { enable?: unknown }>(
                                 <td class="px-4 py-3">
                                     <Badge variant="outline">
                                         {{
-                                            textValue(acl.default_action) ===
-                                            'allow'
-                                                ? '允许'
-                                                : '拒绝'
+                                            acl.scope === 'global'
+                                                ? '全局'
+                                                : '用户'
                                         }}
                                     </Badge>
                                 </td>
@@ -1352,6 +1270,7 @@ function omitEnable<TPayload extends { enable?: unknown }>(
                                             variant="outline"
                                             size="sm"
                                             @click="openAclEditDialog(acl)"
+                                            :disabled="acl.scope === 'global'"
                                         >
                                             <Pencil data-icon="inline-start" />
                                             编辑
@@ -1360,6 +1279,7 @@ function omitEnable<TPayload extends { enable?: unknown }>(
                                             variant="destructive"
                                             size="sm"
                                             @click="openDeleteAcl(acl)"
+                                            :disabled="acl.scope === 'global'"
                                         >
                                             <Trash2 data-icon="inline-start" />
                                             删除
@@ -1374,7 +1294,7 @@ function omitEnable<TPayload extends { enable?: unknown }>(
                                     class="px-6 py-16 text-center text-muted-foreground"
                                     colspan="6"
                                 >
-                                    暂无 ACL
+                                    暂无 WAF
                                 </td>
                             </tr>
                         </tbody>
@@ -2201,211 +2121,61 @@ function omitEnable<TPayload extends { enable?: unknown }>(
         <Dialog v-model:open="aclDialogOpen">
             <DialogScrollContent class="sm:max-w-3xl">
                 <DialogHeader>
-                    <DialogTitle>{{ aclDialogTitle }}</DialogTitle>
-                    <DialogDescription>
-                        每条规则由动作（允许/拒绝）和匹配条件组成，不匹配任何规则时执行默认动作。
-                    </DialogDescription>
+                    <DialogTitle>{{
+                        editingAcl ? '编辑 WAF 规则库' : '新增 WAF 规则库'
+                    }}</DialogTitle>
+                    <DialogDescription
+                        >规则数组支持 action、action_config 和
+                        matcher_groups，保存时保留完整规则配置。</DialogDescription
+                    >
                 </DialogHeader>
-                <form class="grid gap-5" @submit.prevent="submitAcl">
-                    <div class="grid gap-4 md:grid-cols-3">
-                        <div class="grid gap-2">
-                            <Label for="acl-name">名称</Label>
-                            <Input
-                                id="acl-name"
-                                v-model="aclForm.name"
-                                required
-                            />
-                        </div>
-                        <div class="grid gap-2">
-                            <Label>默认动作</Label>
-                            <Select v-model="aclForm.default_action">
-                                <SelectTrigger><SelectValue /></SelectTrigger>
-                                <SelectContent>
-                                    <SelectGroup>
-                                        <SelectItem value="reject"
-                                            >拒绝</SelectItem
-                                        >
-                                        <SelectItem value="allow"
-                                            >允许</SelectItem
-                                        >
-                                    </SelectGroup>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        <div class="grid gap-2">
-                            <Label>状态</Label>
-                            <Select v-model="aclForm.enable">
-                                <SelectTrigger><SelectValue /></SelectTrigger>
-                                <SelectContent>
-                                    <SelectGroup>
-                                        <SelectItem value="1">启用</SelectItem>
-                                        <SelectItem value="0">禁用</SelectItem>
-                                    </SelectGroup>
-                                </SelectContent>
-                            </Select>
-                        </div>
+                <form class="grid gap-4" @submit.prevent="submitAcl">
+                    <Alert v-if="formError" variant="destructive"
+                        ><AlertDescription>{{
+                            formError
+                        }}</AlertDescription></Alert
+                    >
+                    <div class="grid gap-2">
+                        <Label for="acl-name">名称</Label
+                        ><Input id="acl-name" v-model="aclForm.name" required />
                     </div>
                     <div class="grid gap-2">
-                        <div class="flex items-center justify-between">
-                            <Label>规则条目</Label>
-                            <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                @click="addAclEntry"
-                            >
-                                <Plus
-                                    data-icon="inline-start"
-                                    class="size-3.5"
-                                />
-                                添加规则
-                            </Button>
-                        </div>
-                        <p
-                            v-if="aclEntries.length === 0"
-                            class="text-xs text-muted-foreground"
+                        <Label>状态</Label
+                        ><Select v-model="aclForm.enable"
+                            ><SelectTrigger><SelectValue /></SelectTrigger
+                            ><SelectContent
+                                ><SelectItem value="1">启用</SelectItem
+                                ><SelectItem value="0"
+                                    >禁用</SelectItem
+                                ></SelectContent
+                            ></Select
                         >
-                            未添加任何规则条目
-                        </p>
-                        <div
-                            v-for="(entry, ei) in aclEntries"
-                            :key="ei"
-                            class="space-y-2 rounded-md border p-3"
-                        >
-                            <div
-                                class="flex items-center justify-between gap-2"
-                            >
-                                <div class="flex items-center gap-2">
-                                    <Label class="text-xs whitespace-nowrap"
-                                        >动作</Label
-                                    >
-                                    <Select v-model="entry.action">
-                                        <SelectTrigger class="h-8 w-24 text-xs"
-                                            ><SelectValue
-                                        /></SelectTrigger>
-                                        <SelectContent>
-                                            <SelectGroup>
-                                                <SelectItem value="allow"
-                                                    >允许</SelectItem
-                                                >
-                                                <SelectItem value="reject"
-                                                    >拒绝</SelectItem
-                                                >
-                                            </SelectGroup>
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                                <div class="flex items-center gap-1">
-                                    <Button
-                                        type="button"
-                                        variant="ghost"
-                                        size="sm"
-                                        class="h-7 text-xs"
-                                        @click="addAclCondition(ei)"
-                                    >
-                                        <Plus class="size-3" /> 条件
-                                    </Button>
-                                    <Button
-                                        type="button"
-                                        variant="ghost"
-                                        size="icon"
-                                        class="size-7"
-                                        @click="removeAclEntry(ei)"
-                                    >
-                                        <X class="size-3.5" />
-                                    </Button>
-                                </div>
-                            </div>
-                            <div
-                                v-for="(cond, ci) in entry.conditions"
-                                :key="ci"
-                                class="grid grid-cols-[1fr_120px_1fr_auto] gap-2"
-                            >
-                                <Select v-model="cond.key">
-                                    <SelectTrigger
-                                        ><SelectValue placeholder="选择字段"
-                                    /></SelectTrigger>
-                                    <SelectContent>
-                                        <SelectGroup>
-                                            <SelectItem
-                                                v-for="mk in MATCHER_KEYS"
-                                                :key="mk.value"
-                                                :value="mk.value"
-                                            >
-                                                {{ mk.label }}
-                                            </SelectItem>
-                                        </SelectGroup>
-                                    </SelectContent>
-                                </Select>
-                                <Select v-model="cond.operator">
-                                    <SelectTrigger
-                                        ><SelectValue
-                                    /></SelectTrigger>
-                                    <SelectContent>
-                                        <SelectGroup>
-                                            <SelectItem
-                                                v-for="op in OPERATORS"
-                                                :key="op.value"
-                                                :value="op.value"
-                                            >
-                                                {{ op.label }}
-                                            </SelectItem>
-                                        </SelectGroup>
-                                    </SelectContent>
-                                </Select>
-                                <Input
-                                    v-model="cond.value"
-                                    :placeholder="
-                                        cond.operator === 'AC' ||
-                                        cond.operator === '!AC'
-                                            ? '逗号分隔多个值'
-                                            : '输入值'
-                                    "
-                                />
-                                <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="icon"
-                                    class="size-9"
-                                    @click="removeAclCondition(ei, ci)"
-                                >
-                                    <X class="size-4" />
-                                </Button>
-                            </div>
-                            <p
-                                v-if="entry.conditions.length === 0"
-                                class="pl-1 text-xs text-muted-foreground"
-                            >
-                                无匹配条件 = 匹配所有请求
-                            </p>
-                        </div>
                     </div>
                     <div class="grid gap-2">
-                        <Label for="acl-des">备注</Label>
-                        <textarea
-                            id="acl-des"
-                            v-model="aclForm.des"
-                            class="min-h-20 w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                        <Label for="waf-data">规则 (JSON 数组)</Label
+                        ><textarea
+                            id="waf-data"
+                            v-model="aclForm.data"
+                            rows="16"
+                            class="w-full rounded-md border bg-background p-3 font-mono text-xs"
+                            spellcheck="false"
+                            required
                         />
                     </div>
-                    <Alert v-if="formError" variant="destructive">
-                        <AlertCircle data-icon="alert" />
-                        <AlertDescription>{{ formError }}</AlertDescription>
-                    </Alert>
-                    <DialogFooter>
-                        <Button
+                    <div class="grid gap-2">
+                        <Label for="acl-des">备注</Label
+                        ><Input id="acl-des" v-model="aclForm.des" />
+                    </div>
+                    <DialogFooter
+                        ><Button
                             type="button"
                             variant="outline"
                             @click="aclDialogOpen = false"
-                        >
-                            取消
-                        </Button>
-                        <Button type="submit" :disabled="saving">
-                            <Spinner v-if="saving" data-icon="inline-start" />
-                            <Save v-else data-icon="inline-start" />
-                            保存
-                        </Button>
-                    </DialogFooter>
+                            >取消</Button
+                        ><Button type="submit" :disabled="saving"
+                            ><Spinner v-if="saving" />保存</Button
+                        ></DialogFooter
+                    >
                 </form>
             </DialogScrollContent>
         </Dialog>
@@ -2415,7 +2185,7 @@ function omitEnable<TPayload extends { enable?: unknown }>(
                 <DialogHeader>
                     <DialogTitle>{{ ccDialogTitle }}</DialogTitle>
                     <DialogDescription>
-                        规则组 data 为数组格式，匹配器 data 为对象格式。
+                        规则组和匹配器使用有序规则数组。
                     </DialogDescription>
                 </DialogHeader>
                 <form class="grid gap-5" @submit.prevent="submitCc">
@@ -2667,9 +2437,6 @@ function omitEnable<TPayload extends { enable?: unknown }>(
                                     /></SelectTrigger>
                                     <SelectContent>
                                         <SelectGroup>
-                                            <SelectItem value=""
-                                                >(无)</SelectItem
-                                            >
                                             <SelectItem
                                                 v-for="f in filterOptions"
                                                 :key="f.id"
@@ -2689,7 +2456,7 @@ function omitEnable<TPayload extends { enable?: unknown }>(
                                     /></SelectTrigger>
                                     <SelectContent>
                                         <SelectGroup>
-                                            <SelectItem value=""
+                                            <SelectItem value="__none__"
                                                 >(无)</SelectItem
                                             >
                                             <SelectItem
@@ -2825,7 +2592,7 @@ function omitEnable<TPayload extends { enable?: unknown }>(
 
         <ConfirmDeleteDialog
             :open="deleteOpen"
-            :description="`确认删除${deleteKind === 'acl' ? 'ACL' : ccKindLabel(deleteKind as CcKind)}「${deleteTarget ? recordName(deleteTarget) : ''}」？删除后不可恢复。`"
+            :description="`确认删除${deleteKind === 'acl' ? 'WAF' : ccKindLabel(deleteKind as CcKind)}「${deleteTarget ? recordName(deleteTarget) : ''}」？删除后不可恢复。`"
             :loading="deleting"
             :error="deleteError"
             @confirm="confirmDelete"

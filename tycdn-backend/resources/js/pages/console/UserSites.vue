@@ -1062,16 +1062,77 @@ function idField(v: unknown) {
 function recordName(r: CdnflyRecord) {
     return textValue(r.name) || `#${textValue(r.id)}`;
 }
-function resolveStateLabel(v: unknown) {
-    if (v === 1 || v === '1') {
-        return '已解析';
+// 解析状态 comes from the domain's `cname_state` (populated by 同步解析):
+// done = 解析成功, failed = 解析失败, empty/null = not yet checked.
+function resolveStateLabel(v: unknown): string {
+    const s = String(v ?? '').toLowerCase();
+
+    if (s === 'done') {
+        return '解析成功';
     }
 
-    if (v === 0 || v === '0') {
-        return '未解析';
+    if (s === 'failed') {
+        return '解析失败';
     }
 
-    return textValue(v) || '-';
+    if (s === 'check' || s === 'checking') {
+        return '检测中';
+    }
+
+    if (s === '') {
+        return '待检测';
+    }
+
+    return textValue(v);
+}
+
+function resolveStateVariant(
+    v: unknown,
+): 'secondary' | 'destructive' | 'outline' {
+    const s = String(v ?? '').toLowerCase();
+
+    if (s === 'done') {
+        return 'secondary';
+    }
+
+    if (s === 'failed') {
+        return 'destructive';
+    }
+
+    return 'outline';
+}
+
+// 任务状态 comes from the domain's sync-task `state` field (verified against the
+// panel's taskStateText: done/pending/process/failed, empty = 无任务).
+const TASK_STATE_LABELS: Record<string, string> = {
+    done: '已完成',
+    pending: '待同步',
+    process: '同步中',
+    failed: '同步失败',
+};
+
+function taskStateLabel(v: unknown): string {
+    const s = String(v ?? '').toLowerCase();
+
+    if (s === '') {
+        return '无任务';
+    }
+
+    return TASK_STATE_LABELS[s] ?? textValue(v);
+}
+
+function taskStateVariant(v: unknown): 'secondary' | 'destructive' | 'outline' {
+    const s = String(v ?? '').toLowerCase();
+
+    if (s === 'done') {
+        return 'secondary';
+    }
+
+    if (s === 'failed') {
+        return 'destructive';
+    }
+
+    return 'outline';
 }
 </script>
 
@@ -2042,20 +2103,35 @@ function resolveStateLabel(v: unknown) {
                                     <td class="px-4 py-3">
                                         <Badge
                                             :variant="
-                                                d.state === 1 || d.state === '1'
+                                                resolveStateVariant(
+                                                    d.cname_state,
+                                                )
+                                            "
+                                            >{{
+                                                resolveStateLabel(d.cname_state)
+                                            }}</Badge
+                                        >
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <Badge
+                                            :variant="
+                                                d.dns_api
                                                     ? 'secondary'
                                                     : 'outline'
                                             "
                                             >{{
-                                                resolveStateLabel(d.state)
+                                                d.dns_api ? '已配置' : '未配置'
                                             }}</Badge
                                         >
                                     </td>
-                                    <td class="px-4 py-3 text-muted-foreground">
-                                        {{ textValue(d.dns_api) || '-' }}
-                                    </td>
-                                    <td class="px-4 py-3 text-muted-foreground">
-                                        {{ textValue(d.ret) || '-' }}
+                                    <td class="px-4 py-3">
+                                        <Badge
+                                            :variant="taskStateVariant(d.state)"
+                                            :title="textValue(d.ret)"
+                                            >{{
+                                                taskStateLabel(d.state)
+                                            }}</Badge
+                                        >
                                     </td>
                                 </tr>
                                 <tr v-if="!loading && resolveRows.length === 0">

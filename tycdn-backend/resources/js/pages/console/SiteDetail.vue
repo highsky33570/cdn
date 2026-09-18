@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { cdnflyJsonRows as parseJsonArray, cdnflyJsonObject as parseJsonObject } from '@/lib/cdnflyResponse';
 import { Head, Link } from '@inertiajs/vue3';
 import {
     AlertCircle,
@@ -19,7 +20,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Spinner } from '@/components/ui/spinner';
-import { getErrorMessage, parseJsonArray, parseJsonObject, textValue } from '@/lib/cdnRecord';
+import { getErrorMessage, textValue } from '@/lib/cdnRecord';
 import { getUserSite } from '@/lib/cdnUserApi';
 import type { CdnflyRecord } from '@/lib/cdnUserApi';
 import { cn } from '@/lib/utils';
@@ -75,8 +76,8 @@ const regionName  = computed(() => textValue(site.value?.region_name) || '-');
 const enableIPv6  = computed(() => site.value?.enable_ipv6 === 1);
 
 // HTTP/HTTPS 监听（均为 JSON 字符串）
-const httpListen   = computed(() => parseJsonObject(textValue(site.value?.http_listen) ?? '') as CdnflyRecord | null);
-const httpsListen  = computed(() => parseJsonObject(textValue(site.value?.https_listen) ?? '') as CdnflyRecord | null);
+const httpListen   = computed(() => parseJsonObject(site.value?.http_listen) as CdnflyRecord | null);
+const httpsListen  = computed(() => parseJsonObject(site.value?.https_listen) as CdnflyRecord | null);
 const httpPort     = computed(() => textValue(httpListen.value?.port) || '80');
 const httpsPort    = computed(() => textValue(httpsListen.value?.port) || '443');
 const forceSSL     = computed(() => httpsListen.value?.force_ssl_enable === 1);
@@ -93,7 +94,7 @@ const backendHost      = computed(() => textValue(site.value?.backend_host) || '
 const backendHttpPort  = computed(() => textValue(site.value?.backend_http_port) || '80');
 const backendHttpsPort = computed(() => textValue(site.value?.backend_https_port) || '443');
 const backendList      = computed(() => {
-    const raw = textValue(site.value?.backend);
+    const raw = site.value?.backend;
     if (!raw) return [] as CdnflyRecord[];
     return parseJsonArray(raw) as CdnflyRecord[];
 });
@@ -451,22 +452,22 @@ onMounted(() => { void loadSite(); });
                                 <p class="text-sm font-medium">{{ textValue(site.spider_allow) || '-' }}</p>
                             </div>
                             <div class="rounded-md border p-4 space-y-1">
-                                <p class="text-xs text-muted-foreground">ACL 规则组</p>
-                                <p class="text-sm font-medium">{{ textValue(site.acl) || '未绑定' }}</p>
+                                <p class="text-xs text-muted-foreground">WAF 防护</p>
+                                <p class="text-sm font-medium">{{ Number(site.waf_enable) === 1 ? '已启用' : '未启用' }}</p>
                             </div>
                         </div>
                         <div class="grid gap-3 sm:grid-cols-2">
                             <div class="rounded-md border p-4 space-y-1">
-                                <p class="text-xs text-muted-foreground">IP 黑名单</p>
-                                <p class="font-mono text-xs text-muted-foreground break-all">{{ textValue(site.black_ip) || '（空）' }}</p>
+                                <p class="text-xs text-muted-foreground">WAF 启用规则</p>
+                                <p class="font-mono text-xs text-muted-foreground break-all">{{ Object.entries(parseJsonObject(site.waf)).filter(([, value]) => value !== 'off').map(([key, value]) => `${key}: ${value}`).join(', ') || '未启用规则' }}</p>
                             </div>
                             <div class="rounded-md border p-4 space-y-1">
-                                <p class="text-xs text-muted-foreground">IP 白名单</p>
-                                <p class="font-mono text-xs text-muted-foreground break-all">{{ textValue(site.white_ip) || '（空）' }}</p>
+                                <p class="text-xs text-muted-foreground">WAF 自动封禁 IP</p>
+                                <p class="text-sm font-medium">{{ Number(parseJsonObject(site.waf_ip_auto_block).enable) === 1 ? '已启用' : '未启用' }}</p>
                             </div>
                         </div>
                         <p class="text-sm text-muted-foreground">
-                            ACL / CC 规则绑定编辑，后续在此 Tab 补充。
+                            WAF / CC 规则绑定编辑，后续在此 Tab 补充。
                         </p>
                     </div>
 

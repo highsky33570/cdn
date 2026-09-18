@@ -1,5 +1,9 @@
 <script setup lang="ts">
 import {
+    extractCdnflyRows as extractRows,
+    extractCdnflyTotal as extractTotal,
+} from '@/lib/cdnflyResponse';
+import {
     AlertCircle,
     Check,
     ChevronDown,
@@ -80,7 +84,6 @@ import type {
     AdminNodePayload,
     AdminPendingNodeInitPayload,
     AdminRegionPayload,
-    CdnflyListData,
     CdnflyRecord,
 } from '@/lib/adminModulesApi';
 
@@ -361,9 +364,9 @@ function openEditDialog(node: CdnflyRecord): void {
     form.name = textValue(node.name);
     form.ip = textValue(node.ip);
     form.region_id = idField(node.region_id);
-    form.status = idField(node.status) || '1';
-    form.weight = idField(node.weight);
-    form.bandwidth = idField(node.bandwidth);
+    form.status = idField(node.enable) || '1';
+    form.weight = idField(node.sort);
+    form.bandwidth = textValue(node.bw_limit);
     form.des = textValue(node.des ?? node.remark);
     nodeFormError.value = '';
     nodeDialogOpen.value = true;
@@ -641,68 +644,13 @@ function buildPayload(): AdminNodePayload {
     return {
         name: form.name.trim(),
         ip: form.ip.trim(),
-        region_id: nullableNumber(form.region_id),
-        status: nullableNumber(form.status),
-        weight: nullableNumber(form.weight),
-        bandwidth: nullableNumber(form.bandwidth),
+        enable: Number(form.status),
+        target: 'node',
+        disable_by: 'admin',
+        sort: nullableNumber(form.weight) ?? 100,
+        bw_limit: form.bandwidth.trim(),
         des: form.des.trim() === '' ? null : form.des.trim(),
     };
-}
-
-function extractRows(result: unknown): CdnflyRecord[] {
-    if (Array.isArray(result)) {
-        return result.filter(isRecord);
-    }
-
-    if (!isRecord(result)) {
-        return [];
-    }
-
-    const directKeys = ['data', 'items', 'list', 'rows', 'records'];
-
-    for (const key of directKeys) {
-        const value = result[key];
-
-        if (Array.isArray(value)) {
-            return value.filter(isRecord);
-        }
-
-        if (isRecord(value)) {
-            const nested = extractRows(value);
-
-            if (nested.length > 0) {
-                return nested;
-            }
-        }
-    }
-
-    return [];
-}
-
-function extractTotal(result: CdnflyListData, fallback: number): number | null {
-    if (typeof result.total === 'number') {
-        return result.total;
-    }
-
-    if (typeof result.count === 'number') {
-        return result.count;
-    }
-
-    if (isRecord(result.meta) && typeof result.meta.total === 'number') {
-        return result.meta.total;
-    }
-
-    if (isRecord(result.data)) {
-        if (typeof result.data.total === 'number') {
-            return result.data.total;
-        }
-
-        if (typeof result.data.count === 'number') {
-            return result.data.count;
-        }
-    }
-
-    return fallback;
 }
 
 function toOptions(records: CdnflyRecord[]): NodeOption[] {
@@ -726,10 +674,6 @@ function toOptions(records: CdnflyRecord[]): NodeOption[] {
             };
         })
         .filter((option): option is NodeOption => option !== null);
-}
-
-function isRecord(value: unknown): value is CdnflyRecord {
-    return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 }
 
 function asNumber(value: unknown): number | null {
@@ -3068,7 +3012,7 @@ function regionNameById(id: unknown): string {
                             </Select>
                         </div>
                         <div class="grid gap-2">
-                            <Label for="node-weight">权重</Label>
+                            <Label for="node-weight">排序</Label>
                             <Input
                                 id="node-weight"
                                 v-model="form.weight"
@@ -3078,30 +3022,17 @@ function regionNameById(id: unknown): string {
                         </div>
                         <div class="grid gap-2">
                             <Label>区域</Label>
-                            <Select v-model="form.region_id">
-                                <SelectTrigger :disabled="referencesLoading">
-                                    <SelectValue placeholder="未选择" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectGroup>
-                                        <SelectItem
-                                            v-for="option in regionOptions"
-                                            :key="option.id"
-                                            :value="option.id"
-                                        >
-                                            {{ option.label }}
-                                        </SelectItem>
-                                    </SelectGroup>
-                                </SelectContent>
-                            </Select>
+                            <Input
+                                :model-value="regionLabel(form.region_id)"
+                                disabled
+                            />
                         </div>
                         <div class="grid gap-2">
                             <Label for="node-bandwidth">带宽</Label>
                             <Input
                                 id="node-bandwidth"
                                 v-model="form.bandwidth"
-                                min="0"
-                                type="number"
+                                placeholder="100Mbps / 1Gbps，留空不限速"
                             />
                         </div>
                     </div>

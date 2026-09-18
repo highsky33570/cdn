@@ -704,6 +704,8 @@ onMounted(loadDnsSetting);
             :icon="Network"
             :columns="dnsApiColumns"
             :fetch-fn="listAdminDnsApis"
+            :search-params="{ limit: 0 }"
+            client-side
             search-placeholder="搜索 DNS API"
         >
             <template #toolbar>

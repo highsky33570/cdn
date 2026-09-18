@@ -99,7 +99,7 @@ const siteColumns: ColumnDef[] = [
         badgeVariant: (v) =>
             String(v) === 'done'
                 ? 'secondary'
-                : String(v) === 'error'
+                : ['error', 'failed'].includes(String(v))
                   ? 'destructive'
                   : 'outline',
     },
@@ -117,6 +117,7 @@ const SYNC_STATE_LABELS: Record<string, string> = {
     process: '同步中',
     pending: '待同步',
     error: '同步失败',
+    failed: '同步失败',
 };
 
 const certColumns: ColumnDef[] = [
@@ -135,7 +136,7 @@ const certColumns: ColumnDef[] = [
     },
     {
         key: 'expire_time',
-        altKeys: ['end_at', 'expire_at', 'not_after'],
+        altKeys: ['expire_time2', 'end_at', 'expire_at', 'not_after'],
         label: '到期时间',
         width: '160px',
         format: (v) => formatDate(v as string | null | undefined),
@@ -145,14 +146,18 @@ const certColumns: ColumnDef[] = [
 const aclColumns: ColumnDef[] = [
     { key: 'id', label: 'ID', width: '70px' },
     { key: 'name', label: '规则名称' },
-    { key: 'type', label: '类型', width: '100px' },
     {
-        key: 'status',
-        altKeys: ['enable'],
+        key: 'scope',
+        label: '作用域',
+        width: '100px',
+        format: (v) => (v === 'global' ? '全局' : '用户'),
+    },
+    {
+        key: 'enable',
         label: '状态',
         badge: true,
         width: '100px',
-        format: (v) => String(v ?? '-'),
+        format: (v) => (Number(v) === 1 ? '启用' : '禁用'),
     },
 ];
 
@@ -165,7 +170,7 @@ const activeTab = ref<SiteTab>('sites');
 const siteTabs: ConsoleTab[] = [
     { key: 'sites', label: '站点', icon: Globe2 },
     { key: 'certificates', label: '证书', icon: FileKey2 },
-    { key: 'acls', label: 'ACL', icon: Shield },
+    { key: 'acls', label: 'WAF', icon: Shield },
 ];
 
 const detailOpen = ref(false);
@@ -273,17 +278,17 @@ const searchParams = computed(() => {
     const search = filters.search.trim();
 
     if (search !== '') {
-        params.search = search;
+        params.domain = search;
     }
 
     const uid = filters.user_id.trim();
 
     if (uid !== '') {
-        params.user_id = uid;
+        params.uid = uid;
     }
 
     if (filters.status !== STATUS_ALL) {
-        params.status = filters.status;
+        params.enable = filters.status;
     }
 
     return params;
@@ -927,6 +932,7 @@ async function confirmCertDelete(): Promise<void> {
             title="全部证书"
             :columns="certColumns"
             :fetch-fn="listAdminAllCerts"
+            search-key="name"
             search-placeholder="搜索证书"
         >
             <template #toolbar>
@@ -951,10 +957,11 @@ async function confirmCertDelete(): Promise<void> {
 
         <ConsoleDataTable
             v-else
-            title="全部 ACL"
+            title="全部 WAF"
             :columns="aclColumns"
             :fetch-fn="listAdminAllAcls"
-            search-placeholder="搜索 ACL"
+            search-key="name"
+            search-placeholder="搜索 WAF"
         >
             <template #actions-col><col style="width: 0" /></template>
             <template #actions-header><th /></template>

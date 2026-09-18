@@ -484,23 +484,23 @@ class AdminNodeController extends Controller
 
     private function validatedNodePayload(Request $request, bool $creating): array
     {
-        $requiredWhenCreating = $creating ? 'required' : 'sometimes';
-
         $validated = $request->validate([
-            'name' => [$requiredWhenCreating, 'string', 'max:255'],
-            'ip' => [$requiredWhenCreating, 'string', 'max:255'],
-            'node_group_id' => ['sometimes', 'nullable', 'integer', 'min:1'],
-            'region_id' => ['sometimes', 'nullable', 'integer', 'min:1'],
-            'line_id' => ['sometimes', 'nullable', 'integer', 'min:1'],
-            'status' => ['sometimes', 'nullable', 'integer', Rule::in([0, 1])],
-            'weight' => ['sometimes', 'nullable', 'integer', 'min:0'],
-            'bandwidth' => ['sometimes', 'nullable', 'integer', 'min:0'],
+            'name' => ['sometimes', 'required', 'string', 'max:255'],
+            'ip' => ['sometimes', 'required', 'ip'],
+            'enable' => ['sometimes', 'integer', 'in:0,1'],
+            'sort' => ['sometimes', 'integer', 'min:0'],
+            'bw_limit' => ['sometimes', 'nullable', 'string', 'regex:/^\d+(?:\.\d+)?(?:Mbps|Gbps)$/'],
+            'target' => ['sometimes', 'in:ip,node'],
+            'disable_by' => ['sometimes', 'in:admin'],
             'des' => ['sometimes', 'nullable', 'string', 'max:1000'],
         ]);
+        foreach (['bw_limit', 'des'] as $key) {
+            if (array_key_exists($key, $validated)) {
+                $validated[$key] ??= '';
+            }
+        }
 
-        return collect($validated)
-            ->reject(fn ($value): bool => $value === '')
-            ->all();
+        return $this->castIntegers($validated, ['enable', 'sort']);
     }
 
     /**

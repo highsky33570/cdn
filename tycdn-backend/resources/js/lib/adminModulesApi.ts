@@ -17,9 +17,11 @@ export type AdminNodePayload = {
     node_group_id?: number | null;
     region_id?: number | null;
     line_id?: number | null;
-    status?: number | null;
-    weight?: number | null;
-    bandwidth?: number | null;
+    enable?: number;
+    sort?: number;
+    bw_limit?: string;
+    target?: 'ip' | 'node';
+    disable_by?: 'admin';
     des?: string | null;
 };
 export type AdminPendingNodeInitPayload = {
@@ -470,14 +472,15 @@ export async function listAdminAllAcls(
 
 // ─── Streams ───────────────────────────────────────────
 export type AdminStreamPayload = {
+    uid?: number;
     user_package: number;
-    listen: string;
+    listen: Array<{ protocol: string; port: number }>;
     balance_way?: string;
     proxy_protocol?: boolean | number;
     backend_port: number;
-    backend: string;
+    backend: Array<{ addr: string; weight: number; state: string }>;
     conn_limit?: number | string;
-    acl?: string;
+    acl?: Record<string, unknown>;
     enable?: boolean | number;
 };
 
@@ -742,30 +745,14 @@ export async function listAdminOpLogs(
 /**
  * Live site and stream rankings.
  *
- * These panels used to call /v1/monitor/site|stream/realtime, which failed two
- * ways at once. It is a *time series* endpoint — it answers [[ts, value], …]
- * for a single metric, not a list of sites — and it requires `type`, `start`
- * and `end`. ConsoleDataTable sends only page/limit/search, so CDNfly rejected
- * every call and the page showed 请求失败 (502).
- *
- * .../top is the endpoint that returns rows, which is what a table wants. The
- * `type` and `recent_time` values used here are the ones the user console
- * already calls these same endpoints with successfully.
- *
- * Known limit: v6 exposes both at user scope only, so the proxy sends the
- * signed-in operator's credentials and the figures are their own sites and
- * streams. CDNfly has no panel-wide equivalent — its admin monitor endpoints
- * cover nodes and user packages instead.
+ * Ranking endpoints return res/count/traffic, not time-series points.
+ * Use the admin routes so these include all customers' resources.
  */
 export async function getAdminSiteRealtime(
     params: Record<string, string | number> = {},
 ): Promise<CdnflyListData> {
     return apiRequest<CdnflyListData>(
-        buildUrl('/api/cdn/proxy/v1/monitor/site/top', {
-            type: 'top-domain',
-            recent_time: '30m',
-            ...params,
-        }),
+        buildUrl('/api/admin/monitor/site-top', params),
     );
 }
 
@@ -773,11 +760,7 @@ export async function getAdminStreamRealtime(
     params: Record<string, string | number> = {},
 ): Promise<CdnflyListData> {
     return apiRequest<CdnflyListData>(
-        buildUrl('/api/cdn/proxy/v1/monitor/stream/top', {
-            type: 'top-ports',
-            recent_time: '30m',
-            ...params,
-        }),
+        buildUrl('/api/admin/monitor/stream-top', params),
     );
 }
 
@@ -883,38 +866,19 @@ export function updateAdminAcl(id: number, data: Record<string, unknown>) {
         body: JSON.stringify(data),
     });
 }
-/**
- * Deleting needs the owner's CDNfly user id, because /v1/waf-rules is a
- * user-scope endpoint and the server acts as that user via an SSO token. Read it
- * off the row's `user_id`.
- */
-export function deleteAdminAcl(id: number, userId: number) {
+/** WAF libraries are managed directly with administrator credentials. */
+export function deleteAdminAcl(id: number, userId?: number) {
     return apiRequest(`/api/admin/acls/${id}`, {
         method: 'DELETE',
         body: JSON.stringify({ user_id: userId }),
     });
 }
 
-/**
- * CC protection: matchers, filters and rules.
- *
- * These go through /api/cdn/proxy rather than /api/admin/*, for two reasons the
- * old /api/admin/cc-* paths got wrong — they had no routes at all, so the page
- * failed with "请求的接口不存在".
- *
- * 1. CDNfly v6 documents cc-matchs / cc-filters / cc-rules under the *user*
- *    scope, not the admin scope. The proxy sends the caller's own CDNfly
- *    credentials, which is the scope these endpoints expect.
- * 2. Upstream the resource is "cc-matchs", not "cc-matchers". The old client
- *    invented the English plural and would have 404'd against CDNfly even with
- *    a route in place.
- *
- * The proxy allowlist already grants all methods on these three paths.
- */
+/** Installed v6 CC compatibility resources, managed at admin scope. */
 const CC = {
-    matcher: '/api/cdn/proxy/v1/cc-matchs',
-    filter: '/api/cdn/proxy/v1/cc-filters',
-    rule: '/api/cdn/proxy/v1/cc-rules',
+    matcher: '/api/admin/cc/matcher',
+    filter: '/api/admin/cc/filter',
+    rule: '/api/admin/cc/rule',
 } as const;
 
 export async function listAdminCcMatchers(

@@ -982,10 +982,10 @@ function loginSuccess(record: CdnflyRecord): string {
                                     结果
                                 </th>
                                 <th class="px-4 py-3 text-left font-medium">
-                                    账号
+                                    用户 ID
                                 </th>
                                 <th class="px-4 py-3 text-left font-medium">
-                                    User-Agent
+                                    IP 归属地
                                 </th>
                                 <th class="px-4 py-3 text-left font-medium">
                                     时间
@@ -1014,18 +1014,12 @@ function loginSuccess(record: CdnflyRecord): string {
                                     </Badge>
                                 </td>
                                 <td class="px-4 py-3">
-                                    {{
-                                        textValue(
-                                            record.account ?? record.username,
-                                        ) || '-'
-                                    }}
+                                    {{ textValue(record.uid) || '-' }}
                                 </td>
                                 <td class="px-4 py-3">
                                     <div class="truncate">
                                         {{
-                                            textValue(
-                                                record.ua ?? record.user_agent,
-                                            ) || '-'
+                                            textValue(record.ip_location) || '-'
                                         }}
                                     </div>
                                 </td>
@@ -1033,6 +1027,7 @@ function loginSuccess(record: CdnflyRecord): string {
                                     {{
                                         formatDate(
                                             record.create_at2 ??
+                                                record.create_at ??
                                                 record.created_at,
                                         )
                                     }}

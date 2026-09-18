@@ -55,6 +55,7 @@ import {
     listUserAccessLogs,
 } from '@/lib/cdnUserApi';
 import type { CdnflyRecord } from '@/lib/cdnUserApi';
+import { siteRankingRows, inclusiveUsageEnd } from '@/lib/cdnflyResponse';
 
 type AnalyticsView = 'realtime' | 'top' | 'logs' | 'usage';
 
@@ -212,7 +213,7 @@ const activeTopTabDef = computed(
 );
 const topLoading = ref(false);
 const topRows = ref<CdnflyRecord[]>([]);
-const topRecentTime = ref('10m'); // '10m' | '30m' | '1h' | 'custom'
+const topRecentTime = ref('10m'); // '10m' | '30m' | '60m' | 'custom'
 const topFilters = reactive({
     start: defaultStart(),
     end: defaultEnd(),
@@ -410,7 +411,7 @@ async function loadTop(): Promise<void> {
         }
         if (topFilters.domain.trim()) params.domain = topFilters.domain.trim();
         const result = await getUserSiteTop(params);
-        topRows.value = extractCdnflyRows(result);
+        topRows.value = siteRankingRows(result, activeTopTab.value);
     } catch (err) {
         errorMessage.value = getErrorMessage(err);
     } finally {
@@ -603,7 +604,9 @@ async function loadOtherData(targetPage = page.value): Promise<void> {
         if (props.view === 'usage') result = await getUserUsage(params);
         else result = await listUserAccessLogs(params);
         const nextRows = extractCdnflyRows(result);
-        rows.value = nextRows;
+        rows.value = props.view === 'usage'
+            ? nextRows.slice((targetPage - 1) * Number(otherFilters.per_page), targetPage * Number(otherFilters.per_page))
+            : nextRows;
         total.value = extractCdnflyTotal(result, nextRows.length);
         rawPayload.value = jsonText(result, '{}');
         page.value = targetPage;
@@ -621,7 +624,10 @@ function buildOtherParams(targetPage: number): Record<string, string | number> {
     if (props.view === 'usage') {
         params.type = otherFilters.type;
         params.start = otherFilters.start.slice(0, 10);
-        params.end = otherFilters.end.slice(0, 10);
+        params.end = inclusiveUsageEnd(otherFilters.end);
+        delete params.page;
+        delete params.limit;
+        if (otherFilters.host.trim()) params.res = otherFilters.host.trim();
     } else {
         params.start = otherFilters.start;
         params.end = otherFilters.end;
@@ -638,13 +644,15 @@ function prevPage(): void { if (hasPreviousPage.value) void loadOtherData(page.v
 function nextPage(): void { if (hasNextPage.value) void loadOtherData(page.value + 1); }
 
 function rowPrimary(row: CdnflyRecord): string {
-    return textValue(row.time) || textValue(row.key) || textValue(row.name) ||
+    return textValue(row.date) || textValue(row.time) || textValue(row.key) || textValue(row.name) ||
            textValue(row.host) || textValue(row.domain) || textValue(row.addr) || textValue(row.ip) || '-';
 }
 function rowSecondary(row: CdnflyRecord): string {
+    if (props.view === 'usage') return otherFilters.type === 'traffic' ? '流量' : '带宽';
     return textValue(row.req_uri) || textValue(row.referer) || textValue(row.type) || textValue(row.method) || '-';
 }
 function rowMetric(row: CdnflyRecord): string {
+    if (props.view === 'usage') return `${formatBytes(numVal(row.value))}${otherFilters.type === 'bandwidth' ? '/s' : ''}`;
     return textValue(row.value) || textValue(row.count) || textValue(row.traffic) ||
            textValue(row.bandwidth) || textValue(row.status) || '-';
 }
@@ -660,7 +668,6 @@ async function loadLogs(targetPage = 1): Promise<void> {
             start: logsFilters.start,
             end: logsFilters.end,
         };
-        if (logsFilters.host.trim()) params.host = logsFilters.host.trim();
         if (logsFilters.host.trim()) params.host = logsFilters.host.trim();
         if (logsFilters.addr.trim()) params.addr = logsFilters.addr.trim();
         if (logsFilters.req_uri.trim()) {
@@ -972,7 +979,7 @@ function formatInputDate(date: Date): string {
                 <!-- 时间快捷 -->
                 <div class="flex gap-1 rounded-md border p-0.5">
                     <button
-                        v-for="t in [{ v: '10m', label: '10分钟实时' }, { v: '30m', label: '近30分钟' }, { v: '1h', label: '近1小时' }, { v: 'custom', label: '自定义' }]"
+                        v-for="t in [{ v: '10m', label: '10分钟实时' }, { v: '30m', label: '近30分钟' }, { v: '60m', label: '近1小时' }, { v: 'custom', label: '自定义' }]"
                         :key="t.v"
                         type="button"
                         class="rounded px-3 py-1 text-xs font-medium transition-colors"
@@ -1557,8 +1564,8 @@ function formatInputDate(date: Date): string {
                             />
                         </div>
                         <div class="grid gap-2">
-                            <Label for="other-port">端口</Label>
-                            <Input id="other-port" v-model="otherFilters.server_port" inputmode="numeric" />
+                            <Label for="other-resource">资源（域名或转发端口）</Label>
+                            <Input id="other-resource" v-model="otherFilters.host" placeholder="留空查询全部" />
                         </div>
                         <div class="flex items-end">
                             <Button type="submit" :disabled="loading">
@@ -1572,32 +1579,26 @@ function formatInputDate(date: Date): string {
                 <CardContent>
                     <div class="overflow-x-auto border-y">
                         <table class="w-full min-w-[860px] table-fixed text-sm">
-                            <colgroup>
-                                <col style="width: 24%" /><col style="width: 28%" />
-                                <col style="width: 16%" /><col style="width: 14%" /><col style="width: 18%" />
-                            </colgroup>
+
                             <thead class="border-b text-muted-foreground">
                                 <tr>
                                     <th class="px-4 py-3 text-left font-medium">时间</th>
                                     <th class="px-4 py-3 text-left font-medium">类型</th>
                                     <th class="px-4 py-3 text-left font-medium">指标</th>
-                                    <th class="px-4 py-3 text-left font-medium">状态</th>
-                                    <th class="px-4 py-3 text-left font-medium">创建时间</th>
+
                                 </tr>
                             </thead>
                             <tbody>
                                 <tr v-if="loading" class="border-b">
-                                    <td class="px-4 py-12 text-center" colspan="5"><Spinner class="mx-auto" /></td>
+                                    <td class="px-4 py-12 text-center" colspan="3"><Spinner class="mx-auto" /></td>
                                 </tr>
                                 <tr v-for="(row, index) in rows" :key="`${rowPrimary(row)}-${index}`" class="border-b">
                                     <td class="px-4 py-3"><div class="truncate">{{ rowPrimary(row) }}</div></td>
                                     <td class="px-4 py-3"><div class="truncate">{{ rowSecondary(row) }}</div></td>
                                     <td class="px-4 py-3 tabular-nums">{{ rowMetric(row) }}</td>
-                                    <td class="px-4 py-3">{{ textValue(row.cache_status) || textValue(row.state) || '-' }}</td>
-                                    <td class="px-4 py-3 text-muted-foreground">{{ formatDate(row.create_at2 ?? row.time ?? row.timestamp) }}</td>
-                                </tr>
+                                    </tr>
                                 <tr v-if="!loading && rows.length === 0">
-                                    <td class="px-6 py-16 text-center text-muted-foreground" colspan="5">暂无数据</td>
+                                    <td class="px-6 py-16 text-center text-muted-foreground" colspan="3">暂无数据</td>
                                 </tr>
                             </tbody>
                         </table>

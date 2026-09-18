@@ -347,12 +347,12 @@ class AdminConsoleManagementTest extends TestCase
             ->putJson('/api/admin/nodes/101', [
                 'name' => 'Edge Node B',
                 'ip' => '10.0.0.11',
-                'status' => 0,
+                'enable' => 0,
             ])
             ->assertOk()
             ->assertJsonPath('data.data.method', 'PUT')
             ->assertJsonPath('data.data.url', 'https://cdnfly.example.test/v1/nodes/101')
-            ->assertJsonPath('data.data.payload.status', 0);
+            ->assertJsonPath('data.data.payload.enable', 0);
 
         $this->actingAs($admin)
             ->putJson('/api/admin/nodes/101/enable', [
@@ -390,7 +390,7 @@ class AdminConsoleManagementTest extends TestCase
             && ! array_key_exists('ip', $request->data()));
         Http::assertSent(fn ($request) => $request->method() === 'PUT'
             && $request->url() === 'https://cdnfly.example.test/v1/nodes/101'
-            && ($request->data()['status'] ?? null) === 0);
+            && ($request->data()['enable'] ?? null) === 0);
         Http::assertSent(fn ($request) => $request->method() === 'PUT'
             && $request->url() === 'https://cdnfly.example.test/v1/nodes'
             && is_array($request->data())

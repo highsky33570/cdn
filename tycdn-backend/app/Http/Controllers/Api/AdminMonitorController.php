@@ -49,6 +49,33 @@ class AdminMonitorController extends Controller
         }
     }
 
+    public function siteTop(Request $request): JsonResponse
+    {
+        return $this->ranking($request, 'site', 'top-domain');
+    }
+
+    public function streamTop(Request $request): JsonResponse
+    {
+        return $this->ranking($request, 'stream', 'top-ports');
+    }
+
+    private function ranking(Request $request, string $resource, string $type): JsonResponse
+    {
+        $params = $request->only(['start', 'end', 'recent_time', 'domain', 'port', 'server_port', 'uid']);
+        $params['type'] = $type;
+        if (empty($params['start']) || empty($params['end'])) {
+            $params['recent_time'] ??= '30m';
+        }
+
+        try {
+            $data = $this->cdnfly->proxyAdminRequest('GET', "/v1/monitor/{$resource}/top", $params);
+
+            return response()->json(['ok' => true, 'data' => $data]);
+        } catch (\Throwable $e) {
+            return $this->cdnflyFailure($e, __FUNCTION__);
+        }
+    }
+
     public function streamRealtime(Request $request): JsonResponse
     {
         try {
