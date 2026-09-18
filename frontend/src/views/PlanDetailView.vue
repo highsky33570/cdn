@@ -13,9 +13,6 @@
         <section class="detail-panel">
           <span class="eyebrow">PLAN DETAILS</span>
           <h1>{{ product.name }}</h1>
-          <p v-if="product.description" class="detail-description">
-            {{ product.description }}
-          </p>
           <h2 v-if="specs.length">资源配置</h2>
           <dl class="detail-specs">
             <div v-for="spec in specs" :key="spec.label">
@@ -118,7 +115,6 @@ h2 {
   font-size: 17px;
   color: var(--text-strong);
 }
-.detail-description,
 li {
   color: var(--text-2);
   line-height: 1.9;

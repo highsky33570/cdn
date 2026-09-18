@@ -7,29 +7,20 @@
           <rect x="3" y="14" width="18" height="7" rx="2" />
           <path d="M7 6.5h.01M7 17.5h.01M11 6.5h6M11 17.5h6" /></svg
       ></span>
+      <h3>{{ product.name }}</h3>
       <span v-if="selected" class="plan-selected">已选套餐</span>
       <span v-else class="plan-cycle">{{ cycle.label }}</span>
     </div>
-    <h3>{{ product.name }}</h3>
-    <p v-if="product.description" class="plan-description">
-      {{ product.description }}
-    </p>
     <div class="plan-price">
       <strong>{{ priceText }}</strong
-      ><span v-if="amount !== null">/ {{ cycle.unit }}</span>
+      ><span v-if="amount !== null">{{ displayCurrency(product.currency) }} / {{ cycle.unit }}</span>
     </div>
-    <p class="plan-currency">{{ displayCurrency(product.currency) }} · {{ cycle.label }}</p>
     <dl v-if="specs.length" class="plan-specs">
       <div v-for="spec in specs" :key="spec.label">
         <dt>{{ spec.label }}</dt>
         <dd>{{ spec.value }}</dd>
       </div>
     </dl>
-    <ul v-if="features.length" class="plan-features">
-      <li v-for="(feature, index) in features" :key="index">
-        <span aria-hidden="true">✓</span>{{ feature }}
-      </li>
-    </ul>
     <div class="plan-actions">
       <a v-if="amount !== null" :href="checkoutUrl" class="button button--primary"
         >选择套餐 <span aria-hidden="true">↗</span></a
@@ -52,8 +43,7 @@ import {
   productPrice,
   formatAmount,
   displayCurrency,
-  productSpecs,
-  productFeatures
+  productSpecs
 } from '../utils/products'
 import { buildAuthPageUrl, buildConsoleCheckoutPath, dashboardLoginUrl } from '../config/runtime'
 const props = defineProps({
@@ -66,8 +56,8 @@ const cycle = computed(
 )
 const amount = computed(() => productPrice(props.product, cycle.value.key))
 const priceText = computed(() => formatAmount(amount.value))
-const specs = computed(() => productSpecs(props.product))
-const features = computed(() => productFeatures(props.product))
+// Keep cards easy to compare; the detail page includes all specs and features.
+const specs = computed(() => productSpecs(props.product).slice(0, 4))
 const checkoutUrl = computed(() =>
   buildAuthPageUrl(dashboardLoginUrl, buildConsoleCheckoutPath(props.product.id))
 )
@@ -78,9 +68,9 @@ const checkoutUrl = computed(() =>
   min-width: 0;
   display: flex;
   flex-direction: column;
-  padding: 28px;
+  padding: 22px;
   border: 1px solid var(--border);
-  border-radius: 20px;
+  border-radius: 16px;
   background: var(--panel);
   box-shadow: var(--shadow);
   transition:
@@ -96,117 +86,103 @@ const checkoutUrl = computed(() =>
   box-shadow: 0 0 0 1px var(--accent);
 }
 .plan-card__heading {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
 }
 .plan-icon {
   display: grid;
   place-items: center;
-  width: 42px;
-  height: 42px;
-  border-radius: 12px;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
   background: var(--accent-soft);
   color: var(--accent);
 }
 .plan-icon svg {
-  width: 24px;
-  height: 24px;
+  width: 20px;
+  height: 20px;
 }
 .plan-cycle,
 .plan-selected {
-  font-size: 12px;
+  font-size: 11px;
   color: var(--text-2);
   background: var(--surface);
   border-radius: 6px;
   padding: 4px 9px;
+  white-space: nowrap;
 }
 .plan-selected {
   color: var(--accent);
   background: var(--accent-soft);
 }
 h3 {
-  margin: 24px 0 0;
-  font-size: 21px;
+  margin: 0;
+  font-size: 17px;
+  line-height: 1.4;
   color: var(--text-strong);
-  overflow-wrap: anywhere;
-}
-.plan-description {
-  margin: 10px 0 0;
-  line-height: 1.8;
-  color: var(--text-2);
   overflow-wrap: anywhere;
 }
 .plan-price {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
-  gap: 6px;
-  margin-top: 26px;
+  gap: 8px;
+  margin: 20px 0;
 }
 .plan-price strong {
   color: var(--text-strong);
-  font-size: clamp(28px, 3vw, 40px);
+  font-size: 34px;
   letter-spacing: -0.045em;
   line-height: 1.2;
   overflow-wrap: anywhere;
 }
-.plan-price span,
-.plan-currency {
+.plan-price span {
   color: var(--text-3);
   font-size: 13px;
 }
-.plan-currency {
-  margin: 8px 0 24px;
-}
 .plan-specs {
   display: grid;
-  gap: 13px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px 12px;
   margin: 0;
-  padding: 22px 0;
-  border-top: 1px solid var(--border);
+  padding: 16px 0;
+  border-block: 1px solid var(--border);
 }
 .plan-specs div {
-  display: flex;
-  justify-content: space-between;
-  gap: 16px;
+  display: grid;
+  align-content: start;
+  gap: 3px;
+  min-width: 0;
 }
 dt {
-  color: var(--text-2);
+  color: var(--text-3);
+  font-size: 11px;
 }
 dd {
   margin: 0;
-  text-align: right;
+  color: var(--text-strong);
+  font-size: 14px;
   font-weight: 600;
   overflow-wrap: anywhere;
 }
-.plan-features {
-  list-style: none;
-  margin: 0 0 24px;
-  padding: 0;
-  display: grid;
-  gap: 10px;
-  color: var(--text-2);
-}
-.plan-features li {
-  display: flex;
-  gap: 10px;
-  overflow-wrap: anywhere;
-}
-.plan-features span {
-  color: var(--ok);
-}
 .plan-actions {
   display: grid;
-  gap: 14px;
-  padding-top: 12px;
+  gap: 10px;
+  padding-top: 18px;
   margin-top: auto;
   text-align: center;
 }
+.plan-actions .button {
+  min-height: 40px;
+  padding: 9px 14px;
+  font-size: 13px;
+  border-radius: 9px;
+}
 .plan-details {
   color: var(--text-2);
-  font-size: 13px;
+  font-size: 12px;
 }
 .plan-details:hover {
   color: var(--accent);

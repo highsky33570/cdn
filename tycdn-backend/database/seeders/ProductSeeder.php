@@ -10,7 +10,7 @@ use Illuminate\Database\Seeder;
  * Seeds the sellable catalogue.
  *
  * Nothing can be bought until `products` has rows: ProductCatalogController
- * returns an empty list, the portal shows "Coming Soon", and EpusdtCheckoutService
+ * returns an empty list, the portal shows an empty catalogue, and EpusdtCheckoutService
  * 404s on the product lookup. Provisioning additionally needs a
  * `product_cdnfly_mappings` row naming the upstream CDNfly package.
  *
@@ -31,7 +31,7 @@ use Illuminate\Database\Seeder;
 class ProductSeeder extends Seeder
 {
     /**
-     * Mirrors frontend/src/data/plans.js. Quarterly/yearly are plain multiples of
+     * Initial catalogue data. Quarterly/yearly are plain multiples of
      * the monthly price -- no discount is assumed. Review before going live; a
      * zero price would make checkout reject the order outright.
      *
@@ -43,7 +43,6 @@ class ProductSeeder extends Seeder
             'name' => 'JPN-Mini',
             'price_monthly' => 5.00,
             'sort_order' => 10,
-            'description' => '日本东京节点入门套餐，适合个人站点与小流量业务。',
             'features' => ['50 GiB 流量', '1 个网站', '100 Mbps 带宽', '50MiB 上传', 'WebSocket'],
         ],
         [
@@ -51,7 +50,6 @@ class ProductSeeder extends Seeder
             'name' => 'JPN-Standard',
             'price_monthly' => 10.00,
             'sort_order' => 20,
-            'description' => '日本东京节点标准套餐，适合中小企业站点与多域名业务。',
             'features' => ['100 GiB 流量', '5 个网站', '300 Mbps 带宽', '100MiB 上传', 'WebSocket'],
         ],
         [
@@ -59,7 +57,6 @@ class ProductSeeder extends Seeder
             'name' => 'JPN-Plus',
             'price_monthly' => 20.00,
             'sort_order' => 30,
-            'description' => '日本东京节点进阶套餐，适合流量增长期的业务。',
             'features' => ['200 GiB 流量', '10 个网站', '1 Gbps 带宽', '200MiB 上传', 'WebSocket'],
         ],
         [
@@ -67,7 +64,6 @@ class ProductSeeder extends Seeder
             'name' => 'JPN-Pro',
             'price_monthly' => 30.00,
             'sort_order' => 40,
-            'description' => '日本东京节点高阶套餐，适合高并发与多站点业务。',
             'features' => ['300 GiB 流量', '20 个网站', '1 Gbps 带宽', '300MiB 上传', 'WebSocket'],
         ],
     ];
@@ -82,7 +78,7 @@ class ProductSeeder extends Seeder
                 ['slug' => $plan['slug']],
                 [
                     'name' => $plan['name'],
-                    'description' => $plan['description'],
+                    'description' => null,
                     'price_monthly' => $plan['price_monthly'],
                     'price_quarterly' => round($plan['price_monthly'] * 3, 2),
                     'price_yearly' => round($plan['price_monthly'] * 12, 2),
