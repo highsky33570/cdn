@@ -60,6 +60,7 @@ import type {
 } from '@/lib/adminConsoleApi';
 import {
     createAdminUserPackage,
+    listAdminCdnflyUserPackages,
     listAdminOrders,
     listAdminServices,
 } from '@/lib/adminModulesApi';
@@ -96,6 +97,7 @@ const page = ref(1);
 const users = ref<Paginated<AdminUserRecord> | null>(null);
 const detailOrders = ref<Paginated<AdminOrderRecord> | null>(null);
 const detailServices = ref<Paginated<AdminServiceRecord> | null>(null);
+const detailCdnflyPackages = ref<CdnflyRecord[]>([]);
 const detailOrderPage = ref(1);
 const detailServicePage = ref(1);
 const detailOrdersLoading = ref(false);
@@ -145,7 +147,23 @@ const PACKAGE_DURATION_OPTIONS = [
 
 const rows = computed(() => users.value?.data ?? []);
 const detailOrderRows = computed(() => detailOrders.value?.data ?? []);
-const detailServiceRows = computed(() => detailServices.value?.data ?? []);
+const detailServiceRows = computed(() => {
+    const localRows = detailServices.value?.data ?? [];
+    const localCdnflyIds = new Set(
+        localRows
+            .map((service) => service.cdnfly_service_id)
+            .filter((id): id is string => Boolean(id)),
+    );
+    const liveRows = detailCdnflyPackages.value
+        .map(cdnflyPackageToService)
+        .filter(
+            (service) =>
+                !service.cdnfly_service_id ||
+                !localCdnflyIds.has(service.cdnfly_service_id),
+        );
+
+    return [...localRows, ...liveRows];
+});
 const hasPreviousPage = computed(() => (users.value?.current_page ?? 1) > 1);
 const hasNextPage = computed(
     () => (users.value?.current_page ?? 1) < (users.value?.last_page ?? 1),
@@ -461,6 +479,7 @@ function openDetailDialog(user: AdminUserRecord): void {
     detailUser.value = user;
     detailOrders.value = null;
     detailServices.value = null;
+    detailCdnflyPackages.value = [];
     detailOrderPage.value = 1;
     detailServicePage.value = 1;
     detailError.value = '';
@@ -503,11 +522,23 @@ async function loadUserServices(
     detailError.value = '';
 
     try {
-        detailServices.value = await listAdminServices({
-            user_id: detailUser.value.id,
-            page: targetPage,
-            per_page: 8,
-        });
+        const [localServices, cdnflyPackages] = await Promise.all([
+            listAdminServices({
+                user_id: detailUser.value.id,
+                page: targetPage,
+                per_page: 8,
+            }),
+            detailUser.value.cdnfly_user_id
+                ? listAdminCdnflyUserPackages({
+                      uid: detailUser.value.cdnfly_user_id,
+                      page: 1,
+                      limit: 500,
+                  })
+                : Promise.resolve({ data: [] }),
+        ]);
+
+        detailServices.value = localServices;
+        detailCdnflyPackages.value = extractCdnflyRows(cdnflyPackages);
         detailServicePage.value = detailServices.value.current_page;
     } catch (error) {
         detailError.value = getErrorMessage(error);
@@ -585,6 +616,54 @@ function serviceName(service: AdminServiceRecord): string {
             ? `产品 #${service.product_id}`
             : `服务 #${service.id}`)
     );
+}
+
+function cdnflyPackageToService(
+    item: CdnflyRecord,
+    index: number,
+): AdminServiceRecord {
+    const serviceId = valueText(item.id);
+    const enabled = Number(item.enable ?? 1) !== 0;
+
+    return {
+        id: Number(item.id) || -(index + 1),
+        user_id: detailUser.value?.id ?? null,
+        user_name: detailUser.value?.name ?? null,
+        user_email: detailUser.value?.email ?? null,
+        order_no: null,
+        source_order_id: null,
+        product_id: null,
+        product_name: valueText(item.package_name),
+        product_slug: null,
+        service_name:
+            valueText(item.name, item.user_package_name, item.package_name) ??
+            (serviceId ? `CDNfly 套餐 #${serviceId}` : 'CDNfly 套餐'),
+        cdnfly_user_id: valueText(
+            item.uid,
+            item.user_id,
+            detailUser.value?.cdnfly_user_id,
+        ),
+        cdnfly_service_id: serviceId,
+        status:
+            valueText(item.status, item.state) ??
+            (enabled ? 'active' : 'disabled'),
+        error_message: null,
+        opened_at: valueText(item.start_at2, item.start_at, item.create_at2),
+        expired_at: valueText(item.end_at2, item.end_at, item.expire_at),
+        created_at: valueText(item.create_at2, item.created_at),
+        updated_at: valueText(item.update_at2, item.updated_at),
+    };
+}
+
+function valueText(...values: unknown[]): string | null {
+    const value = values.find(
+        (candidate) =>
+            candidate !== null &&
+            candidate !== undefined &&
+            String(candidate).trim() !== '',
+    );
+
+    return value === undefined ? null : String(value);
 }
 
 function detailPaginationText<T>(payload: Paginated<T> | null): string {
@@ -942,7 +1021,7 @@ function detailPaginationText<T>(payload: Paginated<T> | null): string {
                     <DialogDescription>
                         {{
                             detailUser
-                                ? `${userDisplayName(detailUser)}（#${detailUser.id}）的本地订单和已开通服务`
+                                ? `${userDisplayName(detailUser)}（#${detailUser.id}）的本地订单和 CDNfly 实时套餐/服务`
                                 : ''
                         }}
                     </DialogDescription>
@@ -966,7 +1045,7 @@ function detailPaginationText<T>(payload: Paginated<T> | null): string {
                             已有套餐 / 服务
                         </div>
                         <div class="mt-1 text-2xl font-semibold">
-                            {{ detailUser.service_instances_count }}
+                            {{ detailServiceRows.length }}
                         </div>
                     </div>
                     <div class="rounded-md border p-4">
@@ -1120,7 +1199,8 @@ function detailPaginationText<T>(payload: Paginated<T> | null): string {
                             已有套餐 / 服务
                         </div>
                         <div class="text-sm text-muted-foreground">
-                            {{ detailPaginationText(detailServices) }}
+                            {{ detailServiceRows.length }} /
+                            {{ detailServiceRows.length }}
                         </div>
                     </div>
                     <div class="overflow-x-auto">
@@ -1170,7 +1250,7 @@ function detailPaginationText<T>(payload: Paginated<T> | null): string {
                                 </tr>
                                 <tr
                                     v-for="service in detailServiceRows"
-                                    :key="service.id"
+                                    :key="`${service.cdnfly_service_id ?? 'local'}:${service.id}`"
                                     class="border-b last:border-b-0"
                                 >
                                     <td class="px-4 py-3 font-medium">
