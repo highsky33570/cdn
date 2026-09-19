@@ -617,7 +617,7 @@ export type AdminUserPackagePayload = {
     uid: number;
     package: number;
     duration: string;
-    name?: string;
+    name: string;
     coupon_code?: string;
 };
 

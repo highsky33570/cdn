@@ -426,11 +426,20 @@ async function submitPackage(): Promise<void> {
     packageFormError.value = '';
 
     try {
+        const selectedPackage = packageOptions.value.find(
+            (item) => String(item.id) === packageForm.package,
+        );
+        const defaultName = String(
+            selectedPackage?.name ??
+                selectedPackage?.package_name ??
+                `套餐 #${packageForm.package}`,
+        ).trim();
+
         await createAdminUserPackage({
             uid: packageUser.value.cdnfly_user_id,
             package: Number(packageForm.package),
             duration: packageForm.duration,
-            name: packageForm.name.trim() || undefined,
+            name: packageForm.name.trim() || defaultName,
         });
         packageDialogOpen.value = false;
         toast.success(`已为 ${userDisplayName(packageUser.value)} 开通套餐`);
@@ -1507,13 +1516,11 @@ function detailPaginationText<T>(payload: Paginated<T> | null): string {
                     </div>
 
                     <div class="grid gap-2">
-                        <Label for="admin-user-package-name">
-                            套餐名称（可选）
-                        </Label>
+                        <Label for="admin-user-package-name">套餐名称</Label>
                         <Input
                             id="admin-user-package-name"
                             v-model="packageForm.name"
-                            placeholder="留空使用套餐默认名称"
+                            placeholder="留空自动使用所选套餐名称"
                         />
                     </div>
                 </div>

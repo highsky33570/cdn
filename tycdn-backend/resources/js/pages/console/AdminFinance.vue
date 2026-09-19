@@ -396,7 +396,7 @@ async function submitUp(): Promise<void> {
                 uid: Number(upForm.uid),
                 package: Number(upForm.package),
                 duration: upForm.duration,
-                name: upForm.name.trim() || undefined,
+                name: upForm.name.trim() || `套餐 #${upForm.package}`,
             });
             toast.success('用户套餐已创建');
         }

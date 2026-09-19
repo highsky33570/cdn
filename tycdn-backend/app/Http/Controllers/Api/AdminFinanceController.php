@@ -196,16 +196,16 @@ class AdminFinanceController extends Controller
 
     public function storeUserPackage(Request $request): JsonResponse
     {
-        $request->validate([
+        $validated = $request->validate([
             'uid' => ['required', 'integer', 'min:1'],
             'package' => ['required', 'integer', 'min:1'],
             'duration' => ['required', 'string', Rule::in(self::VALID_DURATIONS)],
-            'name' => ['nullable', 'string', 'max:255'],
+            'name' => ['required', 'string', 'max:255'],
             'coupon_code' => ['nullable', 'string', 'max:64'],
         ]);
 
         try {
-            $data = $this->cdnfly->adminCreateUserPackage($request->only(['uid', 'package', 'duration', 'name', 'coupon_code']));
+            $data = $this->cdnfly->adminCreateUserPackage($validated);
 
             return response()->json(['ok' => true, 'data' => $data], 201);
         } catch (\Throwable $e) {
