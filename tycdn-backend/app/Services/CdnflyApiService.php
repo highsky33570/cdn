@@ -416,7 +416,11 @@ class CdnflyApiService
     public function rechargeUser(int $cdnflyUserId, float $amount): array
     {
         $response = $this->adminHttp()->post("/v1/user/{$cdnflyUserId}/recharge", [
-            'amount' => $amount,
+            // CDNfly v6 requires an explicit operation type and rejects JSON
+            // numbers for amount; it expects a decimal string with at most two
+            // fractional digits.
+            'type' => 'add',
+            'amount' => number_format($amount, 2, '.', ''),
         ]);
 
         return $this->parseResponse($response, 'recharge user');
