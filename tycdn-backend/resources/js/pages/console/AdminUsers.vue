@@ -3,6 +3,7 @@ import {
     AlertCircle,
     KeyRound,
     PackageCheck,
+    PackagePlus,
     Pencil,
     Plus,
     RefreshCw,
@@ -57,11 +58,18 @@ import type {
     AdminUserRecord,
     Paginated,
 } from '@/lib/adminConsoleApi';
-import { listAdminOrders, listAdminServices } from '@/lib/adminModulesApi';
+import {
+    createAdminUserPackage,
+    listAdminOrders,
+    listAdminServices,
+} from '@/lib/adminModulesApi';
 import type {
     AdminOrderRecord,
     AdminServiceRecord,
+    CdnflyRecord,
 } from '@/lib/adminModulesApi';
+import { listAdminPackages } from '@/lib/adminPackagesApi';
+import { extractCdnflyRows } from '@/lib/cdnflyResponse';
 
 const ROLE_ALL = 'all';
 
@@ -75,11 +83,13 @@ const createDialogOpen = ref(false);
 const creating = ref(false);
 const editDialogOpen = ref(false);
 const rechargeDialogOpen = ref(false);
+const packageDialogOpen = ref(false);
 const detailDialogOpen = ref(false);
 const deleteConfirmOpen = ref(false);
 const deleting = ref(false);
 const editingUser = ref<AdminUserRecord | null>(null);
 const rechargeUser = ref<AdminUserRecord | null>(null);
+const packageUser = ref<AdminUserRecord | null>(null);
 const detailUser = ref<AdminUserRecord | null>(null);
 const deleteTargetUser = ref<AdminUserRecord | null>(null);
 const page = ref(1);
@@ -91,6 +101,10 @@ const detailServicePage = ref(1);
 const detailOrdersLoading = ref(false);
 const detailServicesLoading = ref(false);
 const detailError = ref('');
+const packageSaving = ref(false);
+const packageOptionsLoading = ref(false);
+const packageFormError = ref('');
+const packageOptions = ref<CdnflyRecord[]>([]);
 
 const filters = reactive({
     search: '',
@@ -116,6 +130,18 @@ const form = reactive({
 const rechargeForm = reactive({
     amount: '',
 });
+
+const packageForm = reactive({
+    package: '',
+    duration: 'month',
+    name: '',
+});
+
+const PACKAGE_DURATION_OPTIONS = [
+    { value: 'month', label: '月付' },
+    { value: 'quarter', label: '季付' },
+    { value: 'year', label: '年付' },
+];
 
 const rows = computed(() => users.value?.data ?? []);
 const detailOrderRows = computed(() => detailOrders.value?.data ?? []);
@@ -357,6 +383,69 @@ async function submitRecharge(): Promise<void> {
     } finally {
         recharging.value = false;
     }
+}
+
+async function openPackageDialog(user: AdminUserRecord): Promise<void> {
+    if (!user.cdnfly_user_id) {
+        return;
+    }
+
+    packageUser.value = user;
+    packageForm.package = '';
+    packageForm.duration = 'month';
+    packageForm.name = '';
+    packageFormError.value = '';
+    packageOptions.value = [];
+    packageDialogOpen.value = true;
+    packageOptionsLoading.value = true;
+
+    try {
+        const payload = await listAdminPackages({ page: 1, limit: 500 });
+        packageOptions.value = extractCdnflyRows(payload).filter(
+            (item) => Number.isInteger(Number(item.id)) && Number(item.id) > 0,
+        );
+
+        if (packageOptions.value.length === 0) {
+            packageFormError.value = '暂无可分配的 CDNfly 套餐';
+        }
+    } catch (error) {
+        packageFormError.value = getErrorMessage(error);
+    } finally {
+        packageOptionsLoading.value = false;
+    }
+}
+
+async function submitPackage(): Promise<void> {
+    if (!packageUser.value?.cdnfly_user_id || !packageForm.package) {
+        packageFormError.value = '请选择要开通的套餐';
+
+        return;
+    }
+
+    packageSaving.value = true;
+    packageFormError.value = '';
+
+    try {
+        await createAdminUserPackage({
+            uid: packageUser.value.cdnfly_user_id,
+            package: Number(packageForm.package),
+            duration: packageForm.duration,
+            name: packageForm.name.trim() || undefined,
+        });
+        packageDialogOpen.value = false;
+        toast.success(`已为 ${userDisplayName(packageUser.value)} 开通套餐`);
+    } catch (error) {
+        packageFormError.value = getErrorMessage(error);
+    } finally {
+        packageSaving.value = false;
+    }
+}
+
+function packageOptionLabel(item: CdnflyRecord): string {
+    const id = String(item.id ?? '');
+    const name = String(item.name ?? item.package_name ?? `套餐 #${id}`);
+
+    return `${name}（ID: ${id}）`;
 }
 
 function openDetailDialog(user: AdminUserRecord): void {
@@ -771,6 +860,17 @@ function detailPaginationText<T>(payload: Paginated<T> | null): string {
                                                 data-icon="inline-start"
                                             />
                                             同步
+                                        </Button>
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            :disabled="!user.cdnfly_user_id"
+                                            @click="openPackageDialog(user)"
+                                        >
+                                            <PackagePlus
+                                                data-icon="inline-start"
+                                            />
+                                            开套餐
                                         </Button>
                                         <Button
                                             variant="outline"
@@ -1333,6 +1433,112 @@ function detailPaginationText<T>(payload: Paginated<T> | null): string {
                         <Spinner v-if="deleting" data-icon="inline-start" />
                         <Trash2 v-else data-icon="inline-start" />
                         确认删除
+                    </Button>
+                </DialogFooter>
+            </DialogScrollContent>
+        </Dialog>
+
+        <Dialog v-model:open="packageDialogOpen">
+            <DialogScrollContent class="max-w-md">
+                <DialogHeader>
+                    <DialogTitle>直接开通套餐</DialogTitle>
+                    <DialogDescription>
+                        <template v-if="packageUser">
+                            为 {{ userDisplayName(packageUser) }}（CDNfly ID:
+                            {{
+                                packageUser.cdnfly_user_id
+                            }}）直接分配套餐，无需用户支付。
+                        </template>
+                    </DialogDescription>
+                </DialogHeader>
+
+                <Alert v-if="packageFormError" variant="destructive">
+                    <AlertCircle data-icon="alert" />
+                    <AlertTitle>开通失败</AlertTitle>
+                    <AlertDescription>{{ packageFormError }}</AlertDescription>
+                </Alert>
+
+                <div class="grid gap-4">
+                    <div class="grid gap-2">
+                        <Label>套餐</Label>
+                        <Select
+                            v-model="packageForm.package"
+                            :disabled="packageOptionsLoading"
+                        >
+                            <SelectTrigger>
+                                <SelectValue
+                                    :placeholder="
+                                        packageOptionsLoading
+                                            ? '正在加载套餐…'
+                                            : '请选择套餐'
+                                    "
+                                />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectGroup>
+                                    <SelectItem
+                                        v-for="item in packageOptions"
+                                        :key="String(item.id)"
+                                        :value="String(item.id)"
+                                    >
+                                        {{ packageOptionLabel(item) }}
+                                    </SelectItem>
+                                </SelectGroup>
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    <div class="grid gap-2">
+                        <Label>开通时长</Label>
+                        <Select v-model="packageForm.duration">
+                            <SelectTrigger><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                                <SelectGroup>
+                                    <SelectItem
+                                        v-for="duration in PACKAGE_DURATION_OPTIONS"
+                                        :key="duration.value"
+                                        :value="duration.value"
+                                    >
+                                        {{ duration.label }}
+                                    </SelectItem>
+                                </SelectGroup>
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    <div class="grid gap-2">
+                        <Label for="admin-user-package-name">
+                            套餐名称（可选）
+                        </Label>
+                        <Input
+                            id="admin-user-package-name"
+                            v-model="packageForm.name"
+                            placeholder="留空使用套餐默认名称"
+                        />
+                    </div>
+                </div>
+
+                <DialogFooter>
+                    <Button
+                        variant="outline"
+                        @click="packageDialogOpen = false"
+                    >
+                        取消
+                    </Button>
+                    <Button
+                        :disabled="
+                            packageSaving ||
+                            packageOptionsLoading ||
+                            !packageForm.package
+                        "
+                        @click="submitPackage"
+                    >
+                        <Spinner
+                            v-if="packageSaving"
+                            data-icon="inline-start"
+                        />
+                        <PackagePlus v-else data-icon="inline-start" />
+                        确认开通
                     </Button>
                 </DialogFooter>
             </DialogScrollContent>
