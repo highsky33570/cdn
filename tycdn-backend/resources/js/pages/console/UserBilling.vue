@@ -64,11 +64,7 @@ import type {
 } from '@/lib/localBillingApi';
 
 type BillingView =
-    | 'packages'
-    | 'subscriptions'
-    | 'orders'
-    | 'traffic-packs'
-    | 'usage';
+    'packages' | 'subscriptions' | 'orders' | 'traffic-packs' | 'usage';
 
 const props = defineProps<{
     view: BillingView;
@@ -240,23 +236,115 @@ async function loadServices(targetPage = page.value): Promise<void> {
     errorMessage.value = '';
 
     try {
-        const params = basePageParams(targetPage);
+        const params: Record<string, string | number> = {
+            page: targetPage,
+            per_page: Number(filters.per_page),
+        };
         const search = filters.search.trim();
 
         if (search !== '') {
             params.search = search;
         }
 
-        const result = await listBillingServiceInstances(params);
+        const [localResult, cdnflyResult] = await Promise.allSettled([
+            listBillingServiceInstances(params),
+            listUserPackages(basePageParams(targetPage)),
+        ]);
 
-        services.value = result.items;
-        total.value = result.total;
-        page.value = result.page;
+        if (
+            localResult.status === 'rejected' &&
+            cdnflyResult.status === 'rejected'
+        ) {
+            throw cdnflyResult.reason;
+        }
+
+        const localServices =
+            localResult.status === 'fulfilled' ? localResult.value.items : [];
+        const cdnflyRows =
+            cdnflyResult.status === 'fulfilled'
+                ? extractCdnflyRows(cdnflyResult.value)
+                : [];
+        const normalizedSearch = search.toLowerCase();
+        const cdnflyServices = cdnflyRows
+            .map(cdnflyPackageToService)
+            .filter(
+                (service) =>
+                    normalizedSearch === '' ||
+                    `${service.service_name ?? ''} ${service.product_name ?? ''} ${service.cdnfly_service_id ?? ''}`
+                        .toLowerCase()
+                        .includes(normalizedSearch),
+            );
+        const cdnflyIds = new Set(
+            cdnflyServices.map((service) => String(service.cdnfly_service_id)),
+        );
+        const localOnly = localServices.filter(
+            (service) =>
+                !service.cdnfly_service_id ||
+                !cdnflyIds.has(String(service.cdnfly_service_id)),
+        );
+
+        services.value = [...cdnflyServices, ...localOnly];
+        total.value =
+            normalizedSearch === ''
+                ? (cdnflyResult.status === 'fulfilled'
+                      ? extractCdnflyTotal(
+                            cdnflyResult.value,
+                            cdnflyServices.length,
+                        )
+                      : 0) + localOnly.length
+                : services.value.length;
+        page.value = targetPage;
+
+        if (cdnflyResult.status === 'rejected') {
+            errorMessage.value = getErrorMessage(cdnflyResult.reason);
+        } else if (localResult.status === 'rejected') {
+            errorMessage.value = getErrorMessage(localResult.reason);
+        }
     } catch (error) {
         errorMessage.value = getErrorMessage(error);
     } finally {
         loading.value = false;
     }
+}
+
+function cdnflyPackageToService(
+    record: CdnflyRecord,
+): LocalBillingServiceInstance {
+    const packageId = textValue(record.id);
+    const packageName =
+        textValue(record.package_name ?? record.package_title) || null;
+    const serviceName =
+        textValue(record.name ?? record.user_package_name) ||
+        packageName ||
+        (packageId ? `CDNfly package-${packageId}` : 'CDNfly package');
+    const enabled = !(
+        record.enable === 0 ||
+        record.enable === '0' ||
+        record.enable === false
+    );
+
+    return {
+        id: Number(record.id) || 0,
+        status:
+            textValue(record.status ?? record.state) ||
+            (enabled ? 'active' : 'disabled'),
+        service_name: serviceName,
+        product_name: packageName ?? serviceName,
+        product_slug: null,
+        order_no: null,
+        cdnfly_user_id: textValue(record.uid ?? record.user_id) || null,
+        cdnfly_service_id: packageId || null,
+        opened_at:
+            textValue(
+                record.start_at2 ??
+                    record.start_at ??
+                    record.create_at2 ??
+                    record.created_at,
+            ) || null,
+        expired_at:
+            textValue(record.end_at2 ?? record.end_at ?? record.expire_at) ||
+            null,
+    };
 }
 
 async function loadOrders(targetPage = page.value): Promise<void> {
