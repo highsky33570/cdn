@@ -69,10 +69,10 @@ const metricGroups = [
         key: 'basic',
         label: '基础数据',
         metrics: [
-            { key: 'bandwidth', label: '带宽',    unit: 'bytes/s', color: '#6366f1' },
-            { key: 'traffic',   label: '流量',    unit: 'bytes',   color: '#06b6d4' },
-            { key: 'req',       label: '访问次数', unit: 'count',   color: '#10b981' },
-            { key: 'qps',       label: 'QPS',     unit: 'count',   color: '#f59e0b' },
+            { key: 'bandwidth', label: '带宽',    unit: 'bytes/s', color: '#4f72d8' },
+            { key: 'traffic',   label: '流量',    unit: 'bytes',   color: '#4f72d8' },
+            { key: 'req',       label: '访问次数', unit: 'count',   color: '#4f72d8' },
+            { key: 'qps',       label: 'QPS',     unit: 'count',   color: '#4f72d8' },
         ],
     },
     {
@@ -197,6 +197,7 @@ const metricError = ref<Record<string, string>>({});
 const canvasRefs = ref<Record<string, HTMLCanvasElement | null>>({});
 const chartInstances: Record<string, unknown> = {};
 const autoRefresh = ref('off');
+const rtRangePreset = ref('60');
 let countdownTimer: ReturnType<typeof setInterval> | null = null;
 const countdown = ref(0);
 const rtFilters = reactive({
@@ -364,10 +365,15 @@ function stopAutoRefresh(): void {
     countdown.value = 0;
 }
 function setRtTimeRange(minutes: number): void {
+    rtRangePreset.value = String(minutes);
     const now = new Date();
     rtFilters.end = formatInputDate(now);
     rtFilters.start = formatInputDate(new Date(now.getTime() - minutes * 60 * 1000));
     void loadGroup();
+}
+
+function useCustomRtRange(): void {
+    rtRangePreset.value = 'custom';
 }
 async function loadGroup(): Promise<void> {
     await Promise.all((activeGroupDef.value.metrics as readonly MetricDef[]).map((m) => loadMetric(m)));
@@ -754,16 +760,6 @@ function switchLogsTab(tab: 'query' | 'jobs'): void {
 }
 
 // ── 工具函数 ──────────────────────────────────────────
-function metricSummary(key: string, unit: string) {
-    const pts = metricPoints.value[key] ?? [];
-    if (!pts.length) return { current: '-', max: '-', avg: '-' };
-    const values = pts.map(([, v]) => v);
-    return {
-        current: formatValue(values[values.length - 1], unit),
-        max: formatValue(Math.max(...values), unit),
-        avg: formatValue(values.reduce((s, v) => s + v, 0) / values.length, unit),
-    };
-}
 function formatValue(value: number, unit: string): string {
     if (unit === 'bytes/s' || unit === 'bytes') {
         if (value >= 1073741824) return `${(value / 1073741824).toFixed(2)} GB${unit === 'bytes/s' ? '/s' : ''}`;
@@ -829,8 +825,9 @@ function formatInputDate(date: Date): string {
 </script>
 
 <template>
-    <div class="flex flex-1 flex-col gap-6 p-4 md:p-6">
+    <div class="flex flex-1 flex-col gap-4 p-4 md:p-6">
         <ConsolePageHeader
+            v-if="props.view !== 'realtime'"
             eyebrow="用户端 / 访问数据"
             :title="title"
             :description="description"
@@ -848,16 +845,17 @@ function formatInputDate(date: Date): string {
              实时监控
         ════════════════════════════════════════════════ -->
         <template v-if="props.view === 'realtime'">
+            <Card class="gap-0 overflow-hidden">
             <!-- 分组 Tab -->
-            <div class="flex gap-1 rounded-lg border bg-muted/40 p-1 w-fit">
+            <div class="flex gap-6 overflow-x-auto border-b px-5 pt-3">
                 <button
                     v-for="g in metricGroups"
                     :key="g.key"
                     type="button"
-                    class="rounded-md px-4 py-1.5 text-sm font-medium transition-colors"
+                    class="-mb-px border-b-2 px-1 py-3 text-sm font-medium transition-colors"
                     :class="activeGroup === g.key
-                        ? 'bg-background text-foreground shadow-sm'
-                        : 'text-muted-foreground hover:text-foreground'"
+                        ? 'border-primary text-primary'
+                        : 'border-transparent text-muted-foreground hover:text-foreground'"
                     @click="activeGroup = (g.key as 'basic' | 'quality' | 'origin')"
                 >
                     {{ g.label }}
@@ -865,89 +863,105 @@ function formatInputDate(date: Date): string {
             </div>
 
             <!-- 控制栏 -->
-            <Card>
-                <CardContent class="pt-4">
-                    <div class="flex flex-wrap items-end gap-3">
-                        <div class="grid gap-1.5">
-                            <Label class="text-xs text-muted-foreground">时间范围</Label>
-                            <div class="flex gap-1">
-                                <Button variant="outline" size="sm" @click="setRtTimeRange(30)">30m</Button>
-                                <Button variant="outline" size="sm" @click="setRtTimeRange(60)">1h</Button>
-                                <Button variant="outline" size="sm" @click="setRtTimeRange(360)">6h</Button>
-                                <Button variant="outline" size="sm" @click="setRtTimeRange(1440)">24h</Button>
-                            </div>
-                        </div>
-                        <div class="grid gap-1.5">
-                            <Label class="text-xs text-muted-foreground">时间范围</Label>
-                            <DateRangePicker
-                                :start="rtFilters.start"
-                                :end="rtFilters.end"
-                                @update:start="rtFilters.start = $event"
-                                @update:end="rtFilters.end = $event"
-                            />
-                        </div>
-                        <div class="grid gap-1.5">
-                            <Label for="rt-domain" class="text-xs text-muted-foreground">域名</Label>
-                            <Input id="rt-domain" v-model="rtFilters.host" class="h-8 w-36 text-xs" placeholder="留空=全部" />
-                        </div>
-                        <div class="grid gap-1.5">
-                            <Label for="rt-port" class="text-xs text-muted-foreground">端口</Label>
-                            <Input id="rt-port" v-model="rtFilters.server_port" class="h-8 w-20 text-xs" inputmode="numeric" />
-                        </div>
-                        <div class="grid gap-1.5">
-                            <Label class="text-xs text-muted-foreground">
-                                自动刷新
-                                <span v-if="countdown > 0" class="ml-1 tabular-nums text-primary">{{ countdown }}s</span>
-                            </Label>
-                            <Select v-model="autoRefresh">
-                                <SelectTrigger class="h-8 w-24 text-xs"><SelectValue /></SelectTrigger>
-                                <SelectContent>
-                                    <SelectGroup>
-                                        <SelectItem value="off">关闭</SelectItem>
-                                        <SelectItem value="30s">30 秒</SelectItem>
-                                        <SelectItem value="60s">60 秒</SelectItem>
-                                    </SelectGroup>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        <Button class="h-8" :disabled="groupLoading" @click="loadGroup">
-                            <Spinner v-if="groupLoading" data-icon="inline-start" />
-                            <Search v-else data-icon="inline-start" />
-                            查询
-                        </Button>
+            <div class="border-b px-4 py-4">
+                <div class="flex flex-wrap items-center gap-2">
+                    <Input
+                        id="rt-domain-filter"
+                        v-model="rtFilters.host"
+                        class="h-9 w-full text-sm sm:w-64"
+                        placeholder="输入域名，多个空格分隔"
+                        @keydown.enter="loadGroup"
+                    />
+                    <Input
+                        id="rt-port-filter"
+                        v-model="rtFilters.server_port"
+                        class="h-9 w-full text-sm sm:w-40"
+                        placeholder="输入监听端口"
+                        inputmode="numeric"
+                        @keydown.enter="loadGroup"
+                    />
+                    <div class="flex h-9 max-w-full overflow-x-auto rounded-md border">
+                        <button
+                            v-for="range in [
+                                { minutes: 60, label: '近1小时' },
+                                { minutes: 360, label: '近6小时' },
+                                { minutes: 720, label: '近12小时' },
+                            ]"
+                            :key="range.minutes"
+                            type="button"
+                            class="border-r px-4 text-sm transition-colors"
+                            :class="
+                                rtRangePreset === String(range.minutes)
+                                    ? 'bg-primary text-primary-foreground'
+                                    : 'bg-background text-foreground hover:bg-muted'
+                            "
+                            @click="setRtTimeRange(range.minutes)"
+                        >
+                            {{ range.label }}
+                        </button>
+                        <button
+                            type="button"
+                            class="px-4 text-sm transition-colors"
+                            :class="
+                                rtRangePreset === 'custom'
+                                    ? 'bg-primary text-primary-foreground'
+                                    : 'bg-background text-foreground hover:bg-muted'
+                            "
+                            @click="useCustomRtRange"
+                        >
+                            自定义
+                        </button>
                     </div>
-                </CardContent>
-            </Card>
+                    <DateRangePicker
+                        v-if="rtRangePreset === 'custom'"
+                        :start="rtFilters.start"
+                        :end="rtFilters.end"
+                        @update:start="rtFilters.start = $event"
+                        @update:end="rtFilters.end = $event"
+                    />
+                    <Button class="h-9" :disabled="groupLoading" @click="loadGroup">
+                        <Spinner v-if="groupLoading" data-icon="inline-start" />
+                        <Search v-else data-icon="inline-start" />
+                        查询
+                    </Button>
+                    <div class="ml-auto flex items-center gap-2">
+                        <span class="text-xs text-muted-foreground">
+                            自动刷新
+                            <span
+                                v-if="countdown > 0"
+                                class="ml-1 tabular-nums text-primary"
+                            >{{ countdown }}s</span>
+                        </span>
+                        <Select v-model="autoRefresh">
+                            <SelectTrigger class="h-9 w-24 text-xs">
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectGroup>
+                                    <SelectItem value="off">关闭</SelectItem>
+                                    <SelectItem value="30s">30 秒</SelectItem>
+                                    <SelectItem value="60s">60 秒</SelectItem>
+                                </SelectGroup>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                </div>
+            </div>
 
             <!-- 指标图表网格 -->
-            <div class="grid gap-4 md:grid-cols-2">
-                <Card v-for="m in activeGroupDef.metrics" :key="m.key">
-                    <CardHeader class="flex flex-row items-center justify-between pb-2">
-                        <CardTitle class="text-sm font-medium flex items-center gap-2">
-                            <span class="inline-block h-2.5 w-2.5 rounded-full flex-shrink-0" :style="`background:${m.color}`" />
+            <div class="grid gap-0 lg:grid-cols-2">
+                <Card
+                    v-for="m in activeGroupDef.metrics"
+                    :key="m.key"
+                    class="gap-0 rounded-none border-0 shadow-none"
+                >
+                    <CardHeader class="flex flex-row items-center justify-between px-5 pt-5 pb-2">
+                        <CardTitle class="text-sm font-medium">
                             {{ m.label }}
-                            <span class="text-xs font-normal text-muted-foreground">{{ (metricPoints[m.key] ?? []).length }} 个数据点</span>
                         </CardTitle>
-                        <Button variant="ghost" size="sm" class="h-7 w-7 p-0" :disabled="metricLoading[m.key]" @click="loadMetric(m)">
-                            <RefreshCw class="h-3.5 w-3.5" :class="{ 'animate-spin': metricLoading[m.key] }" />
-                        </Button>
                     </CardHeader>
-                    <CardContent class="pb-3">
-                        <div class="mb-3 grid grid-cols-3 gap-2 text-center">
-                            <div class="rounded-md bg-muted/40 px-2 py-1.5">
-                                <p class="text-[10px] text-muted-foreground">当前</p>
-                                <p class="text-sm font-semibold tabular-nums">{{ metricSummary(m.key, m.unit).current }}</p>
-                            </div>
-                            <div class="rounded-md bg-muted/40 px-2 py-1.5">
-                                <p class="text-[10px] text-muted-foreground">峰值</p>
-                                <p class="text-sm font-semibold tabular-nums">{{ metricSummary(m.key, m.unit).max }}</p>
-                            </div>
-                            <div class="rounded-md bg-muted/40 px-2 py-1.5">
-                                <p class="text-[10px] text-muted-foreground">均值</p>
-                                <p class="text-sm font-semibold tabular-nums">{{ metricSummary(m.key, m.unit).avg }}</p>
-                            </div>
-                        </div>
-                        <div class="relative h-40">
+                    <CardContent class="px-5 pb-6">
+                        <div class="relative h-64 xl:h-72">
                             <div v-if="metricLoading[m.key]" class="absolute inset-0 flex items-center justify-center"><Spinner class="h-6 w-6" /></div>
                             <div v-else-if="metricError[m.key]" class="absolute inset-0 flex items-center justify-center text-xs text-destructive">{{ metricError[m.key] }}</div>
                             <div v-else-if="!(metricPoints[m.key] ?? []).length" class="absolute inset-0 flex items-center justify-center text-xs text-muted-foreground">暂无数据</div>
@@ -956,6 +970,7 @@ function formatInputDate(date: Date): string {
                     </CardContent>
                 </Card>
             </div>
+            </Card>
         </template>
 
         <!-- ═══════════════════════════════════════════════
