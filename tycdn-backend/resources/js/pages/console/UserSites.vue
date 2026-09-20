@@ -1034,6 +1034,12 @@ async function syncResolve() {
 
 // ── 通用删除 ──
 function openDelete(record: CdnflyRecord, label: string) {
+    if (activeTab.value === 'sites' && isSiteEnabled(record)) {
+        toast.error('请先关闭站点状态，等待配置同步完成后再删除');
+
+        return;
+    }
+
     deleteTarget.value = record;
     deleteLabel.value = label;
     deleteError.value = '';
