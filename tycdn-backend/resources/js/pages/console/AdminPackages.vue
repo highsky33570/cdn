@@ -5,6 +5,7 @@ import {
     Eye,
     Layers3,
     Pencil,
+    PackagePlus,
     Plus,
     RefreshCw,
     Save,
@@ -54,7 +55,10 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
+import { listAdminUsers } from '@/lib/adminConsoleApi';
+import type { AdminUserRecord } from '@/lib/adminConsoleApi';
 import {
+    createAdminUserPackage,
     listAdminPackageGroups,
     createAdminPackageGroup,
     updateAdminPackageGroup,
@@ -333,6 +337,22 @@ const formError = ref('');
 const batchError = ref('');
 const optionsError = ref('');
 const packageDialogOpen = ref(false);
+const grantDialogOpen = ref(false);
+const grantSaving = ref(false);
+const grantUsersLoading = ref(false);
+const grantError = ref('');
+const grantPackage = ref<PackageRecord | null>(null);
+const grantUsers = ref<AdminUserRecord[]>([]);
+const grantForm = reactive({
+    userId: '',
+    duration: 'month',
+    name: '',
+});
+const PACKAGE_DURATION_OPTIONS = [
+    { value: 'month', label: '月付' },
+    { value: 'quarter', label: '季付' },
+    { value: 'year', label: '年付' },
+];
 type PackageTab = 'packages' | 'groups' | 'upgrades';
 
 const activeTab = ref<PackageTab>('packages');
@@ -1503,6 +1523,87 @@ function getPackageId(record: PackageRecord): number | null {
     return null;
 }
 
+async function openGrantDialog(record: PackageRecord): Promise<void> {
+    const packageId = getPackageId(record);
+
+    if (packageId === null) {
+        toast.error('套餐 ID 无效，无法开通');
+
+        return;
+    }
+
+    grantPackage.value = record;
+    grantForm.userId = '';
+    grantForm.duration = 'month';
+    grantForm.name = '';
+    grantError.value = '';
+    grantUsers.value = [];
+    grantDialogOpen.value = true;
+    grantUsersLoading.value = true;
+
+    try {
+        const result = await listAdminUsers({
+            page: 1,
+            per_page: 100,
+            role: 'user',
+        });
+        grantUsers.value = result.data.filter(
+            (user) => Number(user.cdnfly_user_id) > 0,
+        );
+
+        if (grantUsers.value.length === 0) {
+            grantError.value = '暂无已同步 CDNfly 的普通用户';
+        }
+    } catch (error) {
+        grantError.value = getErrorMessage(error);
+    } finally {
+        grantUsersLoading.value = false;
+    }
+}
+
+async function submitGrantPackage(): Promise<void> {
+    const packageId = grantPackage.value
+        ? getPackageId(grantPackage.value)
+        : null;
+    const selectedUser = grantUsers.value.find(
+        (user) => String(user.id) === grantForm.userId,
+    );
+
+    if (packageId === null || !selectedUser?.cdnfly_user_id) {
+        grantError.value = '请选择要开通套餐的用户';
+
+        return;
+    }
+
+    grantSaving.value = true;
+    grantError.value = '';
+
+    try {
+        const packageName = getDisplayValue(
+            grantPackage.value ?? {},
+            ['name', 'title', 'package_name'],
+            `套餐 #${packageId}`,
+        );
+
+        await createAdminUserPackage({
+            uid: selectedUser.cdnfly_user_id,
+            package: packageId,
+            duration: grantForm.duration,
+            name: grantForm.name.trim() || packageName,
+        });
+        grantDialogOpen.value = false;
+        toast.success(`已为 ${selectedUser.name} 开通 ${packageName}`);
+    } catch (error) {
+        grantError.value = getErrorMessage(error);
+    } finally {
+        grantSaving.value = false;
+    }
+}
+
+function grantUserLabel(user: AdminUserRecord): string {
+    return `${user.name}（${user.email}，CDNfly ID: ${user.cdnfly_user_id}）`;
+}
+
 function getDisplayValue(
     record: PackageRecord,
     keys: string[],
@@ -2056,6 +2157,16 @@ async function confirmPuDelete(): Promise<void> {
                                             <Button
                                                 variant="ghost"
                                                 size="sm"
+                                                @click="openGrantDialog(record)"
+                                            >
+                                                <PackagePlus
+                                                    data-icon="inline-start"
+                                                />
+                                                开通
+                                            </Button>
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
                                                 :disabled="
                                                     loadingDetailId ===
                                                     getPackageId(record)
@@ -2110,6 +2221,122 @@ async function confirmPuDelete(): Promise<void> {
                 </div>
             </CardContent>
         </Card>
+
+        <Dialog v-model:open="grantDialogOpen">
+            <DialogScrollContent class="max-w-lg">
+                <DialogHeader>
+                    <DialogTitle>为用户开通套餐</DialogTitle>
+                    <DialogDescription>
+                        直接为用户分配当前套餐，无需用户下单或支付。
+                    </DialogDescription>
+                </DialogHeader>
+
+                <Alert v-if="grantError" variant="destructive">
+                    <AlertCircle data-icon="alert" />
+                    <AlertTitle>开通失败</AlertTitle>
+                    <AlertDescription>{{ grantError }}</AlertDescription>
+                </Alert>
+
+                <div class="grid gap-4">
+                    <div class="grid gap-2">
+                        <Label>当前套餐</Label>
+                        <div class="rounded-md border bg-muted/30 px-3 py-2 text-sm">
+                            <div class="font-medium">
+                                {{
+                                    grantPackage
+                                        ? getDisplayValue(grantPackage, [
+                                              'name',
+                                              'title',
+                                              'package_name',
+                                          ])
+                                        : '-'
+                                }}
+                            </div>
+                            <div class="text-xs text-muted-foreground">
+                                ID: {{ grantPackage ? getPackageId(grantPackage) : '-' }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid gap-2">
+                        <Label>用户</Label>
+                        <Select
+                            v-model="grantForm.userId"
+                            :disabled="grantUsersLoading"
+                        >
+                            <SelectTrigger>
+                                <SelectValue
+                                    :placeholder="
+                                        grantUsersLoading
+                                            ? '正在加载用户…'
+                                            : '请选择用户'
+                                    "
+                                />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectGroup>
+                                    <SelectItem
+                                        v-for="user in grantUsers"
+                                        :key="user.id"
+                                        :value="String(user.id)"
+                                    >
+                                        {{ grantUserLabel(user) }}
+                                    </SelectItem>
+                                </SelectGroup>
+                            </SelectContent>
+                        </Select>
+                        <p class="text-xs text-muted-foreground">
+                            仅显示已关联 CDNfly 账号的普通用户。
+                        </p>
+                    </div>
+
+                    <div class="grid gap-2">
+                        <Label>开通时长</Label>
+                        <Select v-model="grantForm.duration">
+                            <SelectTrigger><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                                <SelectGroup>
+                                    <SelectItem
+                                        v-for="duration in PACKAGE_DURATION_OPTIONS"
+                                        :key="duration.value"
+                                        :value="duration.value"
+                                    >
+                                        {{ duration.label }}
+                                    </SelectItem>
+                                </SelectGroup>
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    <div class="grid gap-2">
+                        <Label for="grant-package-name">套餐名称（可选）</Label>
+                        <Input
+                            id="grant-package-name"
+                            v-model="grantForm.name"
+                            placeholder="留空使用当前套餐名称"
+                        />
+                    </div>
+                </div>
+
+                <DialogFooter>
+                    <Button variant="outline" @click="grantDialogOpen = false">
+                        取消
+                    </Button>
+                    <Button
+                        :disabled="
+                            grantSaving ||
+                            grantUsersLoading ||
+                            !grantForm.userId
+                        "
+                        @click="submitGrantPackage"
+                    >
+                        <Spinner v-if="grantSaving" data-icon="inline-start" />
+                        <PackagePlus v-else data-icon="inline-start" />
+                        确认开通
+                    </Button>
+                </DialogFooter>
+            </DialogScrollContent>
+        </Dialog>
 
         <Dialog v-model:open="packageDialogOpen">
             <DialogScrollContent class="max-w-3xl">
