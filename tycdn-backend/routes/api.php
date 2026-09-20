@@ -42,7 +42,7 @@ Route::prefix('auth')->group(function () {
     Route::post('/forgot-password', [AuthController::class, 'forgotPassword'])->middleware('throttle:forgot-password');
     Route::post('/reset-password', [AuthController::class, 'resetPassword'])->middleware('throttle:6,1');
     Route::get('/verify-email/{id}/{hash}', [AuthController::class, 'verifyEmail'])
-        ->middleware(['signed', 'throttle:6,1'])
+        ->middleware(['signed:relative', 'throttle:6,1'])
         ->name('api.auth.verify-email');
 
     Route::middleware('auth:sanctum')->group(function () {
