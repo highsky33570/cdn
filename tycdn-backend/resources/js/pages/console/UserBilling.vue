@@ -4,6 +4,8 @@ import {
     ArrowUpCircle,
     BarChart3,
     ChevronDown,
+    ChevronLeft,
+    ChevronRight,
     CreditCard,
     ExternalLink,
     Package,
@@ -1089,6 +1091,7 @@ function trafficPackMetric(record: CdnflyRecord): string {
 <template>
     <div class="space-y-6">
         <ConsolePageHeader
+            v-if="props.view !== 'subscriptions'"
             eyebrow="用户端 / 财务"
             :title="title"
             :description="description"
@@ -1101,7 +1104,11 @@ function trafficPackMetric(record: CdnflyRecord): string {
             <AlertTitle>请求失败</AlertTitle>
             <AlertDescription>{{ errorMessage }}</AlertDescription>
         </Alert>
-        <Card>
+        <Card
+            :class="{
+                'ruiyi-subscriptions': props.view === 'subscriptions',
+            }"
+        >
             <CardHeader class="space-y-4">
                 <div
                     class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between"
@@ -1111,11 +1118,13 @@ function trafficPackMetric(record: CdnflyRecord): string {
                         class="w-fit"
                         @click="goToPackagePurchase"
                     >
-                        <ShoppingCart data-icon="inline-start" />
                         购买套餐
                     </Button>
                     <CardTitle v-else class="text-base">{{ title }}</CardTitle>
-                    <div class="text-sm text-muted-foreground">
+                    <div
+                        v-if="props.view !== 'subscriptions'"
+                        class="text-sm text-muted-foreground"
+                    >
                         {{ total === 0 ? '暂无记录' : `${total} 条记录` }}
                     </div>
                 </div>
@@ -1527,6 +1536,7 @@ function trafficPackMetric(record: CdnflyRecord): string {
                                                 v-if="service.source_package"
                                                 variant="ghost"
                                                 size="sm"
+                                                class="h-auto px-0 text-primary hover:bg-transparent hover:text-primary/80"
                                                 @click="
                                                     openSubscriptionDetails(
                                                         service,
@@ -1539,6 +1549,7 @@ function trafficPackMetric(record: CdnflyRecord): string {
                                                 v-if="service.product_id"
                                                 variant="ghost"
                                                 size="sm"
+                                                class="h-auto px-0 text-primary hover:bg-transparent hover:text-primary/80"
                                                 @click="
                                                     openRenewDialog(service)
                                                 "
@@ -1554,6 +1565,7 @@ function trafficPackMetric(record: CdnflyRecord): string {
                                                 "
                                                 variant="ghost"
                                                 size="sm"
+                                                class="h-auto px-0 text-primary hover:bg-transparent hover:text-primary/80"
                                                 @click="
                                                     openUpgradeDialog(service)
                                                 "
@@ -1738,31 +1750,62 @@ function trafficPackMetric(record: CdnflyRecord): string {
                         </tbody>
                     </table>
                 </div>
+
+                <div
+                    v-if="props.view === 'subscriptions'"
+                    class="ruiyi-pagination flex items-center gap-1 pt-5"
+                >
+                    <span class="mr-2 text-sm text-muted-foreground">
+                        Total {{ total }} {{ total === 1 ? 'item' : 'items' }}
+                    </span>
+                    <Button
+                        variant="outline"
+                        size="icon-sm"
+                        :disabled="!hasPreviousPage || loading"
+                        aria-label="上一页"
+                        @click="prevPage"
+                    >
+                        <ChevronLeft />
+                    </Button>
+                    <Button size="icon-sm" variant="outline" class="is-current">
+                        {{ page }}
+                    </Button>
+                    <Button
+                        variant="outline"
+                        size="icon-sm"
+                        :disabled="!hasNextPage || loading"
+                        aria-label="下一页"
+                        @click="nextPage"
+                    >
+                        <ChevronRight />
+                    </Button>
+                    <Select
+                        v-model="filters.per_page"
+                        @update:model-value="loadCurrent(1)"
+                    >
+                        <SelectTrigger class="ml-2 w-24">
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectGroup>
+                                <SelectItem value="10">10 /page</SelectItem>
+                                <SelectItem value="20">20 /page</SelectItem>
+                                <SelectItem value="50">50 /page</SelectItem>
+                            </SelectGroup>
+                        </SelectContent>
+                    </Select>
+                </div>
             </CardContent>
         </Card>
 
         <div
-            v-if="props.view !== 'packages'"
+            v-if="props.view !== 'packages' && props.view !== 'subscriptions'"
             class="flex items-center justify-between gap-4"
         >
             <span class="text-sm text-muted-foreground">
                 共 {{ total }} 条
             </span>
             <div class="flex items-center gap-2">
-                <Select
-                    v-if="props.view === 'subscriptions'"
-                    v-model="filters.per_page"
-                    @update:model-value="loadCurrent(1)"
-                >
-                    <SelectTrigger class="w-24"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                        <SelectGroup>
-                            <SelectItem value="10">10 条</SelectItem>
-                            <SelectItem value="20">20 条</SelectItem>
-                            <SelectItem value="50">50 条</SelectItem>
-                        </SelectGroup>
-                    </SelectContent>
-                </Select>
                 <Button
                     variant="outline"
                     size="sm"

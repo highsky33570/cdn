@@ -264,8 +264,11 @@
     --sidebar-border: hsl(214 25% 90%);
     --radius: 0.25rem;
     background: var(--background);
-    font-size: 13px;
-    line-height: 1.45;
+    font-family:
+        'Helvetica Neue', Helvetica, 'PingFang SC', 'Microsoft YaHei', Arial,
+        sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
 }
 
 .dark .console-shell {
@@ -300,8 +303,8 @@
 }
 
 .console-shell [data-sidebar='header'] {
-    min-height: 2.5rem;
-    padding: 0.25rem 0.5rem;
+    min-height: 4rem;
+    padding: 0.5rem 1.75rem;
     border-bottom: 1px solid var(--sidebar-border);
 }
 
@@ -311,17 +314,18 @@
 }
 
 .console-shell [data-sidebar='group-label'] {
-    height: 1.65rem;
-    padding-inline: 0.55rem;
-    color: var(--muted-foreground);
-    font-size: 0.7rem;
-    font-weight: 500;
+    display: none;
+}
+
+.console-shell [data-sidebar='group'] {
+    padding: 0;
 }
 
 .console-shell [data-sidebar='menu-button'] {
-    height: 1.9rem;
-    border-radius: 2px;
-    font-size: 0.78rem;
+    height: 3.25rem;
+    padding-inline: 1.75rem;
+    border-radius: 0;
+    font-size: 0.875rem;
 }
 
 .console-shell [data-sidebar='menu-button'][data-active='true'] {
@@ -332,8 +336,9 @@
 
 .console-shell [data-sidebar='menu-button'][data-active='true']::before {
     position: absolute;
-    inset-block: 0.25rem;
-    left: -0.5rem;
+    inset-block: 0;
+    right: 0;
+    left: auto;
     width: 2px;
     border-radius: 0 2px 2px 0;
     background: var(--primary);
@@ -341,15 +346,17 @@
 }
 
 .console-shell [data-sidebar='menu-sub-button'] {
-    height: 1.7rem;
-    border-radius: 2px;
-    font-size: 0.75rem;
+    height: 3.25rem;
+    padding-inline: 2.75rem 1.5rem;
+    border-radius: 0;
+    font-size: 0.875rem;
 }
 
-.console-shell [data-sidebar='menu-badge'] {
-    gap: 0.1rem;
-    margin-left: 1rem;
-    padding-left: 0.65rem;
+.console-shell [data-slot='sidebar-menu-sub'] {
+    gap: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
 }
 
 .console-shell [data-slot='card'] {
@@ -441,7 +448,50 @@
 
 @media (min-width: 768px) {
     .console-shell [data-slot='sidebar-inset'] > .flex.flex-1.flex-col {
-        gap: 0.75rem;
-        padding: 0.75rem;
+        gap: 1.5rem;
+        padding: 1.5rem;
     }
+}
+
+.console-shell .ruiyi-subscriptions {
+    gap: 0;
+    padding-block: 1rem;
+    border-radius: 4px;
+    box-shadow: 0 1px 4px rgb(0 0 0 / 5%);
+}
+
+.console-shell .ruiyi-subscriptions [data-slot='card-header'],
+.console-shell .ruiyi-subscriptions [data-slot='card-content'] {
+    padding-inline: 1rem;
+}
+
+.console-shell .ruiyi-subscriptions [data-slot='card-header'] {
+    padding-bottom: 0.875rem;
+}
+
+.console-shell .ruiyi-subscriptions table {
+    font-size: 0.875rem;
+}
+
+.console-shell .ruiyi-subscriptions th {
+    height: 2.5rem;
+    color: hsl(215 24% 32%);
+    font-weight: 600;
+}
+
+.console-shell .ruiyi-subscriptions td {
+    height: 2.875rem;
+}
+
+.console-shell .ruiyi-subscriptions .ruiyi-pagination [data-slot='button'],
+.console-shell
+    .ruiyi-subscriptions
+    .ruiyi-pagination
+    [data-slot='select-trigger'] {
+    height: 2rem;
+}
+
+.console-shell .ruiyi-subscriptions .ruiyi-pagination .is-current {
+    border-color: var(--primary);
+    color: var(--primary);
 }

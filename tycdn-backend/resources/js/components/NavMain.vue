@@ -53,6 +53,10 @@ function isActive(item: NavItem) {
     return isCurrentUrl(item.href);
 }
 
+function isParentButtonActive(item: NavItem) {
+    return isCurrentUrl(item.href) && !hasActiveChild(item);
+}
+
 const openMenuTitles = ref<Set<string>>(
     new Set(
         isMobile.value
@@ -129,7 +133,7 @@ watch(openMobile, (value) => {
                 <SidebarMenuItem v-if="item.children?.length">
                     <CollapsibleTrigger as-child>
                         <SidebarMenuButton
-                            :is-active="isActive(item)"
+                            :is-active="isParentButtonActive(item)"
                             :tooltip="item.title"
                             @click="expandDesktopSidebar"
                         >
