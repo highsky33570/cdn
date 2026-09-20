@@ -68,7 +68,6 @@ class AppServiceProvider extends ServiceProvider
     protected function configureEmailVerificationLinks(): void
     {
         VerifyEmail::createUrlUsing(function ($notifiable): string {
-            $frontendBaseUrl = rtrim((string) config('app.frontend_url', config('app.url')), '/');
             $backendBaseUrl = rtrim((string) config('app.url'), '/');
             $userId = $notifiable->getKey();
             $emailHash = sha1($notifiable->getEmailForVerification());
@@ -83,9 +82,7 @@ class AppServiceProvider extends ServiceProvider
                 'token' => $token,
             ]);
 
-            return $frontendBaseUrl.'/verify-email#'.http_build_query([
-                'verify_url' => $signedUrl,
-            ]);
+            return $signedUrl;
         });
     }
 

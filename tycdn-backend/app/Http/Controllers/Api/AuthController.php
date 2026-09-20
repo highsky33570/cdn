@@ -10,6 +10,7 @@ use App\Services\RecaptchaService;
 use App\Support\EmailVerificationSignature;
 use Illuminate\Auth\Events\Verified;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -94,33 +95,33 @@ class AuthController extends Controller
      *
      * Signed email verification callback for the SPA flow.
      */
-    public function verifyEmail(Request $request, int $id, string $hash): JsonResponse
+    public function verifyEmail(Request $request, int $id, string $hash): JsonResponse|RedirectResponse
     {
         $expires = filter_var($request->query('expires'), FILTER_VALIDATE_INT);
         $token = (string) $request->query('token', '');
 
         if ($expires === false || ! EmailVerificationSignature::isValid($id, $hash, $expires, $token)) {
-            return response()->json([
+            return $this->emailVerificationResponse($request, [
                 'ok' => false,
                 'message' => '验证链接已过期或无效，请重新发送验证邮件。',
-            ], 403);
+            ], 403, 'invalid');
         }
 
         /** @var User|null $user */
         $user = User::query()->find($id);
 
         if (! $user) {
-            return response()->json([
+            return $this->emailVerificationResponse($request, [
                 'ok' => false,
                 'message' => '用户不存在',
-            ], 404);
+            ], 404, 'invalid');
         }
 
         if (! hash_equals((string) $hash, sha1($user->getEmailForVerification()))) {
-            return response()->json([
+            return $this->emailVerificationResponse($request, [
                 'ok' => false,
                 'message' => '验证链接无效',
-            ], 403);
+            ], 403, 'invalid');
         }
 
         if (! $user->hasVerifiedEmail() && $user->markEmailAsVerified()) {
@@ -129,13 +130,36 @@ class AuthController extends Controller
 
         $user->refresh();
 
-        return response()->json([
+        return $this->emailVerificationResponse($request, [
             'ok' => true,
             'message' => '邮箱验证成功',
             'data' => [
                 'email_verified' => $user->hasVerifiedEmail(),
             ],
-        ]);
+        ], 200, 'verified');
+    }
+
+    /**
+     * Keep JSON responses for the legacy SPA request path, while normal email
+     * clicks are verified on the backend and redirected to the portal.
+     *
+     * @param  array<string, mixed>  $payload
+     */
+    private function emailVerificationResponse(
+        Request $request,
+        array $payload,
+        int $status,
+        string $result,
+    ): JsonResponse|RedirectResponse {
+        if ($request->expectsJson()) {
+            return response()->json($payload, $status);
+        }
+
+        $frontendBaseUrl = rtrim((string) config('app.frontend_url', config('app.url')), '/');
+
+        return redirect()->away($frontendBaseUrl.'/verify-email?'.http_build_query([
+            'verification' => $result,
+        ]));
     }
 
     /**

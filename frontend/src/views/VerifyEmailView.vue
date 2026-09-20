@@ -41,6 +41,10 @@ const verificationUrl = computed(() => {
   return typeof route.query.verify_url === 'string' ? route.query.verify_url : ''
 })
 
+const verificationResult = computed(() =>
+  typeof route.query.verification === 'string' ? route.query.verification : ''
+)
+
 const hasExpiredVerificationState = computed(
   () =>
     verificationAttempted.value &&
@@ -133,6 +137,23 @@ onMounted(async () => {
   if (verificationLink) {
     await cleanVerifyRoute()
     await handleVerificationLink(verificationLink)
+    return
+  }
+
+  if (verificationResult.value) {
+    verificationAttempted.value = true
+    emailVerified.value = verificationResult.value === 'verified'
+    statusMessage.value = emailVerified.value ? '' : expiredVerificationMessage
+    await cleanVerifyRoute()
+    await hydrateSessionState()
+    loading.value = false
+
+    if (emailVerified.value) {
+      Message.success(verificationSuccessMessage)
+    } else {
+      Message.warning(statusMessage.value)
+    }
+
     return
   }
 
