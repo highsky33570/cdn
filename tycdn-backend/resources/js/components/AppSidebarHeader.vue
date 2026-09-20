@@ -19,6 +19,16 @@ const props = withDefaults(
 const page = usePage();
 
 const consoleBreadcrumbs: Record<string, BreadcrumbItem[]> = {
+    '/console/security/cc': [
+        { title: '首页', href: '/console' },
+        { title: '网站管理', href: '/console/sites' },
+        { title: 'CC 规则', href: '/console/security/cc' },
+    ],
+    '/console/security/acls': [
+        { title: '首页', href: '/console' },
+        { title: '网站管理', href: '/console/sites' },
+        { title: 'ACL 规则', href: '/console/security/acls' },
+    ],
     '/console/cache/jobs': [
         { title: '首页', href: '/console' },
         { title: '网站管理', href: '/console/sites' },

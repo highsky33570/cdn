@@ -261,14 +261,14 @@ const historyBlackIpFilters = reactive({
 
 const pageTitle = computed(() => {
     if (props.view === 'cc') {
-        return 'CC 防护';
+        return 'CC 规则';
     }
 
     if (props.view === 'blackip') {
         return '拉黑日志';
     }
 
-    return 'WAF 规则';
+    return 'ACL 规则';
 });
 const pageDescription = computed(() => {
     if (props.view === 'cc') {
@@ -279,7 +279,7 @@ const pageDescription = computed(() => {
         return '查询拉黑 IP 记录，并提交解锁任务。';
     }
 
-    return '维护访问控制规则组。';
+    return '维护访问控制规则。';
 });
 const ccDialogTitle = computed(() =>
     editingCc.value
@@ -1122,7 +1122,7 @@ function omitEnable<TPayload extends { enable?: unknown }>(
 </script>
 
 <template>
-    <div class="space-y-6">
+    <div class="flex flex-1 flex-col gap-6 p-4 md:p-6">
         <ConsolePageHeader
             eyebrow="用户端 / 安全防护"
             :title="pageTitle"
@@ -1142,18 +1142,11 @@ function omitEnable<TPayload extends { enable?: unknown }>(
             <AlertDescription>{{ formError }}</AlertDescription>
         </Alert>
 
-        <Card v-if="props.view === 'acls'">
-            <CardHeader
-                class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between"
-            >
-                <div>
-                    <CardTitle>WAF 规则组</CardTitle>
-                    <p class="mt-1 text-sm text-muted-foreground">
-                        {{ aclTotal === 0 ? '暂无 WAF' : `${aclTotal} 个 WAF` }}
-                    </p>
-                </div>
+        <template v-if="props.view === 'acls'">
+            <Card class="gap-4">
+                <CardContent class="pt-6">
                 <form
-                    class="grid gap-2 md:grid-cols-[1fr_120px_120px_auto_auto]"
+                    class="grid gap-3 xl:grid-cols-[1fr_160px_120px_auto]"
                     @submit.prevent="loadAclRows(1)"
                 >
                     <Input v-model="aclFilters.search" placeholder="搜索名称" />
@@ -1177,19 +1170,39 @@ function omitEnable<TPayload extends { enable?: unknown }>(
                             </SelectGroup>
                         </SelectContent>
                     </Select>
-                    <Button type="submit" :disabled="loading">
-                        <Spinner v-if="loading" data-icon="inline-start" />
-                        <Search v-else data-icon="inline-start" />
-                        查询
-                    </Button>
-                    <Button type="button" @click="openAclCreateDialog">
-                        <Plus data-icon="inline-start" />
-                        新增
-                    </Button>
+                    <div class="flex flex-wrap gap-2">
+                        <Button type="submit" :disabled="loading">
+                            <Spinner v-if="loading" data-icon="inline-start" />
+                            <Search v-else data-icon="inline-start" />
+                            搜索
+                        </Button>
+                        <Button type="button" @click="openAclCreateDialog">
+                            <Plus data-icon="inline-start" />
+                            新增 ACL
+                        </Button>
+                    </div>
                 </form>
-            </CardHeader>
-            <CardContent>
-                <div class="overflow-x-auto border-y">
+                </CardContent>
+            </Card>
+
+            <Card class="gap-0 overflow-hidden">
+                <CardHeader
+                    class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between"
+                >
+                    <div class="flex items-center gap-3">
+                        <div
+                            class="flex size-10 items-center justify-center rounded-md border bg-card"
+                        >
+                            <ShieldCheck class="size-5" />
+                        </div>
+                        <CardTitle class="text-base">ACL 规则列表</CardTitle>
+                    </div>
+                    <div class="text-sm text-muted-foreground">
+                        {{ aclTotal === 0 ? '暂无 ACL' : `${aclTotal} 个 ACL` }}
+                    </div>
+                </CardHeader>
+                <CardContent class="p-0">
+                <div class="overflow-x-auto">
                     <table class="w-full min-w-[880px] table-fixed text-sm">
                         <colgroup>
                             <col style="width: 22%" />
@@ -1199,7 +1212,9 @@ function omitEnable<TPayload extends { enable?: unknown }>(
                             <col style="width: 18%" />
                             <col style="width: 18%" />
                         </colgroup>
-                        <thead class="border-b text-muted-foreground">
+                        <thead
+                            class="border-y bg-muted/50 text-muted-foreground"
+                        >
                             <tr>
                                 <th class="px-4 py-3 text-left font-medium">
                                     名称
@@ -1230,7 +1245,7 @@ function omitEnable<TPayload extends { enable?: unknown }>(
                             <tr
                                 v-for="acl in displayedAclRows"
                                 :key="textValue(acl.id)"
-                                class="border-b"
+                                class="border-b last:border-b-0"
                             >
                                 <td class="px-4 py-3">
                                     <div class="font-medium">
@@ -1300,41 +1315,32 @@ function omitEnable<TPayload extends { enable?: unknown }>(
                         </tbody>
                     </table>
                 </div>
-            </CardContent>
-        </Card>
+                </CardContent>
+            </Card>
+        </template>
 
-        <Card v-else-if="props.view === 'cc'">
-            <CardHeader class="space-y-4">
-                <div
-                    class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between"
+        <template v-else-if="props.view === 'cc'">
+            <div class="flex gap-1 border-b">
+                <button
+                    v-for="kind in ccKinds"
+                    :key="kind.key"
+                    type="button"
+                    class="-mb-px border-b-2 px-4 py-2 text-sm font-medium transition-colors"
+                    :class="
+                        activeCcKind === kind.key
+                            ? 'border-primary text-primary'
+                            : 'border-transparent text-muted-foreground hover:text-foreground'
+                    "
+                    @click="selectCcKind(kind.key)"
                 >
-                    <div>
-                        <CardTitle>CC 防护资源</CardTitle>
-                        <p class="mt-1 text-sm text-muted-foreground">
-                            {{
-                                ccTotal === 0 ? '暂无资源' : `${ccTotal} 个资源`
-                            }}
-                        </p>
-                    </div>
-                    <div class="flex flex-wrap gap-2">
-                        <Button
-                            v-for="kind in ccKinds"
-                            :key="kind.key"
-                            type="button"
-                            size="sm"
-                            :variant="
-                                activeCcKind === kind.key
-                                    ? 'default'
-                                    : 'outline'
-                            "
-                            @click="selectCcKind(kind.key)"
-                        >
-                            {{ kind.label }}
-                        </Button>
-                    </div>
-                </div>
+                    {{ kind.label }}
+                </button>
+            </div>
+
+            <Card class="gap-4">
+                <CardContent class="pt-6">
                 <form
-                    class="grid gap-2 md:grid-cols-[1fr_120px_120px_auto_auto]"
+                    class="grid gap-3 xl:grid-cols-[1fr_160px_120px_auto]"
                     @submit.prevent="loadCcRows(1)"
                 >
                     <Input v-model="ccFilters.search" placeholder="搜索名称" />
@@ -1358,19 +1364,43 @@ function omitEnable<TPayload extends { enable?: unknown }>(
                             </SelectGroup>
                         </SelectContent>
                     </Select>
-                    <Button type="submit" :disabled="loading">
-                        <Spinner v-if="loading" data-icon="inline-start" />
-                        <Search v-else data-icon="inline-start" />
-                        查询
-                    </Button>
-                    <Button type="button" @click="openCcCreateDialog">
-                        <Plus data-icon="inline-start" />
-                        新增
-                    </Button>
+                    <div class="flex flex-wrap gap-2">
+                        <Button type="submit" :disabled="loading">
+                            <Spinner v-if="loading" data-icon="inline-start" />
+                            <Search v-else data-icon="inline-start" />
+                            搜索
+                        </Button>
+                        <Button type="button" @click="openCcCreateDialog">
+                            <Plus data-icon="inline-start" />
+                            新增{{ ccKindLabel(activeCcKind) }}
+                        </Button>
+                    </div>
                 </form>
-            </CardHeader>
-            <CardContent>
-                <div class="overflow-x-auto border-y">
+                </CardContent>
+            </Card>
+
+            <Card class="gap-0 overflow-hidden">
+                <CardHeader
+                    class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between"
+                >
+                    <div class="flex items-center gap-3">
+                        <div
+                            class="flex size-10 items-center justify-center rounded-md border bg-card"
+                        >
+                            <ShieldCheck class="size-5" />
+                        </div>
+                        <CardTitle class="text-base">
+                            CC {{ ccKindLabel(activeCcKind) }}列表
+                        </CardTitle>
+                    </div>
+                    <div class="text-sm text-muted-foreground">
+                        {{
+                            ccTotal === 0 ? '暂无资源' : `${ccTotal} 个资源`
+                        }}
+                    </div>
+                </CardHeader>
+                <CardContent class="p-0">
+                <div class="overflow-x-auto">
                     <table class="w-full min-w-[900px] table-fixed text-sm">
                         <colgroup>
                             <col style="width: 22%" />
@@ -1380,7 +1410,9 @@ function omitEnable<TPayload extends { enable?: unknown }>(
                             <col style="width: 14%" />
                             <col style="width: 16%" />
                         </colgroup>
-                        <thead class="border-b text-muted-foreground">
+                        <thead
+                            class="border-y bg-muted/50 text-muted-foreground"
+                        >
                             <tr>
                                 <th class="px-4 py-3 text-left font-medium">
                                     名称
@@ -1411,7 +1443,7 @@ function omitEnable<TPayload extends { enable?: unknown }>(
                             <tr
                                 v-for="record in displayedCcRows"
                                 :key="textValue(record.id)"
-                                class="border-b"
+                                class="border-b last:border-b-0"
                             >
                                 <td class="px-4 py-3">
                                     <div class="font-medium">
@@ -1480,8 +1512,9 @@ function omitEnable<TPayload extends { enable?: unknown }>(
                         </tbody>
                     </table>
                 </div>
-            </CardContent>
-        </Card>
+                </CardContent>
+            </Card>
+        </template>
 
         <div v-else class="space-y-4">
             <!-- 三个 Tab -->
