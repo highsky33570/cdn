@@ -3,6 +3,7 @@ import {
     AlertCircle,
     ArrowUpCircle,
     BarChart3,
+    ChevronDown,
     CreditCard,
     ExternalLink,
     Package,
@@ -11,7 +12,6 @@ import {
     Save,
     Search,
     ShoppingCart,
-    Zap,
 } from 'lucide-vue-next';
 import { computed, onMounted, reactive, ref } from 'vue';
 import { toast } from 'vue-sonner';
@@ -66,6 +66,10 @@ import type {
 type BillingView =
     'packages' | 'subscriptions' | 'orders' | 'traffic-packs' | 'usage';
 
+type SubscriptionRow = LocalBillingServiceInstance & {
+    source_package?: CdnflyRecord;
+};
+
 const props = defineProps<{
     view: BillingView;
 }>();
@@ -83,7 +87,7 @@ const page = ref(1);
 const total = ref(0);
 const productCatalog = ref<LocalBillingProduct[]>([]);
 const products = ref<LocalBillingProduct[]>([]);
-const services = ref<LocalBillingServiceInstance[]>([]);
+const services = ref<SubscriptionRow[]>([]);
 const orders = ref<LocalBillingOrder[]>([]);
 const trafficPacks = ref<CdnflyRecord[]>([]);
 const userPackages = ref<CdnflyRecord[]>([]);
@@ -106,7 +110,7 @@ const usageError = ref('');
 const filters = reactive({
     search: '',
     status: 'all',
-    per_page: '20',
+    per_page: props.view === 'subscriptions' ? '10' : '20',
 });
 
 const form = reactive({
@@ -122,6 +126,7 @@ const title = computed(() => {
         'traffic-packs': '流量包',
         usage: '用量查询',
     };
+
     return map[props.view] ?? '套餐购买';
 });
 
@@ -134,6 +139,7 @@ const description = computed(() => {
         'traffic-packs': '流量包仍保持只读，等待确认真实购买字段后再开放。',
         usage: '查看套餐流量、带宽等资源用量。选择套餐后可查看详细使用数据。',
     };
+
     return map[props.view] ?? '';
 });
 
@@ -145,14 +151,27 @@ const icon = computed(() => {
         'traffic-packs': CreditCard,
         usage: BarChart3,
     };
+
     return map[props.view] ?? CreditCard;
 });
 
 const activeRows = computed(() => {
-    if (props.view === 'packages') return products.value;
-    if (props.view === 'subscriptions') return services.value;
-    if (props.view === 'orders') return orders.value;
-    if (props.view === 'usage') return userPackages.value;
+    if (props.view === 'packages') {
+        return products.value;
+    }
+
+    if (props.view === 'subscriptions') {
+        return services.value;
+    }
+
+    if (props.view === 'orders') {
+        return orders.value;
+    }
+
+    if (props.view === 'usage') {
+        return userPackages.value;
+    }
+
     return trafficPacks.value;
 });
 
@@ -307,9 +326,7 @@ async function loadServices(targetPage = page.value): Promise<void> {
     }
 }
 
-function cdnflyPackageToService(
-    record: CdnflyRecord,
-): LocalBillingServiceInstance {
+function cdnflyPackageToService(record: CdnflyRecord): SubscriptionRow {
     const packageId = textValue(record.id);
     const packageName =
         textValue(record.package_name ?? record.package_title) || null;
@@ -344,6 +361,7 @@ function cdnflyPackageToService(
         expired_at:
             textValue(record.end_at2 ?? record.end_at ?? record.expire_at) ||
             null,
+        source_package: record,
     };
 }
 
@@ -442,6 +460,7 @@ async function openUpgradeDialog(
 
     if (!pkgId) {
         toast.error('该实例没有关联 CDNfly 套餐');
+
         return;
     }
 
@@ -464,7 +483,9 @@ async function openUpgradeDialog(
 async function submitUpgrade(packageUpId: number): Promise<void> {
     const pkgId = Number(upgradeTarget.value?.cdnfly_service_id);
 
-    if (!pkgId) return;
+    if (!pkgId) {
+        return;
+    }
 
     upgradeSubmitting.value = true;
     upgradeError.value = '';
@@ -473,7 +494,10 @@ async function submitUpgrade(packageUpId: number): Promise<void> {
         await purchaseUserPackageUpgrade(pkgId, { package_up_id: packageUpId });
         toast.success('升级购买成功');
         upgradeDialogOpen.value = false;
-        if (props.view === 'subscriptions') await loadServices();
+
+        if (props.view === 'subscriptions') {
+            await loadServices();
+        }
     } catch (error) {
         upgradeError.value = getErrorMessage(error);
     } finally {
@@ -484,7 +508,9 @@ async function submitUpgrade(packageUpId: number): Promise<void> {
 async function openUsageDialog(record: CdnflyRecord): Promise<void> {
     const pkgId = Number(record.id);
 
-    if (!pkgId) return;
+    if (!pkgId) {
+        return;
+    }
 
     usageTarget.value = record;
     usageData.value = [];
@@ -505,6 +531,7 @@ async function openUsageDialog(record: CdnflyRecord): Promise<void> {
             delete flat.code;
             delete flat.msg;
             delete flat.message;
+
             if (Object.keys(flat).length > 0) {
                 usageData.value = [flat];
             }
@@ -539,6 +566,7 @@ function usageLabel(key: string): string {
         expire_time: '到期时间',
         start_time: '开始时间',
     };
+
     return labels[key] ?? key;
 }
 
@@ -686,12 +714,13 @@ async function retryProvision(order: LocalBillingOrder): Promise<void> {
     try {
         const result = await provisionBillingOrder(order.order_no);
         const nextStatus = textValue(result.status) || 'queued';
-        toast.success(`订单已创建并开通成功`);
-        nextStatus === 'success'
-            ? '已提交开通请求'
-            : nextStatus === 'queued'
-              ? '已记录待开通状态，系统将稍后自动同步'
-              : '已触发开通重试';
+        toast.success(
+            nextStatus === 'success'
+                ? '已提交开通请求'
+                : nextStatus === 'queued'
+                  ? '已记录待开通状态，系统将稍后自动同步'
+                  : '已触发开通重试',
+        );
         await loadOrders(page.value);
 
         if (props.view === 'subscriptions') {
@@ -813,6 +842,50 @@ function serviceStatusText(service: LocalBillingServiceInstance): string {
     return service.status;
 }
 
+function subscriptionIsActive(service: LocalBillingServiceInstance): boolean {
+    return ['1', 'active', 'enabled', 'normal'].includes(
+        String(service.status).trim().toLowerCase(),
+    );
+}
+
+function subscriptionStatusText(service: LocalBillingServiceInstance): string {
+    const status = String(service.status).trim().toLowerCase();
+
+    if (subscriptionIsActive(service)) {
+        return '正常';
+    }
+
+    if (status === 'expired') {
+        return '已过期';
+    }
+
+    if (status === 'disabled' || status === 'disable' || status === '0') {
+        return '已停用';
+    }
+
+    return serviceStatusText(service);
+}
+
+function subscriptionTrafficText(service: SubscriptionRow): string {
+    return service.source_package
+        ? usageTrafficText(service.source_package)
+        : '-';
+}
+
+function openSubscriptionDetails(service: SubscriptionRow): void {
+    if (!service.source_package) {
+        toast.error('该套餐暂时没有可查询的用量详情');
+
+        return;
+    }
+
+    void openUsageDialog(service.source_package);
+}
+
+function goToPackagePurchase(): void {
+    window.location.href = '/console/billing/packages';
+}
+
 function trafficPackName(record: CdnflyRecord): string {
     return textValue(record.name ?? record.title) || '-';
 }
@@ -848,7 +921,15 @@ function trafficPackMetric(record: CdnflyRecord): string {
                 <div
                     class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between"
                 >
-                    <CardTitle class="text-base">{{ title }}</CardTitle>
+                    <Button
+                        v-if="props.view === 'subscriptions'"
+                        class="w-fit"
+                        @click="goToPackagePurchase"
+                    >
+                        <ShoppingCart data-icon="inline-start" />
+                        购买套餐
+                    </Button>
+                    <CardTitle v-else class="text-base">{{ title }}</CardTitle>
                     <div class="text-sm text-muted-foreground">
                         {{ total === 0 ? '暂无记录' : `${total} 条记录` }}
                     </div>
@@ -938,7 +1019,7 @@ function trafficPackMetric(record: CdnflyRecord): string {
                 </form>
 
                 <form
-                    v-else
+                    v-else-if="props.view !== 'subscriptions'"
                     class="grid gap-3 xl:grid-cols-[1fr_120px_auto]"
                     @submit.prevent="submitSearch"
                 >
@@ -965,7 +1046,16 @@ function trafficPackMetric(record: CdnflyRecord): string {
             <CardContent>
                 <div class="overflow-x-auto border-y">
                     <table class="w-full min-w-[980px] table-fixed text-sm">
-                        <colgroup>
+                        <colgroup v-if="props.view === 'subscriptions'">
+                            <col style="width: 7%" />
+                            <col style="width: 20%" />
+                            <col style="width: 17%" />
+                            <col style="width: 17%" />
+                            <col style="width: 16%" />
+                            <col style="width: 10%" />
+                            <col style="width: 13%" />
+                        </colgroup>
+                        <colgroup v-else>
                             <col style="width: 22%" />
                             <col style="width: 16%" />
                             <col style="width: 18%" />
@@ -996,19 +1086,22 @@ function trafficPackMetric(record: CdnflyRecord): string {
                             </tr>
                             <tr v-else-if="props.view === 'subscriptions'">
                                 <th class="px-4 py-3 text-left font-medium">
-                                    实例
+                                    ID
                                 </th>
                                 <th class="px-4 py-3 text-left font-medium">
-                                    商品
+                                    套餐名称
                                 </th>
                                 <th class="px-4 py-3 text-left font-medium">
-                                    订单
+                                    购买时间
+                                </th>
+                                <th class="px-4 py-3 text-left font-medium">
+                                    到期时间
+                                </th>
+                                <th class="px-4 py-3 text-left font-medium">
+                                    已用 / 总流量
                                 </th>
                                 <th class="px-4 py-3 text-left font-medium">
                                     状态
-                                </th>
-                                <th class="px-4 py-3 text-left font-medium">
-                                    最近更新时间
                                 </th>
                                 <th class="px-4 py-3 text-right font-medium">
                                     操作
@@ -1073,7 +1166,12 @@ function trafficPackMetric(record: CdnflyRecord): string {
                         </thead>
                         <tbody>
                             <tr v-if="loading">
-                                <td class="px-6 py-16 text-center" colspan="6">
+                                <td
+                                    class="px-6 py-16 text-center"
+                                    :colspan="
+                                        props.view === 'subscriptions' ? 7 : 6
+                                    "
+                                >
                                     <Spinner class="mx-auto" />
                                 </td>
                             </tr>
@@ -1195,90 +1293,91 @@ function trafficPackMetric(record: CdnflyRecord): string {
                                     :key="service.id"
                                     class="border-b"
                                 >
-                                    <td class="px-4 py-3">
-                                        <div class="truncate font-medium">
-                                            {{
-                                                service.service_name ||
-                                                `service-${service.id}`
-                                            }}
-                                        </div>
-                                        <div
-                                            class="text-xs text-muted-foreground"
-                                        >
-                                            #{{ service.id }}
-                                        </div>
-                                    </td>
-                                    <td class="px-4 py-3">
-                                        <div class="truncate font-medium">
-                                            {{ service.product_name ?? '-' }}
-                                        </div>
-                                        <div
-                                            class="text-xs text-muted-foreground"
-                                        >
-                                            {{ service.product_slug ?? '-' }}
-                                        </div>
-                                    </td>
-                                    <td class="px-4 py-3">
-                                        {{ service.order_no ?? '-' }}
-                                    </td>
-                                    <td class="px-4 py-3">
-                                        <div class="flex flex-col gap-1">
-                                            <Badge variant="secondary">{{
-                                                serviceStatusText(service)
-                                            }}</Badge>
-                                            <span
-                                                v-if="service.queue_reason"
-                                                class="text-xs text-muted-foreground"
-                                            >
-                                                {{ service.queue_reason }}
-                                            </span>
-                                        </div>
-                                    </td>
                                     <td class="px-4 py-3 text-muted-foreground">
                                         {{
-                                            formatDate(
-                                                service.opened_at ??
-                                                    service.last_attempt_at,
-                                            )
+                                            service.cdnfly_service_id ??
+                                            service.id
                                         }}
                                     </td>
                                     <td class="px-4 py-3">
-                                        <div class="flex justify-end gap-1.5">
-                                            <Button
-                                                v-if="
-                                                    service.cdnfly_service_id &&
-                                                    service.status === 'active'
+                                        <div class="truncate font-medium">
+                                            {{
+                                                service.product_name ??
+                                                service.service_name ??
+                                                '-'
+                                            }}
+                                        </div>
+                                    </td>
+                                    <td class="px-4 py-3 text-muted-foreground">
+                                        {{ formatDate(service.opened_at) }}
+                                    </td>
+                                    <td class="px-4 py-3 text-muted-foreground">
+                                        {{ formatDate(service.expired_at) }}
+                                    </td>
+                                    <td class="px-4 py-3 text-muted-foreground">
+                                        {{ subscriptionTrafficText(service) }}
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <div class="flex items-center gap-2">
+                                            <span
+                                                class="size-2 rounded-full"
+                                                :class="
+                                                    subscriptionIsActive(
+                                                        service,
+                                                    )
+                                                        ? 'bg-emerald-500'
+                                                        : 'bg-muted-foreground'
                                                 "
-                                                variant="outline"
+                                            />
+                                            <span>{{
+                                                subscriptionStatusText(service)
+                                            }}</span>
+                                        </div>
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <div
+                                            class="flex items-center justify-end gap-2 whitespace-nowrap"
+                                        >
+                                            <Button
+                                                v-if="service.source_package"
+                                                variant="ghost"
                                                 size="sm"
                                                 @click="
-                                                    openUpgradeDialog(service)
+                                                    openSubscriptionDetails(
+                                                        service,
+                                                    )
                                                 "
                                             >
-                                                <Zap data-icon="inline-start" />
-                                                升级
+                                                详情
                                             </Button>
                                             <Button
                                                 v-if="service.product_id"
-                                                variant="outline"
+                                                variant="ghost"
                                                 size="sm"
                                                 @click="
                                                     openRenewDialog(service)
                                                 "
                                             >
-                                                <ShoppingCart
-                                                    data-icon="inline-start"
-                                                />
                                                 续费
                                             </Button>
-                                            <Badge
+                                            <Button
                                                 v-if="
-                                                    !service.product_id &&
-                                                    !service.cdnfly_service_id
+                                                    service.cdnfly_service_id &&
+                                                    subscriptionIsActive(
+                                                        service,
+                                                    )
                                                 "
-                                                variant="outline"
-                                                >只读</Badge
+                                                variant="ghost"
+                                                size="sm"
+                                                @click="
+                                                    openUpgradeDialog(service)
+                                                "
                                             >
+                                                更多
+                                                <ChevronDown
+                                                    data-icon="inline-end"
+                                                />
+                                            </Button>
                                         </div>
                                     </td>
                                 </tr>
@@ -1444,7 +1543,9 @@ function trafficPackMetric(record: CdnflyRecord): string {
                             <tr v-if="!loading && activeRows.length === 0">
                                 <td
                                     class="px-6 py-16 text-center text-muted-foreground"
-                                    colspan="6"
+                                    :colspan="
+                                        props.view === 'subscriptions' ? 7 : 6
+                                    "
                                 >
                                     暂无记录
                                 </td>
@@ -1457,25 +1558,46 @@ function trafficPackMetric(record: CdnflyRecord): string {
 
         <div
             v-if="props.view !== 'packages'"
-            class="flex items-center justify-end gap-2"
+            class="flex items-center justify-between gap-4"
         >
-            <Button
-                variant="outline"
-                size="sm"
-                :disabled="!hasPreviousPage || loading"
-                @click="prevPage"
-            >
-                上一页
-            </Button>
-            <span class="text-sm text-muted-foreground">第 {{ page }} 页</span>
-            <Button
-                variant="outline"
-                size="sm"
-                :disabled="!hasNextPage || loading"
-                @click="nextPage"
-            >
-                下一页
-            </Button>
+            <span class="text-sm text-muted-foreground">
+                共 {{ total }} 条
+            </span>
+            <div class="flex items-center gap-2">
+                <Select
+                    v-if="props.view === 'subscriptions'"
+                    v-model="filters.per_page"
+                    @update:model-value="loadCurrent(1)"
+                >
+                    <SelectTrigger class="w-24"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                        <SelectGroup>
+                            <SelectItem value="10">10 条</SelectItem>
+                            <SelectItem value="20">20 条</SelectItem>
+                            <SelectItem value="50">50 条</SelectItem>
+                        </SelectGroup>
+                    </SelectContent>
+                </Select>
+                <Button
+                    variant="outline"
+                    size="sm"
+                    :disabled="!hasPreviousPage || loading"
+                    @click="prevPage"
+                >
+                    上一页
+                </Button>
+                <span class="text-sm text-muted-foreground"
+                    >第 {{ page }} 页</span
+                >
+                <Button
+                    variant="outline"
+                    size="sm"
+                    :disabled="!hasNextPage || loading"
+                    @click="nextPage"
+                >
+                    下一页
+                </Button>
+            </div>
         </div>
 
         <Dialog v-model:open="purchaseDialogOpen">
@@ -1669,7 +1791,7 @@ function trafficPackMetric(record: CdnflyRecord): string {
                     <DialogDescription>
                         「{{
                             textValue(
-                                usageTarget?.name ?? usageTarget?.package_name,
+                                usageTarget?.package_name ?? usageTarget?.name,
                             ) || '-'
                         }}」的资源使用情况
                     </DialogDescription>
