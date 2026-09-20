@@ -422,13 +422,49 @@ async function loadTop(): Promise<void> {
             params.end = topFilters.end;
         }
         if (topFilters.domain.trim()) params.domain = topFilters.domain.trim();
-        const result = await getUserSiteTop(params);
-        topRows.value = siteRankingRows(result, activeTopTab.value);
+        let nextRows: CdnflyRecord[] = [];
+
+        try {
+            const result = await getUserSiteTop(params);
+            nextRows = siteRankingRows(result, activeTopTab.value);
+        } catch (error) {
+            if (topRecentTime.value === 'custom') {
+                throw error;
+            }
+        }
+
+        if (nextRows.length === 0 && topRecentTime.value !== 'custom') {
+            const range = recentTopRange(topRecentTime.value);
+            const fallbackParams: Record<string, string | number> = {
+                type: activeTopTab.value,
+                ...range,
+            };
+
+            if (topFilters.domain.trim()) {
+                fallbackParams.domain = topFilters.domain.trim();
+            }
+
+            const fallbackResult = await getUserSiteTop(fallbackParams);
+            nextRows = siteRankingRows(fallbackResult, activeTopTab.value);
+        }
+
+        topRows.value = nextRows;
     } catch (err) {
         errorMessage.value = getErrorMessage(err);
     } finally {
         topLoading.value = false;
     }
+}
+
+function recentTopRange(value: string): { start: string; end: string } {
+    const minutes = value === '10m' ? 10 : value === '30m' ? 30 : 60;
+    const end = new Date();
+    const start = new Date(end.getTime() - minutes * 60 * 1000);
+
+    return {
+        start: formatInputDate(start),
+        end: formatInputDate(end),
+    };
 }
 
 function setTopRecentTime(t: string): void {
@@ -1020,7 +1056,7 @@ function formatInputDate(date: Date): string {
 <template>
     <div class="flex flex-1 flex-col gap-4 p-4 md:p-6">
         <ConsolePageHeader
-            v-if="props.view !== 'realtime'"
+            v-if="props.view !== 'realtime' && props.view !== 'top'"
             eyebrow="用户端 / 访问数据"
             :title="title"
             :description="description"
@@ -1170,9 +1206,10 @@ function formatInputDate(date: Date): string {
              数据分析
         ════════════════════════════════════════════════ -->
         <template v-else-if="props.view === 'top'">
+            <Card class="gap-0 overflow-hidden">
 
             <!-- Tab 栏 -->
-            <div class="flex flex-wrap gap-1 border-b">
+            <div class="flex flex-wrap gap-1 border-b px-4 pt-4">
                 <button
                     v-for="tab in topTabs"
                     :key="tab.key"
@@ -1188,7 +1225,7 @@ function formatInputDate(date: Date): string {
             </div>
 
             <!-- 控制栏 -->
-            <div class="flex flex-wrap items-center gap-2">
+            <div class="flex flex-wrap items-center gap-2 border-b px-4 py-4">
                 <!-- 时间快捷 -->
                 <div class="flex gap-1 rounded-md border p-0.5">
                     <button
@@ -1232,7 +1269,7 @@ function formatInputDate(date: Date): string {
             </div>
 
             <!-- 表格 -->
-            <Card>
+            <Card class="gap-0 rounded-none border-0 shadow-none">
                 <CardContent class="p-0">
                     <div class="overflow-x-auto">
                         <table class="w-full text-sm">
@@ -1318,6 +1355,7 @@ function formatInputDate(date: Date): string {
                         </table>
                     </div>
                 </CardContent>
+            </Card>
             </Card>
 
         </template>

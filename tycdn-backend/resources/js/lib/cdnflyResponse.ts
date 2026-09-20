@@ -192,11 +192,120 @@ export function siteRankingRows(result: unknown, type: string): CdnflyRecord[] {
         'top-referer': 'referer',
     };
     const dimension = dimensions[type] ?? 'res';
+    const rows = rankingRows(result);
 
-    return extractCdnflyRows(result).map((row) => ({
+    return rows.map((row) => ({
         ...row,
-        [dimension]: row[dimension] ?? row.res,
-        req: row.req ?? row.count,
-        backend_traffic: row.backend_traffic ?? row.up_recv,
+        [dimension]:
+            row[dimension] ?? row.res ?? row.key ?? row.name ?? row.label,
+        req: row.req ?? row.count ?? row.requests ?? row.value,
+        traffic:
+            row.traffic ?? row.bytes ?? row.size ?? row.down_send ?? row.send,
+        backend_traffic:
+            row.backend_traffic ??
+            row.up_recv ??
+            row.up_traffic ??
+            row.origin_traffic,
     }));
+}
+
+function rankingRows(result: unknown): CdnflyRecord[] {
+    const nativeRows = extractCdnflyRows(result);
+
+    if (nativeRows.length > 0) {
+        return nativeRows;
+    }
+
+    const payload = rankingPayload(result);
+
+    if (Array.isArray(payload)) {
+        return payload.flatMap((item) => rankingArrayRow(item));
+    }
+
+    if (!isCdnflyRecord(payload)) {
+        return [];
+    }
+
+    if (
+        ['res', 'domain', 'url', 'ip', 'country', 'province', 'isp'].some(
+            (key) => key in payload,
+        )
+    ) {
+        return [payload];
+    }
+
+    return Object.entries(payload).flatMap(([resource, value]) => {
+        if (isCdnflyRecord(value)) {
+            return [{ res: resource, ...value }];
+        }
+
+        if (Array.isArray(value)) {
+            if (value.every((item) => typeof item !== 'object')) {
+                return [rankingTuple(value, resource)];
+            }
+
+            return value.flatMap((item) => rankingArrayRow(item, resource));
+        }
+
+        const count = Number(value);
+
+        return Number.isFinite(count) ? [{ res: resource, count }] : [];
+    });
+}
+
+function rankingPayload(result: unknown): unknown {
+    let value = result;
+
+    for (let depth = 0; depth < 5; depth++) {
+        if (typeof value === 'string') {
+            try {
+                value = JSON.parse(value);
+                continue;
+            } catch {
+                return value;
+            }
+        }
+
+        if (!isCdnflyRecord(value)) {
+            return value;
+        }
+
+        const nested =
+            value.data ??
+            value.items ??
+            value.list ??
+            value.rows ??
+            value.records;
+
+        if (nested === undefined) {
+            return value;
+        }
+
+        value = nested;
+    }
+
+    return value;
+}
+
+function rankingArrayRow(item: unknown, resource?: string): CdnflyRecord[] {
+    if (isCdnflyRecord(item)) {
+        return [{ ...(resource ? { res: resource } : {}), ...item }];
+    }
+
+    if (!Array.isArray(item)) {
+        return [];
+    }
+
+    return [rankingTuple(item, resource)];
+}
+
+function rankingTuple(values: unknown[], resource?: string): CdnflyRecord {
+    const hasResource = resource === undefined;
+
+    return {
+        res: resource ?? values[0],
+        count: values[hasResource ? 1 : 0],
+        traffic: values[hasResource ? 2 : 1],
+        up_recv: values[hasResource ? 3 : 2],
+    };
 }
