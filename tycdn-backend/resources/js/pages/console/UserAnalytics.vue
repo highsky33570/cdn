@@ -6,7 +6,6 @@ import {
     ChevronDown,
     ChevronUp,
     Download,
-    ExternalLink,
     FileText,
     RefreshCw,
     Search,
@@ -317,12 +316,6 @@ const sortedTopRows = computed(() => {
         const bv = numVal(b[sortKey.value]);
         return sortDir.value === 'desc' ? bv - av : av - bv;
     });
-});
-
-// 用于进度条：找最大请求次数
-const topMaxReq = computed(() => {
-    if (!topRows.value.length) return 1;
-    return Math.max(...topRows.value.map((r) => numVal(r.req)), 1);
 });
 
 // ── 生命周期 ──────────────────────────────────────────
@@ -1206,7 +1199,7 @@ function formatInputDate(date: Date): string {
              数据分析
         ════════════════════════════════════════════════ -->
         <template v-else-if="props.view === 'top'">
-            <Card class="gap-0 overflow-hidden">
+            <Card class="analytics-ranking-panel gap-0 overflow-hidden">
 
             <!-- Tab 栏 -->
             <div class="flex flex-wrap gap-1 border-b px-4 pt-4">
@@ -1214,10 +1207,10 @@ function formatInputDate(date: Date): string {
                     v-for="tab in topTabs"
                     :key="tab.key"
                     type="button"
-                    class="px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors"
+                    class="-mb-px rounded-t-sm border px-4 py-2 text-sm font-normal transition-colors"
                     :class="activeTopTab === tab.key
-                        ? 'border-primary text-primary'
-                        : 'border-transparent text-muted-foreground hover:text-foreground'"
+                        ? 'border-border border-b-card bg-card text-primary'
+                        : 'border-border bg-muted/30 text-foreground hover:text-primary'"
                     @click="activeTopTab = tab.key"
                 >
                     {{ tab.label }}
@@ -1227,12 +1220,12 @@ function formatInputDate(date: Date): string {
             <!-- 控制栏 -->
             <div class="flex flex-wrap items-center gap-2 border-b px-4 py-4">
                 <!-- 时间快捷 -->
-                <div class="flex gap-1 rounded-md border p-0.5">
+                <div class="flex overflow-hidden rounded-sm border">
                     <button
                         v-for="t in [{ v: '10m', label: '10分钟实时' }, { v: '30m', label: '近30分钟' }, { v: '60m', label: '近1小时' }, { v: 'custom', label: '自定义' }]"
                         :key="t.v"
                         type="button"
-                        class="rounded px-3 py-1 text-xs font-medium transition-colors"
+                        class="border-r px-4 py-1.5 text-sm font-normal transition-colors last:border-r-0"
                         :class="topRecentTime === t.v
                             ? 'bg-primary text-primary-foreground'
                             : 'text-muted-foreground hover:text-foreground'"
@@ -1253,12 +1246,21 @@ function formatInputDate(date: Date): string {
                 </template>
 
                 <!-- 域名筛选 -->
-                <Input
-                    v-model="topFilters.domain"
-                    class="h-8 w-52 text-xs"
-                    placeholder="输入域名，多个空格分隔"
-                    @keydown.enter="loadTop"
-                />
+                <div class="flex items-center">
+                    <button
+                        type="button"
+                        class="flex h-8 items-center gap-1 rounded-l-sm border border-r-0 bg-card px-3 text-sm"
+                    >
+                        域名
+                        <ChevronDown class="size-3.5 text-muted-foreground" />
+                    </button>
+                    <Input
+                        v-model="topFilters.domain"
+                        class="h-8 w-60 rounded-l-none text-sm"
+                        placeholder="输入域名，多个空格分隔"
+                        @keydown.enter="loadTop"
+                    />
+                </div>
 
                 <!-- 刷新 -->
                 <Button class="h-8" :disabled="topLoading" @click="loadTop">
@@ -1269,11 +1271,11 @@ function formatInputDate(date: Date): string {
             </div>
 
             <!-- 表格 -->
-            <Card class="gap-0 rounded-none border-0 shadow-none">
+            <Card class="analytics-ranking-table-card gap-0 rounded-none border-0 shadow-none">
                 <CardContent class="p-0">
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-sm">
-                            <thead class="border-b bg-muted/30">
+                    <div class="w-full max-w-[1100px] overflow-x-auto">
+                        <table class="analytics-ranking-table w-full min-w-[900px]">
+                            <thead>
                                 <tr>
                                     <th class="px-4 py-3 text-left font-medium text-muted-foreground w-14">排行</th>
                                     <th class="px-4 py-3 text-left font-medium text-muted-foreground">
@@ -1310,38 +1312,25 @@ function formatInputDate(date: Date): string {
                                     class="border-b last:border-0 hover:bg-muted/20 transition-colors"
                                 >
                                     <!-- 排行 -->
-                                    <td class="px-4 py-3 text-muted-foreground font-mono">
-                                        <span
-                                            v-if="index < 3"
-                                            class="inline-flex h-5 w-5 items-center justify-center rounded-full text-xs font-bold text-white"
-                                            :class="[index === 0 ? 'bg-amber-400' : index === 1 ? 'bg-slate-400' : 'bg-orange-400']"
-                                        >{{ index + 1 }}</span>
-                                        <span v-else class="text-muted-foreground">{{ index + 1 }}</span>
+                                    <td class="px-4 py-0 text-muted-foreground">
+                                        <span>{{ index + 1 }}</span>
                                     </td>
                                     <!-- 维度列（含进度条） -->
-                                    <td class="px-4 py-3 max-w-xs">
-                                        <div class="truncate font-mono text-xs">{{ rowDimension(row, activeTopTab) }}</div>
-                                        <!-- 进度条：仅有 req 字段时显示 -->
-                                        <div v-if="numVal(row.req)" class="mt-1 h-1 w-full rounded-full bg-muted overflow-hidden">
-                                            <div
-                                                class="h-full rounded-full bg-primary/40 transition-all"
-                                                :style="`width:${Math.round(numVal(row.req) / topMaxReq * 100)}%`"
-                                            />
-                                        </div>
+                                    <td class="max-w-xs px-4 py-0">
+                                        <div class="truncate">{{ rowDimension(row, activeTopTab) }}</div>
                                     </td>
                                     <!-- 其他列 -->
                                     <template v-for="col in activeTopTabDef.cols.slice(1)" :key="col.key">
-                                        <td v-if="col.type === 'action'" class="px-4 py-3">
+                                        <td v-if="col.type === 'action'" class="px-4 py-0">
                                             <button
                                                 type="button"
-                                                class="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+                                                class="inline-flex items-center text-sm text-primary hover:underline"
                                                 @click="goToLogs"
                                             >
-                                                <ExternalLink class="h-3 w-3" />
                                                 查看日志
                                             </button>
                                         </td>
-                                        <td v-else class="px-4 py-3 tabular-nums text-muted-foreground">
+                                        <td v-else class="px-4 py-0 tabular-nums text-muted-foreground">
                                             {{ cellValue(row, col) }}
                                         </td>
                                     </template>

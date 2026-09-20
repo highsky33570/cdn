@@ -438,6 +438,75 @@
     background: hsl(210 50% 98%);
 }
 
+/* Ruiyi-style resource ranking table: compact, readable and intentionally
+ * narrower than the surrounding workspace so scan paths stay short. */
+.console-shell .analytics-ranking-panel,
+.console-shell .analytics-ranking-table-card {
+    padding-block: 0 !important;
+}
+
+.console-shell .analytics-ranking-table {
+    color: #515a6e;
+    font-size: 14px;
+    line-height: 1.5;
+    table-layout: fixed;
+}
+
+.console-shell .analytics-ranking-table thead {
+    background: #f8f8f9;
+}
+
+.console-shell .analytics-ranking-table th {
+    height: 38px;
+    padding-block: 0 !important;
+    color: #515a6e;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.console-shell .analytics-ranking-table td {
+    height: 48px;
+    padding-block: 0 !important;
+    color: #515a6e;
+    font-size: 14px;
+}
+
+.console-shell .analytics-ranking-table th:nth-child(1) {
+    width: 104px;
+}
+
+.console-shell .analytics-ranking-table th:nth-child(2) {
+    width: 344px;
+}
+
+.console-shell .analytics-ranking-table th:nth-child(3),
+.console-shell .analytics-ranking-table th:nth-child(4),
+.console-shell .analytics-ranking-table th:nth-child(5) {
+    width: 184px;
+}
+
+.console-shell .analytics-ranking-table th:last-child {
+    width: 100px;
+}
+
+.console-shell .analytics-ranking-table tbody tr:hover {
+    background: #ebf7ff;
+}
+
+.dark .console-shell .analytics-ranking-table,
+.dark .console-shell .analytics-ranking-table th,
+.dark .console-shell .analytics-ranking-table td {
+    color: var(--foreground);
+}
+
+.dark .console-shell .analytics-ranking-table thead {
+    background: hsl(216 18% 16%);
+}
+
+.dark .console-shell .analytics-ranking-table tbody tr:hover {
+    background: hsl(211 31% 20%);
+}
+
 .dark .console-shell tbody tr:hover {
     background: hsl(211 25% 17%);
 }
