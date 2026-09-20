@@ -19,6 +19,11 @@ const props = withDefaults(
 const page = usePage();
 
 const consoleBreadcrumbs: Record<string, BreadcrumbItem[]> = {
+    '/console/cache/jobs': [
+        { title: '首页', href: '/console' },
+        { title: '网站管理', href: '/console/sites' },
+        { title: '刷新预热', href: '/console/cache/jobs' },
+    ],
     '/console/billing/subscriptions': [
         { title: '首页', href: '/console' },
         { title: '套餐管理', href: '/console/billing/subscriptions' },

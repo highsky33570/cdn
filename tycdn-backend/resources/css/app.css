@@ -495,3 +495,37 @@
     border-color: var(--primary);
     color: var(--primary);
 }
+
+.console-shell .ruiyi-cache-card {
+    gap: 0;
+    padding-block: 0;
+    border-radius: 4px;
+    box-shadow: 0 1px 4px rgb(0 0 0 / 5%);
+}
+
+.console-shell .ruiyi-cache-card [data-slot='card-header'] {
+    padding: 1rem;
+}
+
+.console-shell .ruiyi-cache-card [data-slot='card-content'] {
+    padding: 1rem;
+}
+
+.console-shell .ruiyi-cache-card table {
+    font-size: 0.875rem;
+}
+
+.console-shell .ruiyi-cache-card th {
+    height: 2.5rem;
+    color: hsl(215 24% 32%);
+    font-weight: 600;
+}
+
+.console-shell .ruiyi-cache-card td {
+    height: 2.875rem;
+}
+
+.console-shell .ruiyi-cache-card .ruiyi-pagination .is-current {
+    border-color: var(--primary);
+    color: var(--primary);
+}
