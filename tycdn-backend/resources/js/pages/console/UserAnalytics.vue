@@ -69,7 +69,7 @@ const metricGroups = [
         key: 'basic',
         label: '基础数据',
         metrics: [
-            { key: 'bandwidth', label: '带宽',    unit: 'bytes/s', color: '#4f72d8' },
+            { key: 'bandwidth', label: '带宽',    unit: 'bits/s', color: '#4f72d8' },
             { key: 'traffic',   label: '流量',    unit: 'bytes',   color: '#4f72d8' },
             { key: 'req',       label: '访问次数', unit: 'count',   color: '#4f72d8' },
             { key: 'qps',       label: 'QPS',     unit: 'count',   color: '#4f72d8' },
@@ -79,25 +79,30 @@ const metricGroups = [
         key: 'quality',
         label: '质量监控',
         metrics: [
-            { key: 'req-cache-status',  label: '请求命中率', unit: 'percent', color: '#8b5cf6' },
-            { key: 'byte-cache-status', label: '字节命中率', unit: 'percent', color: '#ec4899' },
-            { key: 'status-4xx',        label: '4xx状态码',  unit: 'count',   color: '#f97316' },
-            { key: 'status-5xx',        label: '5xx状态码',  unit: 'count',   color: '#ef4444' },
+            { key: 'req-cache-status',  label: '请求命中率', unit: 'percent', color: '#4f72d8' },
+            { key: 'byte-cache-status', label: '字节命中率', unit: 'percent', color: '#4f72d8' },
+            { key: 'status-4xx',        label: '4xx状态码',  unit: 'count',   color: '#4f72d8' },
+            { key: 'status-5xx',        label: '5xx状态码',  unit: 'count',   color: '#4f72d8' },
         ],
     },
     {
         key: 'origin',
         label: '回源监控',
         metrics: [
-            { key: 'backend-bandwidth',  label: '回源带宽', unit: 'bytes/s', color: '#64748b' },
-            { key: 'backend-traffic',    label: '回源流量', unit: 'bytes',   color: '#0ea5e9' },
-            { key: 'backend-resp-time',  label: '回源耗时', unit: 'ms',      color: '#84cc16' },
+            { key: 'backend-bandwidth',  label: '回源带宽', unit: 'bits/s', color: '#4f72d8' },
+            { key: 'backend-traffic',    label: '回源流量', unit: 'bytes',   color: '#4f72d8' },
+            { key: 'backend-resp-time',  label: '回源耗时', unit: 'seconds', color: '#4f72d8' },
         ],
     },
 ] as const;
 
 type MetricGroup = typeof metricGroups[number];
 type MetricDef = MetricGroup['metrics'][number];
+type MetricSeries = {
+    label: string;
+    color: string;
+    points: [number, number][];
+};
 
 // ── 数据分析：Tab 定义 ────────────────────────────────
 type TopTab = {
@@ -192,6 +197,7 @@ const activeGroupDef = computed(
     () => metricGroups.find((g) => g.key === activeGroup.value) ?? metricGroups[0],
 );
 const metricPoints = ref<Record<string, [number, number][]>>({});
+const metricSeries = ref<Record<string, MetricSeries[]>>({});
 const metricLoading = ref<Record<string, boolean>>({});
 const metricError = ref<Record<string, string>>({});
 const canvasRefs = ref<Record<string, HTMLCanvasElement | null>>({});
@@ -390,12 +396,12 @@ async function loadMetric(m: MetricDef): Promise<void> {
         if (rtFilters.host.trim()) params.domain = rtFilters.host.trim();
         if (rtFilters.server_port.trim()) params.server_port = rtFilters.server_port.trim();
         const result = await getUserSiteRealtime(params);
-        const raw = (result as { data?: unknown }).data;
-        const points: [number, number][] = Array.isArray(raw)
-            ? (raw as [number, number][]).filter(Array.isArray) : [];
+        const series = extractMetricSeries(result, m);
+        const points = series.flatMap((item) => item.points);
+        metricSeries.value[m.key] = series;
         metricPoints.value[m.key] = points;
         await nextTick();
-        await renderChart(m, points);
+        await renderChart(m, series);
     } catch (err) {
         metricError.value[m.key] = getErrorMessage(err);
     } finally {
@@ -511,10 +517,10 @@ function watchThemeForCharts(): void {
 
     themeObserver = new MutationObserver(() => {
         for (const m of activeGroupDef.value.metrics as readonly MetricDef[]) {
-            const points = metricPoints.value[m.key];
+            const series = metricSeries.value[m.key];
 
-            if (points && points.length > 0) {
-                void renderChart(m, points);
+            if (series && series.length > 0) {
+                void renderChart(m, series);
             }
         }
     });
@@ -533,7 +539,142 @@ async function ensureChartJs(): Promise<void> {
     await loadScript('https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js');
     chartJsLoaded = true;
 }
-async function renderChart(m: MetricDef, points: [number, number][]): Promise<void> {
+
+function extractMetricSeries(
+    result: unknown,
+    metric: MetricDef,
+): MetricSeries[] {
+    const raw = (result as { data?: unknown } | null)?.data;
+    const colors = ['#4f72d8', '#7ac36a', '#f5a623', '#ef5b5b', '#8b5cf6'];
+    const collected: Array<{ label: string; points: [number, number][] }> = [];
+
+    if (Array.isArray(raw)) {
+        const direct = pointRows(raw);
+
+        if (direct.length > 0) {
+            collected.push({ label: metric.label, points: direct });
+        } else {
+            const groups = new Map<string, [number, number][]>();
+
+            for (const item of raw) {
+                if (!item || typeof item !== 'object' || Array.isArray(item)) {
+                    continue;
+                }
+
+                const row = item as CdnflyRecord;
+                const timestamp = timestampValue(
+                    row.time ?? row.timestamp ?? row.ts ?? row.date,
+                );
+
+                if (timestamp === null) {
+                    continue;
+                }
+
+                const explicitLabel = textValue(
+                    row.status ?? row.code ?? row.name ?? row.series,
+                );
+                const explicitValue = numericValue(
+                    row.value ?? row.count ?? row.rate,
+                );
+
+                if (explicitLabel && explicitValue !== null) {
+                    const values = groups.get(explicitLabel) ?? [];
+                    values.push([timestamp, explicitValue]);
+                    groups.set(explicitLabel, values);
+                    continue;
+                }
+
+                for (const [key, value] of Object.entries(row)) {
+                    if (['time', 'timestamp', 'ts', 'date'].includes(key)) {
+                        continue;
+                    }
+
+                    const number = numericValue(value);
+
+                    if (number !== null) {
+                        const values = groups.get(key) ?? [];
+                        values.push([timestamp, number]);
+                        groups.set(key, values);
+                    }
+                }
+            }
+
+            for (const [label, values] of groups) {
+                collected.push({ label, points: values });
+            }
+        }
+    } else if (raw && typeof raw === 'object') {
+        for (const [label, value] of Object.entries(raw)) {
+            const data =
+                value && typeof value === 'object' && !Array.isArray(value)
+                    ? (value as { data?: unknown }).data
+                    : value;
+            const values = pointRows(data);
+
+            if (values.length > 0) {
+                collected.push({ label, points: values });
+            }
+        }
+    }
+
+    return collected.map((item, index) => ({
+        label: item.label,
+        color: collected.length === 1 ? metric.color : colors[index % colors.length],
+        points: normalizePercentPoints(item.points, metric.unit),
+    }));
+}
+
+function pointRows(value: unknown): [number, number][] {
+    if (!Array.isArray(value)) {
+        return [];
+    }
+
+    return value
+        .filter(
+            (item): item is unknown[] =>
+                Array.isArray(item) && item.length >= 2,
+        )
+        .map((item) => [timestampValue(item[0]), numericValue(item[1])])
+        .filter(
+            (item): item is [number, number] =>
+                item[0] !== null && item[1] !== null,
+        );
+}
+
+function timestampValue(value: unknown): number | null {
+    const numeric = Number(value);
+
+    if (Number.isFinite(numeric)) {
+        return numeric < 10_000_000_000 ? numeric * 1000 : numeric;
+    }
+
+    const parsed = Date.parse(String(value ?? ''));
+
+    return Number.isNaN(parsed) ? null : parsed;
+}
+
+function numericValue(value: unknown): number | null {
+    const parsed = Number(value);
+
+    return Number.isFinite(parsed) ? parsed : null;
+}
+
+function normalizePercentPoints(
+    points: [number, number][],
+    unit: string,
+): [number, number][] {
+    if (unit !== 'percent') {
+        return points;
+    }
+
+    const max = Math.max(...points.map(([, value]) => value), 0);
+
+    return max > 0 && max <= 1
+        ? points.map(([timestamp, value]) => [timestamp, value * 100])
+        : points;
+}
+
+async function renderChart(m: MetricDef, series: MetricSeries[]): Promise<void> {
     await ensureChartJs();
     const Chart = (window as unknown as Record<string, unknown>)['Chart'] as {
         new (canvas: HTMLCanvasElement, config: unknown): unknown;
@@ -543,32 +684,70 @@ async function renderChart(m: MetricDef, points: [number, number][]): Promise<vo
     if (!canvas) return;
     const existing = Chart.getChart(canvas);
     if (existing) existing.destroy();
-    const labels = points.map(([ts]) => {
+    const timestamps = [
+        ...new Set(series.flatMap((item) => item.points.map(([ts]) => ts))),
+    ].sort((a, b) => a - b);
+    const labels = timestamps.map((ts) => {
         const d = new Date(ts);
         return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
     });
-    const data = points.map(([, v]) => toChartValue(v, m.unit));
     const theme = chartColors();
     chartInstances[m.key] = new Chart(canvas, {
         type: 'line',
         data: {
             labels,
-            datasets: [{
-                label: m.label, data,
-                borderColor: m.color, backgroundColor: m.color + '18',
-                borderWidth: 2, pointRadius: points.length > 60 ? 0 : 3,
-                pointHoverRadius: 5, fill: true, tension: 0.3,
-            }],
+            datasets: series.map((item) => {
+                const values = new Map(item.points);
+
+                return {
+                    label: item.label,
+                    data: timestamps.map((timestamp) => {
+                        const value = values.get(timestamp);
+
+                        return value === undefined
+                            ? null
+                            : toChartValue(value, m.unit);
+                    }),
+                    borderColor: item.color,
+                    backgroundColor: `${item.color}18`,
+                    borderWidth: 2,
+                    pointRadius: timestamps.length > 60 ? 0 : 2.5,
+                    pointHoverRadius: 5,
+                    fill: series.length === 1,
+                    tension: 0.25,
+                    spanGaps: true,
+                };
+            }),
         },
         options: {
             responsive: true, maintainAspectRatio: false,
             interaction: { mode: 'index', intersect: false },
             plugins: {
-                legend: { display: false },
+                legend: {
+                    display: series.length > 1,
+                    position: 'top',
+                    align: 'center',
+                    labels: {
+                        color: theme.tick,
+                        usePointStyle: true,
+                        pointStyle: 'circle',
+                        boxWidth: 7,
+                        boxHeight: 7,
+                    },
+                },
                 tooltip: {
                     callbacks: {
                         label: (ctx: { parsed: { y: number } }) => {
-                            const raw = ctx.parsed.y * (m.unit === 'bytes/s' || m.unit === 'bytes' ? 1048576 : 1);
+                            const scale =
+                                m.unit === 'bits/s'
+                                    ? 1000 / 8
+                                    : m.unit === 'bytes'
+                                    ? 1048576
+                                    : m.unit === 'seconds'
+                                      ? 1000
+                                      : 1;
+                            const raw = ctx.parsed.y * scale;
+
                             return ` ${formatValue(raw, m.unit)}`;
                         },
                     },
@@ -761,6 +940,15 @@ function switchLogsTab(tab: 'query' | 'jobs'): void {
 
 // ── 工具函数 ──────────────────────────────────────────
 function formatValue(value: number, unit: string): string {
+    if (unit === 'bits/s') {
+        const bits = value * 8;
+
+        if (bits >= 1000000000) return `${(bits / 1000000000).toFixed(2)} Gbps`;
+        if (bits >= 1000000) return `${(bits / 1000000).toFixed(2)} Mbps`;
+        if (bits >= 1000) return `${(bits / 1000).toFixed(2)} Kbps`;
+        return `${bits.toFixed(0)} bps`;
+    }
+
     if (unit === 'bytes/s' || unit === 'bytes') {
         if (value >= 1073741824) return `${(value / 1073741824).toFixed(2)} GB${unit === 'bytes/s' ? '/s' : ''}`;
         if (value >= 1048576)    return `${(value / 1048576).toFixed(2)} MB${unit === 'bytes/s' ? '/s' : ''}`;
@@ -769,6 +957,7 @@ function formatValue(value: number, unit: string): string {
     }
     if (unit === 'percent') return `${value.toFixed(1)}%`;
     if (unit === 'ms') return `${value.toFixed(0)} ms`;
+    if (unit === 'seconds') return `${(value / 1000).toFixed(2)} 秒`;
     if (value >= 100000000) return `${(value / 100000000).toFixed(2)} 亿`;
     if (value >= 10000)     return `${(value / 10000).toFixed(1)} 万`;
     return `${value.toFixed(0)}`;
@@ -792,14 +981,18 @@ function numVal(v: unknown): number {
     return 0;
 }
 function yAxisLabel(unit: string): string {
+    if (unit === 'bits/s') return 'Kbps';
     if (unit === 'bytes/s') return 'MB/s';
     if (unit === 'bytes') return 'MB';
     if (unit === 'percent') return '%';
     if (unit === 'ms') return 'ms';
+    if (unit === 'seconds') return '秒';
     return '';
 }
 function toChartValue(value: number, unit: string): number {
+    if (unit === 'bits/s') return value * 8 / 1000;
     if (unit === 'bytes/s' || unit === 'bytes') return value / 1048576;
+    if (unit === 'seconds') return value / 1000;
     return value;
 }
 function rowDataValue(row: CdnflyRecord, key: string): unknown {
