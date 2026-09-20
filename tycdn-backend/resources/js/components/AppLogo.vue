@@ -4,14 +4,14 @@ import AppLogoIcon from '@/components/AppLogoIcon.vue';
 
 <template>
     <div
-        class="flex aspect-square size-8 items-center justify-center rounded-lg bg-sky-600 text-white shadow-sm dark:bg-sky-500"
+        class="flex aspect-square size-7 items-center justify-center rounded-full bg-gradient-to-br from-violet-600 to-sky-500 text-white"
     >
-        <AppLogoIcon class="size-5" />
+        <AppLogoIcon class="size-4" />
     </div>
     <div
         class="ml-1 grid flex-1 text-left text-sm group-data-[collapsible=icon]:hidden"
     >
-        <span class="mb-0.5 truncate leading-tight font-semibold">
+        <span class="truncate text-xs leading-tight font-semibold">
             TY CDN Console
         </span>
     </div>

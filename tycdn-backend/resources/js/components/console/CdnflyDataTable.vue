@@ -92,7 +92,7 @@ defineExpose({ reload: loadData });
 
     <Card class="gap-0 overflow-hidden">
         <CardHeader
-            class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between"
+            class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between"
         >
             <div class="flex items-center gap-3">
                 <CardTitle class="text-base">{{ title }}</CardTitle>
@@ -119,7 +119,7 @@ defineExpose({ reload: loadData });
                             <th
                                 v-for="col in columns"
                                 :key="col.key"
-                                class="px-4 py-3 text-left font-medium first:px-6"
+                                class="px-3 py-2 text-left font-medium"
                             >
                                 {{ col.label }}
                             </th>
@@ -142,7 +142,7 @@ defineExpose({ reload: loadData });
                             <td
                                 v-for="col in columns"
                                 :key="col.key"
-                                class="px-4 py-4 first:px-6"
+                                class="px-3 py-2.5"
                             >
                                 <Badge v-if="col.badge" variant="secondary">
                                     {{ cellValue(row, col) }}

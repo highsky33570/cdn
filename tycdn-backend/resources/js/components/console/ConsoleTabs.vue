@@ -43,18 +43,18 @@ defineEmits<{
         is about the page as a whole.
     -->
     <div
-        class="flex flex-col gap-3 border-b pb-3 md:flex-row md:items-center md:justify-between"
+        class="flex flex-col border-b md:flex-row md:items-center md:justify-between"
     >
-        <div class="flex flex-wrap gap-1">
+        <div class="flex flex-wrap gap-5">
             <button
                 v-for="tab in tabs"
                 :key="tab.key"
                 type="button"
-                class="flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors"
+                class="relative flex h-9 items-center gap-1.5 border-b-2 px-0 text-xs font-medium transition-colors"
                 :class="
                     modelValue === tab.key
-                        ? 'bg-primary/10 text-primary'
-                        : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+                        ? 'border-primary text-primary'
+                        : 'border-transparent text-muted-foreground hover:text-primary'
                 "
                 @click="$emit('update:modelValue', tab.key)"
             >
@@ -70,7 +70,10 @@ defineEmits<{
             </button>
         </div>
 
-        <div v-if="$slots.actions" class="flex shrink-0 flex-wrap gap-2">
+        <div
+            v-if="$slots.actions"
+            class="flex shrink-0 flex-wrap gap-2 pb-2 md:pb-0"
+        >
             <slot name="actions" />
         </div>
     </div>

@@ -314,14 +314,14 @@ defineExpose({
                 viewport is too narrow to hold it.
             -->
             <div
-                class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between"
+                class="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between"
             >
-                <div class="flex items-center gap-3">
+                <div class="flex items-center gap-2">
                     <div
                         v-if="icon"
-                        class="flex size-10 items-center justify-center rounded-md border bg-card"
+                        class="flex size-7 items-center justify-center rounded-sm border border-primary/20 bg-primary/5 text-primary"
                     >
-                        <component :is="icon" class="size-5" />
+                        <component :is="icon" class="size-3.5" />
                     </div>
                     <CardTitle class="text-base">{{ title }}</CardTitle>
                     <Badge v-if="total > 0" variant="outline">
@@ -428,7 +428,7 @@ defineExpose({
                     </colgroup>
                     <thead class="border-y bg-muted/50 text-muted-foreground">
                         <tr>
-                            <th v-if="selectable" class="px-3 py-3 text-center">
+                            <th v-if="selectable" class="px-3 py-2 text-center">
                                 <Checkbox
                                     :checked="allSelected"
                                     @update:checked="toggleSelectAll"
@@ -437,13 +437,13 @@ defineExpose({
                             <th
                                 v-for="col in columns"
                                 :key="col.key"
-                                class="px-4 py-3 font-medium"
+                                class="px-3 py-2 font-medium"
                                 :class="colAlign(col)"
                             >
                                 {{ col.label }}
                             </th>
                             <slot name="actions-header">
-                                <th class="px-4 py-3 text-right font-medium">
+                                <th class="px-3 py-2 text-right font-medium">
                                     操作
                                 </th>
                             </slot>
@@ -468,7 +468,7 @@ defineExpose({
                         >
                             <td
                                 v-if="selectable"
-                                class="px-3 py-4 text-center"
+                                class="px-3 py-2.5 text-center"
                                 @click.stop
                             >
                                 <Checkbox
@@ -479,7 +479,7 @@ defineExpose({
                             <td
                                 v-for="col in columns"
                                 :key="col.key"
-                                class="px-4 py-4"
+                                class="px-3 py-2.5"
                                 :class="colAlign(col)"
                             >
                                 <slot
@@ -499,7 +499,7 @@ defineExpose({
                                     }}</span>
                                 </slot>
                             </td>
-                            <td class="px-4 py-4" @click.stop>
+                            <td class="px-3 py-2.5" @click.stop>
                                 <div class="flex justify-end gap-1.5">
                                     <slot name="row-actions" :row="row" />
                                 </div>

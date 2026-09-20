@@ -33,13 +33,13 @@ withDefaults(
 
 <template>
     <div
-        class="grid gap-3 sm:grid-cols-2"
+        class="grid gap-2 sm:grid-cols-2"
         :class="columns === 3 ? 'xl:grid-cols-3' : 'xl:grid-cols-4'"
     >
         <div
             v-for="stat in stats"
             :key="stat.key"
-            class="rounded-xl border p-4"
+            class="border bg-card px-3 py-2.5"
             :class="
                 stat.tone === 'warning'
                     ? 'border-destructive/40 bg-destructive/5'
@@ -62,12 +62,12 @@ withDefaults(
                 />
             </div>
             <div
-                class="mt-2 text-2xl font-semibold"
+                class="mt-1 text-xl font-semibold"
                 :class="stat.tone === 'warning' ? 'text-destructive' : ''"
             >
                 {{ stat.value }}
             </div>
-            <div v-if="stat.hint" class="mt-1 text-xs text-muted-foreground">
+            <div v-if="stat.hint" class="mt-0.5 text-xs text-muted-foreground">
                 {{ stat.hint }}
             </div>
         </div>

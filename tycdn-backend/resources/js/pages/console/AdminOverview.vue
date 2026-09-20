@@ -229,22 +229,22 @@ function userTitle(user: AdminUserRecord): string {
         </div>
 
         <template v-else>
-            <div class="grid gap-4 xl:grid-cols-4">
-                <Card class="gap-4">
-                    <CardHeader class="flex flex-row items-center gap-3">
+            <div class="grid gap-2 xl:grid-cols-4">
+                <Card class="gap-2">
+                    <CardHeader class="flex flex-row items-center gap-2">
                         <div
-                            class="flex size-10 items-center justify-center rounded-md border bg-card"
+                            class="flex size-8 items-center justify-center rounded-sm border border-primary/20 bg-primary/5 text-primary"
                         >
-                            <Users class="size-5" />
+                            <Users class="size-4" />
                         </div>
                         <div>
                             <CardTitle class="text-base">本地用户</CardTitle>
-                            <div class="mt-1 text-3xl font-semibold">
+                            <div class="mt-0.5 text-xl font-semibold">
                                 {{ formatNumber(metrics?.users_total) }}
                             </div>
                         </div>
                     </CardHeader>
-                    <CardContent class="grid gap-2 text-sm">
+                    <CardContent class="grid gap-1 text-xs">
                         <div class="flex justify-between gap-3">
                             <span class="text-muted-foreground">管理员</span>
                             <span>{{
@@ -262,40 +262,40 @@ function userTitle(user: AdminUserRecord): string {
                     </CardContent>
                 </Card>
 
-                <Card class="gap-4">
-                    <CardHeader class="flex flex-row items-center gap-3">
+                <Card class="gap-2">
+                    <CardHeader class="flex flex-row items-center gap-2">
                         <div
-                            class="flex size-10 items-center justify-center rounded-md border bg-card"
+                            class="flex size-8 items-center justify-center rounded-sm border border-primary/20 bg-primary/5 text-primary"
                         >
-                            <KeyRound class="size-5" />
+                            <KeyRound class="size-4" />
                         </div>
                         <div>
                             <CardTitle class="text-base">API Key</CardTitle>
-                            <div class="mt-1 text-3xl font-semibold">
+                            <div class="mt-0.5 text-xl font-semibold">
                                 {{ formatNumber(metrics?.api_key_ready_users) }}
                             </div>
                         </div>
                     </CardHeader>
-                    <CardContent class="text-sm text-muted-foreground">
+                    <CardContent class="text-xs text-muted-foreground">
                         可直接调用 CDNfly 用户端 API 的账号数量
                     </CardContent>
                 </Card>
 
-                <Card class="gap-4">
-                    <CardHeader class="flex flex-row items-center gap-3">
+                <Card class="gap-2">
+                    <CardHeader class="flex flex-row items-center gap-2">
                         <div
-                            class="flex size-10 items-center justify-center rounded-md border bg-card"
+                            class="flex size-8 items-center justify-center rounded-sm border border-primary/20 bg-primary/5 text-primary"
                         >
-                            <ShoppingCart class="size-5" />
+                            <ShoppingCart class="size-4" />
                         </div>
                         <div>
                             <CardTitle class="text-base">本地订单</CardTitle>
-                            <div class="mt-1 text-3xl font-semibold">
+                            <div class="mt-0.5 text-xl font-semibold">
                                 {{ formatNumber(metrics?.orders_total) }}
                             </div>
                         </div>
                     </CardHeader>
-                    <CardContent class="grid gap-2 text-sm">
+                    <CardContent class="grid gap-1 text-xs">
                         <div class="flex justify-between gap-3">
                             <span class="text-muted-foreground">待支付</span>
                             <span>
@@ -311,21 +311,21 @@ function userTitle(user: AdminUserRecord): string {
                     </CardContent>
                 </Card>
 
-                <Card class="gap-4">
-                    <CardHeader class="flex flex-row items-center gap-3">
+                <Card class="gap-2">
+                    <CardHeader class="flex flex-row items-center gap-2">
                         <div
-                            class="flex size-10 items-center justify-center rounded-md border bg-card"
+                            class="flex size-8 items-center justify-center rounded-sm border border-primary/20 bg-primary/5 text-primary"
                         >
-                            <Cloud class="size-5" />
+                            <Cloud class="size-4" />
                         </div>
                         <div>
                             <CardTitle class="text-base">CDNfly</CardTitle>
-                            <div class="mt-1 text-3xl font-semibold">
+                            <div class="mt-0.5 text-xl font-semibold">
                                 {{ formatNumber(cdnfly?.users_total) }}
                             </div>
                         </div>
                     </CardHeader>
-                    <CardContent class="grid gap-2 text-sm">
+                    <CardContent class="grid gap-1 text-xs">
                         <div class="flex justify-between gap-3">
                             <span class="text-muted-foreground">基础套餐</span>
                             <span>
@@ -343,21 +343,21 @@ function userTitle(user: AdminUserRecord): string {
             </div>
 
             <Card class="gap-0 overflow-hidden">
-                <CardHeader class="flex flex-row items-center gap-3">
+                <CardHeader class="flex flex-row items-center gap-2">
                     <div
-                        class="flex size-10 items-center justify-center rounded-md border bg-card"
+                        class="flex size-8 items-center justify-center rounded-sm border border-primary/20 bg-primary/5 text-primary"
                     >
-                        <Cloud class="size-5" />
+                        <Cloud class="size-4" />
                     </div>
                     <CardTitle class="text-base">CDNfly 资源总览</CardTitle>
                 </CardHeader>
-                <CardContent class="grid gap-6 p-4 md:p-6">
+                <CardContent class="grid gap-3 p-3">
                     <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
                         <Link
                             v-for="stat in cdnflyResourceStats"
                             :key="stat.label"
                             :href="stat.href || '/console/admin'"
-                            class="group flex min-h-28 flex-col justify-between rounded-md border bg-card px-4 py-3 transition-colors hover:border-primary/60 hover:bg-muted/40"
+                            class="group flex min-h-20 flex-col justify-between rounded-sm border bg-card px-3 py-2 transition-colors hover:border-primary/60 hover:bg-muted/40"
                         >
                             <div
                                 class="flex items-center justify-between gap-3 text-sm text-muted-foreground"
@@ -367,7 +367,7 @@ function userTitle(user: AdminUserRecord): string {
                                     class="size-4 opacity-40 transition-opacity group-hover:opacity-100"
                                 />
                             </div>
-                            <div class="text-3xl font-semibold">
+                            <div class="text-xl font-semibold">
                                 {{ formatNumber(stat.value) }}
                             </div>
                         </Link>
@@ -378,7 +378,7 @@ function userTitle(user: AdminUserRecord): string {
                             v-for="stat in cdnflyConfigStats"
                             :key="stat.label"
                             :href="stat.href || '/console/admin'"
-                            class="group flex min-h-24 flex-col justify-between rounded-md border bg-card px-4 py-3 transition-colors hover:border-primary/60 hover:bg-muted/40"
+                            class="group flex min-h-16 flex-col justify-between rounded-sm border bg-card px-3 py-2 transition-colors hover:border-primary/60 hover:bg-muted/40"
                         >
                             <div
                                 class="flex items-center justify-between gap-3 text-sm text-muted-foreground"
@@ -388,7 +388,7 @@ function userTitle(user: AdminUserRecord): string {
                                     class="size-4 opacity-40 transition-opacity group-hover:opacity-100"
                                 />
                             </div>
-                            <div class="text-2xl font-semibold">
+                            <div class="text-lg font-semibold">
                                 {{ formatNumber(stat.value) }}
                             </div>
                         </Link>

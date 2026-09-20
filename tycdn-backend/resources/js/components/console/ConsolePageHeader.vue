@@ -19,32 +19,32 @@ defineProps<{
 
 <template>
     <div
-        class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between"
+        class="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between"
     >
-        <div class="flex min-w-0 flex-col gap-3">
+        <div class="flex min-w-0 flex-col gap-2">
             <div
-                v-if="eyebrow || showApiBadge !== false"
+                v-if="eyebrow || showApiBadge === true"
                 class="flex flex-wrap items-center gap-2"
             >
                 <Badge v-if="eyebrow" variant="secondary">{{ eyebrow }}</Badge>
-                <Badge v-if="showApiBadge !== false" variant="outline">
+                <Badge v-if="showApiBadge === true" variant="outline">
                     CDNfly API
                 </Badge>
             </div>
             <div class="flex items-center gap-3">
                 <div
                     v-if="icon"
-                    class="flex size-10 shrink-0 items-center justify-center rounded-md border bg-card"
+                    class="flex size-7 shrink-0 items-center justify-center rounded-sm border border-primary/20 bg-primary/5 text-primary [&>svg]:size-3.5"
                 >
                     <component :is="icon" />
                 </div>
                 <div class="min-w-0">
-                    <h1 class="text-2xl font-semibold tracking-normal">
+                    <h1 class="text-base font-semibold tracking-normal">
                         {{ title }}
                     </h1>
                     <p
                         v-if="description"
-                        class="mt-1 max-w-3xl text-sm text-muted-foreground"
+                        class="mt-0.5 max-w-3xl text-xs text-muted-foreground"
                     >
                         {{ description }}
                     </p>

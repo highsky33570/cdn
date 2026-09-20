@@ -231,3 +231,217 @@
         @apply bg-background text-foreground;
     }
 }
+
+/*
+ * Dense console theme inspired by the Ruiyi operations panel.  Keeping these
+ * rules under the console shell lets the public/auth pages retain their own
+ * visual language while every user and administrator module stays consistent.
+ */
+.console-shell {
+    --background: hsl(216 33% 97%);
+    --foreground: hsl(215 24% 20%);
+    --card: hsl(0 0% 100%);
+    --card-foreground: hsl(215 24% 20%);
+    --popover: hsl(0 0% 100%);
+    --popover-foreground: hsl(215 24% 20%);
+    --primary: hsl(209 82% 54%);
+    --primary-foreground: hsl(0 0% 100%);
+    --secondary: hsl(211 38% 95%);
+    --secondary-foreground: hsl(211 56% 38%);
+    --muted: hsl(214 30% 97%);
+    --muted-foreground: hsl(215 12% 48%);
+    --accent: hsl(210 53% 95%);
+    --accent-foreground: hsl(209 72% 43%);
+    --border: hsl(214 25% 90%);
+    --input: hsl(214 22% 86%);
+    --ring: hsl(209 82% 54%);
+    --sidebar-background: hsl(0 0% 100%);
+    --sidebar-foreground: hsl(215 18% 32%);
+    --sidebar-primary: hsl(209 82% 54%);
+    --sidebar-primary-foreground: hsl(0 0% 100%);
+    --sidebar-accent: hsl(209 70% 96%);
+    --sidebar-accent-foreground: hsl(209 76% 46%);
+    --sidebar-border: hsl(214 25% 90%);
+    --radius: 0.25rem;
+    background: var(--background);
+    font-size: 13px;
+    line-height: 1.45;
+}
+
+.dark .console-shell {
+    --background: hsl(218 22% 10%);
+    --foreground: hsl(210 25% 94%);
+    --card: hsl(218 20% 13%);
+    --card-foreground: hsl(210 25% 94%);
+    --popover: hsl(218 20% 13%);
+    --popover-foreground: hsl(210 25% 94%);
+    --secondary: hsl(215 20% 18%);
+    --secondary-foreground: hsl(210 70% 74%);
+    --muted: hsl(216 18% 17%);
+    --muted-foreground: hsl(215 14% 65%);
+    --accent: hsl(211 34% 20%);
+    --accent-foreground: hsl(210 75% 72%);
+    --border: hsl(216 17% 22%);
+    --input: hsl(216 17% 25%);
+    --sidebar-background: hsl(218 20% 12%);
+    --sidebar-foreground: hsl(210 18% 84%);
+    --sidebar-accent: hsl(211 31% 20%);
+    --sidebar-accent-foreground: hsl(210 75% 72%);
+    --sidebar-border: hsl(216 17% 22%);
+}
+
+.console-shell [data-slot='sidebar-inset'] {
+    min-width: 0;
+    background: var(--background);
+}
+
+.console-shell [data-sidebar='sidebar'] {
+    box-shadow: none;
+}
+
+.console-shell [data-sidebar='header'] {
+    min-height: 2.5rem;
+    padding: 0.25rem 0.5rem;
+    border-bottom: 1px solid var(--sidebar-border);
+}
+
+.console-shell [data-sidebar='footer'] {
+    padding: 0.3rem 0.45rem;
+    border-top: 1px solid var(--sidebar-border);
+}
+
+.console-shell [data-sidebar='group-label'] {
+    height: 1.65rem;
+    padding-inline: 0.55rem;
+    color: var(--muted-foreground);
+    font-size: 0.7rem;
+    font-weight: 500;
+}
+
+.console-shell [data-sidebar='menu-button'] {
+    height: 1.9rem;
+    border-radius: 2px;
+    font-size: 0.78rem;
+}
+
+.console-shell [data-sidebar='menu-button'][data-active='true'] {
+    position: relative;
+    color: var(--sidebar-accent-foreground);
+    font-weight: 500;
+}
+
+.console-shell [data-sidebar='menu-button'][data-active='true']::before {
+    position: absolute;
+    inset-block: 0.25rem;
+    left: -0.5rem;
+    width: 2px;
+    border-radius: 0 2px 2px 0;
+    background: var(--primary);
+    content: '';
+}
+
+.console-shell [data-sidebar='menu-sub-button'] {
+    height: 1.7rem;
+    border-radius: 2px;
+    font-size: 0.75rem;
+}
+
+.console-shell [data-sidebar='menu-badge'] {
+    gap: 0.1rem;
+    margin-left: 1rem;
+    padding-left: 0.65rem;
+}
+
+.console-shell [data-slot='card'] {
+    gap: 0.75rem;
+    padding-block: 0.75rem;
+    border-radius: 2px;
+    box-shadow: none;
+}
+
+.console-shell [data-slot='card-header'] {
+    padding-inline: 0.75rem;
+}
+
+.console-shell [data-slot='card-content']:not(.p-0) {
+    padding-inline: 0.75rem;
+}
+
+.console-shell [data-slot='button'] {
+    min-height: 1.875rem;
+    border-radius: 2px;
+    font-size: 0.78rem;
+    box-shadow: none;
+}
+
+.console-shell [data-slot='input'],
+.console-shell [data-slot='select-trigger'] {
+    height: 2rem;
+    border-radius: 2px;
+    background: var(--card);
+    font-size: 0.78rem;
+    box-shadow: none;
+}
+
+.console-shell [data-slot='badge'] {
+    border-radius: 2px;
+    font-weight: 500;
+}
+
+.console-shell [data-slot='card-title'] {
+    font-size: 0.82rem;
+    font-weight: 500;
+}
+
+.console-shell [data-slot='alert'] {
+    border-radius: 2px;
+}
+
+.console-shell table {
+    font-size: 0.76rem;
+}
+
+.console-shell thead {
+    background: hsl(214 35% 97%);
+}
+
+.dark .console-shell thead {
+    background: hsl(216 18% 16%);
+}
+
+.console-shell th,
+.console-shell td {
+    border-color: var(--border);
+}
+
+.console-shell th {
+    height: 2rem;
+    font-weight: 500;
+}
+
+.console-shell td {
+    height: 2.35rem;
+}
+
+.console-shell tbody tr {
+    transition: background-color 120ms ease;
+}
+
+.console-shell tbody tr:hover {
+    background: hsl(210 50% 98%);
+}
+
+.dark .console-shell tbody tr:hover {
+    background: hsl(211 25% 17%);
+}
+
+.console-shell [role='dialog'] {
+    border-radius: 4px;
+}
+
+@media (min-width: 768px) {
+    .console-shell [data-slot='sidebar-inset'] > .flex.flex-1.flex-col {
+        gap: 0.75rem;
+        padding: 0.75rem;
+    }
+}
