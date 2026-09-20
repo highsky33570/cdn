@@ -661,6 +661,12 @@ export async function listUserDomains(
     return proxyGet('/v1/domains', params);
 }
 
+export async function syncUserDomains(
+    data: Array<{ id: number }>,
+): Promise<CdnflyRecord> {
+    return proxyRequest('/v1/domains', 'POST', data);
+}
+
 export async function postCnameCheck(
     data: Record<string, { cname: string; domain: string }>,
 ): Promise<CdnflyRecord> {

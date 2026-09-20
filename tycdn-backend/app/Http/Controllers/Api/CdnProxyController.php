@@ -31,7 +31,7 @@ class CdnProxyController extends Controller
         '/v1/monitor/site/history-blackip' => ['GET'],
         '/v1/monitor/site/blackip-count' => ['GET'],
         '/v1/monitor/site/access-log' => ['GET'],
-        '/v1/domains' => ['GET'],
+        '/v1/domains' => ['GET', 'POST'],
         '/v1/cname-check' => ['POST'],
         '/v1/user-configs' => ['GET', 'POST', 'PUT', 'DELETE'],
         '/v1/monitor/usage' => ['GET'],

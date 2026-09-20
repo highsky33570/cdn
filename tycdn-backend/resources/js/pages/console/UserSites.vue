@@ -1,13 +1,16 @@
 <script setup lang="ts">
 import {
     AlertCircle,
+    CheckCircle2,
     Globe2,
+    LoaderCircle,
     Pencil,
     Plus,
     RefreshCw,
     Save,
     Search,
     Trash2,
+    XCircle,
 } from 'lucide-vue-next';
 import { computed, onMounted, reactive, ref, watch } from 'vue';
 import { toast } from 'vue-sonner';
@@ -55,6 +58,7 @@ import {
     deleteUserDnsApi,
     deleteUserSite,
     deleteUserSiteGroup,
+    extractCdnflyRecord,
     extractCdnflyRows,
     extractCdnflyTotal,
     listUserConfigs,
@@ -64,6 +68,7 @@ import {
     listUserSiteGroups,
     listUserSites,
     postCnameCheck,
+    syncUserDomains,
     updateUserConfig,
     updateUserDnsApi,
     updateUserSite,
@@ -303,6 +308,8 @@ const resolveFilters = reactive({ domain: '', site_id: '', per_page: '20' });
 const resolveSelected = ref<Set<number>>(new Set());
 const resolveChecking = ref(false);
 const resolveSelectAll = ref(false);
+type ResolveCheckState = 'checking' | 'resolved' | 'unresolved' | 'error';
+const resolveCheckStates = ref<Record<string, ResolveCheckState>>({});
 
 const currentConfigMeta = computed(() =>
     SITE_CONFIG_NAMES.find((c) => c.value === configForm.name),
@@ -962,15 +969,63 @@ async function loadResolve(p = resolvePage.value) {
         }
 
         const r = await listUserDomains(params);
-        resolveRows.value = extractCdnflyRows(r);
+        const rows = extractCdnflyRows(r);
+        resolveRows.value = rows;
         resolveTotal.value = extractCdnflyTotal(r, resolveRows.value.length);
         resolvePage.value = p;
         resolveSelected.value.clear();
         resolveSelectAll.value = false;
+        resolveCheckStates.value = Object.fromEntries(
+            rows.map((row) => [String(row.id), 'checking']),
+        );
+        void checkResolveRows(rows);
     } catch (e) {
         errorMessage.value = getErrorMessage(e);
     } finally {
         loading.value = false;
+    }
+}
+
+async function checkResolveRows(rows: CdnflyRecord[]) {
+    if (rows.length === 0) {
+        return;
+    }
+
+    const payload: Record<string, { cname: string; domain: string }> = {};
+
+    for (const row of rows) {
+        const id = textValue(row.id);
+        const cname = textValue(row.cname);
+        const domain = textValue(row.domain);
+
+        if (id && cname && domain) {
+            payload[id] = { cname, domain };
+        } else if (id) {
+            resolveCheckStates.value[id] = 'error';
+        }
+    }
+
+    if (Object.keys(payload).length === 0) {
+        return;
+    }
+
+    try {
+        const response = await postCnameCheck(payload);
+        const results = extractCdnflyRecord(response) ?? {};
+
+        for (const id of Object.keys(payload)) {
+            const result = results[id];
+            resolveCheckStates.value[id] =
+                result === true || result === 1 || result === '1'
+                    ? 'resolved'
+                    : 'unresolved';
+        }
+    } catch (e) {
+        for (const id of Object.keys(payload)) {
+            resolveCheckStates.value[id] = 'error';
+        }
+
+        toast.error(`自动检测解析失败：${getErrorMessage(e)}`);
     }
 }
 
@@ -1006,23 +1061,10 @@ async function syncResolve() {
         return;
     }
 
-    const data: Record<string, { cname: string; domain: string }> = {};
-
-    for (const id of resolveSelected.value) {
-        const row = resolveRows.value.find((r) => Number(r.id) === id);
-
-        if (row) {
-            data[String(id)] = {
-                cname: textValue(row.cname),
-                domain: textValue(row.domain),
-            };
-        }
-    }
-
     resolveChecking.value = true;
 
     try {
-        await postCnameCheck(data);
+        await syncUserDomains([...resolveSelected.value].map((id) => ({ id })));
         toast.success('同步解析任务已提交');
         await loadResolve();
     } catch (e) {
@@ -1149,44 +1191,8 @@ function idField(v: unknown) {
 function recordName(r: CdnflyRecord) {
     return textValue(r.name) || `#${textValue(r.id)}`;
 }
-// 解析状态 comes from the domain's `cname_state` (populated by 同步解析):
-// done = 解析成功, failed = 解析失败, empty/null = not yet checked.
-function resolveStateLabel(v: unknown): string {
-    const s = String(v ?? '').toLowerCase();
-
-    if (s === 'done') {
-        return '解析成功';
-    }
-
-    if (s === 'failed') {
-        return '解析失败';
-    }
-
-    if (s === 'check' || s === 'checking') {
-        return '检测中';
-    }
-
-    if (s === '') {
-        return '待检测';
-    }
-
-    return textValue(v);
-}
-
-function resolveStateVariant(
-    v: unknown,
-): 'secondary' | 'destructive' | 'outline' {
-    const s = String(v ?? '').toLowerCase();
-
-    if (s === 'done') {
-        return 'secondary';
-    }
-
-    if (s === 'failed') {
-        return 'destructive';
-    }
-
-    return 'outline';
+function resolveCheckState(row: CdnflyRecord): ResolveCheckState {
+    return resolveCheckStates.value[textValue(row.id)] ?? 'checking';
 }
 
 // 任务状态 comes from the domain's sync-task `state` field (verified against the
@@ -2185,16 +2191,35 @@ function taskStateVariant(v: unknown): 'secondary' | 'destructive' | 'outline' {
                                         {{ textValue(d.cname) || '-' }}
                                     </td>
                                     <td class="px-4 py-3">
-                                        <Badge
-                                            :variant="
-                                                resolveStateVariant(
-                                                    d.cname_state,
-                                                )
+                                        <LoaderCircle
+                                            v-if="
+                                                resolveCheckState(d) ===
+                                                'checking'
                                             "
-                                            >{{
-                                                resolveStateLabel(d.cname_state)
-                                            }}</Badge
-                                        >
+                                            class="size-4 animate-spin text-muted-foreground"
+                                            aria-label="检测中"
+                                        />
+                                        <CheckCircle2
+                                            v-else-if="
+                                                resolveCheckState(d) ===
+                                                'resolved'
+                                            "
+                                            class="size-4 text-emerald-500"
+                                            aria-label="解析正确"
+                                        />
+                                        <XCircle
+                                            v-else-if="
+                                                resolveCheckState(d) ===
+                                                'unresolved'
+                                            "
+                                            class="size-4 text-red-500"
+                                            aria-label="解析错误"
+                                        />
+                                        <AlertCircle
+                                            v-else
+                                            class="size-4 text-amber-500"
+                                            aria-label="检测失败"
+                                        />
                                     </td>
                                     <td class="px-4 py-3">
                                         <Badge
