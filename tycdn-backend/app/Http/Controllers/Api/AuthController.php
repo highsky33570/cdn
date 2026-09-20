@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Services\CdnflyAccountService;
 use App\Services\CdnflyApiService;
 use App\Services\RecaptchaService;
+use App\Support\EmailVerificationSignature;
 use Illuminate\Auth\Events\Verified;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -95,6 +96,16 @@ class AuthController extends Controller
      */
     public function verifyEmail(Request $request, int $id, string $hash): JsonResponse
     {
+        $expires = filter_var($request->query('expires'), FILTER_VALIDATE_INT);
+        $token = (string) $request->query('token', '');
+
+        if ($expires === false || ! EmailVerificationSignature::isValid($id, $hash, $expires, $token)) {
+            return response()->json([
+                'ok' => false,
+                'message' => '验证链接已过期或无效，请重新发送验证邮件。',
+            ], 403);
+        }
+
         /** @var User|null $user */
         $user = User::query()->find($id);
 

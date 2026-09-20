@@ -6,6 +6,7 @@ use App\Listeners\InvalidateSessionsOnPasswordReset;
 use App\Listeners\SyncCdnflyOnVerified;
 use App\Listeners\ThrottleOutboundMail;
 use App\Support\CdnflyEncrypter;
+use App\Support\EmailVerificationSignature;
 use Carbon\CarbonImmutable;
 use Illuminate\Auth\Events\PasswordReset as PasswordResetEvent;
 use Illuminate\Auth\Events\Verified;
@@ -15,7 +16,6 @@ use Illuminate\Mail\Events\MessageSending;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
-use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
 
@@ -68,23 +68,20 @@ class AppServiceProvider extends ServiceProvider
     protected function configureEmailVerificationLinks(): void
     {
         VerifyEmail::createUrlUsing(function ($notifiable): string {
-            // Sign only the path and query. An absolute signature also includes
-            // scheme and host, which changes when the request passes through
-            // Cloudflare/nginx or when the public API host differs from the
-            // frontend host. That made brand-new links fail validation.
-            $signedPath = URL::temporarySignedRoute(
-                'api.auth.verify-email',
-                now()->addMinutes(config('auth.verification.expire', 60)),
-                [
-                    'id' => $notifiable->getKey(),
-                    'hash' => sha1($notifiable->getEmailForVerification()),
-                ],
-                absolute: false,
-            );
-
             $frontendBaseUrl = rtrim((string) config('app.frontend_url', config('app.url')), '/');
             $backendBaseUrl = rtrim((string) config('app.url'), '/');
-            $signedUrl = $backendBaseUrl.'/'.ltrim($signedPath, '/');
+            $userId = $notifiable->getKey();
+            $emailHash = sha1($notifiable->getEmailForVerification());
+            $expires = now()->addMinutes(config('auth.verification.expire', 60))->getTimestamp();
+            $token = EmailVerificationSignature::make($userId, $emailHash, $expires);
+            $verificationPath = route('api.auth.verify-email', [
+                'id' => $userId,
+                'hash' => $emailHash,
+            ], false);
+            $signedUrl = $backendBaseUrl.'/'.ltrim($verificationPath, '/').'?'.http_build_query([
+                'expires' => $expires,
+                'token' => $token,
+            ]);
 
             return $frontendBaseUrl.'/verify-email#'.http_build_query([
                 'verify_url' => $signedUrl,
