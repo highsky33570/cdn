@@ -43,6 +43,8 @@ import { formatDate, getErrorMessage, textValue } from '@/lib/cdnRecord';
 import {
     extractCdnflyRows,
     extractCdnflyTotal,
+    extractCdnflyRecord,
+    getUserPackage,
     getUserPackageUpgrades,
     getUserPackageUsage,
     listSalePackageUps,
@@ -104,6 +106,9 @@ const upgradeError = ref('');
 const usageDialogOpen = ref(false);
 const usageTarget = ref<CdnflyRecord | null>(null);
 const usageData = ref<CdnflyRecord[]>([]);
+const usageDetails = ref<CdnflyRecord | null>(null);
+const usageUpgrades = ref<CdnflyRecord[]>([]);
+const usageTab = ref<'usage' | 'details'>('usage');
 const usageLoading = ref(false);
 const usageError = ref('');
 
@@ -514,27 +519,46 @@ async function openUsageDialog(record: CdnflyRecord): Promise<void> {
 
     usageTarget.value = record;
     usageData.value = [];
+    usageDetails.value = record;
+    usageUpgrades.value = [];
+    usageTab.value = 'usage';
     usageError.value = '';
     usageDialogOpen.value = true;
     usageLoading.value = true;
 
     try {
-        const result = await getUserPackageUsage(pkgId);
-        usageData.value = extractCdnflyRows(result);
+        const [detailResult, usageResult, upgradesResult] =
+            await Promise.allSettled([
+                getUserPackage(pkgId),
+                getUserPackageUsage(pkgId),
+                getUserPackageUpgrades(pkgId, { limit: 0 }),
+            ]);
 
-        if (
-            usageData.value.length === 0 &&
-            result &&
-            typeof result === 'object'
-        ) {
-            const flat = { ...result } as CdnflyRecord;
-            delete flat.code;
-            delete flat.msg;
-            delete flat.message;
+        if (detailResult.status === 'fulfilled') {
+            const details = extractCdnflyRecord(detailResult.value);
 
-            if (Object.keys(flat).length > 0) {
-                usageData.value = [flat];
+            if (details) {
+                usageDetails.value = { ...record, ...details };
             }
+        }
+
+        if (usageResult.status === 'fulfilled') {
+            const rows = extractCdnflyRows(usageResult.value);
+            const flat = extractCdnflyRecord(usageResult.value);
+
+            usageData.value = rows.length > 0 ? rows : flat ? [flat] : [];
+        }
+
+        if (upgradesResult.status === 'fulfilled') {
+            usageUpgrades.value = extractCdnflyRows(upgradesResult.value);
+        }
+
+        const failed = [detailResult, usageResult, upgradesResult].find(
+            (result) => result.status === 'rejected',
+        );
+
+        if (failed?.status === 'rejected') {
+            usageError.value = getErrorMessage(failed.reason);
         }
     } catch (error) {
         usageError.value = getErrorMessage(error);
@@ -543,31 +567,176 @@ async function openUsageDialog(record: CdnflyRecord): Promise<void> {
     }
 }
 
-function usageLabel(key: string): string {
-    const labels: Record<string, string> = {
-        traffic: '流量',
-        flow: '流量',
-        bandwidth: '带宽',
-        bw: '带宽',
-        connection: '连接数',
-        conn: '连接数',
-        domain: '域名数',
-        site: '站点数',
-        sites: '站点数',
-        request: '请求数',
-        used_traffic: '已用流量',
-        total_traffic: '总流量',
-        used_bandwidth: '已用带宽',
-        total_bandwidth: '总带宽',
-        used_connection: '已用连接数',
-        total_connection: '总连接数',
-        used_domain: '已用域名数',
-        total_domain: '总域名数',
-        expire_time: '到期时间',
-        start_time: '开始时间',
-    };
+type UsageMetric = {
+    label: string;
+    total: string;
+    used: string;
+    remaining: string;
+};
 
-    return labels[key] ?? key;
+const usageRecord = computed<CdnflyRecord>(() =>
+    Object.assign({}, ...usageData.value),
+);
+
+const usageMetrics = computed<UsageMetric[]>(() => [
+    buildUsageMetric(
+        '流量 (GB)',
+        ['traffic', 'total_traffic'],
+        ['traffic', 'used_traffic', 'traffic_usage'],
+        usageTarget.value?.traffic_usage,
+    ),
+    buildUsageMetric(
+        '域名数',
+        ['domain', 'total_domain'],
+        ['domain', 'used_domain'],
+    ),
+    buildUsageMetric(
+        '主域名数',
+        ['main_domain', 'total_main_domain'],
+        ['main_domain', 'used_main_domain'],
+    ),
+    buildUsageMetric(
+        'HTTP端口数',
+        ['http_port', 'total_http_port'],
+        ['http_port', 'used_http_port'],
+    ),
+    buildUsageMetric(
+        '转发端口数',
+        ['stream_port', 'total_stream_port'],
+        ['stream_port', 'used_stream_port'],
+    ),
+]);
+
+const packageDetailItems = computed(() => [
+    { label: '名称', value: detailText(['package_name', 'name']) },
+    { label: '流量 (GB)', value: quotaText(detailValue(['traffic'])) },
+    { label: '带宽', value: quotaText(detailValue(['bandwidth'])) },
+    { label: '连接数', value: quotaText(detailValue(['connection'])) },
+    { label: '域名数', value: quotaText(detailValue(['domain'])) },
+    { label: '主域名数', value: quotaText(detailValue(['main_domain'])) },
+    { label: 'HTTP端口数', value: quotaText(detailValue(['http_port'])) },
+    { label: '转发端口数', value: quotaText(detailValue(['stream_port'])) },
+    {
+        label: '自定义CC规则',
+        value: enabledText(detailValue(['custom_cc_rule'])),
+    },
+    { label: 'WebSocket', value: enabledText(detailValue(['websocket'])) },
+    { label: 'HTTP3', value: enabledText(detailValue(['http3'])) },
+    {
+        label: '购买时间',
+        value: formatDate(
+            detailValue(['start_at2', 'start_at', 'create_at2', 'created_at']),
+        ),
+    },
+    {
+        label: '到期时间',
+        value: formatDate(detailValue(['end_at2', 'end_at', 'expire_at'])),
+    },
+    {
+        label: '流量重置时间',
+        value: formatDate(
+            detailValue([
+                'traffic_reset_at2',
+                'traffic_reset_at',
+                'reset_at2',
+                'reset_at',
+                'end_at2',
+                'end_at',
+            ]),
+        ),
+    },
+]);
+
+function buildUsageMetric(
+    label: string,
+    totalKeys: string[],
+    usedKeys: string[],
+    fallbackUsed?: unknown,
+): UsageMetric {
+    const totalValue = firstRecordValue(usageDetails.value, totalKeys);
+    const usedValue =
+        firstRecordValue(usageRecord.value, usedKeys) ?? fallbackUsed ?? 0;
+
+    return {
+        label,
+        total: quotaText(totalValue),
+        used: numberText(usedValue),
+        remaining: remainingText(totalValue, usedValue),
+    };
+}
+
+function detailValue(keys: string[]): unknown {
+    return firstRecordValue(usageDetails.value, keys);
+}
+
+function detailText(keys: string[]): string {
+    return textValue(detailValue(keys)) || '-';
+}
+
+function firstRecordValue(
+    record: CdnflyRecord | null,
+    keys: string[],
+): unknown {
+    if (!record) {
+        return undefined;
+    }
+
+    for (const key of keys) {
+        const value = record[key];
+
+        if (value !== undefined && value !== null && value !== '') {
+            return value;
+        }
+    }
+
+    return undefined;
+}
+
+function quotaText(value: unknown): string {
+    if (String(value) === '-1') {
+        return '不限';
+    }
+
+    return numberText(value, '-');
+}
+
+function numberText(value: unknown, fallback = '0'): string {
+    const numeric = Number(value);
+
+    if (!Number.isFinite(numeric)) {
+        return textValue(value) || fallback;
+    }
+
+    return Number.isInteger(numeric)
+        ? String(numeric)
+        : numeric.toFixed(2).replace(/\.00$/, '');
+}
+
+function remainingText(total: unknown, used: unknown): string {
+    if (String(total) === '-1') {
+        return '-';
+    }
+
+    const totalNumber = Number(total);
+    const usedNumber = Number(used);
+
+    if (!Number.isFinite(totalNumber) || !Number.isFinite(usedNumber)) {
+        return '-';
+    }
+
+    return numberText(Math.max(totalNumber - usedNumber, 0));
+}
+
+function enabledText(value: unknown): string {
+    if (value === undefined || value === null || value === '') {
+        return '-';
+    }
+
+    return ['1', 'true', 'enable', 'enabled', 'allow'].includes(
+        String(value).toLowerCase(),
+    )
+        ? '允许'
+        : '不允许';
 }
 
 /**
@@ -1783,20 +1952,41 @@ function trafficPackMetric(record: CdnflyRecord): string {
             </DialogScrollContent>
         </Dialog>
 
-        <!-- 用量详情对话框 -->
+        <!-- 套餐详情对话框 -->
         <Dialog v-model:open="usageDialogOpen">
-            <DialogScrollContent class="sm:max-w-xl">
+            <DialogScrollContent class="sm:max-w-3xl">
                 <DialogHeader>
-                    <DialogTitle>用量详情</DialogTitle>
-                    <DialogDescription>
-                        「{{
-                            textValue(
-                                usageTarget?.package_name ?? usageTarget?.name,
-                            ) || '-'
-                        }}」的资源使用情况
-                    </DialogDescription>
+                    <DialogTitle>套餐详情</DialogTitle>
                 </DialogHeader>
-                <div class="grid gap-4">
+
+                <div class="flex gap-6 border-b">
+                    <button
+                        type="button"
+                        class="-mb-px border-b-2 px-4 py-2 text-sm transition-colors"
+                        :class="
+                            usageTab === 'usage'
+                                ? 'border-primary text-primary'
+                                : 'border-transparent text-muted-foreground hover:text-foreground'
+                        "
+                        @click="usageTab = 'usage'"
+                    >
+                        使用情况
+                    </button>
+                    <button
+                        type="button"
+                        class="-mb-px border-b-2 px-4 py-2 text-sm transition-colors"
+                        :class="
+                            usageTab === 'details'
+                                ? 'border-primary text-primary'
+                                : 'border-transparent text-muted-foreground hover:text-foreground'
+                        "
+                        @click="usageTab = 'details'"
+                    >
+                        套餐详情
+                    </button>
+                </div>
+
+                <div class="grid min-h-80 gap-4">
                     <Alert v-if="usageError" variant="destructive">
                         <AlertCircle data-icon="alert" />
                         <AlertTitle>请求失败</AlertTitle>
@@ -1808,37 +1998,147 @@ function trafficPackMetric(record: CdnflyRecord): string {
                     </div>
 
                     <div
-                        v-else-if="usageData.length === 0"
-                        class="py-8 text-center text-muted-foreground"
+                        v-else-if="usageTab === 'usage'"
+                        class="overflow-x-auto"
                     >
-                        暂无用量数据
+                        <table class="w-full text-sm">
+                            <thead class="bg-muted/60 text-muted-foreground">
+                                <tr>
+                                    <th
+                                        class="px-4 py-3 text-left font-medium"
+                                    ></th>
+                                    <th class="px-4 py-3 text-left font-medium">
+                                        总额度
+                                    </th>
+                                    <th class="px-4 py-3 text-left font-medium">
+                                        已使用
+                                    </th>
+                                    <th class="px-4 py-3 text-left font-medium">
+                                        剩余
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr
+                                    v-for="metric in usageMetrics"
+                                    :key="metric.label"
+                                    class="border-b last:border-b-0"
+                                >
+                                    <td class="px-4 py-3 text-muted-foreground">
+                                        {{ metric.label }}
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        {{ metric.total }}
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        {{ metric.used }}
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        {{ metric.remaining }}
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
 
-                    <div v-else class="space-y-3">
-                        <div
-                            v-for="(record, idx) in usageData"
-                            :key="idx"
-                            class="overflow-x-auto rounded-md border"
+                    <div v-else class="space-y-6">
+                        <dl
+                            class="grid gap-x-10 gap-y-4 text-sm sm:grid-cols-2"
                         >
-                            <table class="w-full text-sm">
-                                <tbody>
-                                    <tr
-                                        v-for="(val, key) in record"
-                                        :key="String(key)"
-                                        class="border-b last:border-b-0"
+                            <div
+                                v-for="item in packageDetailItems"
+                                :key="item.label"
+                                class="grid grid-cols-[120px_1fr] gap-3"
+                            >
+                                <dt class="text-right text-muted-foreground">
+                                    {{ item.label }}：
+                                </dt>
+                                <dd class="min-w-0 break-words">
+                                    {{ item.value }}
+                                </dd>
+                            </div>
+                        </dl>
+
+                        <div class="space-y-3">
+                            <div class="flex items-center gap-4">
+                                <div class="h-px flex-1 bg-border"></div>
+                                <div class="text-sm font-medium">
+                                    已购升级包
+                                </div>
+                                <div class="h-px flex-1 bg-border"></div>
+                            </div>
+                            <div class="overflow-x-auto border-y">
+                                <table class="w-full text-sm">
+                                    <thead
+                                        class="bg-muted/60 text-muted-foreground"
                                     >
-                                        <td
-                                            class="px-4 py-2 font-medium whitespace-nowrap text-muted-foreground"
-                                            style="width: 40%"
+                                        <tr>
+                                            <th
+                                                class="px-4 py-3 text-left font-medium"
+                                            >
+                                                名称
+                                            </th>
+                                            <th
+                                                class="px-4 py-3 text-left font-medium"
+                                            >
+                                                升级内容
+                                            </th>
+                                            <th
+                                                class="px-4 py-3 text-left font-medium"
+                                            >
+                                                总数
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr
+                                            v-for="upgrade in usageUpgrades"
+                                            :key="
+                                                textValue(
+                                                    upgrade.id ??
+                                                        upgrade.package_up_id,
+                                                )
+                                            "
+                                            class="border-b last:border-b-0"
                                         >
-                                            {{ usageLabel(String(key)) }}
-                                        </td>
-                                        <td class="px-4 py-2">
-                                            {{ textValue(val) || '-' }}
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
+                                            <td class="px-4 py-3">
+                                                {{
+                                                    textValue(
+                                                        upgrade.name ??
+                                                            upgrade.package_up_name,
+                                                    ) || '-'
+                                                }}
+                                            </td>
+                                            <td class="px-4 py-3">
+                                                {{
+                                                    textValue(
+                                                        upgrade.des ??
+                                                            upgrade.description ??
+                                                            upgrade.type,
+                                                    ) || '-'
+                                                }}
+                                            </td>
+                                            <td class="px-4 py-3">
+                                                {{
+                                                    textValue(
+                                                        upgrade.num ??
+                                                            upgrade.count ??
+                                                            upgrade.quantity,
+                                                    ) || '1'
+                                                }}
+                                            </td>
+                                        </tr>
+                                        <tr v-if="usageUpgrades.length === 0">
+                                            <td
+                                                colspan="3"
+                                                class="px-4 py-6 text-center text-muted-foreground"
+                                            >
+                                                暂无已购升级包
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
                 </div>

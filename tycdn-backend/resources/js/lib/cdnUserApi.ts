@@ -484,6 +484,10 @@ export async function listUserPackages(
     return proxyGet('/v1/user-packages', params);
 }
 
+export async function getUserPackage(id: number): Promise<CdnflyRecord> {
+    return proxyRequest(`/v1/user-packages/${id}`, 'GET');
+}
+
 export async function listSalePackages(
     params: Record<string, string | number> = {},
 ): Promise<CdnflyListData> {
