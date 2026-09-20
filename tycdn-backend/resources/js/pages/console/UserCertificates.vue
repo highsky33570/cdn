@@ -622,10 +622,10 @@ function textValue(value: unknown): string {
                                     状态
                                 </th>
                                 <th class="px-3 py-2.5 text-left font-medium">
-                                    到期时间
+                                    创建时间
                                 </th>
                                 <th class="px-3 py-2.5 text-left font-medium">
-                                    创建时间
+                                    到期时间
                                 </th>
                                 <th class="px-4 py-2.5 text-right font-medium">
                                     操作
@@ -675,17 +675,17 @@ function textValue(value: unknown): string {
                                 <td class="px-3 py-3 text-muted-foreground">
                                     {{
                                         formatDate(
-                                            cert.expire_time ??
-                                                cert.expire_time2 ??
-                                                cert.expired_at ??
-                                                cert.not_after,
+                                            cert.create_at2 ?? cert.created_at,
                                         )
                                     }}
                                 </td>
                                 <td class="px-3 py-3 text-muted-foreground">
                                     {{
                                         formatDate(
-                                            cert.create_at2 ?? cert.created_at,
+                                            cert.expire_time ??
+                                                cert.expire_time2 ??
+                                                cert.expired_at ??
+                                                cert.not_after,
                                         )
                                     }}
                                 </td>
