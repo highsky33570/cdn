@@ -10,10 +10,10 @@ import {
     Trash2,
 } from 'lucide-vue-next';
 import { computed, onMounted, reactive, ref } from 'vue';
-import { toast } from 'vue-sonner'
+import { toast } from 'vue-sonner';
+import ConfirmDeleteDialog from '@/components/console/ConfirmDeleteDialog.vue';
 import ConsolePageHeader from '@/components/console/ConsolePageHeader.vue';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -36,12 +36,13 @@ import {
 } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
 import Switch from '@/components/ui/switch/Switch.vue';
-import ConfirmDeleteDialog from '@/components/console/ConfirmDeleteDialog.vue';
 import {
     createUserCert,
     deleteUserCert,
+    extractCdnflyRecord,
     extractCdnflyRows,
     extractCdnflyTotal,
+    getUserCert,
     listUserCerts,
     listUserDnsApis,
     updateUserCert,
@@ -52,6 +53,9 @@ const STATUS_ALL = 'all';
 
 const loading = ref(false);
 const saving = ref(false);
+const certDetailsLoading = ref(false);
+const certDetailsReady = ref(true);
+const certDetailsRequest = ref(0);
 const togglingId = ref<number | null>(null);
 const deleteOpen = ref(false);
 const deleting = ref(false);
@@ -89,7 +93,9 @@ const form = reactive({
 const dnsApiOptions = ref<{ id: number; name: string }[]>([]);
 
 const rows = computed(() => certs.value);
-const dialogTitle = computed(() => (editingCert.value ? '编辑证书' : '上传证书'));
+const dialogTitle = computed(() =>
+    editingCert.value ? '编辑证书' : '上传证书',
+);
 const certIsCustom = computed(() => certMode.value === 'single');
 const hasPreviousPage = computed(() => page.value > 1);
 const hasNextPage = computed(
@@ -140,7 +146,10 @@ async function loadCerts(targetPage = page.value): Promise<void> {
 }
 
 async function loadDnsApis(): Promise<void> {
-    if (dnsApiOptions.value.length > 0) return;
+    if (dnsApiOptions.value.length > 0) {
+        return;
+    }
+
     try {
         const result = await listUserDnsApis({ limit: '500' });
         const rows = extractCdnflyRows(result);
@@ -159,7 +168,10 @@ function submitSearch(): void {
 }
 
 function openCreateDialog(): void {
+    certDetailsRequest.value += 1;
+    certDetailsLoading.value = false;
     editingCert.value = null;
+    certDetailsReady.value = true;
     resetForm();
     certMode.value = 'single';
     formError.value = '';
@@ -172,26 +184,103 @@ function switchCertMode(mode: 'single' | 'batch'): void {
     form.type = mode === 'single' ? 'custom' : 'lets';
 }
 
-function openEditDialog(cert: CdnflyRecord): void {
+async function openEditDialog(cert: CdnflyRecord): Promise<void> {
     editingCert.value = cert;
+    certDetailsReady.value = false;
+    fillCertForm(cert);
+    formError.value = '';
+    certDialogOpen.value = true;
+
+    const id = asNumber(cert.id);
+
+    if (!id) {
+        formError.value = '证书 ID 缺失';
+
+        return;
+    }
+
+    certDetailsLoading.value = true;
+    const requestNumber = ++certDetailsRequest.value;
+
+    try {
+        const response = await getUserCert(id);
+        const details = extractCdnflyRecord(response);
+
+        if (!details) {
+            throw new Error('证书详情为空');
+        }
+
+        // Ignore a late response if the user has already opened another record.
+        if (
+            certDetailsRequest.value !== requestNumber ||
+            asNumber(editingCert.value?.id) !== id
+        ) {
+            return;
+        }
+
+        editingCert.value = { ...cert, ...details };
+        fillCertForm(editingCert.value);
+        certDetailsReady.value = true;
+
+        if (form.type !== 'custom') {
+            void loadDnsApis();
+        }
+    } catch (error) {
+        if (certDetailsRequest.value === requestNumber) {
+            formError.value = `读取证书详情失败：${getErrorMessage(error)}`;
+        }
+    } finally {
+        if (certDetailsRequest.value === requestNumber) {
+            certDetailsLoading.value = false;
+        }
+    }
+}
+
+function fillCertForm(cert: CdnflyRecord): void {
     form.name = textValue(cert.name);
     form.type = textValue(cert.type) || 'custom';
     form.domain = textValue(cert.domain);
-    form.dnsapi = idField(cert.dnsapi);
-    form.cert = '';
-    form.key = '';
-    form.auto_renew =
-        cert.auto_renew === 0 || cert.auto_renew === false ? '0' : '1';
-    form.enable = cert.enable === 0 || cert.enable === false ? '0' : '1';
+    form.dnsapi = relatedId(cert.dnsapi);
+    form.cert = textValue(cert.cert ?? cert.certificate ?? cert.pem);
+    form.key = textValue(cert.key ?? cert.private_key);
+    form.auto_renew = booleanFormValue(cert.auto_renew, '1');
+    form.enable = booleanFormValue(cert.enable, '1');
     form.reissue = '0';
     form.des = textValue(cert.des ?? cert.remark);
     certMode.value = form.type === 'custom' ? 'single' : 'batch';
-    formError.value = '';
-    certDialogOpen.value = true;
-    if (form.type !== 'custom') void loadDnsApis();
+}
+
+function relatedId(value: unknown): string {
+    if (value && typeof value === 'object' && !Array.isArray(value)) {
+        return idField((value as CdnflyRecord).id);
+    }
+
+    return idField(value);
+}
+
+function booleanFormValue(value: unknown, fallback: '0' | '1'): '0' | '1' {
+    if (value === undefined || value === null || value === '') {
+        return fallback;
+    }
+
+    if (value === false || value === 0) {
+        return '0';
+    }
+
+    const normalized = textValue(value).trim().toLowerCase();
+
+    return ['0', 'false', 'disable', 'disabled', 'off'].includes(normalized)
+        ? '0'
+        : '1';
 }
 
 async function submitCert(): Promise<void> {
+    if (editingCert.value && !certDetailsReady.value) {
+        formError.value = '证书详情尚未加载完成，暂时无法保存';
+
+        return;
+    }
+
     const payload = buildPayload();
 
     if (payload.name.trim() === '') {
@@ -255,8 +344,13 @@ function openDeleteCert(cert: CdnflyRecord) {
 
 async function confirmDeleteCert() {
     const id = asNumber(deleteTarget.value?.id);
-    if (!id) return;
+
+    if (!id) {
+        return;
+    }
+
     deleting.value = true;
+
     try {
         await deleteUserCert(id);
         deleteOpen.value = false;
@@ -271,8 +365,13 @@ async function confirmDeleteCert() {
 
 async function toggleCertEnabled(cert: CdnflyRecord, checked: boolean) {
     const id = asNumber(cert.id);
-    if (!id) return;
+
+    if (!id) {
+        return;
+    }
+
     togglingId.value = id;
+
     try {
         await updateUserCert(id, { enable: checked ? 1 : 0 });
         toast.success(checked ? '证书已启用' : '证书已停用');
@@ -346,32 +445,6 @@ function certName(cert: CdnflyRecord): string {
 
 function domainText(cert: CdnflyRecord): string {
     return textValue(cert.domain ?? cert.domains) || '-';
-}
-
-function statusLabel(value: unknown): string {
-    if (value === 1 || value === '1' || value === 'normal') {
-        return '正常';
-    }
-
-    if (value === 0 || value === '0' || value === false) {
-        return '不可用';
-    }
-
-    return textValue(value) || '-';
-}
-
-function statusVariant(
-    value: unknown,
-): 'secondary' | 'outline' | 'destructive' {
-    if (value === 1 || value === '1' || value === 'normal') {
-        return 'secondary';
-    }
-
-    if (value === 0 || value === '0' || value === false) {
-        return 'destructive';
-    }
-
-    return 'outline';
 }
 
 function formatDate(value: unknown): string {
@@ -584,14 +657,20 @@ function textValue(value: unknown): string {
                                     </div>
                                 </td>
                                 <td class="px-2 py-3 text-center">
-                                    <Badge
                                     <Switch
-                                        :checked="cert.enable === 1 || cert.enable === '1'"
-                                        :disabled="togglingId === asNumber(cert.id)"
-                                        @update:checked="toggleCertEnabled(cert, $event)"
+                                        :checked="
+                                            booleanFormValue(
+                                                cert.enable,
+                                                '0',
+                                            ) === '1'
+                                        "
+                                        :disabled="
+                                            togglingId === asNumber(cert.id)
+                                        "
+                                        @update:checked="
+                                            toggleCertEnabled(cert, $event)
+                                        "
                                     />
-                                </td>
-                                <td class="px-2 py-3 text-center" hidden>
                                 </td>
                                 <td class="px-3 py-3 text-muted-foreground">
                                     {{
@@ -672,7 +751,7 @@ function textValue(value: unknown): string {
                 <DialogHeader>
                     <DialogTitle>{{ dialogTitle }}</DialogTitle>
                     <DialogDescription>
-                        私钥通过安全通道提交，不在列表中展示。
+                        编辑时会通过安全接口读取完整证书内容和私钥。
                     </DialogDescription>
                 </DialogHeader>
 
@@ -683,13 +762,27 @@ function textValue(value: unknown): string {
                         <AlertDescription>{{ formError }}</AlertDescription>
                     </Alert>
 
+                    <div
+                        v-if="certDetailsLoading"
+                        class="flex items-center gap-2 text-sm text-muted-foreground"
+                    >
+                        <Spinner />正在读取证书详情…
+                    </div>
+
                     <div class="grid gap-4">
                         <!-- 模式切换 -->
-                        <div v-if="!editingCert" class="flex rounded-lg border p-1">
+                        <div
+                            v-if="!editingCert"
+                            class="flex rounded-lg border p-1"
+                        >
                             <button
                                 type="button"
                                 class="flex-1 rounded-md px-3 py-1.5 text-center text-sm font-medium transition-colors"
-                                :class="certMode === 'single' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'"
+                                :class="
+                                    certMode === 'single'
+                                        ? 'bg-primary text-primary-foreground shadow-sm'
+                                        : 'text-muted-foreground hover:text-foreground'
+                                "
                                 @click="switchCertMode('single')"
                             >
                                 单个上传
@@ -697,7 +790,11 @@ function textValue(value: unknown): string {
                             <button
                                 type="button"
                                 class="flex-1 rounded-md px-3 py-1.5 text-center text-sm font-medium transition-colors"
-                                :class="certMode === 'batch' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'"
+                                :class="
+                                    certMode === 'batch'
+                                        ? 'bg-primary text-primary-foreground shadow-sm'
+                                        : 'text-muted-foreground hover:text-foreground'
+                                "
                                 @click="switchCertMode('batch')"
                             >
                                 批量申请
@@ -722,7 +819,7 @@ function textValue(value: unknown): string {
                                     id="cert-body"
                                     v-model="form.cert"
                                     class="min-h-32 w-full rounded-md border border-input bg-background px-3 py-2 font-mono text-sm shadow-xs outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
-                                    :placeholder="editingCert ? '留空不修改' : '-----BEGIN CERTIFICATE-----'"
+                                    placeholder="-----BEGIN CERTIFICATE-----"
                                     spellcheck="false"
                                 />
                             </div>
@@ -732,7 +829,7 @@ function textValue(value: unknown): string {
                                     id="cert-key"
                                     v-model="form.key"
                                     class="min-h-32 w-full rounded-md border border-input bg-background px-3 py-2 font-mono text-sm shadow-xs outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
-                                    :placeholder="editingCert ? '留空不修改' : '-----BEGIN PRIVATE KEY-----'"
+                                    placeholder="-----BEGIN PRIVATE KEY-----"
                                     spellcheck="false"
                                 />
                             </div>
@@ -744,11 +841,17 @@ function textValue(value: unknown): string {
                                 <div class="grid gap-2">
                                     <Label>签发方式</Label>
                                     <Select v-model="form.type">
-                                        <SelectTrigger><SelectValue /></SelectTrigger>
+                                        <SelectTrigger
+                                            ><SelectValue
+                                        /></SelectTrigger>
                                         <SelectContent>
                                             <SelectGroup>
-                                                <SelectItem value="lets">Let's Encrypt</SelectItem>
-                                                <SelectItem value="zerossl">ZeroSSL</SelectItem>
+                                                <SelectItem value="lets"
+                                                    >Let's Encrypt</SelectItem
+                                                >
+                                                <SelectItem value="zerossl"
+                                                    >ZeroSSL</SelectItem
+                                                >
                                             </SelectGroup>
                                         </SelectContent>
                                     </Select>
@@ -765,7 +868,10 @@ function textValue(value: unknown): string {
                                 <div class="grid gap-2">
                                     <Label>DNS API</Label>
                                     <Select v-model="form.dnsapi">
-                                        <SelectTrigger><SelectValue placeholder="选择 DNS API" /></SelectTrigger>
+                                        <SelectTrigger
+                                            ><SelectValue
+                                                placeholder="选择 DNS API"
+                                        /></SelectTrigger>
                                         <SelectContent>
                                             <SelectGroup>
                                                 <SelectItem
@@ -773,7 +879,9 @@ function textValue(value: unknown): string {
                                                     :key="api.id"
                                                     :value="String(api.id)"
                                                 >
-                                                    {{ api.name }} (#{{ api.id }})
+                                                    {{ api.name }} (#{{
+                                                        api.id
+                                                    }})
                                                 </SelectItem>
                                             </SelectGroup>
                                         </SelectContent>
@@ -782,11 +890,17 @@ function textValue(value: unknown): string {
                                 <div class="grid gap-2">
                                     <Label>自动续期</Label>
                                     <Select v-model="form.auto_renew">
-                                        <SelectTrigger><SelectValue /></SelectTrigger>
+                                        <SelectTrigger
+                                            ><SelectValue
+                                        /></SelectTrigger>
                                         <SelectContent>
                                             <SelectGroup>
-                                                <SelectItem value="1">开启</SelectItem>
-                                                <SelectItem value="0">关闭</SelectItem>
+                                                <SelectItem value="1"
+                                                    >开启</SelectItem
+                                                >
+                                                <SelectItem value="0"
+                                                    >关闭</SelectItem
+                                                >
                                             </SelectGroup>
                                         </SelectContent>
                                     </Select>
@@ -795,15 +909,24 @@ function textValue(value: unknown): string {
                         </template>
 
                         <!-- 编辑时显示启用/重签 -->
-                        <div v-if="editingCert" class="grid gap-4 md:grid-cols-2">
+                        <div
+                            v-if="editingCert"
+                            class="grid gap-4 md:grid-cols-2"
+                        >
                             <div class="grid gap-2">
                                 <Label>启用</Label>
                                 <Select v-model="form.enable">
-                                    <SelectTrigger><SelectValue /></SelectTrigger>
+                                    <SelectTrigger
+                                        ><SelectValue
+                                    /></SelectTrigger>
                                     <SelectContent>
                                         <SelectGroup>
-                                            <SelectItem value="1">启用</SelectItem>
-                                            <SelectItem value="0">禁用</SelectItem>
+                                            <SelectItem value="1"
+                                                >启用</SelectItem
+                                            >
+                                            <SelectItem value="0"
+                                                >禁用</SelectItem
+                                            >
                                         </SelectGroup>
                                     </SelectContent>
                                 </Select>
@@ -811,11 +934,17 @@ function textValue(value: unknown): string {
                             <div v-if="!certIsCustom" class="grid gap-2">
                                 <Label>重签</Label>
                                 <Select v-model="form.reissue">
-                                    <SelectTrigger><SelectValue /></SelectTrigger>
+                                    <SelectTrigger
+                                        ><SelectValue
+                                    /></SelectTrigger>
                                     <SelectContent>
                                         <SelectGroup>
-                                            <SelectItem value="0">不重签</SelectItem>
-                                            <SelectItem value="1">重签</SelectItem>
+                                            <SelectItem value="0"
+                                                >不重签</SelectItem
+                                            >
+                                            <SelectItem value="1"
+                                                >重签</SelectItem
+                                            >
                                         </SelectGroup>
                                     </SelectContent>
                                 </Select>
@@ -824,7 +953,11 @@ function textValue(value: unknown): string {
 
                         <div class="grid gap-2">
                             <Label for="cert-des">备注</Label>
-                            <Input id="cert-des" v-model="form.des" placeholder="可选备注" />
+                            <Input
+                                id="cert-des"
+                                v-model="form.des"
+                                placeholder="可选备注"
+                            />
                         </div>
                     </div>
 
@@ -836,7 +969,14 @@ function textValue(value: unknown): string {
                         >
                             取消
                         </Button>
-                        <Button :disabled="saving" type="submit">
+                        <Button
+                            :disabled="
+                                saving ||
+                                certDetailsLoading ||
+                                (Boolean(editingCert) && !certDetailsReady)
+                            "
+                            type="submit"
+                        >
                             <Spinner v-if="saving" data-icon="inline-start" />
                             <Save v-else data-icon="inline-start" />
                             保存

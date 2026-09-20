@@ -182,6 +182,10 @@ export async function listUserCerts(
     return apiRequest<CdnflyListData>(buildUrl('/api/cdn/certs', params));
 }
 
+export async function getUserCert(id: number): Promise<CdnflyRecord> {
+    return apiRequest<CdnflyRecord>(`/api/cdn/certs/${id}`);
+}
+
 export async function createUserCert(
     payload: CdnCertPayload,
 ): Promise<CdnflyRecord> {

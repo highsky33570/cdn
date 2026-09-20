@@ -248,6 +248,7 @@ const sitePage = ref(1);
 const siteTotal = ref(0);
 const siteRows = ref<CdnflyRecord[]>([]);
 const userPackages = ref<{ id: number; label: string; hint: string }[]>([]);
+const userPackagesLoaded = ref(false);
 const siteFilters = reactive({
     domain: '',
     enable: ENABLE_ALL,
@@ -454,6 +455,8 @@ async function loadUserPackages() {
         }));
     } catch {
         userPackages.value = [];
+    } finally {
+        userPackagesLoaded.value = true;
     }
 }
 
@@ -481,6 +484,40 @@ function sitePackageId(s: CdnflyRecord): string {
     }
 
     return idField(value);
+}
+
+function sitePackageName(site: CdnflyRecord): string {
+    const value = site.user_package;
+
+    if (value && typeof value === 'object' && !Array.isArray(value)) {
+        const packageRecord = value as CdnflyRecord;
+        const nestedName = textValue(
+            packageRecord.package_name ?? packageRecord.name,
+        ).trim();
+
+        if (nestedName) {
+            return nestedName;
+        }
+    }
+
+    const directName = textValue(
+        site.package_name ?? site.user_package_name,
+    ).trim();
+
+    if (directName) {
+        return directName;
+    }
+
+    const packageId = Number(sitePackageId(site));
+    const userPackage = userPackages.value.find(
+        (item) => item.id === packageId,
+    );
+
+    if (userPackage) {
+        return userPackage.label;
+    }
+
+    return userPackagesLoaded.value ? '未知套餐' : '加载中…';
 }
 
 function backendAddressForEdit(s: CdnflyRecord): string {
@@ -1446,9 +1483,7 @@ function taskStateVariant(v: unknown): 'secondary' | 'destructive' | 'outline' {
                                     <td
                                         class="px-2 py-3 text-center text-muted-foreground"
                                     >
-                                        {{
-                                            textValue(site.user_package) || '-'
-                                        }}
+                                        {{ sitePackageName(site) }}
                                     </td>
                                     <td class="px-3 py-3">
                                         <div class="truncate font-mono text-xs">
