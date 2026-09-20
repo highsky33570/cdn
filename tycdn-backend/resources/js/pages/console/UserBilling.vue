@@ -582,28 +582,33 @@ const usageMetrics = computed<UsageMetric[]>(() => [
     buildUsageMetric(
         '流量 (GB)',
         ['traffic', 'total_traffic'],
-        ['traffic', 'used_traffic', 'traffic_usage'],
-        usageTarget.value?.traffic_usage,
+        ['traffic_usage', 'used_traffic'],
+        usageDetails.value?.traffic_usage ?? usageTarget.value?.traffic_usage,
+        bytesToGigabytes,
     ),
     buildUsageMetric(
         '域名数',
         ['domain', 'total_domain'],
-        ['domain', 'used_domain'],
+        ['domain_usage', 'used_domain'],
+        usageDetails.value?.domain_usage,
     ),
     buildUsageMetric(
         '主域名数',
         ['main_domain', 'total_main_domain'],
-        ['main_domain', 'used_main_domain'],
+        ['main_domain_usage', 'used_main_domain'],
+        usageDetails.value?.main_domain_usage,
     ),
     buildUsageMetric(
         'HTTP端口数',
         ['http_port', 'total_http_port'],
-        ['http_port', 'used_http_port'],
+        ['http_port_usage', 'used_http_port'],
+        usageDetails.value?.http_port_usage,
     ),
     buildUsageMetric(
         '转发端口数',
         ['stream_port', 'total_stream_port'],
-        ['stream_port', 'used_stream_port'],
+        ['stream_port_usage', 'used_stream_port'],
+        usageDetails.value?.stream_port_usage,
     ),
 ]);
 
@@ -652,17 +657,28 @@ function buildUsageMetric(
     totalKeys: string[],
     usedKeys: string[],
     fallbackUsed?: unknown,
+    transformUsed: (value: unknown) => unknown = (value) => value,
 ): UsageMetric {
     const totalValue = firstRecordValue(usageDetails.value, totalKeys);
+    const rawUsedValue =
+        firstRecordValue(usageRecord.value, usedKeys) ?? fallbackUsed;
     const usedValue =
-        firstRecordValue(usageRecord.value, usedKeys) ?? fallbackUsed ?? 0;
+        rawUsedValue === undefined || rawUsedValue === null
+            ? undefined
+            : transformUsed(rawUsedValue);
 
     return {
         label,
         total: quotaText(totalValue),
-        used: numberText(usedValue),
+        used: numberText(usedValue, '-'),
         remaining: remainingText(totalValue, usedValue),
     };
+}
+
+function bytesToGigabytes(value: unknown): unknown {
+    const bytes = Number(value);
+
+    return Number.isFinite(bytes) ? bytes / 1024 ** 3 : value;
 }
 
 function detailValue(keys: string[]): unknown {
@@ -741,10 +757,10 @@ function enabledText(value: unknown): string {
 
 /**
  * A usage page should lead with how much of the allowance is left. `traffic` is
- * the GB allowance (-1 = unlimited); `traffic_usage` is GB consumed.
+ * the GB allowance (-1 = unlimited); CDNfly returns `traffic_usage` in bytes.
  */
 function usageTrafficText(pkg: CdnflyRecord): string {
-    const used = Number(pkg.traffic_usage ?? 0);
+    const used = Number(bytesToGigabytes(pkg.traffic_usage ?? 0));
     const limit = pkg.traffic;
 
     if (limit === undefined || limit === null || limit === '') {
