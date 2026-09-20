@@ -326,7 +326,7 @@ function goBack(): void {
 </script>
 
 <template>
-    <div class="space-y-6">
+    <div class="flex flex-1 flex-col gap-6 p-4 md:p-6">
         <ConsolePageHeader
             eyebrow="用户端 / 四层转发"
             :title="`转发 #${streamId}`"

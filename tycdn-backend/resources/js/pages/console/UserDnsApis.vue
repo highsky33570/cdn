@@ -311,7 +311,7 @@ function nullableText(value: string): string | null {
 </script>
 
 <template>
-    <div class="space-y-6">
+    <div class="flex flex-1 flex-col gap-6 p-4 md:p-6">
         <ConsolePageHeader
             eyebrow="用户端 / DNS API"
             title="DNS API"

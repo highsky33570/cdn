@@ -23,10 +23,9 @@ defineProps<{
     >
         <div class="flex min-w-0 flex-col gap-2">
             <div
-                v-if="eyebrow || showApiBadge === true"
+                v-if="showApiBadge === true"
                 class="flex flex-wrap items-center gap-2"
             >
-                <Badge v-if="eyebrow" variant="secondary">{{ eyebrow }}</Badge>
                 <Badge v-if="showApiBadge === true" variant="outline">
                     CDNfly API
                 </Badge>

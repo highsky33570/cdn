@@ -1089,9 +1089,8 @@ function trafficPackMetric(record: CdnflyRecord): string {
 </script>
 
 <template>
-    <div class="space-y-6">
+    <div class="flex flex-1 flex-col gap-6 p-4 md:p-6">
         <ConsolePageHeader
-            v-if="props.view !== 'subscriptions'"
             eyebrow="用户端 / 财务"
             :title="title"
             :description="description"

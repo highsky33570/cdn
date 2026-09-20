@@ -18,48 +18,139 @@ const props = withDefaults(
 
 const page = usePage();
 
-const consoleBreadcrumbs: Record<string, BreadcrumbItem[]> = {
-    '/console/security/cc': [
-        { title: '首页', href: '/console' },
-        { title: '网站管理', href: '/console/sites' },
-        { title: 'CC 规则', href: '/console/security/cc' },
+type BreadcrumbMeta = [section: string, sectionHref: string, page: string];
+
+const consoleBreadcrumbMeta: Record<string, BreadcrumbMeta> = {
+    '/console': ['用户控制台', '/console', '服务概览'],
+    '/dashboard': ['用户控制台', '/console', '服务概览'],
+    '/console/sites': ['网站管理', '/console/sites', '网站列表'],
+    '/console/site-groups': ['网站管理', '/console/sites', '分组管理'],
+    '/console/certificates': ['网站管理', '/console/sites', '证书管理'],
+    '/console/dnsapis': ['网站管理', '/console/sites', 'DNS API'],
+    '/console/cache': ['网站管理', '/console/sites', '刷新预热'],
+    '/console/cache/jobs': ['网站管理', '/console/sites', '刷新预热'],
+    '/console/security/acls': ['网站管理', '/console/sites', 'ACL 规则'],
+    '/console/security/cc': ['网站管理', '/console/sites', 'CC 规则'],
+    '/console/security/blackip': [
+        '统计分析',
+        '/console/analytics/realtime',
+        '拉黑日志',
     ],
-    '/console/security/acls': [
-        { title: '首页', href: '/console' },
-        { title: '网站管理', href: '/console/sites' },
-        { title: 'ACL 规则', href: '/console/security/acls' },
+    '/console/analytics/realtime': [
+        '统计分析',
+        '/console/analytics/realtime',
+        '实时监控',
     ],
-    '/console/cache/jobs': [
-        { title: '首页', href: '/console' },
-        { title: '网站管理', href: '/console/sites' },
-        { title: '刷新预热', href: '/console/cache/jobs' },
+    '/console/analytics/top': [
+        '统计分析',
+        '/console/analytics/realtime',
+        '数据分析',
     ],
+    '/console/analytics/logs': [
+        '统计分析',
+        '/console/analytics/realtime',
+        '访问日志',
+    ],
+    '/console/analytics/usage': [
+        '统计分析',
+        '/console/analytics/realtime',
+        '用量统计',
+    ],
+    '/console/streams': ['四层转发', '/console/streams', '转发列表'],
+    '/console/streams/analytics': ['四层转发', '/console/streams', '实时监控'],
     '/console/billing/subscriptions': [
-        { title: '首页', href: '/console' },
-        { title: '套餐管理', href: '/console/billing/subscriptions' },
-        { title: '我的套餐', href: '/console/billing/subscriptions' },
+        '套餐管理',
+        '/console/billing/subscriptions',
+        '我的套餐',
     ],
     '/console/billing/packages': [
-        { title: '首页', href: '/console' },
-        { title: '套餐管理', href: '/console/billing/subscriptions' },
-        { title: '套餐购买', href: '/console/billing/packages' },
+        '套餐管理',
+        '/console/billing/subscriptions',
+        '套餐购买',
     ],
     '/console/billing/traffic-packs': [
-        { title: '首页', href: '/console' },
-        { title: '套餐管理', href: '/console/billing/subscriptions' },
-        { title: '流量包', href: '/console/billing/traffic-packs' },
+        '套餐管理',
+        '/console/billing/subscriptions',
+        '流量包',
     ],
     '/console/billing/usage': [
-        { title: '首页', href: '/console' },
-        { title: '套餐管理', href: '/console/billing/subscriptions' },
-        { title: '用量查询', href: '/console/billing/usage' },
+        '套餐管理',
+        '/console/billing/subscriptions',
+        '用量查询',
     ],
+    '/console/billing/orders': [
+        '账户中心',
+        '/console/account/profile',
+        '消费记录',
+    ],
+    '/console/messages': ['账户中心', '/console/account/profile', '消息查询'],
+    '/console/messages/subscriptions': [
+        '账户中心',
+        '/console/account/profile',
+        '消息订阅',
+    ],
+    '/console/account/profile': [
+        '账户中心',
+        '/console/account/profile',
+        '个人资料',
+    ],
+    '/console/account/certification': [
+        '账户中心',
+        '/console/account/profile',
+        '实名认证',
+    ],
+    '/console/account/api-key': [
+        '账户中心',
+        '/console/account/profile',
+        'API 密钥',
+    ],
+    '/console/account/login-logs': [
+        '账户中心',
+        '/console/account/profile',
+        '日志查询',
+    ],
+    '/console/admin': ['管理员面板', '/console/admin', '管理概览'],
+    '/console/admin/users': ['管理员面板', '/console/admin', '用户管理'],
+    '/console/admin/packages': ['管理员面板', '/console/admin', '套餐管理'],
+    '/console/admin/sites': ['管理员面板', '/console/admin', '网站管理'],
+    '/console/admin/nodes': ['管理员面板', '/console/admin', '节点管理'],
+    '/console/admin/dns': ['管理员面板', '/console/admin', 'DNS 管理'],
+    '/console/admin/streams': ['管理员面板', '/console/admin', '四层转发'],
+    '/console/admin/finance': ['管理员面板', '/console/admin', '财务管理'],
+    '/console/admin/monitoring': ['管理员面板', '/console/admin', '监控日志'],
+    '/console/admin/settings': ['管理员面板', '/console/admin', '系统配置'],
+    '/console/admin/security': ['管理员面板', '/console/admin', '安全权限'],
 };
 
 const effectiveBreadcrumbs = computed(() => {
     const path = page.url.split('?')[0];
+    const meta = consoleBreadcrumbMeta[path];
 
-    return consoleBreadcrumbs[path] ?? props.breadcrumbs;
+    if (meta) {
+        return [
+            { title: '首页', href: '/console' },
+            { title: meta[0], href: meta[1] },
+            { title: meta[2], href: path },
+        ];
+    }
+
+    if (/^\/console\/sites\/[^/]+$/.test(path)) {
+        return [
+            { title: '首页', href: '/console' },
+            { title: '网站管理', href: '/console/sites' },
+            { title: '网站详情', href: path },
+        ];
+    }
+
+    if (/^\/console\/streams\/\d+$/.test(path)) {
+        return [
+            { title: '首页', href: '/console' },
+            { title: '四层转发', href: '/console/streams' },
+            { title: '转发详情', href: path },
+        ];
+    }
+
+    return props.breadcrumbs;
 });
 
 function reloadPage(): void {

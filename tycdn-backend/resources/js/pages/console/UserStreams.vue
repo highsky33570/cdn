@@ -647,7 +647,7 @@ function formatInputDate(date: Date): string {
 </script>
 
 <template>
-    <div class="space-y-6">
+    <div class="flex flex-1 flex-col gap-6 p-4 md:p-6">
         <ConsolePageHeader
             eyebrow="用户端 / 四层转发"
             :title="title"
@@ -936,44 +936,27 @@ function formatInputDate(date: Date): string {
             </Card>
         </template>
 
-        <Card v-else>
-            <CardHeader class="space-y-4">
-                <div
-                    class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between"
-                >
-                    <div>
-                        <CardTitle>转发列表</CardTitle>
-                        <p class="mt-1 text-sm text-muted-foreground">
-                            {{ total === 0 ? '暂无转发' : `${total} 条转发` }}
-                        </p>
-                    </div>
-                    <Button @click="openCreateDialog">
-                        <Plus data-icon="inline-start" />
-                        新增转发
-                    </Button>
-                </div>
+        <template v-else>
+            <Card class="gap-4">
+                <CardContent class="pt-6">
                 <form
-                    class="flex flex-wrap items-center gap-2"
+                    class="grid gap-3 md:grid-cols-2 xl:grid-cols-[repeat(4,minmax(0,1fr))_160px_120px_auto]"
                     @submit.prevent="loadStreams(1)"
                 >
                     <Input
                         v-model="filters.listen_port"
-                        class="w-32"
                         placeholder="监听端口"
                     />
                     <Input
                         v-model="filters.group"
-                        class="w-32"
                         placeholder="转发组"
                     />
                     <Input
                         v-model="filters.id"
-                        class="w-32"
                         placeholder="转发 ID"
                     />
                     <Input
                         v-model="filters.user_package"
-                        class="w-32"
                         placeholder="套餐 ID"
                     />
                     <Select v-model="filters.enable">
@@ -986,15 +969,57 @@ function formatInputDate(date: Date): string {
                             </SelectGroup>
                         </SelectContent>
                     </Select>
-                    <Button type="submit" :disabled="loading">
-                        <Spinner v-if="loading" data-icon="inline-start" />
-                        <Search v-else data-icon="inline-start" />
-                        查询
-                    </Button>
+                    <Select v-model="filters.per_page">
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                            <SelectGroup>
+                                <SelectItem value="20">20 条</SelectItem>
+                                <SelectItem value="50">50 条</SelectItem>
+                            </SelectGroup>
+                        </SelectContent>
+                    </Select>
+                    <div class="flex flex-wrap gap-2">
+                        <Button type="submit" :disabled="loading">
+                            <Spinner v-if="loading" data-icon="inline-start" />
+                            <Search v-else data-icon="inline-start" />
+                            搜索
+                        </Button>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            :disabled="loading"
+                            @click="loadStreams()"
+                        >
+                            <RefreshCw data-icon="inline-start" />
+                            刷新
+                        </Button>
+                        <Button type="button" @click="openCreateDialog">
+                            <Plus data-icon="inline-start" />
+                            新增转发
+                        </Button>
+                    </div>
                 </form>
-            </CardHeader>
-            <CardContent>
-                <div class="overflow-x-auto border-y">
+                </CardContent>
+            </Card>
+
+            <Card class="gap-0 overflow-hidden">
+                <CardHeader
+                    class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between"
+                >
+                    <div class="flex items-center gap-3">
+                        <div
+                            class="flex size-10 items-center justify-center rounded-md border bg-card"
+                        >
+                            <Network class="size-5" />
+                        </div>
+                        <CardTitle class="text-base">转发列表</CardTitle>
+                    </div>
+                    <div class="text-sm text-muted-foreground">
+                        {{ total === 0 ? '暂无转发' : `${total} 条转发` }}
+                    </div>
+                </CardHeader>
+                <CardContent class="p-0">
+                <div class="overflow-x-auto">
                     <table class="w-full min-w-[1100px] table-fixed text-sm">
                         <colgroup>
                             <col style="width: 7%" />
@@ -1006,7 +1031,9 @@ function formatInputDate(date: Date): string {
                             <col style="width: 12%" />
                             <col style="width: 12%" />
                         </colgroup>
-                        <thead class="border-b text-muted-foreground">
+                        <thead
+                            class="border-y bg-muted/50 text-muted-foreground"
+                        >
                             <tr>
                                 <th class="px-4 py-3 text-left font-medium">
                                     ID
@@ -1043,7 +1070,7 @@ function formatInputDate(date: Date): string {
                             <tr
                                 v-for="stream in streams"
                                 :key="textValue(stream.id)"
-                                class="border-b"
+                                class="border-b last:border-b-0"
                             >
                                 <td class="px-4 py-3">
                                     #{{ textValue(stream.id) || '-' }}
@@ -1136,8 +1163,9 @@ function formatInputDate(date: Date): string {
                         </tbody>
                     </table>
                 </div>
-            </CardContent>
-        </Card>
+                </CardContent>
+            </Card>
+        </template>
 
         <div
             v-if="props.view === 'list'"

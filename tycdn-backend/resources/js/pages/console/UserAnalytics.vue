@@ -806,6 +806,11 @@ function toChartValue(value: number, unit: string): number {
     if (unit === 'bytes/s' || unit === 'bytes') return value / 1048576;
     return value;
 }
+function rowDataValue(row: CdnflyRecord, key: string): unknown {
+    return row.data && typeof row.data === 'object' && !Array.isArray(row.data)
+        ? (row.data as CdnflyRecord)[key]
+        : undefined;
+}
 function loadScript(src: string): Promise<void> {
     return new Promise((resolve, reject) => {
         const script = document.createElement('script');
@@ -824,7 +829,7 @@ function formatInputDate(date: Date): string {
 </script>
 
 <template>
-    <div class="space-y-6">
+    <div class="flex flex-1 flex-col gap-6 p-4 md:p-6">
         <ConsolePageHeader
             eyebrow="用户端 / 访问数据"
             :title="title"
@@ -1434,11 +1439,11 @@ function formatInputDate(date: Date): string {
                                             {{ formatDate(row.create_at ?? row.created_at ?? row.create_time) }}
                                         </td>
                                         <td class="px-4 py-3 text-xs text-muted-foreground">
-                                            <div class="whitespace-nowrap">{{ textValue((row.data as Record<string,unknown>)?.start ?? row.log_start) || '-' }}</div>
-                                            <div class="whitespace-nowrap">~ {{ textValue((row.data as Record<string,unknown>)?.end ?? row.log_end) || '-' }}</div>
+                                            <div class="whitespace-nowrap">{{ textValue(rowDataValue(row, 'start') ?? row.log_start) || '-' }}</div>
+                                            <div class="whitespace-nowrap">~ {{ textValue(rowDataValue(row, 'end') ?? row.log_end) || '-' }}</div>
                                         </td>
                                         <td class="px-4 py-3 max-w-[160px]">
-                                            <div class="truncate">{{ textValue((row.data as Record<string,unknown>)?.domain ?? row.domain) || '全部域名' }}</div>
+                                            <div class="truncate">{{ textValue(rowDataValue(row, 'domain') ?? row.domain) || '全部域名' }}</div>
                                         </td>
                                         <td class="px-4 py-3">
                                             <span class="inline-flex items-center gap-1.5 text-xs">

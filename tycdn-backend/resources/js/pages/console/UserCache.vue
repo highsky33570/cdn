@@ -4,6 +4,7 @@ import {
     ArrowUpToLine,
     ChevronLeft,
     ChevronRight,
+    Clock3,
     Flame,
     RefreshCw,
     Search,
@@ -11,6 +12,7 @@ import {
 } from 'lucide-vue-next';
 import { computed, onMounted, reactive, ref } from 'vue';
 import { toast } from 'vue-sonner';
+import ConsolePageHeader from '@/components/console/ConsolePageHeader.vue';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -242,7 +244,13 @@ function stateVariant(value: unknown): 'default' | 'outline' | 'secondary' {
 </script>
 
 <template>
-    <div class="space-y-4">
+    <div class="flex flex-1 flex-col gap-6 p-4 md:p-6">
+        <ConsolePageHeader
+            title="刷新预热"
+            :icon="Clock3"
+            :show-api-badge="false"
+        />
+
         <Alert v-if="errorMessage" variant="destructive">
             <AlertCircle data-icon="alert" />
             <AlertTitle>请求失败</AlertTitle>
@@ -250,7 +258,7 @@ function stateVariant(value: unknown): 'default' | 'outline' | 'secondary' {
         </Alert>
         <Card class="ruiyi-cache-card">
             <CardHeader class="border-b">
-                <CardTitle>刷新预热</CardTitle>
+                <CardTitle>提交任务</CardTitle>
                 <p class="text-sm text-muted-foreground">
                     提交刷新 URL、刷新目录或预热 URL 任务，每行填写一个地址。
                 </p>
