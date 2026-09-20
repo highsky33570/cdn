@@ -992,6 +992,7 @@ async function checkResolveRows(rows: CdnflyRecord[]) {
     }
 
     const payload: Record<string, { cname: string; domain: string }> = {};
+    const domainIds: Record<string, string> = {};
 
     for (const row of rows) {
         const id = textValue(row.id);
@@ -999,7 +1000,12 @@ async function checkResolveRows(rows: CdnflyRecord[]) {
         const domain = textValue(row.domain);
 
         if (id && cname && domain) {
-            payload[id] = { cname, domain };
+            // Numeric JSON object keys are converted to PHP array indexes by
+            // Laravel. A prefixed key keeps the proxied payload an object, as
+            // required by CDNFly; the API returns the same caller-defined key.
+            const requestKey = `domain_${id}`;
+            payload[requestKey] = { cname, domain };
+            domainIds[requestKey] = id;
         } else if (id) {
             resolveCheckStates.value[id] = 'error';
         }
@@ -1013,16 +1019,16 @@ async function checkResolveRows(rows: CdnflyRecord[]) {
         const response = await postCnameCheck(payload);
         const results = extractCdnflyRecord(response) ?? {};
 
-        for (const id of Object.keys(payload)) {
-            const result = results[id];
-            resolveCheckStates.value[id] =
+        for (const requestKey of Object.keys(payload)) {
+            const result = results[requestKey];
+            resolveCheckStates.value[domainIds[requestKey]] =
                 result === true || result === 1 || result === '1'
                     ? 'resolved'
                     : 'unresolved';
         }
     } catch (e) {
-        for (const id of Object.keys(payload)) {
-            resolveCheckStates.value[id] = 'error';
+        for (const requestKey of Object.keys(payload)) {
+            resolveCheckStates.value[domainIds[requestKey]] = 'error';
         }
 
         toast.error(`自动检测解析失败：${getErrorMessage(e)}`);
