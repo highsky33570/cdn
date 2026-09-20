@@ -348,6 +348,7 @@ watch(activeTab, (tab) => {
 
 onMounted(() => {
     void loadSites();
+    void loadUserPackages();
 });
 
 // ── 网站列表 ──
@@ -378,6 +379,30 @@ async function loadSites(p = sitePage.value) {
     } finally {
         loading.value = false;
     }
+}
+
+function isSiteEnabled(site: CdnflyRecord): boolean {
+    const value = site.enable ?? site.enabled ?? site.status;
+
+    if (value === true || value === 1) {
+        return true;
+    }
+
+    const normalized = textValue(value).trim().toLowerCase();
+
+    return [
+        '1',
+        'true',
+        'enable',
+        'enabled',
+        'active',
+        'running',
+        'normal',
+        'online',
+        '启用',
+        '正常',
+        '运行中',
+    ].includes(normalized);
 }
 
 /**
@@ -441,20 +466,76 @@ function openSiteCreate() {
     }
 }
 
+function sitePackageId(s: CdnflyRecord): string {
+    const value = s.user_package ?? s.user_package_id ?? s.package_id;
+
+    if (value && typeof value === 'object' && !Array.isArray(value)) {
+        return idField((value as CdnflyRecord).id);
+    }
+
+    return idField(value);
+}
+
+function backendAddressForEdit(s: CdnflyRecord): string {
+    const raw = s.backend ?? s.backend_addr ?? s.origin;
+
+    if (typeof raw === 'string') {
+        const trimmed = raw.trim();
+
+        if (trimmed === '') {
+            return '';
+        }
+
+        try {
+            const parsed = JSON.parse(trimmed) as unknown;
+
+            if (Array.isArray(parsed) && parsed.length > 0) {
+                const first = parsed[0];
+
+                return first && typeof first === 'object'
+                    ? textValue((first as CdnflyRecord).addr)
+                    : textValue(first);
+            }
+
+            if (parsed && typeof parsed === 'object') {
+                return textValue((parsed as CdnflyRecord).addr);
+            }
+        } catch {
+            return trimmed;
+        }
+
+        return '';
+    }
+
+    if (Array.isArray(raw) && raw.length > 0) {
+        const first = raw[0];
+
+        return first && typeof first === 'object'
+            ? textValue((first as CdnflyRecord).addr)
+            : textValue(first);
+    }
+
+    if (raw && typeof raw === 'object') {
+        return textValue((raw as CdnflyRecord).addr);
+    }
+
+    return '';
+}
+
 function openSiteEdit(s: CdnflyRecord) {
     editingSite.value = s;
     siteForm.domain = textValue(s.domain);
-    siteForm.user_package = idField(s.user_package);
-    const b = s.backend;
-    siteForm.backend_addr =
-        Array.isArray(b) && b.length > 0
-            ? String((b[0] as Record<string, unknown>).addr ?? '')
-            : '';
+    siteForm.user_package = sitePackageId(s);
+    siteForm.backend_addr = backendAddressForEdit(s);
     siteForm.groups = textValue(s.groups);
-    siteForm.enable = s.enable === 0 || s.enable === false ? '0' : '1';
+    siteForm.enable = isSiteEnabled(s) ? '1' : '0';
     formError.value = '';
     showAdvanced.value = false;
     siteDialogOpen.value = true;
+
+    if (userPackages.value.length === 0) {
+        void loadUserPackages();
+    }
 }
 
 async function submitSite() {
@@ -1334,10 +1415,7 @@ function taskStateVariant(v: unknown): 'secondary' | 'destructive' | 'outline' {
                                     </td>
                                     <td class="px-2 py-3 text-center">
                                         <Switch
-                                            :checked="
-                                                site.enable === 1 ||
-                                                site.enable === '1'
-                                            "
+                                            :checked="isSiteEnabled(site)"
                                             :disabled="
                                                 togglingId ===
                                                 numberValue(site.id)
