@@ -6,8 +6,10 @@ use App\Http\Controllers\Concerns\ReportsCdnflyFailures;
 use App\Http\Controllers\Controller;
 use App\Services\CdnflyApiService;
 use App\Support\ConfigSecrets;
+use Carbon\CarbonImmutable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 
 /** Explicit master resources, behind the administrator middleware. */
 class AdminWorkspaceController extends Controller
@@ -65,6 +67,24 @@ class AdminWorkspaceController extends Controller
             $payload = ['enable' => 0];
         } else {
             $payload = $request->isMethod('GET') ? $request->query() : $request->all();
+        }
+        if ($resource === 'usage-count' && $request->isMethod('GET')) {
+            $range = $request->validate([
+                'start' => ['required', 'string', 'date_format:Y-m-d,Y-m-d H:i:s'],
+                'end' => ['required', 'string', 'date_format:Y-m-d,Y-m-d H:i:s'],
+            ]);
+            $end = CarbonImmutable::parse($range['end']);
+            if (! $end->greaterThan(CarbonImmutable::parse($range['start']))) {
+                throw ValidationException::withMessages(['end' => '结束时间必须晚于开始时间。']);
+            }
+            // usage-count aggregates calendar days with an exclusive end date.
+            // Cover the last partial day for older clients still sending times;
+            // date-only and midnight end boundaries are already exclusive.
+            if (strlen($range['end']) > 10 && $end->format('H:i:s') !== '00:00:00') {
+                $end = $end->addDay();
+            }
+            $payload['start'] = substr($range['start'], 0, 10);
+            $payload['end'] = $end->format('Y-m-d');
         }
         try {
             $data = $cdnfly->proxyAdminRequest($request->method(), $path.($id === null ? '' : '/'.$id), $payload);

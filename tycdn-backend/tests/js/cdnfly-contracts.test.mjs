@@ -160,6 +160,26 @@ test('inclusive date selection becomes the exclusive CDNfly end date across cale
     assert.equal(response.inclusiveUsageEnd('2028-02-28'), '2028-02-29');
 });
 
+test('overview totals send date-only ranges including today without adding an eighth day', () => {
+    const now = new Date(2026, 8, 21, 16, 8, 2);
+    assert.deepEqual(response.usageCountRange('today', now), {
+        start: '2026-09-21',
+        end: '2026-09-22',
+    });
+    assert.deepEqual(response.usageCountRange('7d', now), {
+        start: '2026-09-15',
+        end: '2026-09-22',
+    });
+    assert.deepEqual(
+        response.usageCountRange('7d', new Date(2027, 0, 2, 0, 5)),
+        { start: '2026-12-27', end: '2027-01-03' },
+    );
+    assert.deepEqual(
+        response.usageCountRange('today', new Date(2028, 1, 29, 23, 59)),
+        { start: '2028-02-29', end: '2028-03-01' },
+    );
+});
+
 test('CC matchers use arrays and retain header values and unknown fields while editing', () => {
     const native = [
         {

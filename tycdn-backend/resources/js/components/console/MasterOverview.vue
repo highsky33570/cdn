@@ -2,7 +2,7 @@
 import { Link } from '@inertiajs/vue3';
 import { computed, onMounted, ref } from 'vue';
 import { Button } from '@/components/ui/button';
-import { extractCdnflyRecord } from '@/lib/cdnflyResponse';
+import { extractCdnflyRecord, usageCountRange } from '@/lib/cdnflyResponse';
 import { masterGet } from '@/lib/masterApi';
 import type { CdnflyRecord } from '@/lib/sharedTypes';
 
@@ -11,7 +11,7 @@ const state = ref<CdnflyRecord>({}),
     license = ref<CdnflyRecord>({});
 const errors = ref<string[]>([]),
     loading = ref(false),
-    period = ref('24h');
+    period = ref<'today' | '7d'>('today');
 const stats = computed(() => [
     { label: '网站域名', value: state.value.domain_count },
     { label: '四层端口', value: state.value.stream_port_count },
@@ -77,15 +77,9 @@ const status = computed(() => [
 async function load() {
     loading.value = true;
     errors.value = [];
-    const end = new Date(),
-        start = new Date(
-            end.getTime() - (period.value === '7d' ? 7 : 1) * 86400000,
-        );
-    const date = (d: Date) =>
-        `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}:${String(d.getSeconds()).padStart(2, '0')}`;
     const results = await Promise.allSettled([
         masterGet('overview'),
-        masterGet('usage-count', { start: date(start), end: date(end) }),
+        masterGet('usage-count', usageCountRange(period.value)),
         masterGet('license'),
     ]);
     [state, usage, license].forEach((target, i) => {
@@ -110,7 +104,7 @@ onMounted(load);
             <div>
                 <h2 class="text-lg font-semibold">全局运行概况</h2>
                 <p class="mt-1 text-sm text-muted-foreground">
-                    主控资源与全网统计
+                    主控资源与全网统计 · 按自然日汇总
                 </p>
             </div>
             <div class="flex gap-2">
@@ -120,8 +114,8 @@ onMounted(load);
                     class="h-9 rounded-md border bg-card px-3"
                     @change="load"
                 >
-                    <option value="24h">近 24 小时</option>
-                    <option value="7d">近 7 天</option></select
+                    <option value="today">今日</option>
+                    <option value="7d">近 7 天（含今日）</option></select
                 ><Button variant="outline" :disabled="loading" @click="load">{{
                     loading ? '加载中…' : '刷新'
                 }}</Button>

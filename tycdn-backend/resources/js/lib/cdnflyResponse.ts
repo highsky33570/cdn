@@ -145,6 +145,23 @@ export function inclusiveUsageEnd(value: string): string {
     return date.toISOString().slice(0, 10);
 }
 
+/** Calendar-day totals include today and use tomorrow as the exclusive end. */
+export function usageCountRange(
+    period: 'today' | '7d',
+    now = new Date(),
+): { start: string; end: string } {
+    const date = (day: Date) =>
+        `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, '0')}-${String(day.getDate()).padStart(2, '0')}`;
+    const today = date(now);
+    const start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+    if (period === '7d') {
+        start.setDate(start.getDate() - 6);
+    }
+
+    return { start: date(start), end: inclusiveUsageEnd(today) };
+}
+
 export function streamListenText(value: unknown): string {
     return (
         cdnflyJsonRows(value)
