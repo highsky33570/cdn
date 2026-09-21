@@ -12,10 +12,13 @@ use Illuminate\Auth\Events\PasswordReset as PasswordResetEvent;
 use Illuminate\Auth\Events\Verified;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Auth\Notifications\VerifyEmail;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
 use Illuminate\Mail\Events\MessageSending;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
 
@@ -37,6 +40,7 @@ class AppServiceProvider extends ServiceProvider
         $this->configureDefaults();
         $this->configureEmailVerificationLinks();
         $this->configurePasswordResetLinks();
+        $this->configureConsoleRateLimiting();
 
         Event::listen(Verified::class, SyncCdnflyOnVerified::class);
         Event::listen(PasswordResetEvent::class, InvalidateSessionsOnPasswordReset::class);
@@ -63,6 +67,40 @@ class AppServiceProvider extends ServiceProvider
                 ->uncompromised()
             : null,
         );
+    }
+
+    protected function configureConsoleRateLimiting(): void
+    {
+        RateLimiter::for('admin-api', function (Request $request) {
+            $operation = $request->isMethodSafe() ? 'reads' : 'writes';
+            $user = $request->user()?->getAuthIdentifier() ?? $request->ip();
+
+            $default = $operation === 'reads' ? 600 : 120;
+
+            return Limit::perMinute(max(1, (int) config("rate_limits.admin_{$operation}_per_minute", $default)))
+                ->by($operation.':'.$user);
+        });
+
+        // Named keys prevent nested limits from incrementing the same counter.
+        // Keep record IDs out of the action key so bulk edits share one budget.
+        foreach ([10, 20, 30, 60] as $attempts) {
+            RateLimiter::for('admin-write-'.$attempts, function (Request $request) use ($attempts) {
+                if ($request->isMethodSafe()) {
+                    return Limit::none();
+                }
+
+                $route = $request->route();
+                $action = implode('|', [
+                    $request->method(),
+                    $route->uri(),
+                    $route->parameter('resource', ''),
+                    $route->parameter('kind', ''),
+                ]);
+
+                return Limit::perMinute($attempts)
+                    ->by($request->user()->getAuthIdentifier().'|'.$action);
+            });
+        }
     }
 
     protected function configureEmailVerificationLinks(): void

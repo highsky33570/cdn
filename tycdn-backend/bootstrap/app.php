@@ -114,6 +114,6 @@ return Application::configure(basePath: dirname(__DIR__))
             return response()->json([
                 'ok' => false,
                 'message' => $message,
-            ], $status);
+            ], $status, $e instanceof HttpExceptionInterface ? $e->getHeaders() : []);
         });
     })->create();
