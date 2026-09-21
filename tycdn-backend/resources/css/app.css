@@ -118,8 +118,8 @@
     --card-foreground: hsl(0 0% 3.9%);
     --popover: hsl(0 0% 100%);
     --popover-foreground: hsl(0 0% 3.9%);
-    --primary: hsl(0 0% 9%);
-    --primary-foreground: hsl(0 0% 98%);
+    --primary: #2d8cf0;
+    --primary-foreground: #ffffff;
     --secondary: hsl(0 0% 92.1%);
     --secondary-foreground: hsl(0 0% 9%);
     --muted: hsl(0 0% 96.1%);
@@ -130,7 +130,7 @@
     --destructive-foreground: hsl(0 0% 98%);
     --border: hsl(0 0% 92.8%);
     --input: hsl(0 0% 89.8%);
-    --ring: hsl(0 0% 3.9%);
+    --ring: #2d8cf0;
     --chart-1: hsl(12 76% 61%);
     --chart-2: hsl(173 58% 39%);
     --chart-3: hsl(197 37% 24%);
@@ -139,7 +139,7 @@
     --radius: 0.5rem;
     --sidebar-background: hsl(0 0% 98%);
     --sidebar-foreground: hsl(240 5.3% 26.1%);
-    --sidebar-primary: hsl(0 0% 10%);
+    --sidebar-primary: #2d8cf0;
     --sidebar-primary-foreground: hsl(0 0% 98%);
     --sidebar-accent: hsl(0 0% 94%);
     --sidebar-accent-foreground: hsl(0 0% 30%);
@@ -158,8 +158,8 @@
     --card-foreground: hsl(0 0% 98%);
     --popover: hsl(0 0% 3.9%);
     --popover-foreground: hsl(0 0% 98%);
-    --primary: hsl(0 0% 98%);
-    --primary-foreground: hsl(0 0% 9%);
+    --primary: #2d8cf0;
+    --primary-foreground: #ffffff;
     --secondary: hsl(0 0% 14.9%);
     --secondary-foreground: hsl(0 0% 98%);
     --muted: hsl(0 0% 16.08%);
@@ -170,7 +170,7 @@
     --destructive-foreground: hsl(0 0% 98%);
     --border: hsl(0 0% 14.9%);
     --input: hsl(0 0% 14.9%);
-    --ring: hsl(0 0% 83.1%);
+    --ring: #2d8cf0;
     --chart-1: hsl(220 70% 50%);
     --chart-2: hsl(160 60% 45%);
     --chart-3: hsl(30 80% 55%);
@@ -178,7 +178,7 @@
     --chart-5: hsl(340 75% 55%);
     --sidebar-background: hsl(0 0% 7%);
     --sidebar-foreground: hsl(0 0% 95.9%);
-    --sidebar-primary: hsl(360, 100%, 100%);
+    --sidebar-primary: #2d8cf0;
     --sidebar-primary-foreground: hsl(0 0% 100%);
     --sidebar-accent: hsl(0 0% 15.9%);
     --sidebar-accent-foreground: hsl(240 4.8% 95.9%);
@@ -247,8 +247,8 @@
     --card-foreground: hsl(215 24% 20%);
     --popover: hsl(0 0% 100%);
     --popover-foreground: hsl(215 24% 20%);
-    --primary: hsl(221 83% 53%);
-    --primary-foreground: hsl(0 0% 100%);
+    --primary: #2d8cf0;
+    --primary-foreground: #ffffff;
     --secondary: hsl(211 38% 95%);
     --secondary-foreground: hsl(211 56% 38%);
     --muted: hsl(214 30% 97%);
@@ -257,10 +257,10 @@
     --accent-foreground: hsl(209 72% 43%);
     --border: hsl(214 25% 90%);
     --input: hsl(214 22% 86%);
-    --ring: hsl(221 83% 53%);
+    --ring: #2d8cf0;
     --sidebar-background: hsl(0 0% 100%);
     --sidebar-foreground: hsl(215 18% 32%);
-    --sidebar-primary: hsl(221 83% 53%);
+    --sidebar-primary: #2d8cf0;
     --sidebar-primary-foreground: hsl(0 0% 100%);
     --sidebar-accent: hsl(209 70% 96%);
     --sidebar-accent-foreground: hsl(209 76% 46%);
@@ -274,8 +274,8 @@
 
 .dark.console-theme,
 .dark .console-shell {
-    --primary: hsl(213 94% 68%);
-    --primary-foreground: hsl(218 25% 12%);
+    --primary: #2d8cf0;
+    --primary-foreground: #ffffff;
     --background: hsl(218 22% 10%);
     --foreground: hsl(210 25% 94%);
     --card: hsl(218 20% 13%);

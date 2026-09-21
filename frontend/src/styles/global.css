@@ -19,8 +19,8 @@
   --accent-2: #9bc3ff;
   --accent-3: #bad6ff;
   --accent-ink: #ffffff;
-  --accent-fill: #2563eb;
-  --accent-hover: #1d4ed8;
+  --accent-fill: #2d8cf0;
+  --accent-hover: #1d78d8;
   --accent-glow: rgba(59, 130, 246, 0.15);
   --accent-soft: #192e4e;
   --accent-border: #355a8f;
@@ -192,9 +192,9 @@ html body[arco-theme='dark'] {
   --color-border-3: var(--border-strong);
   --color-primary-light-1: var(--accent-soft);
   --color-primary-light-2: var(--accent-soft);
-  --primary-5: 59, 130, 246;
-  --primary-6: 37, 99, 235;
-  --primary-7: 29, 78, 216;
+  --primary-5: 87, 163, 243;
+  --primary-6: 45, 140, 240;
+  --primary-7: 29, 120, 216;
 }
 body .arco-btn {
   border-radius: 10px;

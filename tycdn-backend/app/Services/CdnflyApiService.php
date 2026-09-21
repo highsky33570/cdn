@@ -1649,7 +1649,53 @@ class CdnflyApiService
         $http = $this->adminHttp();
         $response = $this->sendRequest($http, $method, $path, $data);
 
+        if (strtoupper($method) === 'GET' && $response->successful()) {
+            $unavailableLog = $this->unavailableMaintenanceLog($response, $path);
+            if ($unavailableLog !== null) {
+                return $unavailableLog;
+            }
+        }
+
         return $this->parseResponse($response, 'admin '.strtoupper($method)." {$path}");
+    }
+
+    /** Recognize only the master's known optional-log responses. */
+    private function unavailableMaintenanceLog(Response $response, string $path): ?array
+    {
+        if (! in_array($path, ['/v1/master/transfer-log', '/v1/master/upgrades/log'], true)) {
+            return null;
+        }
+
+        $code = $response->json('code');
+        $message = $response->json('msg');
+        if ($path === '/v1/master/transfer-log' && $code === 'system-30'
+            && $message === 'system处理失败: open /tmp/master_transfer.log: no such file or directory') {
+            return ['code' => 0, 'data' => [
+                'available' => false,
+                'reason' => 'not_found',
+                'message' => '暂无迁移日志。主控尚未生成日志，或临时日志已被清理。',
+            ]];
+        }
+
+        if ($path === '/v1/master/upgrades/log' && $code === 'upgrade-12'
+            && $message === 'upgrade处理失败: exit status 1') {
+            // Exit status 1 alone does not prove the log is missing. Only show
+            // an unavailable state when the master confirms no upgrade is running.
+            try {
+                $status = $this->proxyAdminRequest('GET', '/v1/master/upgrades');
+            } catch (\Exception) {
+                return null;
+            }
+            if (in_array(data_get($status, 'data.upgrade_run'), [false, 0, '0'], true)) {
+                return ['code' => 0, 'data' => [
+                    'available' => false,
+                    'reason' => 'unreadable_while_idle',
+                    'message' => '当前没有可读取的主控升级日志。主控未在升级，日志读取命令返回 exit status 1。',
+                ]];
+            }
+        }
+
+        return null;
     }
 
     private function sendRequest(PendingRequest $http, string $method, string $path, array $data = []): Response

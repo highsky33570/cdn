@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
-import RecordDetails from '@/components/console/RecordDetails.vue';
+import MaintenanceTable from '@/components/console/MaintenanceTable.vue';
 import { Button } from '@/components/ui/button';
 import { isCdnflyRecord } from '@/lib/cdnflyResponse';
 import { masterGet } from '@/lib/masterApi';
@@ -8,18 +8,31 @@ const sections = [
     { key: 'overview', title: '系统与 Agent 状态' },
     { key: 'master-upgrades', title: '主控版本' },
     { key: 'agent-upgrades', title: '节点版本' },
-    { key: 'master-upgrade-log', title: '主控升级日志' },
     { key: 'transfer-status', title: '迁移状态' },
-    { key: 'transfer-log', title: '迁移日志' },
     { key: 'license', title: '授权信息' },
+    {
+        key: 'master-upgrade-log',
+        title: '主控升级日志',
+        emptyMessage: '暂无主控升级日志。',
+    },
+    { key: 'transfer-log', title: '迁移日志', emptyMessage: '暂无迁移日志。' },
 ];
 const values = ref<Record<string, unknown>>({}),
     errors = ref<Record<string, string>>({}),
+    notices = ref<Record<string, string>>({}),
     loading = ref(false);
 const labels = {
     current_version: '当前版本',
     latest_version: '最新版本',
     version: '版本',
+    version_name: '当前版本',
+    version_num: '当前版本号',
+    latest_version_name: '最新版本',
+    latest_version_num: '最新版本号',
+    upgrade_run: '正在升级',
+    agent_ver: '节点版本',
+    name: '名称',
+    ip: 'IP 地址',
     release_notes: '版本说明',
     release_note: '版本说明',
     es_status: 'Elasticsearch',
@@ -52,7 +65,29 @@ async function load() {
                     result = result.data;
                 }
 
-                values.value[section.key] = result;
+                values.value[section.key] =
+                    section.key === 'transfer-status' &&
+                    typeof result === 'boolean'
+                        ? { state: result ? '迁移中' : '未在迁移' }
+                        : result;
+                notices.value[section.key] = '';
+
+                if (section.emptyMessage) {
+                    if (isCdnflyRecord(result) && result.available === false) {
+                        notices.value[section.key] =
+                            typeof result.message === 'string'
+                                ? result.message
+                                : section.emptyMessage;
+                    } else if (
+                        result == null ||
+                        result === '' ||
+                        (typeof result === 'object' &&
+                            Object.keys(result).length === 0)
+                    ) {
+                        notices.value[section.key] = section.emptyMessage;
+                    }
+                }
+
                 errors.value[section.key] = '';
             } catch (e) {
                 errors.value[section.key] =
@@ -85,26 +120,24 @@ onMounted(load);
             <section
                 v-for="section in sections"
                 :key="section.key"
-                class="rounded-xl border bg-card p-5"
+                class="min-w-0 overflow-hidden rounded-xl border bg-card"
+                :class="
+                    section.emptyMessage || section.key === 'agent-upgrades'
+                        ? 'xl:col-span-2'
+                        : ''
+                "
             >
-                <h2 class="mb-4 font-semibold">{{ section.title }}</h2>
-                <p
-                    v-if="errors[section.key]"
-                    role="alert"
-                    class="text-sm text-destructive"
-                >
-                    {{ errors[section.key] }}
-                </p>
-                <p
-                    v-else-if="loading && !values[section.key]"
-                    class="text-sm text-muted-foreground"
-                >
-                    加载中…
-                </p>
-                <RecordDetails
-                    v-else
-                    :value="values[section.key]"
+                <h2 class="px-5 py-4 font-semibold">{{ section.title }}</h2>
+                <MaintenanceTable
+                    :title="section.title"
+                    :value="notices[section.key] ? null : values[section.key]"
                     :labels="labels"
+                    :log="Boolean(section.emptyMessage)"
+                    :loading="loading"
+                    :error="errors[section.key]"
+                    :empty-message="
+                        notices[section.key] || section.emptyMessage
+                    "
                 />
             </section>
         </div>
