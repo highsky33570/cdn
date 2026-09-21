@@ -18,6 +18,7 @@ function moduleUrl(file) {
         (_, path) =>
             `from '${moduleUrl(resolve(dirname(file), `${path}.ts`))}'`,
     );
+
     return `data:text/javascript;base64,${Buffer.from(js).toString('base64')}`;
 }
 const response = await import(
@@ -175,4 +176,123 @@ test('CC matchers use arrays and retain header values and unknown fields while e
     assert.deepEqual(security.buildCcMatcher(form), [
         { ...native[0], op: 'contain' },
     ]);
+});
+
+const configEditor = await import(
+    moduleUrl(resolve('resources/js/lib/configEditor.ts'))
+);
+const streamBatch = await import(
+    moduleUrl(resolve('resources/js/lib/streamBatch.ts'))
+);
+const monitoring = await import(
+    moduleUrl(resolve('resources/js/lib/monitorSeries.ts'))
+);
+
+test('editing a JSON-text origin preserves other origins, weights and unknown fields', () => {
+    const original = configEditor.configRecord({
+        id: 9,
+        backend:
+            '[{"addr":"192.0.2.1","weight":4,"state":"up","custom":true},{"addr":"192.0.2.2","weight":2,"state":"down"}]',
+        https_listen: '{"cert":4,"http3":1,"future_flag":"keep"}',
+    });
+    const edited = configEditor.setField(original, 'https_listen.http3', 0);
+    assert.deepEqual(
+        configEditor.configPatch(original, edited, ['backend', 'https_listen']),
+        { https_listen: { cert: 4, http3: 0, future_flag: 'keep' } },
+    );
+    assert.equal(edited.backend[0].weight, 4);
+    assert.equal(edited.backend[1].addr, '192.0.2.2');
+    assert.equal(original.https_listen.http3, 1);
+});
+test('malformed stored configuration is retained and cannot be silently replaced through a nested edit', () => {
+    const original = configEditor.configRecord({ https_listen: '{broken' });
+    assert.equal(original.https_listen, '{broken');
+    assert.throws(() =>
+        configEditor.setField(original, 'https_listen.cert', 9),
+    );
+    assert.deepEqual(
+        configEditor.configPatch(original, original, ['https_listen']),
+        {},
+    );
+    assert.deepEqual(
+        configEditor.setField({ https_listen: '' }, 'https_listen.cert', 9),
+        { https_listen: { cert: 9 } },
+    );
+});
+test('batch forwarding validates every line before any creation and handles IPv6 origins', () => {
+    assert.deepEqual(
+        streamBatch.parseStreamBatch('tcp | 8443 | 2001:db8::1 | 443')[0],
+        {
+            protocol: 'tcp',
+            port: 8443,
+            origin: '2001:db8::1',
+            originPort: 443,
+            status: 'pending',
+        },
+    );
+    assert.throws(() =>
+        streamBatch.parseStreamBatch(
+            'tcp|8443|192.0.2.1|443\nudp|70000|192.0.2.2|443',
+        ),
+    );
+    assert.throws(() =>
+        streamBatch.parseStreamBatch(
+            'tcp|8443|192.0.2.1|443\ntcp|8443|192.0.2.2|443',
+        ),
+    );
+});
+test('node monitoring decodes nested interface series and preserves real empty datasets', () => {
+    assert.deepEqual(
+        monitoring.monitorSeries({
+            code: 0,
+            data: {
+                eth0: [
+                    {
+                        name: 'outbound',
+                        data: [
+                            [1700000000000, 1200],
+                            [1700000060000, 1800],
+                        ],
+                    },
+                ],
+            },
+        }),
+        [
+            {
+                name: 'outbound',
+                points: [
+                    [1700000000000, 1200],
+                    [1700000060000, 1800],
+                ],
+            },
+        ],
+    );
+    assert.deepEqual(monitoring.monitorSeries({ code: 0, data: [] }), []);
+    assert.deepEqual(
+        monitoring.monitorSeries({
+            code: 0,
+            data: [
+                {
+                    create_at: 1700000000000,
+                    bytes_sent: '1024',
+                    bytes_received: 0,
+                },
+                {
+                    create_at: 1700000060000,
+                    bytes_sent: 2048,
+                    bytes_received: null,
+                },
+            ],
+        }),
+        [
+            {
+                name: '出站流量（B）',
+                points: [
+                    [1700000000000, 1024],
+                    [1700000060000, 2048],
+                ],
+            },
+            { name: '入站流量（B）', points: [[1700000000000, 0]] },
+        ],
+    );
 });

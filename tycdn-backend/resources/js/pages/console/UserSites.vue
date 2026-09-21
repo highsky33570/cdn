@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { router } from '@inertiajs/vue3';
 import {
     AlertCircle,
     CheckCircle2,
@@ -520,66 +521,8 @@ function sitePackageName(site: CdnflyRecord): string {
     return userPackagesLoaded.value ? '未知套餐' : '加载中…';
 }
 
-function backendAddressForEdit(s: CdnflyRecord): string {
-    const raw = s.backend ?? s.backend_addr ?? s.origin;
-
-    if (typeof raw === 'string') {
-        const trimmed = raw.trim();
-
-        if (trimmed === '') {
-            return '';
-        }
-
-        try {
-            const parsed = JSON.parse(trimmed) as unknown;
-
-            if (Array.isArray(parsed) && parsed.length > 0) {
-                const first = parsed[0];
-
-                return first && typeof first === 'object'
-                    ? textValue((first as CdnflyRecord).addr)
-                    : textValue(first);
-            }
-
-            if (parsed && typeof parsed === 'object') {
-                return textValue((parsed as CdnflyRecord).addr);
-            }
-        } catch {
-            return trimmed;
-        }
-
-        return '';
-    }
-
-    if (Array.isArray(raw) && raw.length > 0) {
-        const first = raw[0];
-
-        return first && typeof first === 'object'
-            ? textValue((first as CdnflyRecord).addr)
-            : textValue(first);
-    }
-
-    if (raw && typeof raw === 'object') {
-        return textValue((raw as CdnflyRecord).addr);
-    }
-
-    return '';
-}
-
 function openSiteEdit(s: CdnflyRecord) {
-    editingSite.value = s;
-    siteForm.domain = textValue(s.domain);
-    siteForm.user_package = sitePackageId(s);
-    siteForm.backend_addr = backendAddressForEdit(s);
-    siteForm.groups = textValue(s.groups);
-    siteForm.enable = isSiteEnabled(s) ? '1' : '0';
-    formError.value = '';
-    showAdvanced.value = false;
-    siteDialogOpen.value = true;
-
-    if (userPackages.value.length === 0) {
-        void loadUserPackages();
-    }
+    router.visit(`/console/sites/${Number(s.id)}`);
 }
 
 async function submitSite() {

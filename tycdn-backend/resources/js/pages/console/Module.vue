@@ -1,17 +1,22 @@
 <script setup lang="ts">
-import { Head } from '@inertiajs/vue3';
+import { Head, usePage } from '@inertiajs/vue3';
 import type { Component } from 'vue';
 import { computed } from 'vue';
-import ConsoleModuleView from '@/components/console/ConsoleModuleView.vue';
+import { settingsSections } from '@/lib/configSections';
 import { consoleModules, fallbackModule } from '@/lib/consoleData';
+import { consoleNavigationTitle } from '@/lib/consoleNavigation';
+import { masterResources } from '@/lib/masterResources';
+import AdminConfigWorkspace from './AdminConfigWorkspace.vue';
 import AdminDns from './AdminDns.vue';
 import AdminFinance from './AdminFinance.vue';
+import AdminMaintenance from './AdminMaintenance.vue';
+import AdminMasterResources from './AdminMasterResources.vue';
 import AdminMonitoring from './AdminMonitoring.vue';
+import AdminNodeMonitoring from './AdminNodeMonitoring.vue';
 import AdminNodes from './AdminNodes.vue';
 import AdminOverview from './AdminOverview.vue';
 import AdminPackages from './AdminPackages.vue';
 import AdminSecurity from './AdminSecurity.vue';
-import AdminSettings from './AdminSettings.vue';
 import AdminSites from './AdminSites.vue';
 import AdminStreams from './AdminStreams.vue';
 import AdminUsers from './AdminUsers.vue';
@@ -71,10 +76,41 @@ const MODULES: Record<
     'admin-streams': { component: AdminStreams },
     'admin-finance': { component: AdminFinance },
     'admin-monitoring': { component: AdminMonitoring },
-    'admin-settings': { component: AdminSettings },
+    'admin-settings': { component: AdminConfigWorkspace },
+    'admin-maintenance': { component: AdminMaintenance },
+    'admin-node-monitoring': { component: AdminNodeMonitoring },
+    'admin-sold-packages': {
+        component: AdminFinance,
+        props: { initialTab: 'packages' },
+    },
+    'admin-services': {
+        component: AdminFinance,
+        props: { initialTab: 'services' },
+    },
+    'admin-package-groups': {
+        component: AdminPackages,
+        props: { initialTab: 'groups' },
+    },
+    'admin-package-upgrades': {
+        component: AdminPackages,
+        props: { initialTab: 'upgrades' },
+    },
+    'admin-certificates': {
+        component: AdminSites,
+        props: { initialTab: 'certificates' },
+    },
+    'admin-pending-nodes': {
+        component: AdminNodes,
+        props: { initialTab: 'pending' },
+    },
+    'admin-topology': {
+        component: AdminNodes,
+        props: { initialTab: 'topology' },
+    },
     'admin-security': { component: AdminSecurity },
 
     sites: { component: UserSites },
+    'site-groups': { component: UserSites, props: { initialTab: 'groups' } },
     certificates: { component: UserCertificates },
     dnsapis: { component: UserSites, props: { initialTab: 'dnsapi' } },
 
@@ -94,6 +130,10 @@ const MODULES: Record<
     'analytics-usage': { component: UserAnalytics, props: { view: 'usage' } },
 
     streams: { component: UserStreams, props: { view: 'list' } },
+    'stream-groups': {
+        component: AdminMasterResources,
+        props: { resource: 'stream-groups', scope: 'user' },
+    },
     'streams-analytics': {
         component: UserStreams,
         props: { view: 'analytics' },
@@ -129,21 +169,52 @@ const MODULES: Record<
     },
 };
 
+for (const resource of Object.keys(masterResources)) {
+    MODULES[`admin-workspace-${resource}`] = {
+        component: AdminMasterResources,
+        props: { resource },
+    };
+}
+
+for (const { key: section } of settingsSections) {
+    MODULES[`admin-config-${section}`] = {
+        component: AdminConfigWorkspace,
+        props: { section },
+    };
+}
+
+for (const view of ['realtime', 'top', 'logs', 'usage']) {
+    MODULES[`admin-analytics-${view}`] = {
+        component: UserAnalytics,
+        props: { view, scope: 'admin' },
+    };
+}
+
+MODULES['admin-streams-analytics'] = {
+    component: UserStreams,
+    props: { view: 'analytics', scope: 'admin' },
+};
+MODULES['stream-defaults'] = {
+    component: AdminConfigWorkspace,
+    props: { section: 'stream-defaults', scope: 'user' },
+};
+
 const module = computed(
     () => consoleModules[props.moduleKey] ?? fallbackModule,
 );
+const page = usePage();
 const pageTitle = computed(
     () =>
-        ({
+        consoleNavigationTitle(page.url.split('?')[0]) ??
+        {
             'billing-traffic-packs': '流量包',
             'billing-usage': '用量查询',
-        })[props.moduleKey] ?? module.value.title,
+        }[props.moduleKey] ??
+        module.value.title,
 );
 
 const resolved = computed(() => MODULES[props.moduleKey]);
-const activeComponent = computed(
-    () => resolved.value?.component ?? ConsoleModuleView,
-);
+const activeComponent = computed(() => resolved.value?.component);
 const activeProps = computed(() =>
     resolved.value
         ? (resolved.value.props ?? {})
@@ -154,8 +225,12 @@ const activeProps = computed(() =>
 <template>
     <Head :title="pageTitle" />
     <component
+        v-if="activeComponent"
         :is="activeComponent"
         :key="props.moduleKey"
         v-bind="activeProps"
     />
+    <p v-else class="rounded-lg border bg-card p-6 text-muted-foreground">
+        页面不存在，请从菜单选择功能。
+    </p>
 </template>

@@ -14,6 +14,7 @@ import {
 } from 'lucide-vue-next';
 import { computed, onMounted, ref } from 'vue';
 import ConsolePageHeader from '@/components/console/ConsolePageHeader.vue';
+import MasterOverview from '@/components/console/MasterOverview.vue';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -26,6 +27,7 @@ import type {
     AdminRecentOrder,
     AdminUserRecord,
 } from '@/lib/adminConsoleApi';
+import UserAnalytics from './UserAnalytics.vue';
 
 const loading = ref(false);
 const errorMessage = ref('');
@@ -190,6 +192,21 @@ function userTitle(user: AdminUserRecord): string {
 
 <template>
     <div class="flex flex-1 flex-col gap-6 p-4 md:p-6">
+        <MasterOverview />
+        <details class="rounded-xl border bg-card p-5" open>
+            <summary class="mb-4 cursor-pointer font-semibold">
+                全网实时监控
+            </summary>
+            <UserAnalytics view="realtime" scope="admin" />
+        </details>
+        <details class="rounded-xl border bg-card p-5">
+            <summary class="mb-4 cursor-pointer font-semibold">
+                TOP 10 与网络分析
+            </summary>
+            <UserAnalytics view="top" scope="admin" />
+        </details>
+        <h2 class="mt-3 text-lg font-semibold">本地运营</h2>
+
         <ConsolePageHeader
             title="管理概览"
             :icon="Server"

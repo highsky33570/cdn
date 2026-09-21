@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Concerns\ReportsCdnflyFailures;
 use App\Http\Controllers\Controller;
 use App\Services\CdnflyApiService;
+use App\Support\ConfigSecrets;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -61,7 +62,7 @@ class AdminConfigController extends Controller
         try {
             $data = $this->cdnfly->getConfigs();
 
-            return response()->json(['ok' => true, 'data' => $data]);
+            return response()->json(['ok' => true, 'data' => ConfigSecrets::mask($data)]);
         } catch (\Throwable $e) {
             return $this->cdnflyFailure($e, __FUNCTION__);
         }
@@ -107,12 +108,24 @@ class AdminConfigController extends Controller
         }
 
         try {
+            if (ConfigSecrets::containsMask($validated['value'])) {
+                $configs = $this->cdnfly->getConfigs();
+                $rows = $configs['data'] ?? $configs;
+                $current = collect($rows)->first(fn ($row) => is_array($row)
+                    && ($row['name'] ?? '') === $validated['name']
+                    && ($row['type'] ?? '') === $validated['type']
+                    && ($row['scope_name'] ?? 'global') === ($validated['scope_name'] ?? 'global')
+                    && (int) ($row['scope_id'] ?? 0) === (int) ($validated['scope_id'] ?? 0));
+                $validated['value'] = ConfigSecrets::restore($validated['value'], $current['value'] ?? null);
+            }
             $data = $this->cdnfly->upsertConfig(array_filter(
                 $validated,
                 static fn ($value): bool => $value !== null,
             ));
 
-            return response()->json(['ok' => true, 'data' => $data]);
+            return response()->json(['ok' => true, 'data' => ConfigSecrets::mask($data)]);
+        } catch (ValidationException $e) {
+            throw $e;
         } catch (\Throwable $e) {
             return $this->cdnflyFailure($e, __FUNCTION__);
         }

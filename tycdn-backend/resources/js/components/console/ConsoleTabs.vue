@@ -43,18 +43,20 @@ defineEmits<{
         is about the page as a whole.
     -->
     <div
-        class="flex flex-col border-b md:flex-row md:items-center md:justify-between"
+        class="console-tabs flex flex-col gap-3 md:flex-row md:items-center md:justify-between"
     >
-        <div class="flex flex-wrap gap-5">
+        <div class="flex flex-wrap gap-1" role="tablist">
             <button
                 v-for="tab in tabs"
                 :key="tab.key"
                 type="button"
-                class="relative flex h-9 items-center gap-1.5 border-b-2 px-0 text-xs font-medium transition-colors"
+                role="tab"
+                :aria-selected="modelValue === tab.key"
+                class="relative flex h-9 items-center gap-1.5 rounded-md px-4 text-sm font-medium transition-colors"
                 :class="
                     modelValue === tab.key
-                        ? 'border-primary text-primary'
-                        : 'border-transparent text-muted-foreground hover:text-primary'
+                        ? 'bg-accent text-primary'
+                        : 'text-muted-foreground hover:bg-muted hover:text-primary'
                 "
                 @click="$emit('update:modelValue', tab.key)"
             >

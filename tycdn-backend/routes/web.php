@@ -90,6 +90,52 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ['uri' => 'console/admin/security', 'name' => 'console.admin.security', 'module' => 'admin-security'],
     ];
 
+    $consoleModuleRoutes[] = ['uri' => 'console/admin/maintenance', 'name' => 'console.admin.maintenance', 'module' => 'admin-maintenance'];
+    $consoleModuleRoutes[] = ['uri' => 'console/admin/node-monitoring', 'name' => 'console.admin.node-monitoring', 'module' => 'admin-node-monitoring'];
+    $consoleModuleRoutes[] = ['uri' => 'console/admin/sold-packages', 'name' => 'console.admin.sold-packages', 'module' => 'admin-sold-packages'];
+    $consoleModuleRoutes[] = ['uri' => 'console/admin/services', 'name' => 'console.admin.services', 'module' => 'admin-services'];
+    $consoleModuleRoutes[] = ['uri' => 'console/admin/package-groups', 'name' => 'console.admin.package-groups', 'module' => 'admin-package-groups'];
+    $consoleModuleRoutes[] = ['uri' => 'console/admin/package-upgrades', 'name' => 'console.admin.package-upgrades', 'module' => 'admin-package-upgrades'];
+    $consoleModuleRoutes[] = ['uri' => 'console/admin/certificates', 'name' => 'console.admin.certificates', 'module' => 'admin-certificates'];
+    $consoleModuleRoutes[] = ['uri' => 'console/admin/pending-nodes', 'name' => 'console.admin.pending-nodes', 'module' => 'admin-pending-nodes'];
+    $consoleModuleRoutes[] = ['uri' => 'console/admin/topology', 'name' => 'console.admin.topology', 'module' => 'admin-topology'];
+    $consoleModuleRoutes[] = ['uri' => 'console/admin/workspace/l2-configs', 'name' => 'console.admin.workspace.l2-configs', 'module' => 'admin-workspace-l2-configs'];
+    $consoleModuleRoutes[] = ['uri' => 'console/admin/workspace/l2-conds', 'name' => 'console.admin.workspace.l2-conds', 'module' => 'admin-workspace-l2-conds'];
+    $consoleModuleRoutes[] = ['uri' => 'console/admin/workspace/l2-nodes', 'name' => 'console.admin.workspace.l2-nodes', 'module' => 'admin-workspace-l2-nodes'];
+    $consoleModuleRoutes[] = ['uri' => 'console/admin/workspace/traffic-packages', 'name' => 'console.admin.workspace.traffic-packages', 'module' => 'admin-workspace-traffic-packages'];
+    $consoleModuleRoutes[] = ['uri' => 'console/admin/workspace/user-traffic-packages', 'name' => 'console.admin.workspace.user-traffic-packages', 'module' => 'admin-workspace-user-traffic-packages'];
+    $consoleModuleRoutes[] = ['uri' => 'console/admin/workspace/discounts', 'name' => 'console.admin.workspace.discounts', 'module' => 'admin-workspace-discounts'];
+    $consoleModuleRoutes[] = ['uri' => 'console/admin/workspace/coupons', 'name' => 'console.admin.workspace.coupons', 'module' => 'admin-workspace-coupons'];
+    $consoleModuleRoutes[] = ['uri' => 'console/admin/workspace/coupon-historys', 'name' => 'console.admin.workspace.coupon-historys', 'module' => 'admin-workspace-coupon-historys'];
+    $consoleModuleRoutes[] = ['uri' => 'console/admin/workspace/messages', 'name' => 'console.admin.workspace.messages', 'module' => 'admin-workspace-messages'];
+    $consoleModuleRoutes[] = ['uri' => 'console/admin/workspace/tasks', 'name' => 'console.admin.workspace.tasks', 'module' => 'admin-workspace-tasks'];
+    $consoleModuleRoutes[] = ['uri' => 'console/admin/workspace/attack-log', 'name' => 'console.admin.workspace.attack-log', 'module' => 'admin-workspace-attack-log'];
+    $consoleModuleRoutes[] = ['uri' => 'console/admin/workspace/blackip', 'name' => 'console.admin.workspace.blackip', 'module' => 'admin-workspace-blackip'];
+    $consoleModuleRoutes[] = ['uri' => 'console/admin/workspace/history-blackip', 'name' => 'console.admin.workspace.history-blackip', 'module' => 'admin-workspace-history-blackip'];
+    $consoleModuleRoutes[] = ['uri' => 'console/admin/workspace/node-ip-log', 'name' => 'console.admin.workspace.node-ip-log', 'module' => 'admin-workspace-node-ip-log'];
+    $consoleModuleRoutes[] = ['uri' => 'console/admin/workspace/package-monitor', 'name' => 'console.admin.workspace.package-monitor', 'module' => 'admin-workspace-package-monitor'];
+    $consoleModuleRoutes[] = ['uri' => 'console/admin/config/system', 'name' => 'console.admin.config.system', 'module' => 'admin-config-system'];
+    $consoleModuleRoutes[] = ['uri' => 'console/admin/config/account', 'name' => 'console.admin.config.account', 'module' => 'admin-config-account'];
+    $consoleModuleRoutes[] = ['uri' => 'console/admin/config/payment', 'name' => 'console.admin.config.payment', 'module' => 'admin-config-payment'];
+    $consoleModuleRoutes[] = ['uri' => 'console/admin/config/mail', 'name' => 'console.admin.config.mail', 'module' => 'admin-config-mail'];
+    $consoleModuleRoutes[] = ['uri' => 'console/admin/config/notifications', 'name' => 'console.admin.config.notifications', 'module' => 'admin-config-notifications'];
+    $consoleModuleRoutes[] = ['uri' => 'console/admin/config/cleanup', 'name' => 'console.admin.config.cleanup', 'module' => 'admin-config-cleanup'];
+    $consoleModuleRoutes[] = ['uri' => 'console/admin/config/firewall', 'name' => 'console.admin.config.firewall', 'module' => 'admin-config-firewall'];
+    $consoleModuleRoutes[] = ['uri' => 'console/admin/config/nginx', 'name' => 'console.admin.config.nginx', 'module' => 'admin-config-nginx'];
+    $consoleModuleRoutes[] = ['uri' => 'console/admin/config/resources', 'name' => 'console.admin.config.resources', 'module' => 'admin-config-resources'];
+    $consoleModuleRoutes[] = ['uri' => 'console/admin/config/defaults', 'name' => 'console.admin.config.defaults', 'module' => 'admin-config-defaults'];
+    $consoleModuleRoutes[] = ['uri' => 'console/admin/config/stream-defaults', 'name' => 'console.admin.config.stream-defaults', 'module' => 'admin-config-stream-defaults'];
+    $consoleModuleRoutes[] = ['uri' => 'console/admin/config/errors', 'name' => 'console.admin.config.errors', 'module' => 'admin-config-errors'];
+    $consoleModuleRoutes[] = ['uri' => 'console/admin/config/node-monitor', 'name' => 'console.admin.config.node-monitor', 'module' => 'admin-config-node-monitor'];
+    $consoleModuleRoutes[] = ['uri' => 'console/admin/analytics/realtime', 'name' => 'console.admin.analytics.realtime', 'module' => 'admin-analytics-realtime'];
+    $consoleModuleRoutes[] = ['uri' => 'console/admin/analytics/top', 'name' => 'console.admin.analytics.top', 'module' => 'admin-analytics-top'];
+    $consoleModuleRoutes[] = ['uri' => 'console/admin/analytics/logs', 'name' => 'console.admin.analytics.logs', 'module' => 'admin-analytics-logs'];
+    $consoleModuleRoutes[] = ['uri' => 'console/admin/analytics/usage', 'name' => 'console.admin.analytics.usage', 'module' => 'admin-analytics-usage'];
+    $consoleModuleRoutes[] = ['uri' => 'console/admin/streams/analytics', 'name' => 'console.admin.streams.analytics', 'module' => 'admin-streams-analytics'];
+    $consoleModuleRoutes[] = ['uri' => 'console/streams/defaults', 'name' => 'console.streams.defaults', 'module' => 'stream-defaults'];
+
+    $consoleModuleRoutes[] = ['uri' => 'console/streams/groups', 'name' => 'console.streams.groups', 'module' => 'stream-groups'];
+    $consoleModuleRoutes[] = ['uri' => 'console/admin/workspace/stream-groups', 'name' => 'console.admin.workspace.stream-groups', 'module' => 'admin-workspace-stream-groups'];
     foreach ($consoleModuleRoutes as $route) {
         $consoleRoute = Route::inertia($route['uri'], 'console/Module', [
             'moduleKey' => $route['module'],
@@ -101,6 +147,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         $consoleRoute->name($route['name']);
     }
+
+    Route::get('console/admin/sites/{site}', function (string $site) {
+        return Inertia::render('console/SiteDetail', ['siteId' => $site, 'scope' => 'admin']);
+    })->whereNumber('site')->middleware('admin')->name('console.admin.sites.edit');
 
     Route::get('console/sites/{site}', function (string $site) {
         return Inertia::render('console/SiteDetail', [

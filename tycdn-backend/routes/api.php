@@ -7,8 +7,10 @@ use App\Http\Controllers\Api\AdminDnsController;
 use App\Http\Controllers\Api\AdminFinanceController;
 use App\Http\Controllers\Api\AdminMonitorController;
 use App\Http\Controllers\Api\AdminNodeController;
+use App\Http\Controllers\Api\AdminRecoveryController;
 use App\Http\Controllers\Api\AdminSiteController;
 use App\Http\Controllers\Api\AdminStreamController;
+use App\Http\Controllers\Api\AdminWorkspaceController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CdnApiKeyController;
 use App\Http\Controllers\Api\CdnCertController;
@@ -84,6 +86,9 @@ Route::middleware(['auth:sanctum', 'verified', 'admin', 'throttle:60,1'])->prefi
     Route::post('/users', [AdminController::class, 'storeUser'])->middleware('throttle:20,1');
     Route::put('/users/{id}', [AdminController::class, 'updateUser'])->middleware('throttle:20,1');
     Route::delete('/users/{id}', [AdminController::class, 'destroyUser'])->middleware('throttle:10,1');
+    Route::get('/users/{user}/mapping-preview', [AdminRecoveryController::class, 'mapping']);
+    Route::put('/users/{user}/mapping', [AdminRecoveryController::class, 'bind'])->middleware('throttle:10,1');
+    Route::get('/services/{service}/recovery', [AdminRecoveryController::class, 'service']);
     Route::post('/users/{id}/sync-api-key', [AdminController::class, 'syncUserApiKey'])->middleware('throttle:10,1');
     Route::post('/users/{id}/recharge', [AdminController::class, 'rechargeUser'])->middleware('throttle:10,1');
 
@@ -142,6 +147,7 @@ Route::middleware(['auth:sanctum', 'verified', 'admin', 'throttle:60,1'])->prefi
     Route::put('/sites/{id}/enable', [AdminSiteController::class, 'setEnabled'])->middleware('throttle:20,1');
     // 申请免费证书并绑定：先建证书再回写 https_listen.cert
     Route::post('/sites/{id}/certificate', [AdminSiteController::class, 'applyCertificate'])->middleware('throttle:10,1');
+    Route::match(['GET', 'PUT'], '/sites/{id}/waf-rules', [AdminSiteController::class, 'wafRules'])->whereNumber('id')->middleware('throttle:20,1');
     Route::get('/all-certs', [AdminSiteController::class, 'certs']);
     Route::post('/all-certs', [AdminSiteController::class, 'storeCert'])->middleware('throttle:20,1');
     Route::put('/all-certs/{id}', [AdminSiteController::class, 'updateCert'])->middleware('throttle:20,1');
@@ -214,6 +220,8 @@ Route::middleware(['auth:sanctum', 'verified', 'admin', 'throttle:60,1'])->prefi
     Route::get('/monitor/stream-realtime', [AdminMonitorController::class, 'streamRealtime']);
     Route::get('/monitor/site-top', [AdminMonitorController::class, 'siteTop']);
     Route::get('/monitor/stream-top', [AdminMonitorController::class, 'streamTop']);
+
+    Route::match(['GET', 'POST', 'PUT', 'DELETE'], '/workspace/{resource}/{id?}', [AdminWorkspaceController::class, 'handle'])->whereNumber('id')->middleware('throttle:30,1');
 
     // 系统配置
     Route::get('/configs', [AdminConfigController::class, 'index']);

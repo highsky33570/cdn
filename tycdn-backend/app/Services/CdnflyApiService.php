@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\User;
+use App\Support\SitePayload;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
@@ -924,7 +925,7 @@ class CdnflyApiService
 
     public function updateSite(User $user, int $siteId, array $data): array
     {
-        $response = $this->userHttp($user)->put("/v1/sites/{$siteId}", $data);
+        $response = $this->userHttp($user)->put("/v1/sites/{$siteId}", SitePayload::normalize($data));
 
         return $this->parseResponse($response, 'update site');
     }
@@ -1190,7 +1191,7 @@ class CdnflyApiService
     {
         $this->ensureOutboundEnabled('update admin site');
 
-        $response = $this->adminHttp()->put("/v1/sites/{$siteId}", $data);
+        $response = $this->adminHttp()->put("/v1/sites/{$siteId}", SitePayload::normalize($data));
 
         return $this->parseResponse($response, 'update admin site');
     }

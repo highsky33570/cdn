@@ -1,10 +1,17 @@
 <script setup lang="ts">
 import { usePage } from '@inertiajs/vue3';
-import { RefreshCw } from 'lucide-vue-next';
+import { RefreshCw, ChevronDown } from 'lucide-vue-next';
 import { computed } from 'vue';
 import AppearanceTabs from '@/components/AppearanceTabs.vue';
 import Breadcrumbs from '@/components/Breadcrumbs.vue';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { SidebarTrigger } from '@/components/ui/sidebar';
+import UserMenuContent from '@/components/UserMenuContent.vue';
+import { consoleNavigationTitle } from '@/lib/consoleNavigation';
 import type { BreadcrumbItem } from '@/types';
 
 const props = withDefaults(
@@ -124,6 +131,22 @@ const consoleBreadcrumbMeta: Record<string, BreadcrumbMeta> = {
 
 const effectiveBreadcrumbs = computed(() => {
     const path = page.url.split('?')[0];
+    const title = consoleNavigationTitle(path);
+
+    if (title) {
+        return [
+            {
+                title: path.startsWith('/console/admin')
+                    ? '全局管理'
+                    : '个人控制台',
+                href: path.startsWith('/console/admin')
+                    ? '/console/admin'
+                    : '/console',
+            },
+            { title, href: path },
+        ];
+    }
+
     const meta = consoleBreadcrumbMeta[path];
 
     if (meta) {
@@ -179,5 +202,22 @@ function reloadPage(): void {
             </template>
         </div>
         <AppearanceTabs compact />
+        <DropdownMenu
+            ><DropdownMenuTrigger as-child
+                ><button
+                    type="button"
+                    aria-label="账户菜单"
+                    class="flex h-9 items-center gap-2 rounded-lg border bg-card px-3 text-sm text-foreground hover:bg-accent"
+                >
+                    <span class="max-w-28 truncate">{{
+                        page.props.auth.user.name
+                    }}</span
+                    ><ChevronDown
+                        class="size-3.5"
+                    /></button></DropdownMenuTrigger
+            ><DropdownMenuContent align="end" class="min-w-60"
+                ><UserMenuContent
+                    :user="page.props.auth.user" /></DropdownMenuContent
+        ></DropdownMenu>
     </header>
 </template>

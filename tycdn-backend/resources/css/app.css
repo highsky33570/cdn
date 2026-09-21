@@ -239,6 +239,7 @@
  * rules under the console shell lets the public/auth pages retain their own
  * visual language while every user and administrator module stays consistent.
  */
+.console-theme,
 .console-shell {
     --background: hsl(216 33% 97%);
     --foreground: hsl(215 24% 20%);
@@ -246,7 +247,7 @@
     --card-foreground: hsl(215 24% 20%);
     --popover: hsl(0 0% 100%);
     --popover-foreground: hsl(215 24% 20%);
-    --primary: hsl(209 82% 54%);
+    --primary: hsl(221 83% 53%);
     --primary-foreground: hsl(0 0% 100%);
     --secondary: hsl(211 38% 95%);
     --secondary-foreground: hsl(211 56% 38%);
@@ -256,22 +257,25 @@
     --accent-foreground: hsl(209 72% 43%);
     --border: hsl(214 25% 90%);
     --input: hsl(214 22% 86%);
-    --ring: hsl(209 82% 54%);
+    --ring: hsl(221 83% 53%);
     --sidebar-background: hsl(0 0% 100%);
     --sidebar-foreground: hsl(215 18% 32%);
-    --sidebar-primary: hsl(209 82% 54%);
+    --sidebar-primary: hsl(221 83% 53%);
     --sidebar-primary-foreground: hsl(0 0% 100%);
     --sidebar-accent: hsl(209 70% 96%);
     --sidebar-accent-foreground: hsl(209 76% 46%);
     --sidebar-border: hsl(214 25% 90%);
-    --radius: 0.25rem;
+    --radius: 0.625rem;
     background: var(--background);
     font-family: var(--font-sans);
     font-size: 14px;
     line-height: 1.5;
 }
 
+.dark.console-theme,
 .dark .console-shell {
+    --primary: hsl(213 94% 68%);
+    --primary-foreground: hsl(218 25% 12%);
     --background: hsl(218 22% 10%);
     --foreground: hsl(210 25% 94%);
     --card: hsl(218 20% 13%);
@@ -322,7 +326,7 @@
 }
 
 .console-shell [data-sidebar='menu-button'] {
-    height: 3.25rem;
+    height: 2.75rem;
     padding-inline: 1.75rem;
     border-radius: 0;
     font-size: 0.875rem;
@@ -346,7 +350,7 @@
 }
 
 .console-shell [data-sidebar='menu-sub-button'] {
-    height: 3.25rem;
+    height: 2.75rem;
     padding-inline: 2.75rem 1.5rem;
     border-radius: 0;
     font-size: 0.875rem;
@@ -360,52 +364,52 @@
 }
 
 .console-shell [data-slot='card'] {
-    gap: 0.75rem;
-    padding-block: 0.75rem;
-    border-radius: 2px;
+    gap: 1rem;
+    padding-block: 1.25rem;
+    border-radius: 0.875rem;
     box-shadow: none;
 }
 
 .console-shell [data-slot='card-header'] {
-    padding-inline: 0.75rem;
+    padding-inline: 1.25rem;
 }
 
 .console-shell [data-slot='card-content']:not(.p-0) {
-    padding-inline: 0.75rem;
+    padding-inline: 1.25rem;
 }
 
 .console-shell [data-slot='button'] {
     min-height: 1.875rem;
-    border-radius: 2px;
-    font-size: 0.78rem;
+    border-radius: 0.5rem;
+    font-size: 0.8125rem;
     box-shadow: none;
 }
 
 .console-shell [data-slot='input'],
 .console-shell [data-slot='select-trigger'] {
     height: 2rem;
-    border-radius: 2px;
+    border-radius: 0.5rem;
     background: var(--card);
-    font-size: 0.78rem;
+    font-size: 0.8125rem;
     box-shadow: none;
 }
 
 .console-shell [data-slot='badge'] {
-    border-radius: 2px;
+    border-radius: 0.5rem;
     font-weight: 500;
 }
 
 .console-shell [data-slot='card-title'] {
-    font-size: 0.82rem;
+    font-size: 0.875rem;
     font-weight: 500;
 }
 
 .console-shell [data-slot='alert'] {
-    border-radius: 2px;
+    border-radius: 0.5rem;
 }
 
 .console-shell table {
-    font-size: 0.76rem;
+    font-size: 0.8125rem;
 }
 
 .console-shell thead {
@@ -597,4 +601,45 @@
 .console-shell .ruiyi-cache-card .ruiyi-pagination .is-current {
     border-color: var(--primary);
     color: var(--primary);
+}
+
+/* Portal content shares the same console palette and control geometry. */
+.console-theme [data-slot='dialog-content'],
+.console-theme [data-slot='alert-dialog-content'] {
+    border-radius: 0.875rem;
+    background: var(--popover);
+    color: var(--popover-foreground);
+}
+.console-theme [data-slot='dropdown-menu-content'],
+.console-theme [data-slot='select-content'],
+.console-theme [data-slot='popover-content'] {
+    border-radius: 0.625rem;
+    background: var(--popover);
+    color: var(--popover-foreground);
+}
+.console-theme [role='dialog'] [data-slot='button'],
+.console-theme [role='dialog'] [data-slot='input'],
+.console-theme [role='dialog'] [data-slot='select-trigger'] {
+    border-radius: 0.5rem;
+}
+.console-tabs {
+    padding: 0.25rem;
+    border-radius: 0.75rem;
+    background: var(--card);
+}
+.console-shell .console-page {
+    min-width: 0;
+}
+.config-fields .config-field:has(> label > input),
+.config-fields .config-field:has(> label > select) {
+    min-width: 0;
+}
+@media (min-width: 768px) {
+    .site-editor .config-fields {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .site-editor .config-field:has(> div),
+    .site-editor .config-field:has(textarea) {
+        grid-column: 1 / -1;
+    }
 }

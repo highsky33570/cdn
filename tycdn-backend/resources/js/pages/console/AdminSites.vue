@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { router } from '@inertiajs/vue3';
 import {
     Check,
     Copy,
@@ -61,6 +62,7 @@ import {
     updateAdminSite,
 } from '@/lib/adminModulesApi';
 import type { AdminCertPayload, AdminSitePayload } from '@/lib/adminModulesApi';
+import { cdnflyJsonRows } from '@/lib/cdnflyResponse';
 import { formatDate, getErrorMessage } from '@/lib/formatters';
 import type { CdnflyRecord } from '@/lib/sharedTypes';
 
@@ -165,7 +167,10 @@ const sitesTableRef = ref<InstanceType<typeof ConsoleDataTable> | null>(null);
 const togglingId = ref<number | null>(null);
 type SiteTab = 'sites' | 'certificates' | 'acls';
 
-const activeTab = ref<SiteTab>('sites');
+const props = withDefaults(defineProps<{ initialTab?: SiteTab }>(), {
+    initialTab: 'sites',
+});
+const activeTab = ref<SiteTab>(props.initialTab);
 
 const siteTabs: ConsoleTab[] = [
     { key: 'sites', label: '站点', icon: Globe2 },
@@ -381,24 +386,7 @@ async function submitCreate(): Promise<void> {
 }
 
 function openEditDialog(row: CdnflyRecord): void {
-    editTargetId.value = Number(row.id);
-    editForm.user_package =
-        row.user_package != null ? String(row.user_package) : '';
-    editForm.domain = String(row.domain ?? row.name ?? '');
-    const backend = row.backend;
-
-    if (Array.isArray(backend) && backend.length > 0) {
-        editForm.backend_addr = String(
-            (backend[0] as Record<string, unknown>).addr ?? '',
-        );
-    } else {
-        editForm.backend_addr = '';
-    }
-
-    editForm.groups = row.groups != null ? String(row.groups) : '';
-    editError.value = '';
-    showAdvancedEdit.value = false;
-    editOpen.value = true;
+    router.visit(`/console/admin/sites/${Number(row.id)}`);
 }
 
 async function submitEdit(): Promise<void> {
@@ -634,7 +622,7 @@ function syncStateText(s: CdnflyRecord): string {
 
 /** backend is an array of {addr, weight, state}. */
 function backendText(s: CdnflyRecord): string {
-    const backend = s.backend;
+    const backend = cdnflyJsonRows(s.backend);
 
     if (!Array.isArray(backend) || backend.length === 0) {
         return '-';

@@ -126,6 +126,7 @@ type PackageForm = {
     enable: string;
     sort: string;
     sync_item: string;
+    backend_ip_limit: string;
     extra_json: string;
 };
 
@@ -355,7 +356,10 @@ const PACKAGE_DURATION_OPTIONS = [
 ];
 type PackageTab = 'packages' | 'groups' | 'upgrades';
 
-const activeTab = ref<PackageTab>('packages');
+const props = withDefaults(defineProps<{ initialTab?: PackageTab }>(), {
+    initialTab: 'packages',
+});
+const activeTab = ref<PackageTab>(props.initialTab);
 
 const packageTabs: ConsoleTab[] = [
     { key: 'packages', label: '基础套餐', icon: Package },
@@ -516,6 +520,9 @@ const packagePurchaseLimitOpen = ref(false);
 const packageOtherOpen = ref(false);
 const batchAdvancedOpen = ref(false);
 const packageOptions = ref<AdminPackageOptions>({ ...emptyOptions });
+const resourceOptionLabel = (kind: 'regions' | 'node_groups', id: unknown) =>
+    packageOptions.value[kind].find((o) => String(o.id) === String(id))?.name ??
+    String(id ?? '—');
 const loadingOptions = ref(false);
 
 const form = reactive<PackageForm>(emptyPackageForm());
@@ -1153,6 +1160,7 @@ function emptyPackageForm(batch = false): PackageForm {
         enable: batch ? SELECT_KEEP_VALUE : '1',
         sort: '',
         sync_item: '',
+        backend_ip_limit: '',
         extra_json: '{}',
     };
 }
@@ -1225,6 +1233,7 @@ function formFromRecord(record: PackageRecord): PackageForm {
         enable: getDisplayValue(record, ['enable', 'status', 'state'], '1'),
         sort: getDisplayValue(record, ['sort', 'order'], ''),
         sync_item: '',
+        backend_ip_limit: getDisplayValue(record, ['backend_ip_limit'], ''),
         extra_json: '{}',
     };
 }
@@ -1315,6 +1324,10 @@ function buildPackagePayload(
             // which does not hint that a field is simply missing.
             ['cname_domain', '请选择 CNAME 域名'],
         ]);
+    }
+
+    if (requireName || source.backend_ip_limit.trim() !== '') {
+        payload.backend_ip_limit = source.backend_ip_limit.trim();
     }
 
     const extra = parseExtraJson(source.extra_json);
@@ -2090,6 +2103,34 @@ async function confirmPuDelete(): Promise<void> {
                                                 'title',
                                             ])
                                         }}
+                                        <p
+                                            class="mt-1 text-xs text-muted-foreground"
+                                        >
+                                            区域：{{
+                                                resourceOptionLabel(
+                                                    'regions',
+                                                    record.region_id,
+                                                )
+                                            }}
+                                        </p>
+                                        <p
+                                            class="mt-1 text-xs text-muted-foreground"
+                                        >
+                                            主线：{{
+                                                resourceOptionLabel(
+                                                    'node_groups',
+                                                    record.node_group_id,
+                                                )
+                                            }}
+                                            · 备用：{{
+                                                Number(record.backup_node_group)
+                                                    ? resourceOptionLabel(
+                                                          'node_groups',
+                                                          record.backup_node_group,
+                                                      )
+                                                    : '无'
+                                            }}
+                                        </p>
                                     </td>
                                     <td class="px-4 py-4">
                                         <span
@@ -2101,6 +2142,13 @@ async function confirmPuDelete(): Promise<void> {
                                         <Badge v-else variant="outline">
                                             未上架
                                         </Badge>
+                                        <p
+                                            class="mt-1 text-xs text-muted-foreground"
+                                        >
+                                            季付
+                                            {{ record.quarter_price ?? '—' }} ·
+                                            年付 {{ record.year_price ?? '—' }}
+                                        </p>
                                     </td>
                                     <td class="px-4 py-4 text-muted-foreground">
                                         {{
@@ -2121,6 +2169,15 @@ async function confirmPuDelete(): Promise<void> {
                                     </td>
                                     <td class="px-4 py-4 text-muted-foreground">
                                         {{ siteDomainText(record) }}
+                                        <p class="mt-1 text-xs">
+                                            连接：{{ record.connection ?? '—' }}
+                                        </p>
+                                        <p class="mt-1 text-xs">
+                                            HTTP / 转发端口：{{
+                                                record.http_port ?? '—'
+                                            }}
+                                            / {{ record.stream_port ?? '—' }}
+                                        </p>
                                     </td>
                                     <td class="px-4 py-4">
                                         <div class="flex flex-wrap gap-1">
@@ -2240,7 +2297,9 @@ async function confirmPuDelete(): Promise<void> {
                 <div class="grid gap-4">
                     <div class="grid gap-2">
                         <Label>当前套餐</Label>
-                        <div class="rounded-md border bg-muted/30 px-3 py-2 text-sm">
+                        <div
+                            class="rounded-md border bg-muted/30 px-3 py-2 text-sm"
+                        >
                             <div class="font-medium">
                                 {{
                                     grantPackage
@@ -2253,7 +2312,12 @@ async function confirmPuDelete(): Promise<void> {
                                 }}
                             </div>
                             <div class="text-xs text-muted-foreground">
-                                ID: {{ grantPackage ? getPackageId(grantPackage) : '-' }}
+                                ID:
+                                {{
+                                    grantPackage
+                                        ? getPackageId(grantPackage)
+                                        : '-'
+                                }}
                             </div>
                         </div>
                     </div>
@@ -2990,6 +3054,13 @@ async function confirmPuDelete(): Promise<void> {
                                     />
                                 </div>
                                 <div class="flex flex-col gap-2 md:col-span-2">
+                                    <Label for="package-source-ips"
+                                        >源站 IP 限制</Label
+                                    ><Input
+                                        id="package-source-ips"
+                                        v-model="form.backend_ip_limit"
+                                        placeholder="留空不限制，多个 IP 用空格分隔"
+                                    />
                                     <Label for="package-extra">
                                         扩展字段 JSON
                                     </Label>

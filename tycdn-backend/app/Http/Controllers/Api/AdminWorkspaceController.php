@@ -1,0 +1,77 @@
+<?php
+
+namespace App\Http\Controllers\Api;
+
+use App\Http\Controllers\Concerns\ReportsCdnflyFailures;
+use App\Http\Controllers\Controller;
+use App\Services\CdnflyApiService;
+use App\Support\ConfigSecrets;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+
+/** Explicit master resources, behind the administrator middleware. */
+class AdminWorkspaceController extends Controller
+{
+    use ReportsCdnflyFailures;
+
+    public const RESOURCES = [
+        'stream-groups' => ['/v1/stream-groups', ['GET', 'POST', 'PUT', 'DELETE']],
+        'stream-top' => ['/v1/monitor/stream/top', ['GET']],
+        'l2-configs' => ['/v1/l2-configs', ['GET', 'POST', 'PUT', 'DELETE']],
+        'l2-conds' => ['/v1/l2-conds', ['GET', 'POST', 'PUT', 'DELETE']],
+        'l2-nodes' => ['/v1/l2-nodes', ['GET', 'POST', 'PUT', 'DELETE']],
+        'traffic-packages' => ['/v1/traffic-packages', ['GET', 'POST', 'PUT', 'DELETE']],
+        'user-traffic-packages' => ['/v1/user-traffic-packages', ['GET', 'POST', 'PUT', 'DELETE']],
+        'discounts' => ['/v1/discounts', ['GET', 'POST', 'PUT', 'DELETE']],
+        'coupons' => ['/v1/coupons', ['GET', 'POST', 'PUT', 'DELETE']],
+        'coupon-historys' => ['/v1/coupon-historys', ['GET']],
+        'messages' => ['/v1/messages', ['GET', 'POST', 'PUT', 'DELETE']],
+        'tasks' => ['/v1/tasks', ['GET', 'PUT']],
+        'overview' => ['/v1/admin/overview', ['GET']],
+        'license' => ['/v1/common/auth', ['GET']],
+        'usage-count' => ['/v1/monitor/usage-count', ['GET']],
+        'usage' => ['/v1/monitor/usage', ['GET']],
+        'site-realtime' => ['/v1/monitor/site/realtime', ['GET']],
+        'site-top' => ['/v1/monitor/site/top', ['GET']],
+        'access-log' => ['/v1/monitor/site/access-log', ['GET']],
+        'attack-log' => ['/v1/monitor/site/attack-log', ['GET']],
+        'attack-stats' => ['/v1/monitor/site/attack-log/stats', ['GET']],
+        'blackip' => ['/v1/monitor/site/blackip', ['GET', 'DELETE']],
+        'history-blackip' => ['/v1/monitor/site/history-blackip', ['GET']],
+        'stream-realtime' => ['/v1/monitor/stream/realtime', ['GET']],
+        'node-realtime' => ['/v1/monitor/node/realtime', ['GET']],
+        'node-top' => ['/v1/monitor/node/top', ['GET']],
+        'node-ip-log' => ['/v1/monitor/node/ip-log', ['GET']],
+        'node-traffic' => ['/v1/node-traffic', ['GET']],
+        'package-monitor' => ['/v1/monitor/user-package', ['GET']],
+        'package-nodes' => ['/v1/monitor/user-package/nodes', ['GET']],
+        'master-upgrades' => ['/v1/master/upgrades', ['GET']],
+        'master-upgrade-log' => ['/v1/master/upgrades/log', ['GET']],
+        'agent-upgrades' => ['/v1/agent/upgrades', ['GET']],
+        'agent-upgrade-log' => ['/v1/agent/upgrades/log', ['GET']],
+        'transfer-status' => ['/v1/master/transfer-status', ['GET']],
+        'transfer-log' => ['/v1/master/transfer-log', ['GET']],
+    ];
+
+    public function handle(Request $request, string $resource, CdnflyApiService $cdnfly, ?int $id = null): JsonResponse
+    {
+        abort_unless(isset(self::RESOURCES[$resource]), 404);
+        [$path, $methods] = self::RESOURCES[$resource];
+        abort_unless(in_array($request->method(), $methods, true), 405);
+        abort_if($request->isMethod('DELETE') && $id === null, 405);
+        if ($resource === 'tasks' && $request->isMethod('PUT')) {
+            $request->validate(['enable' => ['required', 'integer', 'in:0']]);
+            abort_if($id === null, 405);
+            $payload = ['enable' => 0];
+        } else {
+            $payload = $request->isMethod('GET') ? $request->query() : $request->all();
+        }
+        try {
+            $data = $cdnfly->proxyAdminRequest($request->method(), $path.($id === null ? '' : '/'.$id), $payload);
+
+            return response()->json(['ok' => true, 'data' => ConfigSecrets::mask($data)]);
+        } catch (\Throwable $e) {
+            return $this->cdnflyFailure($e, __FUNCTION__);
+        }
+    }
+}

@@ -17,6 +17,8 @@ import type { ColumnDef } from '@/components/console/ConsoleDataTable.vue';
 import ConsolePageHeader from '@/components/console/ConsolePageHeader.vue';
 import ConsoleTabs from '@/components/console/ConsoleTabs.vue';
 import type { ConsoleTab } from '@/components/console/ConsoleTabs.vue';
+import StreamBatchCreate from '@/components/console/StreamBatchCreate.vue';
+import StreamBulkActions from '@/components/console/StreamBulkActions.vue';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -545,11 +547,22 @@ function openDeleteStreamGroup(record: CdnflyRecord): void {
             :icon="Network"
             :columns="streamColumns"
             :fetch-fn="listAdminStreams"
+            selectable
             search-key="listen_port"
             search-placeholder="搜索监听端口"
         >
+            <template #toolbar-actions="{ selectedIds, refresh }"
+                ><StreamBulkActions
+                    scope="admin"
+                    :ids="[...selectedIds]"
+                    @updated="refresh"
+            /></template>
             <template #toolbar-end="{ loading: tLoading, refresh: tRefresh }">
                 <div class="flex items-center gap-2">
+                    <StreamBatchCreate
+                        scope="admin"
+                        @updated="streamsTableRef?.refresh()"
+                    />
                     <Button size="sm" @click="openAddStream">
                         <Plus data-icon="inline-start" />
                         新增转发

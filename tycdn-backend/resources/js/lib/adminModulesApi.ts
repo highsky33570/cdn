@@ -574,6 +574,7 @@ export interface AdminFinanceSummary {
     orders_total: number;
     orders_pending: number;
     orders_failed: number;
+    services_failed: number;
     services_active: number;
     services_total: number;
 }

@@ -281,7 +281,7 @@ class AdminController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id)],
             'role' => ['required', Rule::in(['admin', 'user'])],
-            'cdnfly_user_id' => ['nullable', 'integer', 'min:1'],
+            'cdnfly_user_id' => ['nullable', 'integer', 'min:1', Rule::unique('users', 'cdnfly_user_id')->ignore($user->id)],
             'email_verified' => ['required', 'boolean'],
         ]);
 
@@ -300,6 +300,10 @@ class AdminController extends Controller
                 'ok' => false,
                 'message' => '至少需要保留一个管理员账号',
             ], 422);
+        }
+
+        if ((int) $user->cdnfly_user_id !== (int) ($validated['cdnfly_user_id'] ?? 0)) {
+            $user->forceFill(['cdnfly_api_key' => null, 'cdnfly_api_secret' => null, 'cdnfly_synced_at' => null]);
         }
 
         $user->forceFill([

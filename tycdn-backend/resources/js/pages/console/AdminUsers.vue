@@ -20,6 +20,7 @@ import { toast } from 'vue-sonner';
 import ConsolePageHeader from '@/components/console/ConsolePageHeader.vue';
 import ConsoleStatCards from '@/components/console/ConsoleStatCards.vue';
 import type { ConsoleStat } from '@/components/console/ConsoleStatCards.vue';
+import RecoveryReview from '@/components/console/RecoveryReview.vue';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -930,6 +931,12 @@ function detailPaginationText<T>(payload: Paginated<T> | null): string {
                                             <Pencil data-icon="inline-start" />
                                             编辑
                                         </Button>
+                                        <RecoveryReview
+                                            v-if="!user.cdnfly_user_id"
+                                            kind="mapping"
+                                            :id="user.id"
+                                            @updated="loadUsers()"
+                                        />
                                         <Button
                                             variant="outline"
                                             size="sm"

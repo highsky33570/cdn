@@ -27,6 +27,20 @@ class AdminSiteController extends Controller
         }
     }
 
+    public function wafRules(Request $request, int $id): JsonResponse
+    {
+        if ($request->isMethod('PUT')) {
+            $request->validate(['*.rule_id' => ['required', 'integer', 'min:1'], '*.sort' => ['sometimes', 'integer'], '*.enable' => ['required', 'integer', 'in:0,1']]);
+        }
+        try {
+            $result = $this->cdnfly->proxyAdminRequest($request->method(), "/v1/sites/{$id}/waf-rules", $request->isMethod('GET') ? [] : $request->all());
+
+            return response()->json(['ok' => true, 'data' => $result]);
+        } catch (\Throwable $e) {
+            return $this->cdnflyFailure($e, __FUNCTION__);
+        }
+    }
+
     public function show(int $id): JsonResponse
     {
         try {
@@ -186,27 +200,81 @@ class AdminSiteController extends Controller
     public function update(Request $request, int $id): JsonResponse
     {
         $validated = $request->validate([
-            'user_package' => ['sometimes', 'integer', 'min:1'],
-            'domain' => ['sometimes', 'string', 'max:255'],
             'backend' => ['sometimes', 'array', 'min:1'],
-            'backend.*.addr' => ['required_with:backend', 'string', 'max:255'],
-            'backend.*.weight' => ['sometimes', 'integer', 'min:1'],
-            'backend.*.state' => ['sometimes', 'string', 'in:up,down'],
-            'groups' => ['nullable', 'string', 'max:255'],
-            // HTTPS. A listener without a certificate is rejected by the
-            // master as 「https需要指定证书」, so cert is issued first and
-            // attached here. Field names verified against its own panel
-            // (chunk-0871c1ec).
+            'http_listen' => ['sometimes', 'array'],
             'https_listen' => ['sometimes', 'array'],
-            'https_listen.port' => ['sometimes', 'string', 'max:50'],
-            'https_listen.cert' => ['sometimes', 'integer', 'min:0'],
-            'https_listen.hsts' => ['sometimes', 'integer', 'in:0,1'],
-            'https_listen.http2' => ['sometimes', 'integer', 'in:0,1'],
-            'https_listen.http3' => ['sometimes', 'integer', 'in:0,1'],
+            'health_check' => ['sometimes', 'array'],
+            'proxy_auth' => ['sometimes', 'array'],
+            'proxy_cache' => ['sometimes', 'array'],
+            'cc_switch' => ['sometimes', 'array'],
+            'extra_cc_rule' => ['sometimes', 'array'],
+            'condition_backend' => ['sometimes', 'array'],
+            'waf' => ['sometimes', 'array'],
+            'waf_allow_rule' => ['sometimes', 'array'],
+            'waf_ip_auto_block' => ['sometimes', 'array'],
+            'hotlink' => ['sometimes', 'array'],
+            'cors' => ['sometimes', 'array'],
+            'req_header' => ['sometimes', 'array'],
+            'resp_header' => ['sometimes', 'array'],
+            'url_rewrite' => ['sometimes', 'array'],
+            'domain' => ['sometimes', 'nullable', 'string', 'max:200000'],
+            'groups' => ['sometimes', 'nullable', 'string', 'max:200000'],
+            'backend_protocol' => ['sometimes', 'nullable', 'string', 'max:200000'],
+            'backend_http_port' => ['sometimes', 'nullable', 'string', 'max:200000'],
+            'backend_https_port' => ['sometimes', 'nullable', 'string', 'max:200000'],
+            'backend_host' => ['sometimes', 'nullable', 'string', 'max:200000'],
+            'balance_way' => ['sometimes', 'nullable', 'string', 'max:200000'],
+            'block_region' => ['sometimes', 'nullable', 'string', 'max:200000'],
+            'black_ip' => ['sometimes', 'nullable', 'string', 'max:200000'],
+            'white_ip' => ['sometimes', 'nullable', 'string', 'max:200000'],
+            'cookie_domain' => ['sometimes', 'nullable', 'string', 'max:200000'],
+            'post_size_limit' => ['sometimes', 'nullable', 'string', 'max:200000'],
+            'spider_to_sip' => ['sometimes', 'nullable', 'string', 'max:200000'],
+            'l2_state' => ['sometimes', 'nullable', 'string', 'max:200000'],
+            'page_403' => ['sometimes', 'nullable', 'string', 'max:200000'],
+            'page_404' => ['sometimes', 'nullable', 'string', 'max:200000'],
+            'page_500' => ['sometimes', 'nullable', 'string', 'max:200000'],
+            'page_502' => ['sometimes', 'nullable', 'string', 'max:200000'],
+            'page_504' => ['sometimes', 'nullable', 'string', 'max:200000'],
+            'user_package' => ['sometimes', 'nullable', 'numeric'],
+            'enable' => ['sometimes', 'nullable', 'numeric'],
+            'enable_ipv6' => ['sometimes', 'nullable', 'numeric'],
+            'backend_port_mapping' => ['sometimes', 'nullable', 'numeric'],
+            'proxy_timeout' => ['sometimes', 'nullable', 'numeric'],
+            'proxy_connect_timeout' => ['sometimes', 'nullable', 'numeric'],
+            'ups_keepalive' => ['sometimes', 'nullable', 'numeric'],
+            'ups_keepalive_timeout' => ['sometimes', 'nullable', 'numeric'],
+            'cc_default_rule' => ['sometimes', 'nullable', 'numeric'],
+            'block_time' => ['sometimes', 'nullable', 'numeric'],
+            'white_time' => ['sometimes', 'nullable', 'numeric'],
+            'block_proxy' => ['sometimes', 'nullable', 'numeric'],
+            'waf_enable' => ['sometimes', 'nullable', 'numeric'],
+            'gzip_enable' => ['sometimes', 'nullable', 'numeric'],
+            'websocket_enable' => ['sometimes', 'nullable', 'numeric'],
+            'recv_real_time' => ['sometimes', 'nullable', 'numeric'],
+            'send_real_time' => ['sometimes', 'nullable', 'numeric'],
+            'log_req_header' => ['sometimes', 'nullable', 'numeric'],
+            'log_resp_header' => ['sometimes', 'nullable', 'numeric'],
+            'log_req_body' => ['sometimes', 'nullable', 'numeric'],
+            'log_req_body_max_size' => ['sometimes', 'nullable', 'numeric'],
+            'acme_proxy_to_orgin' => ['sometimes', 'nullable', 'numeric'],
+            'is_default_server' => ['sometimes', 'nullable', 'numeric'],
+            'l2_config_id' => ['sometimes', 'nullable', 'numeric'],
+            'backend.*.addr' => ['required_with:backend', 'string', 'max:255'],
+            'backend.*.weight' => ['sometimes', 'numeric', 'min:1'],
+            'backend.*.state' => ['sometimes', 'string', 'in:up,down,backup'],
         ]);
 
         if ($validated === []) {
             return response()->json(['ok' => false, 'message' => '没有可更新的字段'], 422);
+        }
+
+        // Validation checks known origin fields, but must not discard newer
+        // nested options when a complete existing origin list is edited.
+        foreach ($validated as $key => $value) {
+            if (is_array($value)) {
+                $validated[$key] = $request->input($key);
+            }
         }
 
         try {

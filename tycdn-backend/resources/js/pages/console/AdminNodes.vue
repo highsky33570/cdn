@@ -1,8 +1,5 @@
 <script setup lang="ts">
-import {
-    extractCdnflyRows as extractRows,
-    extractCdnflyTotal as extractTotal,
-} from '@/lib/cdnflyResponse';
+import { Link } from '@inertiajs/vue3';
 import {
     AlertCircle,
     Check,
@@ -86,6 +83,10 @@ import type {
     AdminRegionPayload,
     CdnflyRecord,
 } from '@/lib/adminModulesApi';
+import {
+    extractCdnflyRows as extractRows,
+    extractCdnflyTotal as extractTotal,
+} from '@/lib/cdnflyResponse';
 
 const NODE_STATUS_ALL = 'all';
 
@@ -730,6 +731,28 @@ function pendingNodeIp(node: CdnflyRecord): string {
     return textValue(node.ip) || textValue(node.addr) || '-';
 }
 
+function nodeRate(value: unknown): string {
+    if (value === undefined || value === null) {
+        return '—';
+    }
+
+    let n = Number(value);
+
+    if (!Number.isFinite(n)) {
+        return String(value);
+    }
+
+    const units = ['bps', 'Kbps', 'Mbps', 'Gbps'];
+    let index = 0;
+
+    while (n >= 1000 && index < 3) {
+        n /= 1000;
+        index++;
+    }
+
+    return `${n.toFixed(index ? 2 : 0)} ${units[index]}`;
+}
+
 function nodeStatusLabel(node: CdnflyRecord): string {
     if (!nodeEnabled(node)) {
         const reason = textValue(node.disable_by);
@@ -959,7 +982,10 @@ const ngFormError = ref('');
  */
 type NodeTab = 'nodes' | 'pending' | 'topology';
 
-const activeTab = ref<NodeTab>('nodes');
+const props = withDefaults(defineProps<{ initialTab?: NodeTab }>(), {
+    initialTab: 'nodes',
+});
+const activeTab = ref<NodeTab>(props.initialTab);
 
 const nodeTabs = computed<ConsoleTab[]>(() => [
     { key: 'nodes' as const, label: '节点', icon: Server, count: total.value },
@@ -1692,6 +1718,18 @@ function regionNameById(id: unknown): string {
                                         区域
                                     </th>
                                     <th class="px-4 py-3 text-left font-medium">
+                                        监控
+                                    </th>
+                                    <th class="px-4 py-3 text-left font-medium">
+                                        实时带宽
+                                    </th>
+                                    <th class="px-4 py-3 text-left font-medium">
+                                        月流量
+                                    </th>
+                                    <th class="px-4 py-3 text-left font-medium">
+                                        排序
+                                    </th>
+                                    <th class="px-4 py-3 text-left font-medium">
                                         创建时间
                                     </th>
                                     <th
@@ -1705,7 +1743,7 @@ function regionNameById(id: unknown): string {
                                 <tr v-if="loading && rows.length === 0">
                                     <td
                                         class="px-6 py-16 text-center"
-                                        colspan="5"
+                                        colspan="9"
                                     >
                                         <Spinner />
                                     </td>
@@ -1735,6 +1773,37 @@ function regionNameById(id: unknown): string {
                                     </td>
                                     <td class="px-4 py-4 text-muted-foreground">
                                         {{ regionLabel(node.region_id) }}
+                                    </td>
+                                    <td class="px-4 py-4">
+                                        <span>{{
+                                            Number(node.check_on)
+                                                ? node.check_protocol
+                                                : '未开启'
+                                        }}</span
+                                        ><Link
+                                            :href="`/console/admin/workspace/node-ip-log?node_id=${node.id}`"
+                                            class="mt-1 block text-xs text-primary"
+                                            >查看日志</Link
+                                        >
+                                    </td>
+                                    <td class="px-4 py-4 text-xs">
+                                        <Link
+                                            :href="`/console/admin/node-monitoring?node_id=${node.id}`"
+                                            class="text-primary"
+                                            >↑ {{ nodeRate(node.outbound)
+                                            }}<br />↓
+                                            {{ nodeRate(node.inbound) }}</Link
+                                        >
+                                    </td>
+                                    <td class="px-4 py-4">
+                                        {{
+                                            node.month_traffic === undefined
+                                                ? '—'
+                                                : `${node.month_traffic} GB`
+                                        }}
+                                    </td>
+                                    <td class="px-4 py-4">
+                                        {{ node.sort ?? '—' }}
                                     </td>
                                     <td class="px-4 py-4 text-muted-foreground">
                                         {{
@@ -1823,7 +1892,7 @@ function regionNameById(id: unknown): string {
                                 <tr v-if="!loading && rows.length === 0">
                                     <td
                                         class="px-6 py-16 text-center text-muted-foreground"
-                                        colspan="5"
+                                        colspan="9"
                                     >
                                         暂无节点
                                     </td>

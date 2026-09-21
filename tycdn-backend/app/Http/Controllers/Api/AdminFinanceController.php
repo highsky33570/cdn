@@ -113,6 +113,7 @@ class AdminFinanceController extends Controller
                 'orders_failed' => Order::query()->where('status', OrderStatus::FAILED)->count(),
                 'services_active' => ServiceInstance::query()->where('status', 'active')->count(),
                 'services_total' => ServiceInstance::query()->count(),
+                'services_failed' => ServiceInstance::query()->where('status', 'failed')->count(),
             ],
         ]);
     }

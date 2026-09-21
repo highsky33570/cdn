@@ -22,6 +22,7 @@ import ConsoleFormDialog from '@/components/console/ConsoleFormDialog.vue';
 import ConsolePageHeader from '@/components/console/ConsolePageHeader.vue';
 import ConsoleTabs from '@/components/console/ConsoleTabs.vue';
 import type { ConsoleTab } from '@/components/console/ConsoleTabs.vue';
+import RecoveryReview from '@/components/console/RecoveryReview.vue';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -122,16 +123,16 @@ const summaryCards = computed(() => [
         tone: 'default' as const,
     },
     {
-        key: 'orders_failed',
+        key: 'services_failed',
         label: '开通失败',
-        value: String(summary.value?.orders_failed ?? '—'),
+        value: String(summary.value?.services_failed ?? '—'),
         hint:
-            (summary.value?.orders_failed ?? 0) > 0
+            (summary.value?.services_failed ?? 0) > 0
                 ? '已收款但未交付，需处理'
                 : '无需处理',
         icon: TriangleAlert,
         tone:
-            (summary.value?.orders_failed ?? 0) > 0
+            (summary.value?.services_failed ?? 0) > 0
                 ? ('warning' as const)
                 : ('default' as const),
     },
@@ -139,7 +140,10 @@ const summaryCards = computed(() => [
 
 type FinanceTab = 'orders' | 'services' | 'packages';
 
-const activeTab = ref<FinanceTab>('orders');
+const props = withDefaults(defineProps<{ initialTab?: FinanceTab }>(), {
+    initialTab: 'orders',
+});
+const activeTab = ref<FinanceTab>(props.initialTab);
 
 const financeTabs: ConsoleTab[] = [
     { key: 'orders' as const, label: '订单', icon: Receipt },
@@ -607,6 +611,7 @@ const orderDetailFields = computed<{ label: string; value: string }[]>(() => {
 });
 
 // ─── Service detail ─────────────────────────────────────
+const serviceTable = ref<InstanceType<typeof ConsoleDataTable>>();
 const serviceDetailOpen = ref(false);
 const serviceDetail = ref<AdminServiceRecord | null>(null);
 
@@ -771,6 +776,7 @@ const serviceDetailFields = computed<{ label: string; value: string }[]>(() => {
 
         <ConsoleDataTable
             v-else-if="activeTab === 'services'"
+            ref="serviceTable"
             title="服务实例"
             :icon="Package"
             :columns="serviceColumns"
@@ -816,6 +822,15 @@ const serviceDetailFields = computed<{ label: string; value: string }[]>(() => {
             </template>
 
             <template #row-actions="{ row }">
+                <RecoveryReview
+                    v-if="row.status === 'failed'"
+                    kind="service"
+                    :id="Number(row.id)"
+                    @updated="
+                        loadSummary();
+                        serviceTable?.reload();
+                    "
+                />
                 <Button
                     variant="ghost"
                     size="sm"
