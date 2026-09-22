@@ -37,6 +37,132 @@ const accessLogs = await import(
     moduleUrl(resolve('resources/js/lib/accessLogs.ts'))
 );
 const wafLogs = await import(moduleUrl(resolve('resources/js/lib/wafLogs.ts')));
+const stream = await import(
+    moduleUrl(resolve('resources/js/lib/streamAnalytics.ts'))
+);
+
+test('stream queries use master periods, second-precision custom ranges and TCP/UDP ports', () => {
+    const now = new Date(2026, 8, 23, 15, 45, 12);
+    for (const period of ['1', '6', '12']) {
+        const range = stream.streamRange(period, { start: '', end: '' }, now);
+        assert.equal(
+            Date.parse(range.end.replace(' ', 'T')) -
+                Date.parse(range.start.replace(' ', 'T')),
+            Number(period) * 3600000,
+        );
+        assert.equal(range.end, '2026-09-23 15:45:12');
+    }
+    const range = stream.streamRange('custom', {
+        start: '2026-09-22T01:02:03',
+        end: '2026-09-23T04:05',
+    });
+    assert.deepEqual(
+        stream.streamRealtimeParams(
+            'stream-bandwidth',
+            range,
+            ' 88/TCP 99/UDP ',
+        ),
+        {
+            type: 'stream-bandwidth',
+            start: '2026-09-22 01:02:03',
+            end: '2026-09-23 04:05:00',
+            port: '88/TCP 99/UDP',
+        },
+    );
+    for (const custom of [
+        { start: '', end: '' },
+        { start: '2026-09-23T04:05', end: '2026-09-23T04:05' },
+        { start: '2026-09-23T04:05', end: '2026-09-22T04:05' },
+        { start: 'invalid', end: '2026-09-23T04:05' },
+    ]) {
+        assert.throws(() => stream.streamRange('custom', custom));
+    }
+});
+
+test('stream bandwidth converts byte rates to network bits while traffic remains decimal bytes', () => {
+    assert.equal(stream.streamMetric(125000, 'stream-bandwidth'), '1.00 Mbps');
+    assert.equal(
+        stream.streamMetric(125000000, 'stream-bandwidth'),
+        '1.00 Gbps',
+    );
+    assert.equal(stream.streamMetric(0, 'stream-bandwidth'), '0.00 Kbps');
+    assert.equal(stream.streamMetric('1000', 'stream-traffic'), '1.00 KB');
+    assert.equal(stream.streamMetric(1000000, 'stream-traffic'), '1.00 MB');
+    assert.equal(stream.streamMetric(1000000000, 'stream-traffic'), '1.00 GB');
+    assert.equal(stream.streamMetric(null, 'stream-traffic'), '—');
+    assert.equal(stream.streamBytes(0), '0 Bytes');
+    assert.equal(stream.streamBytes('1000'), '1.00 KB');
+    assert.equal(stream.streamBytes(undefined), '—');
+});
+
+test('stream samples retain real zeros and directional gaps without inventing empty points', () => {
+    const time = Date.parse('2026-09-23T00:00:00Z');
+    assert.deepEqual(stream.streamSeries({ code: 0, data: [] }), {
+        outbound: [],
+        inbound: [],
+    });
+    assert.deepEqual(
+        stream.streamSeries({
+            code: 0,
+            data: [
+                [time + 2000, 30],
+                [time, 0],
+                [0, 0],
+                [time + 1000, -1],
+            ],
+        }),
+        {
+            outbound: [
+                [time, 0],
+                [time + 2000, 30],
+            ],
+            inbound: [],
+        },
+    );
+    assert.deepEqual(
+        stream.streamSeries({
+            code: 0,
+            data: {
+                outbound: [
+                    [time, 0],
+                    [time + 2000, 30],
+                ],
+                inbound: [[time + 1000, 10]],
+            },
+        }),
+        {
+            outbound: [
+                [time, 0],
+                [time + 2000, 30],
+            ],
+            inbound: [[time + 1000, 10]],
+        },
+    );
+});
+
+test('port rankings read native values, preserve zero and sort numerically with missing values last', () => {
+    const ranks = stream.streamRanks({
+        code: 0,
+        data: [
+            { res: '88/TCP', count: '2', traffic: '1000' },
+            { res: '99/UDP', count: '10', traffic: 0, outbound_traffic: 100 },
+            { res: '80/TCP', count: 0, new_connections: 123, traffic: '20' },
+            { res: '443/TCP' },
+        ],
+    });
+    assert.equal(ranks[1].traffic, 0);
+    assert.equal(ranks[2].count, 0);
+    assert.equal(ranks[3].count, null);
+    assert.deepEqual(
+        stream.sortStreamRanks(ranks, 'count', 'desc').map((row) => row.port),
+        ['99/UDP', '88/TCP', '80/TCP', '443/TCP'],
+    );
+    assert.deepEqual(
+        stream.sortStreamRanks(ranks, 'traffic', 'asc').map((row) => row.port),
+        ['99/UDP', '80/TCP', '88/TCP', '443/TCP'],
+    );
+    assert.equal(ranks[0].port, '88/TCP');
+});
 
 test('WAF queries preserve every native filter, multi-domain input and false/zero values', () => {
     const filters = wafLogs.defaultWafFilters(new Date(2026, 11, 31, 12));

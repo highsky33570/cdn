@@ -20,6 +20,7 @@ import AdminOverview from './AdminOverview.vue';
 import AdminPackages from './AdminPackages.vue';
 import AdminSecurity from './AdminSecurity.vue';
 import AdminSites from './AdminSites.vue';
+import AdminStreamAnalytics from './AdminStreamAnalytics.vue';
 import AdminStreams from './AdminStreams.vue';
 import AdminUsers from './AdminUsers.vue';
 import AdminWafLogs from './AdminWafLogs.vue';
@@ -183,8 +184,7 @@ for (const view of ['realtime', 'top', 'usage']) {
 }
 
 MODULES['admin-streams-analytics'] = {
-    component: UserStreams,
-    props: { view: 'analytics', scope: 'admin' },
+    component: AdminStreamAnalytics,
 };
 MODULES['stream-defaults'] = {
     component: AdminConfigWorkspace,
