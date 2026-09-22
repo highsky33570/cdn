@@ -33,6 +33,145 @@ const formatters = await import(
 const blockLogs = await import(
     moduleUrl(resolve('resources/js/lib/blockLogs.ts'))
 );
+const accessLogs = await import(
+    moduleUrl(resolve('resources/js/lib/accessLogs.ts'))
+);
+
+test('access logs query the complete current day and retain every download filter', () => {
+    const filters = accessLogs.defaultAccessFilters(
+        new Date(2026, 11, 31, 16, 20, 30),
+    );
+    assert.equal(filters.start, '2026-12-31T00:00:00');
+    assert.equal(filters.end, '2027-01-01T00:00:00');
+    const query = accessLogs.accessLogParams({
+        ...filters,
+        start: '2026-12-31T00:00',
+        host: ' example.test ',
+        addr: '2001:db8::1',
+        req_uri: '/api/',
+        uri_match_type: 'prefix',
+        method: 'GET',
+        status: '530',
+        cache_status: 'MISS',
+        server_port: '443',
+        node_id: '0',
+        tls_fp: 'fp',
+        country: '中国',
+        province: '广东省',
+        isp: '中国移动',
+        referer: 'https://example.test/',
+    });
+    assert.deepEqual(query, {
+        start: '2026-12-31 00:00:00',
+        end: '2027-01-01 00:00:00',
+        host: 'example.test',
+        addr: '2001:db8::1',
+        req_uri: '/api/',
+        uri_match_type: 'prefix',
+        method: 'GET',
+        status: '530',
+        cache_status: 'MISS',
+        server_port: 443,
+        node_id: 0,
+        tls_fp: 'fp',
+        country: '中国',
+        province: '广东省',
+        isp: '中国移动',
+        referer: 'https://example.test/',
+    });
+    assert.throws(() => accessLogs.accessLogParams({ ...filters, end: '' }));
+    assert.throws(() =>
+        accessLogs.accessLogParams({ ...filters, end: filters.start }),
+    );
+    assert.throws(() =>
+        accessLogs.accessLogParams({ ...filters, server_port: '65536' }),
+    );
+});
+
+test('access-log cells use millisecond timestamps and preserve zero and the native master columns', () => {
+    const timestamp = new Date(2026, 8, 22, 16, 9, 38).getTime();
+    assert.equal(
+        accessLogs.accessLogCell({ timestamp }, 'timestamp'),
+        '09-22 16:09:38',
+    );
+    assert.equal(
+        accessLogs.accessLogCell({ timestamp: null }, 'timestamp'),
+        '-',
+    );
+    assert.equal(
+        accessLogs.accessLogCell(
+            { host: 'example.test', host2: 'alias.test' },
+            'host',
+        ),
+        'example.test (alias.test)',
+    );
+    assert.equal(
+        accessLogs.accessLogCell(
+            { host: 'example.test-no-config', host2: 'example.test' },
+            'host',
+        ),
+        'example.test-no-config',
+    );
+    assert.equal(
+        accessLogs.accessLogCell(
+            { country: '中国', province: '广东省', city: '深圳市' },
+            'country',
+        ),
+        '中国-广东省-深圳市',
+    );
+    assert.equal(
+        accessLogs.accessLogCell({ bytes_sent: 0 }, 'bytes_sent'),
+        '0',
+    );
+
+    for (const key of [
+        'sip',
+        'content_type',
+        'referer',
+        'user_agent',
+        'up_resp_time',
+        'bytes_sent',
+        'cache_status',
+        'l1_cache_status',
+        'l2_cache_status',
+        'l2_ip',
+        'nid',
+    ]) {
+        assert.ok(
+            accessLogs.accessLogColumns.some((column) => column.key === key),
+        );
+    }
+});
+
+test('access-log job metadata, states and UTF-8 request details are decoded without inventing progress', () => {
+    assert.deepEqual(
+        accessLogs.accessJobData({
+            data: '{"host":"example.test","start":"2026-09-22 00:00:00"}',
+        }),
+        { host: 'example.test', start: '2026-09-22 00:00:00' },
+    );
+    assert.deepEqual(
+        accessLogs.accessJobData({ data: { host: 'example.test' } }),
+        { host: 'example.test' },
+    );
+    assert.deepEqual(accessLogs.accessJobData({ data: 'broken' }), {});
+    assert.equal(accessLogs.accessJobState('process'), '处理中');
+    assert.equal(accessLogs.accessJobState('unknown'), 'unknown');
+    assert.equal(
+        accessLogs.decodeAccessBody(
+            Buffer.from('你好 <script>alert(1)</script>').toString('base64'),
+        ),
+        '你好 <script>alert(1)</script>',
+    );
+    assert.equal(accessLogs.decodeAccessBody('!invalid!'), '!invalid!');
+    assert.equal(
+        accessLogs.accessHeaderText(
+            '{"Host":"example.test","X-Value":["one","two"]}',
+        ),
+        'Host: example.test\nX-Value: one, two',
+    );
+    assert.equal(accessLogs.accessHeaderText('-'), '未开启记录');
+});
 
 test('block-log tabs use their actual rule fields and auto-unlock meaning', () => {
     assert.equal(

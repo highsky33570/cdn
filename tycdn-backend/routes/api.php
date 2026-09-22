@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\AdminAccessLogController;
 use App\Http\Controllers\Api\AdminBlockLogController;
 use App\Http\Controllers\Api\AdminCcController;
 use App\Http\Controllers\Api\AdminConfigController;
@@ -215,6 +216,10 @@ Route::middleware(['auth:sanctum', 'verified', 'admin', 'throttle:admin-api'])->
     Route::delete('/package-ups/{id}', [AdminFinanceController::class, 'destroyPackageUp'])->middleware('throttle:admin-write-10');
 
     // 监控日志
+    Route::get('/access-log-jobs', [AdminAccessLogController::class, 'jobs']);
+    Route::post('/access-log-jobs', [AdminAccessLogController::class, 'store'])->middleware('throttle:admin-write-30');
+    Route::get('/access-log-jobs/{id}/download', [AdminAccessLogController::class, 'download'])->whereNumber('id');
+    Route::get('/access-logs/{id}', [AdminAccessLogController::class, 'detail'])->where('id', '[A-Za-z0-9_-]+');
     Route::get('/logs/login', [AdminMonitorController::class, 'loginLogs']);
     Route::get('/logs/op', [AdminMonitorController::class, 'opLogs']);
     Route::get('/monitor/site-realtime', [AdminMonitorController::class, 'siteRealtime']);

@@ -1,0 +1,972 @@
+<script setup lang="ts">
+import { usePage } from '@inertiajs/vue3';
+import { ChevronLeft, ChevronRight, RefreshCw, X } from 'lucide-vue-next';
+import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue';
+import { toast } from 'vue-sonner';
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogDescription,
+    DialogFooter,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Spinner } from '@/components/ui/spinner';
+import {
+    accessFilterFields,
+    accessLogColumns,
+    accessLogParams,
+    accessLogCell,
+    accessJobData,
+    accessJobState,
+    accessHeaderText,
+    decodeAccessBody,
+    defaultAccessFilters,
+} from '@/lib/accessLogs';
+import type { AccessFilterKey, AccessLogFilters } from '@/lib/accessLogs';
+import { apiRequest } from '@/lib/apiRequest';
+import {
+    extractCdnflyRecord,
+    extractCdnflyRows,
+    extractCdnflyTotal,
+} from '@/lib/cdnflyResponse';
+import { formatDate, getErrorMessage, textValue } from '@/lib/formatters';
+import { masterGet } from '@/lib/masterApi';
+import type { CdnflyRecord } from '@/lib/sharedTypes';
+
+const filters = reactive(defaultAccessFilters());
+const query = new URLSearchParams(usePage().url.split('?')[1] ?? '');
+
+for (const { key } of accessFilterFields) {
+    const value = query.get(key === 'host' ? 'domain' : key) ?? query.get(key);
+
+    if (value !== null) {
+        filters[key] = value;
+    }
+}
+
+if (query.get('uri_match_type') === 'prefix') {
+    filters.uri_match_type = 'prefix';
+}
+
+const draft = reactive({ ...filters });
+const active = ref<'query' | 'jobs'>(
+    query.get('tab') === 'jobs' ? 'jobs' : 'query',
+);
+const quickType = ref<AccessFilterKey | 'timeRange' | 'uri_match_type'>('host');
+const quickValue = ref('');
+const advanced = ref(false);
+const rows = ref<CdnflyRecord[]>([]),
+    jobs = ref<CdnflyRecord[]>([]);
+const logTotal = ref(0),
+    jobTotal = ref(0),
+    logPage = ref(1),
+    jobPage = ref(1);
+const logSize = ref(10),
+    jobSize = ref(10);
+const loading = ref(false),
+    error = ref(''),
+    applying = ref(false),
+    downloading = ref<string | null>(null);
+const total = computed(() =>
+    active.value === 'query' ? logTotal.value : jobTotal.value,
+);
+const currentPage = computed(() =>
+    active.value === 'query' ? logPage.value : jobPage.value,
+);
+const pageSize = computed({
+    get: () => (active.value === 'query' ? logSize.value : jobSize.value),
+    set: (value: number) => {
+        if (active.value === 'query') {
+            logSize.value = value;
+        } else {
+            jobSize.value = value;
+        }
+    },
+});
+const lastPage = computed(() =>
+    Math.max(1, Math.ceil(total.value / pageSize.value)),
+);
+const pageButtons = computed(() => {
+    const pages = new Set([
+        1,
+        lastPage.value,
+        currentPage.value - 1,
+        currentPage.value,
+        currentPage.value + 1,
+        2,
+        3,
+    ]);
+
+    return [...pages]
+        .filter((page) => page >= 1 && page <= lastPage.value)
+        .sort((a, b) => a - b);
+});
+const tags = computed(() =>
+    accessFilterFields
+        .filter((field) => filters[field.key] !== '')
+        .map((field) => ({
+            key: field.key,
+            label: field.label,
+            value:
+                field.key === 'cache_status'
+                    ? filters.cache_status === 'HIT'
+                        ? '命中'
+                        : '未命中'
+                    : filters[field.key],
+        })),
+);
+let requestVersion = 0;
+
+async function load(target = currentPage.value): Promise<void> {
+    const version = ++requestVersion,
+        tab = active.value;
+    loading.value = true;
+    error.value = '';
+
+    try {
+        if (tab === 'query') {
+            const result = await masterGet('access-log', {
+                ...accessLogParams(filters),
+                page: target,
+                limit: logSize.value,
+            });
+
+            if (version !== requestVersion) {
+                return;
+            }
+
+            rows.value = extractCdnflyRows(result);
+            logTotal.value = extractCdnflyTotal(result, rows.value.length);
+            logPage.value = target;
+        } else {
+            const result = await apiRequest(
+                `/api/admin/access-log-jobs?page=${target}&limit=${jobSize.value}`,
+            );
+
+            if (version !== requestVersion) {
+                return;
+            }
+
+            jobs.value = extractCdnflyRows(result);
+            jobTotal.value = extractCdnflyTotal(result, jobs.value.length);
+            jobPage.value = target;
+        }
+    } catch (e) {
+        if (version !== requestVersion) {
+            return;
+        }
+
+        error.value = getErrorMessage(e);
+
+        if (tab === 'query') {
+            rows.value = [];
+            logTotal.value = 0;
+        } else {
+            jobs.value = [];
+            jobTotal.value = 0;
+        }
+    } finally {
+        if (version === requestVersion) {
+            loading.value = false;
+        }
+    }
+}
+function switchTab(tab: 'query' | 'jobs'): void {
+    if (active.value !== tab) {
+        active.value = tab;
+        void load();
+    }
+}
+function clearFilters(): void {
+    Object.assign(filters, defaultAccessFilters());
+    Object.assign(draft, filters);
+    quickValue.value = '';
+    void load(1);
+}
+function removeFilter(key: AccessFilterKey): void {
+    filters[key] = '';
+    draft[key] = '';
+    void load(1);
+}
+function openAdvanced(): void {
+    Object.assign(draft, filters);
+    advanced.value = !advanced.value;
+    error.value = '';
+}
+function applyAdvanced(): void {
+    try {
+        accessLogParams(draft);
+        Object.assign(filters, draft);
+        void load(1);
+    } catch (e) {
+        error.value = getErrorMessage(e);
+    }
+}
+watch(quickType, (key) => {
+    if (key === 'timeRange') {
+        Object.assign(draft, filters);
+        advanced.value = true;
+    } else {
+        quickValue.value = filters[key];
+    }
+});
+function quickSearch(): void {
+    if (quickType.value === 'timeRange') {
+        applyAdvanced();
+
+        return;
+    }
+
+    const next: AccessLogFilters = {
+        ...filters,
+        [quickType.value]: quickValue.value.trim(),
+    };
+
+    try {
+        accessLogParams(next);
+        Object.assign(filters, next);
+        Object.assign(draft, next);
+        void load(1);
+    } catch (e) {
+        error.value = getErrorMessage(e);
+    }
+}
+function datePreset(days: number): void {
+    const range = defaultAccessFilters();
+    const start = new Date(range.start);
+    start.setDate(start.getDate() - days + 1);
+    draft.start = formatDate(start.toISOString()).replace(' ', 'T');
+    draft.end = range.end;
+}
+async function applyDownload(): Promise<void> {
+    applying.value = true;
+
+    try {
+        await apiRequest('/api/admin/access-log-jobs', {
+            method: 'POST',
+            body: JSON.stringify(accessLogParams(filters)),
+        });
+        toast.success('申请成功，下载链接请到申请记录中等待获取');
+        active.value = 'jobs';
+        await load(1);
+    } catch (e) {
+        toast.error(getErrorMessage(e));
+    } finally {
+        applying.value = false;
+    }
+}
+async function download(row: CdnflyRecord): Promise<void> {
+    const id = textValue(row.id);
+
+    if (!/^\d+$/.test(id)) {
+        return;
+    }
+
+    downloading.value = id;
+
+    try {
+        const response = await fetch(
+            `/api/admin/access-log-jobs/${id}/download`,
+            {
+                credentials: 'same-origin',
+                headers: {
+                    Accept: 'application/gzip, application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+            },
+        );
+
+        if (
+            !response.ok ||
+            !/application\/(?:x-)?gzip|application\/octet-stream/.test(
+                response.headers.get('Content-Type') ?? '',
+            )
+        ) {
+            const body = await response.json().catch(() => null);
+
+            throw new Error(body?.message || '日志文件尚未生成或已过期');
+        }
+
+        const url = URL.createObjectURL(await response.blob()),
+            link = document.createElement('a');
+        link.href = url;
+        link.download = `access-log-${id}.gz`;
+        link.click();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch (e) {
+        toast.error(getErrorMessage(e));
+    } finally {
+        downloading.value = null;
+    }
+}
+
+const detailOpen = ref(false),
+    detailLoading = ref(false),
+    detailError = ref('');
+const detail = ref<CdnflyRecord>({}),
+    detailTab = ref<'req_header' | 'resp_header' | 'req_body'>('req_header');
+const showBase64 = ref(false);
+let detailVersion = 0;
+const detailText = computed(() =>
+    detailTab.value === 'req_body'
+        ? showBase64.value
+            ? textValue(detail.value.req_body)
+            : decodeAccessBody(textValue(detail.value.req_body))
+        : accessHeaderText(detail.value[detailTab.value]),
+);
+async function showDetail(row: CdnflyRecord): Promise<void> {
+    const id = ++detailVersion;
+    detail.value = {};
+    detailTab.value = 'req_header';
+    showBase64.value = false;
+    detailError.value = '';
+    detailOpen.value = true;
+    detailLoading.value = true;
+
+    try {
+        const result = await apiRequest(
+            `/api/admin/access-logs/${encodeURIComponent(textValue(row._id))}`,
+        );
+
+        if (id === detailVersion) {
+            detail.value = extractCdnflyRecord(result) ?? {};
+        }
+    } catch (e) {
+        if (id === detailVersion) {
+            detailError.value = getErrorMessage(e);
+        }
+    } finally {
+        if (id === detailVersion) {
+            detailLoading.value = false;
+        }
+    }
+}
+watch(detailOpen, (open) => {
+    if (!open) {
+        detailVersion++;
+    }
+});
+onMounted(() => void load());
+onUnmounted(() => {
+    requestVersion++;
+    detailVersion++;
+});
+</script>
+
+<template>
+    <div class="console-page min-w-0 p-4 md:p-6">
+        <section
+            class="access-log-card min-w-0 rounded-xl border bg-card p-4 text-card-foreground shadow-sm"
+            aria-label="访问日志"
+        >
+            <div
+                class="mb-4 flex gap-1"
+                role="tablist"
+                aria-label="访问日志分类"
+            >
+                <button
+                    v-for="tab in [
+                        { key: 'query', label: '日志查询' },
+                        { key: 'jobs', label: '申请记录' },
+                    ] as const"
+                    :id="`access-tab-${tab.key}`"
+                    :key="tab.key"
+                    type="button"
+                    role="tab"
+                    :aria-selected="active === tab.key"
+                    aria-controls="access-log-panel"
+                    class="rounded-md px-4 py-2 text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-primary"
+                    :class="
+                        active === tab.key
+                            ? 'bg-primary/10 text-primary'
+                            : 'text-muted-foreground hover:bg-muted'
+                    "
+                    @click="switchTab(tab.key)"
+                >
+                    {{ tab.label }}
+                </button>
+            </div>
+            <div
+                id="access-log-panel"
+                role="tabpanel"
+                :aria-labelledby="`access-tab-${active}`"
+            >
+                <template v-if="active === 'query'">
+                    <div
+                        class="mb-3 flex flex-wrap items-center justify-between gap-3"
+                    >
+                        <form
+                            class="flex max-w-full items-stretch"
+                            @submit.prevent="quickSearch"
+                        >
+                            <select
+                                v-model="quickType"
+                                aria-label="搜索类型"
+                                class="w-28 shrink-0 rounded-l-md border border-r-0 bg-muted px-2 text-sm text-muted-foreground"
+                            >
+                                <option
+                                    v-for="field in accessFilterFields"
+                                    :key="field.key"
+                                    :value="field.key"
+                                >
+                                    {{ field.label }}
+                                </option>
+                                <option value="timeRange">时间范围</option>
+                                <option value="uri_match_type">
+                                    URI搜索模式
+                                </option>
+                            </select>
+                            <select
+                                v-if="
+                                    quickType === 'cache_status' ||
+                                    quickType === 'uri_match_type'
+                                "
+                                v-model="quickValue"
+                                aria-label="搜索值"
+                                class="h-8 w-44 min-w-0 border bg-background px-2 text-sm"
+                            >
+                                <template v-if="quickType === 'cache_status'"
+                                    ><option value="">全部</option>
+                                    <option value="HIT">命中</option>
+                                    <option value="MISS">
+                                        未命中
+                                    </option></template
+                                ><template v-else
+                                    ><option value="exact">精确</option>
+                                    <option value="prefix">
+                                        前缀
+                                    </option></template
+                                >
+                            </select>
+                            <Input
+                                v-else
+                                v-model="quickValue"
+                                aria-label="搜索值"
+                                class="h-8 w-44 min-w-0 rounded-none"
+                                :placeholder="
+                                    quickType === 'timeRange'
+                                        ? '在高级搜索中选择时间'
+                                        : accessFilterFields.find(
+                                              (field) =>
+                                                  field.key === quickType,
+                                          )?.placeholder
+                                "
+                                :disabled="quickType === 'timeRange'"
+                            />
+                            <Button
+                                type="submit"
+                                size="sm"
+                                class="rounded-l-none"
+                                :disabled="loading"
+                                >查询</Button
+                            >
+                        </form>
+                        <div class="flex items-center gap-2">
+                            <Button
+                                size="sm"
+                                variant="outline"
+                                :disabled="applying || loading"
+                                @click="applyDownload"
+                                ><Spinner
+                                    v-if="applying"
+                                    data-icon="inline-start"
+                                />申请下载</Button
+                            ><Button
+                                size="sm"
+                                variant="link"
+                                :aria-expanded="advanced"
+                                @click="openAdvanced"
+                                >高级搜索</Button
+                            >
+                        </div>
+                    </div>
+
+                    <form
+                        v-if="advanced"
+                        class="mb-4 rounded-lg border bg-muted/20 p-4"
+                        aria-label="高级搜索"
+                        @submit.prevent="applyAdvanced"
+                    >
+                        <div
+                            class="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+                        >
+                            <div class="grid gap-1.5">
+                                <Label for="access-start">开始时间</Label
+                                ><Input
+                                    id="access-start"
+                                    v-model="draft.start"
+                                    type="datetime-local"
+                                    step="1"
+                                />
+                            </div>
+                            <div class="grid gap-1.5">
+                                <Label for="access-end">结束时间</Label
+                                ><Input
+                                    id="access-end"
+                                    v-model="draft.end"
+                                    type="datetime-local"
+                                    step="1"
+                                />
+                            </div>
+                            <div class="flex items-end gap-2">
+                                <Button
+                                    v-for="days in [1, 7, 30]"
+                                    :key="days"
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    @click="datePreset(days)"
+                                    >{{
+                                        days === 1 ? '今天' : `近${days}天`
+                                    }}</Button
+                                >
+                            </div>
+                            <div
+                                v-for="field in accessFilterFields"
+                                :key="field.key"
+                                class="grid gap-1.5"
+                            >
+                                <Label :for="`access-${field.key}`">{{
+                                    field.label
+                                }}</Label>
+                                <select
+                                    v-if="field.key === 'cache_status'"
+                                    :id="`access-${field.key}`"
+                                    v-model="draft.cache_status"
+                                    class="h-8 rounded-md border bg-background px-2 text-sm"
+                                >
+                                    <option value="">全部</option>
+                                    <option value="HIT">命中</option>
+                                    <option value="MISS">未命中</option>
+                                </select>
+                                <div
+                                    v-else-if="field.key === 'req_uri'"
+                                    class="flex min-w-0"
+                                >
+                                    <select
+                                        v-model="draft.uri_match_type"
+                                        aria-label="URI匹配方式"
+                                        class="w-20 shrink-0 rounded-l-md border border-r-0 bg-background px-2 text-sm"
+                                    >
+                                        <option value="exact">精确</option>
+                                        <option value="prefix">
+                                            前缀
+                                        </option></select
+                                    ><Input
+                                        :id="`access-${field.key}`"
+                                        v-model="draft.req_uri"
+                                        class="min-w-0 rounded-l-none"
+                                        :placeholder="field.placeholder"
+                                    />
+                                </div>
+                                <Input
+                                    v-else
+                                    :id="`access-${field.key}`"
+                                    v-model="draft[field.key]"
+                                    :placeholder="field.placeholder"
+                                />
+                            </div>
+                        </div>
+                        <div class="flex gap-2">
+                            <Button size="sm" type="submit" :disabled="loading"
+                                >搜索</Button
+                            ><Button
+                                size="sm"
+                                type="button"
+                                variant="outline"
+                                @click="clearFilters"
+                                >重置</Button
+                            >
+                        </div>
+                    </form>
+                    <div
+                        class="mb-3 flex flex-wrap items-center gap-2 text-xs"
+                        aria-label="已应用筛选"
+                    >
+                        <button
+                            type="button"
+                            class="rounded border px-2 py-1 text-muted-foreground hover:text-primary"
+                            @click="
+                                Object.assign(draft, filters);
+                                advanced = true;
+                            "
+                        >
+                            时间范围：{{ filters.start.replace('T', ' ') }} -
+                            {{ filters.end.replace('T', ' ') }}
+                        </button>
+                        <span
+                            v-for="tag in tags"
+                            :key="tag.key"
+                            class="inline-flex max-w-full items-center gap-2 rounded border px-2 py-1 text-muted-foreground"
+                            ><span class="truncate"
+                                >{{ tag.label }}：{{ tag.value
+                                }}{{
+                                    tag.key === 'req_uri'
+                                        ? `（${filters.uri_match_type === 'prefix' ? '前缀' : '精确'}）`
+                                        : ''
+                                }}</span
+                            ><button
+                                type="button"
+                                :aria-label="`移除${tag.label}筛选`"
+                                class="shrink-0 hover:text-foreground"
+                                @click="removeFilter(tag.key)"
+                            >
+                                <X class="size-3" /></button
+                        ></span>
+                        <Button
+                            variant="link"
+                            size="sm"
+                            class="h-auto p-0"
+                            @click="clearFilters"
+                            >清除</Button
+                        >
+                    </div>
+                </template>
+                <div v-else class="mb-3 flex justify-end">
+                    <Button size="sm" :disabled="loading" @click="load()"
+                        ><RefreshCw data-icon="inline-start" />刷新</Button
+                    >
+                </div>
+
+                <div class="max-w-full overflow-x-auto" :aria-busy="loading">
+                    <table
+                        v-if="active === 'query'"
+                        class="access-table access-query-table table-fixed text-left text-sm"
+                        :style="{
+                            width: `${accessLogColumns.reduce((sum, col) => sum + col.width, 130)}px`,
+                        }"
+                    >
+                        <caption class="sr-only">
+                            访问日志查询
+                        </caption>
+                        <colgroup>
+                            <col
+                                v-for="col in accessLogColumns"
+                                :key="col.key"
+                                :style="{ width: `${col.width}px` }"
+                            />
+                            <col style="width: 130px" />
+                        </colgroup>
+                        <thead class="bg-muted/40 text-muted-foreground">
+                            <tr>
+                                <th
+                                    v-for="col in accessLogColumns"
+                                    :key="col.key"
+                                >
+                                    {{ col.label }}
+                                </th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-if="error">
+                                <td :colspan="23" class="text-destructive">
+                                    <span role="alert">{{ error }}</span
+                                    ><Button
+                                        variant="link"
+                                        size="sm"
+                                        @click="load()"
+                                        >重试</Button
+                                    >
+                                </td>
+                            </tr>
+                            <tr v-else-if="loading">
+                                <td :colspan="23" class="h-24">
+                                    <Spinner /><span class="sr-only"
+                                        >加载中</span
+                                    >
+                                </td>
+                            </tr>
+                            <template v-else
+                                ><tr
+                                    v-for="(row, index) in rows"
+                                    :key="textValue(row._id) || index"
+                                >
+                                    <td
+                                        v-for="col in accessLogColumns"
+                                        :key="col.key"
+                                        :title="accessLogCell(row, col.key)"
+                                    >
+                                        <span class="block truncate">{{
+                                            accessLogCell(row, col.key)
+                                        }}</span>
+                                    </td>
+                                    <td>
+                                        <Button
+                                            variant="link"
+                                            size="sm"
+                                            class="h-auto p-0"
+                                            :disabled="!row._id"
+                                            @click="showDetail(row)"
+                                            >查看更多</Button
+                                        >
+                                    </td>
+                                </tr>
+                                <tr v-if="!rows.length">
+                                    <td
+                                        :colspan="23"
+                                        class="h-24 text-muted-foreground"
+                                    >
+                                        暂无数据
+                                    </td>
+                                </tr></template
+                            >
+                        </tbody>
+                    </table>
+                    <table
+                        v-else
+                        class="access-table w-full min-w-[1100px] text-left text-sm"
+                    >
+                        <caption class="sr-only">
+                            申请记录
+                        </caption>
+                        <thead class="bg-muted/40 text-muted-foreground">
+                            <tr>
+                                <th>JobId / TaskId</th>
+                                <th>申请时间</th>
+                                <th>日志时间</th>
+                                <th>日志域名</th>
+                                <th>状态</th>
+                                <th>进度</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-if="error">
+                                <td
+                                    colspan="7"
+                                    class="h-24 text-center text-destructive"
+                                >
+                                    <span role="alert">{{ error }}</span
+                                    ><Button
+                                        variant="link"
+                                        size="sm"
+                                        @click="load()"
+                                        >重试</Button
+                                    >
+                                </td>
+                            </tr>
+                            <tr v-else-if="loading">
+                                <td colspan="7" class="h-24">
+                                    <Spinner class="mx-auto" />
+                                </td>
+                            </tr>
+                            <template v-else>
+                                <tr
+                                    v-for="row in jobs"
+                                    :key="textValue(row.id)"
+                                >
+                                    <td>
+                                        {{ row.id ?? '-' }} /
+                                        {{ row.task_id ?? '-' }}
+                                    </td>
+                                    <td class="whitespace-nowrap">
+                                        {{ formatDate(row.create_at2) }}
+                                    </td>
+                                    <td class="whitespace-nowrap">
+                                        {{
+                                            textValue(
+                                                accessJobData(row).start,
+                                            ) || '-'
+                                        }}
+                                        -
+                                        {{
+                                            textValue(accessJobData(row).end) ||
+                                            '-'
+                                        }}
+                                    </td>
+                                    <td>{{ accessJobData(row).host ?? '' }}</td>
+                                    <td
+                                        :class="
+                                            row.state === 'failed'
+                                                ? 'text-destructive'
+                                                : row.state === 'done'
+                                                  ? 'text-emerald-600 dark:text-emerald-400'
+                                                  : 'text-muted-foreground'
+                                        "
+                                    >
+                                        {{ accessJobState(row.state) }}
+                                    </td>
+                                    <td>{{ row.progress ?? '-' }}</td>
+                                    <td>
+                                        <Button
+                                            variant="link"
+                                            size="sm"
+                                            class="h-auto p-0"
+                                            :disabled="downloading !== null"
+                                            @click="download(row)"
+                                            >{{
+                                                downloading === String(row.id)
+                                                    ? '下载中…'
+                                                    : '下载'
+                                            }}</Button
+                                        >
+                                    </td>
+                                </tr>
+                                <tr v-if="!jobs.length">
+                                    <td
+                                        colspan="7"
+                                        class="h-24 text-center text-muted-foreground"
+                                    >
+                                        暂无数据
+                                    </td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+                <nav
+                    class="mt-4 flex flex-wrap items-center justify-end gap-2 text-sm text-muted-foreground"
+                    aria-label="访问日志分页"
+                >
+                    <span class="mr-1" aria-live="polite"
+                        >共 {{ total }} 条</span
+                    ><Button
+                        size="icon"
+                        variant="outline"
+                        aria-label="上一页"
+                        :disabled="loading || currentPage <= 1"
+                        @click="load(currentPage - 1)"
+                        ><ChevronLeft class="size-4"
+                    /></Button>
+                    <template
+                        v-for="(number, index) in pageButtons"
+                        :key="number"
+                        ><span
+                            v-if="
+                                index > 0 && number - pageButtons[index - 1] > 1
+                            "
+                            aria-hidden="true"
+                            >…</span
+                        ><Button
+                            size="icon"
+                            variant="outline"
+                            :aria-label="`第 ${number} 页`"
+                            :aria-current="
+                                currentPage === number ? 'page' : undefined
+                            "
+                            :disabled="loading"
+                            :class="{
+                                'border-primary text-primary':
+                                    currentPage === number,
+                            }"
+                            @click="load(number)"
+                            >{{ number }}</Button
+                        ></template
+                    >
+                    <Button
+                        size="icon"
+                        variant="outline"
+                        aria-label="下一页"
+                        :disabled="loading || currentPage >= lastPage"
+                        @click="load(currentPage + 1)"
+                        ><ChevronRight class="size-4" /></Button
+                    ><select
+                        v-model.number="pageSize"
+                        aria-label="每页条数"
+                        class="h-8 rounded-md border border-input bg-background px-2 text-foreground"
+                        :disabled="loading"
+                        @change="load(1)"
+                    >
+                        <option
+                            v-for="size in active === 'query'
+                                ? [10, 30, 100]
+                                : [10, 30, 100, 300]"
+                            :key="size"
+                            :value="size"
+                        >
+                            {{ size }} 条/页
+                        </option>
+                    </select>
+                </nav>
+            </div>
+        </section>
+        <Dialog v-model:open="detailOpen"
+            ><DialogContent class="max-h-[85vh] overflow-y-auto sm:max-w-2xl"
+                ><DialogHeader
+                    ><DialogTitle>更多日志</DialogTitle
+                    ><DialogDescription
+                        >请求头、响应头与请求体</DialogDescription
+                    ></DialogHeader
+                >
+                <div
+                    class="flex flex-wrap gap-2"
+                    role="tablist"
+                    aria-label="日志详情"
+                >
+                    <button
+                        v-for="tab in [
+                            { key: 'req_header', label: '请求头' },
+                            { key: 'resp_header', label: '响应头' },
+                            { key: 'req_body', label: '请求体' },
+                        ] as const"
+                        :key="tab.key"
+                        type="button"
+                        role="tab"
+                        :aria-selected="detailTab === tab.key"
+                        class="rounded px-3 py-2 text-sm"
+                        :class="
+                            detailTab === tab.key
+                                ? 'bg-primary/10 text-primary'
+                                : 'text-muted-foreground'
+                        "
+                        @click="detailTab = tab.key"
+                    >
+                        {{ tab.label }}
+                    </button>
+                </div>
+                <Spinner v-if="detailLoading" />
+                <p
+                    v-else-if="detailError"
+                    role="alert"
+                    class="text-sm text-destructive"
+                >
+                    {{ detailError }}
+                </p>
+                <pre
+                    v-else
+                    class="max-h-96 overflow-auto rounded-md border bg-muted/20 p-3 text-xs break-all whitespace-pre-wrap"
+                    >{{ detailText }}</pre
+                >
+                <label
+                    v-if="
+                        detailTab === 'req_body' &&
+                        detail.req_body &&
+                        !detailLoading
+                    "
+                    class="flex items-center gap-2 text-sm"
+                    ><Checkbox
+                        v-model="showBase64"
+                    />转为base64，用于复制二进制数据</label
+                ><DialogFooter
+                    ><Button variant="outline" @click="detailOpen = false"
+                        >关闭</Button
+                    ></DialogFooter
+                >
+            </DialogContent></Dialog
+        >
+    </div>
+</template>
+
+<style scoped>
+.access-table th {
+    padding: 0.75rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+.access-table td {
+    padding: 0.875rem 0.75rem;
+}
+.access-table tr {
+    border-bottom: 1px solid var(--border);
+}
+.access-query-table th,
+.access-query-table td {
+    border: 1px solid var(--border);
+}
+</style>

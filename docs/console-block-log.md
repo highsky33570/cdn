@@ -6,7 +6,7 @@
 - **拉黑统计:** refresh, rank/site/blacklist-count columns, and pagination over the complete ranking returned by the master.
 - **历史拉黑:** IP/site/time filters, full filtered blacklist export, pagination, and manual-unlock status. There is no implicit one-hour cutoff. Time filters send Unix seconds, including the selected time of day.
 
-The page supports light/dark themes and horizontal table scrolling on mobile. Page sizes match the master: 10, 30, 100, and 300. Filtering resets pagination, changing tabs clears stale selections, and older responses cannot overwrite a newer tab/query. “查看日志” opens access logs with the row's IP populated and its advanced filter visible.
+The page supports light/dark themes and horizontal table scrolling on mobile. Page sizes match the master: 10, 30, 100, and 300. Filtering resets pagination, changing tabs clears stale selections, and older responses cannot overwrite a newer tab/query. “查看日志” opens access logs filtered by the row's IP, with the applied IP filter visible.
 
 ## Verified API contract
 

@@ -1047,6 +1047,19 @@ class CdnflyApiService
         return $response;
     }
 
+    public function downloadAdminAccessLog(int $id): Response
+    {
+        $response = $this->adminHttp()->withOptions(['stream' => true])
+            ->get("/v1/monitor/site/download-access-log/{$id}");
+        $contentType = strtolower($response->header('Content-Type'));
+        if (! $response->successful() || ! preg_match('~application/(?:x-)?gzip|application/octet-stream~', $contentType)) {
+            $this->parseResponse($response, 'admin download access log');
+            throw new \RuntimeException('访问日志文件尚未生成或已过期');
+        }
+
+        return $response;
+    }
+
     public function proxyUserRequest(User $user, string $method, string $path, array $data = []): array
     {
         if (! $this->outboundEnabled() && strtoupper($method) === 'GET') {

@@ -6,6 +6,7 @@ import { settingsSections } from '@/lib/configSections';
 import { consoleModules, fallbackModule } from '@/lib/consoleData';
 import { consoleNavigationTitle } from '@/lib/consoleNavigation';
 import { masterResources } from '@/lib/masterResources';
+import AdminAccessLogs from './AdminAccessLogs.vue';
 import AdminBlockLogs from './AdminBlockLogs.vue';
 import AdminConfigWorkspace from './AdminConfigWorkspace.vue';
 import AdminDns from './AdminDns.vue';
@@ -69,6 +70,7 @@ const MODULES: Record<
     { component: Component; props?: Record<string, string> }
 > = {
     'admin-overview': { component: AdminOverview },
+    'admin-analytics-logs': { component: AdminAccessLogs },
     'admin-users': { component: AdminUsers },
     'admin-packages': { component: AdminPackages },
     'admin-sites': { component: AdminSites },
@@ -170,7 +172,7 @@ for (const { key: section } of settingsSections) {
     };
 }
 
-for (const view of ['realtime', 'top', 'logs', 'usage']) {
+for (const view of ['realtime', 'top', 'usage']) {
     MODULES[`admin-analytics-${view}`] = {
         component: UserAnalytics,
         props: { view, scope: 'admin' },
