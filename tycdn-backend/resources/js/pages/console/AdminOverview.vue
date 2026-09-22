@@ -374,7 +374,7 @@ function userTitle(user: AdminUserRecord): string {
                             v-for="stat in cdnflyResourceStats"
                             :key="stat.label"
                             :href="stat.href || '/console/admin'"
-                            class="group flex min-h-20 flex-col justify-between rounded-sm border bg-card px-3 py-2 transition-colors hover:border-primary/60 hover:bg-muted/40"
+                            class="group flex min-h-20 flex-col justify-between rounded-sm border bg-muted/50 px-3 py-2 transition-colors hover:border-primary/60 hover:bg-muted"
                         >
                             <div
                                 class="flex items-center justify-between gap-3 text-sm text-muted-foreground"
@@ -395,7 +395,7 @@ function userTitle(user: AdminUserRecord): string {
                             v-for="stat in cdnflyConfigStats"
                             :key="stat.label"
                             :href="stat.href || '/console/admin'"
-                            class="group flex min-h-16 flex-col justify-between rounded-sm border bg-card px-3 py-2 transition-colors hover:border-primary/60 hover:bg-muted/40"
+                            class="group flex min-h-16 flex-col justify-between rounded-sm border bg-muted/50 px-3 py-2 transition-colors hover:border-primary/60 hover:bg-muted"
                         >
                             <div
                                 class="flex items-center justify-between gap-3 text-sm text-muted-foreground"

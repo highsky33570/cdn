@@ -27,6 +27,21 @@ const response = await import(
 const security = await import(
     moduleUrl(resolve('resources/js/lib/cdnflySecurity.ts'))
 );
+const formatters = await import(
+    moduleUrl(resolve('resources/js/lib/formatters.ts'))
+);
+
+test('USDT display preserves numeric units, zero and six-decimal gateway amounts', () => {
+    assert.equal(formatters.formatMoney('50.00'), '50.00 USDT');
+    assert.equal(formatters.formatMoney(0), '0.00 USDT');
+    assert.equal(formatters.formatMoney('50.000123'), '50.000123 USDT');
+    assert.equal(formatters.formatMoney('0.000001'), '0.000001 USDT');
+    assert.equal(formatters.formatMoney(-2.5), '-2.50 USDT');
+
+    for (const missing of [null, undefined, '', ' ', 'invalid', true]) {
+        assert.equal(formatters.formatMoney(missing), '-');
+    }
+});
 
 test('CDNfly count controls totals instead of the number of rows on this page', () => {
     assert.equal(

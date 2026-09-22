@@ -19,7 +19,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Spinner } from '@/components/ui/spinner';
 import { siteRankingRows } from '@/lib/cdnflyResponse';
-import { formatDate, getErrorMessage, textValue } from '@/lib/cdnRecord';
+import { formatDate, formatMoney, getErrorMessage, textValue } from '@/lib/cdnRecord';
 import {
     extractCdnflyRecord,
     extractCdnflyRows,
@@ -189,7 +189,7 @@ async function loadDashboard(): Promise<void> {
         getUserSiteTop({ type: 'top-domain', recent_time: '30m' }),
     ]);
 
-    overview.value = value(tasks[0]) ?? {};
+    overview.value = extractCdnflyRecord(value(tasks[0])) ?? {};
     packages.value = rows(value(tasks[1]));
     sitesTotal.value = total(value(tasks[2]));
     certsTotal.value = total(value(tasks[3]));
@@ -305,9 +305,7 @@ function numberValue(value: unknown): number {
 }
 
 function money(value: unknown): string {
-    const amount = numberValue(value);
-
-    return `¥${amount.toFixed(2)}`;
+    return formatMoney(value);
 }
 
 function formatCount(value: number): string {

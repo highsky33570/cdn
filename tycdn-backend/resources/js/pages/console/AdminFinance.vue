@@ -90,8 +90,7 @@ async function loadSummary(): Promise<void> {
 
 onMounted(loadSummary);
 
-const money = (value: number | undefined): string =>
-    value === undefined ? '—' : `${Number(value).toFixed(2)}`;
+const money = (value: number | undefined): string => formatMoney(value);
 
 /**
  * Paid-but-undelivered is the only figure here that demands action today, so it
@@ -161,7 +160,7 @@ const orderColumns: ColumnDef[] = [
         key: 'amount_usdt',
         label: '金额',
         width: '120px',
-        format: (v) => `${formatMoney(v as string | number | null, 'USDT')}`,
+        format: (v) => formatMoney(v),
     },
     {
         key: 'status',
@@ -597,8 +596,7 @@ const orderDetailFields = computed<{ label: string; value: string }[]>(() => {
         { label: '类型', value: o.order_type ?? '-' },
         { label: '计费周期', value: o.billing_cycle ?? '-' },
         { label: '数量', value: String(o.quantity ?? '-') },
-        { label: '金额 (USDT)', value: `${o.amount_usdt} USDT` },
-        { label: '金额 (CNY)', value: o.amount_cny ? `¥${o.amount_cny}` : '-' },
+        { label: '金额 (USDT)', value: formatMoney(o.amount_usdt) },
         { label: '状态', value: o.status },
         { label: '网关状态', value: o.gateway_status ?? '-' },
         { label: 'EPUSDT 订单 ID', value: o.epusdt_order_id ?? '-' },

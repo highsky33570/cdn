@@ -43,6 +43,7 @@ import {
 import { Spinner } from '@/components/ui/spinner';
 import {
     formatDate,
+    formatMoney,
     getErrorMessage,
     jsonText,
     textValue,
@@ -431,11 +432,7 @@ const profileCounters = computed(() => {
     );
 });
 
-const accountBalance = computed(() => {
-    const raw = overview.value?.balance;
-
-    return raw === null || raw === undefined ? '-' : String(raw);
-});
+const accountBalance = computed(() => formatMoney(overview.value?.balance));
 
 const cdnflyUid = computed(() => {
     const raw = overview.value?.uid;
@@ -1354,7 +1351,7 @@ function loginSuccess(record: CdnflyRecord): string {
                     </div>
 
                     <div class="grid gap-2">
-                        <Label for="recharge-amount">充值金额 (USD)</Label>
+                        <Label for="recharge-amount">充值金额 (USDT)</Label>
                         <Input
                             id="recharge-amount"
                             v-model="rechargeAmount"

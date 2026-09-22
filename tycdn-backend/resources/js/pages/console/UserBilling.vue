@@ -41,7 +41,12 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
-import { formatDate, getErrorMessage, textValue } from '@/lib/cdnRecord';
+import {
+    formatDate,
+    formatMoney,
+    getErrorMessage,
+    textValue,
+} from '@/lib/cdnRecord';
 import {
     extractCdnflyRows,
     extractCdnflyTotal,
@@ -68,7 +73,11 @@ import type {
 } from '@/lib/localBillingApi';
 
 type BillingView =
-    'packages' | 'subscriptions' | 'orders' | 'traffic-packs' | 'usage';
+    | 'packages'
+    | 'subscriptions'
+    | 'orders'
+    | 'traffic-packs'
+    | 'usage';
 
 type SubscriptionRow = LocalBillingServiceInstance & {
     source_package?: CdnflyRecord;
@@ -945,12 +954,12 @@ function basePageParams(targetPage: number): Record<string, string | number> {
 }
 
 function productMonthlyPrice(product: LocalBillingProduct): string {
-    return formatMoney(product.price_monthly, product.currency);
+    return formatMoney(product.price_monthly);
 }
 
 function productRenewalPrice(product: LocalBillingProduct): string {
-    const quarter = formatMoney(product.price_quarterly, product.currency);
-    const yearly = formatMoney(product.price_yearly, product.currency);
+    const quarter = formatMoney(product.price_quarterly);
+    const yearly = formatMoney(product.price_yearly);
 
     return `${quarter} / ${yearly}`;
 }
@@ -971,23 +980,6 @@ function productDescription(product: LocalBillingProduct): string {
     }
 
     return '-';
-}
-
-function formatMoney(
-    amount: string | number | null | undefined,
-    currency: string | null | undefined,
-): string {
-    if (amount === null || amount === undefined || amount === '') {
-        return '-';
-    }
-
-    const numeric = Number(amount);
-
-    if (!Number.isFinite(numeric)) {
-        return String(amount);
-    }
-
-    return `${numeric.toFixed(2)} ${currency ?? 'USD'}`;
 }
 
 function orderStatusText(order: LocalBillingOrder): string {
@@ -1078,9 +1070,7 @@ function trafficPackName(record: CdnflyRecord): string {
 }
 
 function trafficPackPrice(record: CdnflyRecord): string {
-    return (
-        textValue(record.price ?? record.amount ?? record.month_price) || '-'
-    );
+    return formatMoney(record.price ?? record.amount ?? record.month_price);
 }
 
 function trafficPackMetric(record: CdnflyRecord): string {
@@ -1397,12 +1387,7 @@ function trafficPackMetric(record: CdnflyRecord): string {
                                         </div>
                                     </td>
                                     <td class="px-4 py-3">
-                                        {{
-                                            formatMoney(
-                                                order.fiat_amount,
-                                                order.fiat_currency,
-                                            )
-                                        }}
+                                        {{ formatMoney(order.amount_usdt) }}
                                     </td>
                                     <td class="px-4 py-3">
                                         <div class="flex flex-col gap-1">
@@ -1954,7 +1939,7 @@ function trafficPackMetric(record: CdnflyRecord): string {
                                     class="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground"
                                 >
                                     <span v-if="up.price"
-                                        >价格: {{ textValue(up.price) }}</span
+                                        >价格: {{ formatMoney(up.price) }}</span
                                     >
                                     <span v-if="up.traffic || up.flow"
                                         >流量:

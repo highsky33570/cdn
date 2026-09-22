@@ -141,21 +141,22 @@ export function formatDate(value: unknown): string {
     );
 }
 
-export function formatMoney(
-    amount: string | number | null | undefined,
-    currency: string | null | undefined,
-): string {
-    if (amount === null || amount === undefined || amount === '') {
+/** Console accounting uses USDT units; API quote currencies remain unchanged. */
+export function formatMoney(amount: unknown): string {
+    const numeric = numberValue(amount);
+
+    if (numeric === null) {
         return '-';
     }
 
-    const numeric = Number(amount);
+    // Preserve the gateway's six-decimal USDT amount, including payment suffixes.
+    const value = new Intl.NumberFormat('en-US', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 6,
+        useGrouping: false,
+    }).format(numeric);
 
-    if (!Number.isFinite(numeric)) {
-        return String(amount);
-    }
-
-    return `${numeric.toFixed(2)} ${currency ?? 'USD'}`;
+    return `${value} USDT`;
 }
 
 export function yesNo(value: unknown): string {

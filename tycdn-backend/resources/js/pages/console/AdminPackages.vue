@@ -86,7 +86,11 @@ import type {
     AdminPackageOptions,
     AdminPackagePayload,
 } from '@/lib/adminPackagesApi';
-import { formatDate, getErrorMessage as fmtError } from '@/lib/formatters';
+import {
+    formatDate,
+    formatMoney,
+    getErrorMessage as fmtError,
+} from '@/lib/formatters';
 import type { CdnflyRecord } from '@/lib/sharedTypes';
 
 type PackageRecord = Record<string, unknown>;
@@ -721,10 +725,19 @@ const detailSections = computed(() => {
                 },
                 // The real prepaid prices charged against the customer's CDNfly
                 // balance. Synced from 门户售价 on save, so these should match it
-                // 1:1 (¥ = the same number as USDT).
-                { label: 'CDNfly 月付', value: plainText('month_price') },
-                { label: 'CDNfly 季付', value: plainText('quarter_price') },
-                { label: 'CDNfly 年付', value: plainText('year_price') },
+                // 1:1 using the same numeric USDT accounting units.
+                {
+                    label: 'CDNfly 月付',
+                    value: formatMoney(detailValue('month_price')),
+                },
+                {
+                    label: 'CDNfly 季付',
+                    value: formatMoney(detailValue('quarter_price')),
+                },
+                {
+                    label: 'CDNfly 年付',
+                    value: formatMoney(detailValue('year_price')),
+                },
             ],
         },
     ];
@@ -751,7 +764,7 @@ function portalPriceOf(record: PackageRecord): string {
 
     // Paid in USDT (a USD-pegged stablecoin), so label it USDT rather than the
     // stored ISO code — that is what the customer actually transfers.
-    return `${product.price_monthly} USDT`;
+    return formatMoney(product.price_monthly);
 }
 
 /**
@@ -932,7 +945,7 @@ async function openDetailDialog(record: PackageRecord): Promise<void> {
  * CDNfly is the real, prepaid price: buying or renewing deducts the customer's
  * balance at the package's month_price/quarter_price/year_price. So the single
  * price the admin types (门户售价) drives those CDNfly fields directly — the
- * currency is 1:1 (portal $5 = CDNfly ¥5, symbol only). The portal product
+ * accounting is 1:1 (5 USDT = 5 CDNfly balance units). The portal product
  * stores the same numbers for the storefront, so the two never diverge.
  *
  * A blank quarter/year mirrors the product's rule: ×3 and ×12, no assumed
@@ -1775,7 +1788,7 @@ const puColumns: ColumnDef[] = [
     },
     {
         key: 'month_price',
-        label: '月价格',
+        label: '月价格（USDT）',
         width: '100px',
         format: (v) => String(v ?? '-'),
     },
@@ -2032,9 +2045,9 @@ async function confirmPuDelete(): Promise<void> {
                             <tr>
                                 <th class="px-6 py-3 text-left font-medium">
                                     <Checkbox
-                                        :checked="allVisibleSelected"
+                                        :model-value="allVisibleSelected"
                                         aria-label="选择全部套餐"
-                                        @update:checked="toggleAll"
+                                        @update:model-value="toggleAll"
                                     />
                                 </th>
                                 <th class="px-4 py-3 text-left font-medium">
@@ -2089,9 +2102,9 @@ async function confirmPuDelete(): Promise<void> {
                                     <td class="px-6 py-4">
                                         <Checkbox
                                             v-if="getPackageId(record) !== null"
-                                            :checked="recordSelected(record)"
+                                            :model-value="recordSelected(record)"
                                             aria-label="选择套餐"
-                                            @update:checked="
+                                            @update:model-value="
                                                 toggleRecord(record, $event)
                                             "
                                         />
@@ -2146,8 +2159,13 @@ async function confirmPuDelete(): Promise<void> {
                                             class="mt-1 text-xs text-muted-foreground"
                                         >
                                             季付
-                                            {{ record.quarter_price ?? '—' }} ·
-                                            年付 {{ record.year_price ?? '—' }}
+                                            {{
+                                                formatMoney(
+                                                    record.quarter_price,
+                                                )
+                                            }}
+                                            · 年付
+                                            {{ formatMoney(record.year_price) }}
                                         </p>
                                     </td>
                                     <td class="px-4 py-4 text-muted-foreground">
@@ -3127,7 +3145,7 @@ async function confirmPuDelete(): Promise<void> {
                         </Select>
                     </div>
                     <div class="flex flex-col gap-2">
-                        <Label for="batch-month-price">月付价格（元）</Label>
+                        <Label for="batch-month-price">月付价格（USDT）</Label>
                         <Input
                             id="batch-month-price"
                             v-model="batchForm.month_price"
@@ -3135,7 +3153,9 @@ async function confirmPuDelete(): Promise<void> {
                         />
                     </div>
                     <div class="flex flex-col gap-2">
-                        <Label for="batch-quarter-price">季付价格（元）</Label>
+                        <Label for="batch-quarter-price"
+                            >季付价格（USDT）</Label
+                        >
                         <Input
                             id="batch-quarter-price"
                             v-model="batchForm.quarter_price"
@@ -3143,7 +3163,7 @@ async function confirmPuDelete(): Promise<void> {
                         />
                     </div>
                     <div class="flex flex-col gap-2">
-                        <Label for="batch-year-price">年付价格（元）</Label>
+                        <Label for="batch-year-price">年付价格（USDT）</Label>
                         <Input
                             id="batch-year-price"
                             v-model="batchForm.year_price"
@@ -3831,7 +3851,7 @@ async function confirmPuDelete(): Promise<void> {
                     </div>
                     <div class="grid grid-cols-3 gap-4">
                         <div class="grid gap-2">
-                            <Label for="pu-month">月价格</Label>
+                            <Label for="pu-month">月价格（USDT）</Label>
                             <Input
                                 id="pu-month"
                                 v-model="puForm.month_price"
@@ -3839,7 +3859,7 @@ async function confirmPuDelete(): Promise<void> {
                             />
                         </div>
                         <div class="grid gap-2">
-                            <Label for="pu-quarter">季价格</Label>
+                            <Label for="pu-quarter">季价格（USDT）</Label>
                             <Input
                                 id="pu-quarter"
                                 v-model="puForm.quarter_price"
@@ -3847,7 +3867,7 @@ async function confirmPuDelete(): Promise<void> {
                             />
                         </div>
                         <div class="grid gap-2">
-                            <Label for="pu-year">年价格</Label>
+                            <Label for="pu-year">年价格（USDT）</Label>
                             <Input
                                 id="pu-year"
                                 v-model="puForm.year_price"
