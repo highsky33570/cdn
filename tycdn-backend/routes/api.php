@@ -12,6 +12,7 @@ use App\Http\Controllers\Api\AdminNodeController;
 use App\Http\Controllers\Api\AdminRecoveryController;
 use App\Http\Controllers\Api\AdminSiteController;
 use App\Http\Controllers\Api\AdminStreamController;
+use App\Http\Controllers\Api\AdminWafLogController;
 use App\Http\Controllers\Api\AdminWorkspaceController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CdnApiKeyController;
@@ -216,6 +217,8 @@ Route::middleware(['auth:sanctum', 'verified', 'admin', 'throttle:admin-api'])->
     Route::delete('/package-ups/{id}', [AdminFinanceController::class, 'destroyPackageUp'])->middleware('throttle:admin-write-10');
 
     // 监控日志
+    Route::get('/waf-logs/{id}', [AdminWafLogController::class, 'detail'])->where('id', '[A-Za-z0-9_-]+');
+    Route::post('/waf-logs/unlock', [AdminWafLogController::class, 'unlock'])->middleware('throttle:admin-write-30');
     Route::get('/access-log-jobs', [AdminAccessLogController::class, 'jobs']);
     Route::post('/access-log-jobs', [AdminAccessLogController::class, 'store'])->middleware('throttle:admin-write-30');
     Route::get('/access-log-jobs/{id}/download', [AdminAccessLogController::class, 'download'])->whereNumber('id');

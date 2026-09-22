@@ -36,6 +36,169 @@ const blockLogs = await import(
 const accessLogs = await import(
     moduleUrl(resolve('resources/js/lib/accessLogs.ts'))
 );
+const wafLogs = await import(moduleUrl(resolve('resources/js/lib/wafLogs.ts')));
+
+test('WAF queries preserve every native filter, multi-domain input and false/zero values', () => {
+    const filters = wafLogs.defaultWafFilters(new Date(2026, 11, 31, 12));
+    assert.match(filters.end, /2027-01-01T00:00:00/);
+
+    for (const field of wafLogs.wafFields) {
+        filters[field.key] = `test-${field.key}`;
+    }
+
+    Object.assign(filters, {
+        site_id: '0',
+        auto_blocked: 'false',
+        host: 'a.test b.test',
+        uri_match_type: 'prefix',
+    });
+    const params = wafLogs.wafParams(filters);
+
+    for (const field of wafLogs.wafFields) {
+        assert.equal(params[field.key], filters[field.key]);
+    }
+
+    assert.equal(params.uri_match_type, 'prefix');
+    assert.equal(params.start, '2026-12-31 00:00:00');
+    assert.throws(() => wafLogs.wafParams({ ...filters, end: filters.start }));
+});
+
+test('WAF overview decodes nested stats, empty top arrays and all native ranking dimensions', () => {
+    const empty = wafLogs.normalizeWafStats({
+        ok: true,
+        data: {
+            code: 0,
+            data: {
+                total: 0,
+                top: [],
+                trend: [
+                    {
+                        time: '2026-09-22 00:00:00',
+                        total: 0,
+                        protect: 0,
+                        observe: 0,
+                    },
+                ],
+            },
+        },
+    });
+    assert.equal(empty.total, 0);
+    assert.deepEqual(empty.top, {});
+    assert.equal(empty.trend.length, 1);
+    const top = {
+        domain: [{ key: 'a.test', count: 4 }],
+        client_ip: [
+            {
+                ip: '192.0.2.1',
+                country: '中国',
+                province: '广东省',
+                city: '-',
+                count: 4,
+            },
+        ],
+        country: [{ key: '中国', count: 4 }],
+        province: [{ key: '广东省', count: 4 }],
+        isp: [{ key: '中国移动', count: 4 }],
+        uri: [{ key: '/api/', count: 4 }],
+        attack_type: [
+            { category: 'sqli', count: 3 },
+            { category: 'xss', count: 1 },
+        ],
+    };
+    assert.deepEqual(wafLogs.wafRankRows(top, 'uri')[0].filter, {
+        request_uri: '/api/',
+        uri_match_type: 'exact',
+    });
+    assert.equal(
+        wafLogs.wafRankRows(top, 'client_ip')[0].display,
+        '192.0.2.1 (中国-广东省)',
+    );
+    const types = wafLogs.wafRankRows(top, 'attack_type');
+    assert.equal(types[0].percent, 75);
+    assert.equal(types[0].display, 'SQL注入');
+    assert.deepEqual(types[0].filter, { attack_category: 'sqli' });
+
+    for (const rank of wafLogs.wafRankings) {
+        assert.equal(wafLogs.wafRankRows(top, rank.key)[0].count, 4);
+    }
+});
+
+test('WAF native detail fields translate without losing unknown types, zero IDs or literal evidence', () => {
+    const row = {
+        site_id: 0,
+        node_id: 3,
+        host: 'a.test',
+        host2: 'b.test',
+        action: 'protect',
+        module: 'sqli',
+        attack_category: 'sqli',
+        attack_subtype: 'union',
+        client_ip: '192.0.2.1',
+        waf_matched_part: 'arg',
+        waf_matched_key: 'q',
+        waf_payload_sample: '<script>alert(1)</script>',
+        req_header: '{"X-Test":"literal"}',
+        auto_blocked: 'false',
+    };
+    assert.equal(wafLogs.wafCell(row, 'host'), 'a.test (b.test)');
+    assert.equal(wafLogs.wafCell(row, 'attack_type'), 'UNION查询');
+    assert.equal(wafLogs.wafCell(row, 'action'), '拦截');
+    assert.equal(wafLogs.wafCell(row, 'waf_matched_part'), '请求参数:q');
+    assert.equal(
+        wafLogs.wafCell({ ...row, module: 'new-module' }, 'module'),
+        'new-module',
+    );
+    assert.equal(wafLogs.wafTruthy('false'), false);
+    const sections = wafLogs.wafDetailSections(row);
+    assert.equal(
+        sections[3].items.find((i) => i.label === '站点ID').value,
+        '0',
+    );
+    assert.equal(
+        sections[2].items.find((i) => i.label === '命中内容').value,
+        row.waf_payload_sample,
+    );
+});
+
+test('WAF false-positive rules merge exact host and URI targets while preserving existing conditions', () => {
+    const target = wafLogs.wafAllowTarget({
+        site_id: 0,
+        host: 'Example.TEST',
+        request_uri: 'https://example.test/api?a=1#part',
+    });
+    assert.deepEqual(target, {
+        siteId: '0',
+        host: 'example.test',
+        uri: '/api',
+    });
+    const result = wafLogs.mergeWafAllowRule('', target);
+    assert.equal(result.rules[0].matcher_groups[0].matcher[1].value[0], '/api');
+    assert.equal(
+        wafLogs.mergeWafAllowRule(JSON.stringify(result.rules), target).exists,
+        true,
+    );
+    const merged = wafLogs.mergeWafAllowRule(result.rules, {
+        ...target,
+        uri: '/next',
+    });
+    assert.deepEqual(merged.rules[0].matcher_groups[0].matcher[1].value, [
+        '/api',
+        '/next',
+    ]);
+    assert.equal(result.rules[0].matcher_groups[0].matcher[1].value.length, 1);
+    const complex = structuredClone(result.rules);
+    complex[0].matcher_groups[0].matcher.push({
+        field: 'ip',
+        op: '=',
+        value: '192.0.2.1',
+    });
+    const kept = wafLogs.mergeWafAllowRule(complex, target);
+    assert.deepEqual(kept.rules[0], complex[0]);
+    assert.equal(kept.rules.length, 2);
+    assert.throws(() => wafLogs.mergeWafAllowRule('{broken', target));
+    assert.throws(() => wafLogs.mergeWafAllowRule('{}', target));
+    assert.equal(wafLogs.wafAllowTarget({ host: 'a.test' }), null);
+});
 
 test('access logs query the complete current day and retain every download filter', () => {
     const filters = accessLogs.defaultAccessFilters(

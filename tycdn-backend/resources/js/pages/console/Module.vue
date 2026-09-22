@@ -22,6 +22,7 @@ import AdminSecurity from './AdminSecurity.vue';
 import AdminSites from './AdminSites.vue';
 import AdminStreams from './AdminStreams.vue';
 import AdminUsers from './AdminUsers.vue';
+import AdminWafLogs from './AdminWafLogs.vue';
 import UserAccount from './UserAccount.vue';
 import UserAnalytics from './UserAnalytics.vue';
 import UserBilling from './UserBilling.vue';
@@ -164,6 +165,8 @@ for (const resource of Object.keys(masterResources)) {
         props: { resource },
     };
 }
+
+MODULES['admin-workspace-attack-log'] = { component: AdminWafLogs };
 
 for (const { key: section } of settingsSections) {
     MODULES[`admin-config-${section}`] = {
