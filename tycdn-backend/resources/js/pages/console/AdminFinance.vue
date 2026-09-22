@@ -142,7 +142,23 @@ type FinanceTab = 'orders' | 'services' | 'packages';
 const props = withDefaults(defineProps<{ initialTab?: FinanceTab }>(), {
     initialTab: 'orders',
 });
-const activeTab = ref<FinanceTab>(props.initialTab);
+
+// One route (console/admin/finance) drives all three tabs. ?tab= deep-links a
+// specific one — used by the admin-overview alerts — falling back to the prop.
+const FINANCE_TABS: FinanceTab[] = ['orders', 'services', 'packages'];
+const resolvedInitialTab: FinanceTab =
+    typeof window === 'undefined'
+        ? props.initialTab
+        : (() => {
+              const value = new URLSearchParams(window.location.search).get(
+                  'tab',
+              );
+
+              return FINANCE_TABS.includes(value as FinanceTab)
+                  ? (value as FinanceTab)
+                  : props.initialTab;
+          })();
+const activeTab = ref<FinanceTab>(resolvedInitialTab);
 
 const financeTabs: ConsoleTab[] = [
     { key: 'orders' as const, label: '订单', icon: Receipt },
@@ -552,11 +568,11 @@ const initialStatus = ((): string => {
 
 const orderFilters = reactive({
     search: '',
-    status: props.initialTab === 'orders' ? initialStatus : STATUS_ALL,
+    status: resolvedInitialTab === 'orders' ? initialStatus : STATUS_ALL,
 });
 const serviceFilters = reactive({
     search: '',
-    status: props.initialTab === 'services' ? initialStatus : STATUS_ALL,
+    status: resolvedInitialTab === 'services' ? initialStatus : STATUS_ALL,
 });
 
 const orderSearchParams = computed(() => {

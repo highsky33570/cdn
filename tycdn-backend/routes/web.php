@@ -92,8 +92,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     $consoleModuleRoutes[] = ['uri' => 'console/admin/maintenance', 'name' => 'console.admin.maintenance', 'module' => 'admin-maintenance'];
     $consoleModuleRoutes[] = ['uri' => 'console/admin/node-monitoring', 'name' => 'console.admin.node-monitoring', 'module' => 'admin-node-monitoring'];
-    $consoleModuleRoutes[] = ['uri' => 'console/admin/sold-packages', 'name' => 'console.admin.sold-packages', 'module' => 'admin-sold-packages'];
-    $consoleModuleRoutes[] = ['uri' => 'console/admin/services', 'name' => 'console.admin.services', 'module' => 'admin-services'];
+    // 已售套餐 and 服务实例 are tabs on console/admin/finance (AdminFinance.vue);
+    // deep-link a tab with ?tab=packages / ?tab=services. One route, three tabs.
     $consoleModuleRoutes[] = ['uri' => 'console/admin/package-groups', 'name' => 'console.admin.package-groups', 'module' => 'admin-package-groups'];
     $consoleModuleRoutes[] = ['uri' => 'console/admin/package-upgrades', 'name' => 'console.admin.package-upgrades', 'module' => 'admin-package-upgrades'];
     $consoleModuleRoutes[] = ['uri' => 'console/admin/certificates', 'name' => 'console.admin.certificates', 'module' => 'admin-certificates'];

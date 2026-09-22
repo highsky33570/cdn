@@ -822,7 +822,7 @@ class AdminController extends Controller
                 'level' => 'danger',
                 'title' => '存在开通失败服务',
                 'detail' => $serviceCounts['failed'].' 个服务实例处于 failed 状态',
-                'href' => '/console/admin/services?status=failed',
+                'href' => '/console/admin/finance?tab=services&status=failed',
             ];
         }
 

@@ -79,14 +79,6 @@ const MODULES: Record<
     'admin-settings': { component: AdminConfigWorkspace },
     'admin-maintenance': { component: AdminMaintenance },
     'admin-node-monitoring': { component: AdminNodeMonitoring },
-    'admin-sold-packages': {
-        component: AdminFinance,
-        props: { initialTab: 'packages' },
-    },
-    'admin-services': {
-        component: AdminFinance,
-        props: { initialTab: 'services' },
-    },
     'admin-package-groups': {
         component: AdminPackages,
         props: { initialTab: 'groups' },

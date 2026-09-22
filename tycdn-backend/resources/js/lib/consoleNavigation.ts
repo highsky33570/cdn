@@ -121,7 +121,6 @@ export const adminNavItems: NavItem[] = [
         icon: Package,
         children: [
             child('基础套餐', 'packages'),
-            child('已售套餐', 'sold-packages'),
             child('套餐分组', 'package-groups'),
             child('升级包', 'package-upgrades'),
             child('流量包', 'workspace/traffic-packages'),
@@ -169,10 +168,10 @@ export const adminNavItems: NavItem[] = [
         ],
     },
     {
+        // 订单 / 服务实例 / CDNfly 用户套餐 are tabs on this one page.
         title: '本地财务',
         href: '/console/admin/finance',
         icon: CreditCard,
-        children: [child('订单', 'finance'), child('服务开通', 'services')],
     },
 ];
 export function consoleNavigationTitle(path: string): string | undefined {
