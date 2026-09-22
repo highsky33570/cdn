@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\AdminBlockLogController;
 use App\Http\Controllers\Api\AdminCcController;
 use App\Http\Controllers\Api\AdminConfigController;
 use App\Http\Controllers\Api\AdminController;
@@ -221,6 +222,8 @@ Route::middleware(['auth:sanctum', 'verified', 'admin', 'throttle:admin-api'])->
     Route::get('/monitor/site-top', [AdminMonitorController::class, 'siteTop']);
     Route::get('/monitor/stream-top', [AdminMonitorController::class, 'streamTop']);
 
+    Route::post('/workspace/blackip/unlock', [AdminBlockLogController::class, 'unlock'])->middleware('throttle:admin-write-30');
+    Route::get('/workspace/{resource}/export', [AdminBlockLogController::class, 'export'])->whereIn('resource', ['blackip', 'history-blackip']);
     Route::match(['GET', 'POST', 'PUT', 'DELETE'], '/workspace/{resource}/{id?}', [AdminWorkspaceController::class, 'handle'])->whereNumber('id')->middleware('throttle:admin-write-30');
 
     // 系统配置

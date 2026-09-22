@@ -326,31 +326,6 @@ export const masterResources: Record<string, ResourceDefinition> = {
             { key: 'node_id', label: '节点' },
         ],
     },
-    blackip: {
-        title: '当前封禁',
-        tabs: ['blackip', 'history-blackip'],
-        readOnly: true,
-        searchKey: 'ip',
-        columns: columns({
-            ip: 'IP',
-            domain: '域名',
-            reason: '原因',
-            time: '时间',
-            expire: '到期时间',
-        }),
-    },
-    'history-blackip': {
-        title: '拉黑日志',
-        tabs: ['blackip', 'history-blackip'],
-        readOnly: true,
-        searchKey: 'ip',
-        columns: columns({
-            ip: 'IP',
-            domain: '域名',
-            reason: '原因',
-            time: '时间',
-        }),
-    },
     'node-ip-log': {
         title: '节点 IP 日志',
         readOnly: true,

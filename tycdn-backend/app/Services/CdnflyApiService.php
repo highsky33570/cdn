@@ -1640,6 +1640,23 @@ class CdnflyApiService
         return $this->parseResponse($response, 'get user package usage');
     }
 
+    public function exportAdminBlackIps(string $resource, array $query = []): Response
+    {
+        $path = match ($resource) {
+            'blackip' => '/v1/monitor/site/blackip',
+            'history-blackip' => '/v1/monitor/site/history-blackip',
+            default => throw new \InvalidArgumentException('Unsupported block-log export'),
+        };
+        $response = $this->adminHttp()->withOptions(['stream' => true])
+            ->get($path, [...$query, 'action' => 'export']);
+        if (! $response->successful() || ! str_starts_with(strtolower($response->header('Content-Type')), 'text/plain')) {
+            $this->parseResponse($response, 'export block log');
+            throw new \RuntimeException('主控未返回黑名单导出文件');
+        }
+
+        return $response;
+    }
+
     public function proxyAdminRequest(string $method, string $path, array $data = []): array
     {
         if (! $this->outboundEnabled() && strtoupper($method) === 'GET') {

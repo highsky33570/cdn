@@ -6,6 +6,7 @@ import { settingsSections } from '@/lib/configSections';
 import { consoleModules, fallbackModule } from '@/lib/consoleData';
 import { consoleNavigationTitle } from '@/lib/consoleNavigation';
 import { masterResources } from '@/lib/masterResources';
+import AdminBlockLogs from './AdminBlockLogs.vue';
 import AdminConfigWorkspace from './AdminConfigWorkspace.vue';
 import AdminDns from './AdminDns.vue';
 import AdminFinance from './AdminFinance.vue';
@@ -92,6 +93,8 @@ const MODULES: Record<
         props: { initialTab: 'certificates' },
     },
     'admin-security': { component: AdminSecurity },
+    'admin-workspace-blackip': { component: AdminBlockLogs },
+    'admin-workspace-history-blackip': { component: AdminBlockLogs },
 
     sites: { component: UserSites },
     'site-groups': { component: UserSites, props: { initialTab: 'groups' } },

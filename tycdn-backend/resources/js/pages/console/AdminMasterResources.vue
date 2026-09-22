@@ -46,9 +46,7 @@ const fields = computed(() =>
 const recent = ref('1h');
 const detail = ref<CdnflyRecord | null>(null);
 const showDetail = ref(false);
-const usesTimeRange = computed(() =>
-    ['attack-log', 'history-blackip'].includes(props.resource),
-);
+const usesTimeRange = computed(() => props.resource === 'attack-log');
 const nodeFilter =
     typeof window !== 'undefined'
         ? new URLSearchParams(window.location.search).get('node_id')
@@ -72,14 +70,8 @@ const params = computed<Record<string, string | number>>(() => {
             );
         const date = (value: Date) =>
             `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, '0')}-${String(value.getDate()).padStart(2, '0')} ${String(value.getHours()).padStart(2, '0')}:${String(value.getMinutes()).padStart(2, '0')}:${String(value.getSeconds()).padStart(2, '0')}`;
-        query.start =
-            props.resource === 'history-blackip'
-                ? Math.floor(start.getTime() / 1000)
-                : date(start);
-        query.end =
-            props.resource === 'history-blackip'
-                ? Math.floor(end.getTime() / 1000)
-                : date(end);
+        query.start = date(start);
+        query.end = date(end);
     }
 
     return query;

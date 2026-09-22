@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { router } from '@inertiajs/vue3';
+import { router, usePage } from '@inertiajs/vue3';
 import {
     Activity,
     AlertCircle,
@@ -316,12 +316,13 @@ const otherFilters = reactive({
 
 // ── 访问日志专属状态 ──────────────────────────────────
 const logsTab = ref<'query' | 'jobs'>('query');
-const showAdvanced = ref(false);
+const initialLogIp = new URLSearchParams(usePage().url.split('?')[1] ?? '').get('addr') ?? '';
+const showAdvanced = ref(initialLogIp !== '');
 const logsFilters = reactive({
     host: '',
     start: defaultStart(),
     end: defaultEnd(),
-    addr: '',
+    addr: initialLogIp,
     req_uri_type: 'exact', // 'exact' | 'prefix'
     req_uri: '',
     method: '',

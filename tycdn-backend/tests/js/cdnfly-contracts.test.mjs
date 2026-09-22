@@ -30,6 +30,118 @@ const security = await import(
 const formatters = await import(
     moduleUrl(resolve('resources/js/lib/formatters.ts'))
 );
+const blockLogs = await import(
+    moduleUrl(resolve('resources/js/lib/blockLogs.ts'))
+);
+
+test('block-log tabs use their actual rule fields and auto-unlock meaning', () => {
+    assert.equal(
+        blockLogs.blockFilterLabel({ fname: '9', name: '请求速率5-300-50' }),
+        '请求速率5-300-50 (ID: 9)',
+    );
+    assert.equal(
+        blockLogs.blockFilterLabel(
+            { filter: '9', fname: '请求速率5-300-50' },
+            true,
+        ),
+        '请求速率5-300-50',
+    );
+    assert.equal(
+        blockLogs.blockFilterLabel({ fname: 'extra_f_3' }),
+        '自定义规则第3条 (ID: extra_f_3)',
+    );
+    assert.equal(
+        blockLogs.blockFilterLabel({ filter: 'waf_auto_block' }, true),
+        'WAF 攻击自动封禁',
+    );
+    assert.equal(blockLogs.blockFilterLabel({}, true), '-');
+
+    for (const value of [0, '0', false]) {
+        assert.equal(blockLogs.manualUnlockLabel(value), '是');
+    }
+
+    for (const value of [1, '1', true]) {
+        assert.equal(blockLogs.manualUnlockLabel(value), '否');
+    }
+
+    for (const value of [null, undefined, '', 2]) {
+        assert.equal(blockLogs.manualUnlockLabel(value), '-');
+    }
+});
+
+test('block-log queries preserve site zero and have no implicit history time cutoff', () => {
+    const filters = {
+        ip: '',
+        site_id: '',
+        filter_name: '',
+        start: '',
+        end: '',
+    };
+    assert.deepEqual(blockLogs.blockLogQuery('history', filters), {});
+    assert.deepEqual(
+        blockLogs.blockLogQuery('current', {
+            ...filters,
+            site_id: '0',
+            ip: ' 192.0.2.1 ',
+            filter_name: '9',
+        }),
+        { site_id: '0', ip: '192.0.2.1', filter_name: '9' },
+    );
+    const range = {
+        ...filters,
+        start: '2026-09-22T00:00:00',
+        end: '2026-09-22T13:30:47',
+        filter_name: '9',
+    };
+    assert.deepEqual(blockLogs.blockLogQuery('history', range), {
+        start: new Date(2026, 8, 22, 0, 0, 0).getTime() / 1000,
+        end: new Date(2026, 8, 22, 13, 30, 47).getTime() / 1000,
+    });
+    assert.deepEqual(blockLogs.blockLogQuery('stats', range), {});
+    assert.throws(() =>
+        blockLogs.blockLogQuery('history', { ...range, end: '' }),
+    );
+    assert.throws(() =>
+        blockLogs.blockLogQuery('history', { ...range, start: 'invalid' }),
+    );
+    assert.throws(() =>
+        blockLogs.blockLogQuery('history', {
+            ...range,
+            end: '2026-09-21T00:00:00',
+        }),
+    );
+});
+
+test('block timestamps decode Unix seconds and row keys distinguish site and filter', () => {
+    const date = new Date(2026, 8, 22, 13, 30, 47);
+    assert.equal(
+        blockLogs.blockTimestamp(date.getTime() / 1000),
+        '2026-09-22 13:30:47',
+    );
+    assert.equal(
+        blockLogs.blockTimestamp(String(date.getTime() / 1000)),
+        '2026-09-22 13:30:47',
+    );
+
+    for (const value of [null, undefined, '', 'invalid']) {
+        assert.equal(blockLogs.blockTimestamp(value), '-');
+    }
+
+    const row = {
+        site_id: 0,
+        ip: '192.0.2.1',
+        fname: '9',
+        create_at: 1790055047,
+    };
+    assert.notEqual(
+        blockLogs.blockRowKey(row),
+        blockLogs.blockRowKey({ ...row, site_id: 1 }),
+    );
+    assert.notEqual(
+        blockLogs.blockRowKey(row),
+        blockLogs.blockRowKey({ ...row, fname: '10' }),
+    );
+});
 
 test('USDT display preserves numeric units, zero and six-decimal gateway amounts', () => {
     assert.equal(formatters.formatMoney('50.00'), '50.00 USDT');

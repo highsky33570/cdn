@@ -39,6 +39,7 @@ class AdminWorkspaceController extends Controller
         'attack-log' => ['/v1/monitor/site/attack-log', ['GET']],
         'attack-stats' => ['/v1/monitor/site/attack-log/stats', ['GET']],
         'blackip' => ['/v1/monitor/site/blackip', ['GET', 'DELETE']],
+        'blackip-count' => ['/v1/monitor/site/blackip-count', ['GET']],
         'history-blackip' => ['/v1/monitor/site/history-blackip', ['GET']],
         'stream-realtime' => ['/v1/monitor/stream/realtime', ['GET']],
         'node-realtime' => ['/v1/monitor/node/realtime', ['GET']],
