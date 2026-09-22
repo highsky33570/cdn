@@ -541,17 +541,28 @@ function userTitle(user: AdminUserRecord): string {
                         </div>
                     </CardHeader>
                     <CardContent class="grid gap-3">
-                        <Alert
+                        <component
+                            :is="alert.href ? Link : 'div'"
                             v-for="alert in alerts"
                             :key="`${alert.title}-${alert.detail}`"
-                            :variant="alertVariant(alert)"
+                            :href="alert.href"
+                            class="block"
                         >
-                            <AlertCircle data-icon="alert" />
-                            <AlertTitle>{{ alert.title }}</AlertTitle>
-                            <AlertDescription>
-                                {{ alert.detail }}
-                            </AlertDescription>
-                        </Alert>
+                            <Alert
+                                :variant="alertVariant(alert)"
+                                :class="
+                                    alert.href
+                                        ? 'cursor-pointer transition-colors hover:bg-muted/40'
+                                        : ''
+                                "
+                            >
+                                <AlertCircle data-icon="alert" />
+                                <AlertTitle>{{ alert.title }}</AlertTitle>
+                                <AlertDescription>
+                                    {{ alert.detail }}
+                                </AlertDescription>
+                            </Alert>
+                        </component>
                         <div
                             v-if="alerts.length === 0"
                             class="flex items-center gap-2 rounded-md border px-3 py-3 text-sm text-muted-foreground"

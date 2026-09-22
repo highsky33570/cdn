@@ -535,8 +535,29 @@ async function removeUpgrade(upgradeId: number): Promise<void> {
 }
 
 // ─── Filters ────────────────────────────────────────────
-const orderFilters = reactive({ search: '', status: STATUS_ALL });
-const serviceFilters = reactive({ search: '', status: STATUS_ALL });
+// Deep-link support: the admin-overview alerts link here with ?status=failed
+// (服务实例) or ?status=pending (订单). Apply it to the active tab's filter
+// before the first fetch so the list lands already filtered.
+const initialStatus = ((): string => {
+    if (typeof window === 'undefined') {
+        return STATUS_ALL;
+    }
+
+    const value = new URLSearchParams(window.location.search).get('status');
+
+    return value && ORDER_STATUSES.some((o) => o.value === value)
+        ? value
+        : STATUS_ALL;
+})();
+
+const orderFilters = reactive({
+    search: '',
+    status: props.initialTab === 'orders' ? initialStatus : STATUS_ALL,
+});
+const serviceFilters = reactive({
+    search: '',
+    status: props.initialTab === 'services' ? initialStatus : STATUS_ALL,
+});
 
 const orderSearchParams = computed(() => {
     const p: Record<string, string | number> = {};

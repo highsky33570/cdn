@@ -97,8 +97,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     $consoleModuleRoutes[] = ['uri' => 'console/admin/package-groups', 'name' => 'console.admin.package-groups', 'module' => 'admin-package-groups'];
     $consoleModuleRoutes[] = ['uri' => 'console/admin/package-upgrades', 'name' => 'console.admin.package-upgrades', 'module' => 'admin-package-upgrades'];
     $consoleModuleRoutes[] = ['uri' => 'console/admin/certificates', 'name' => 'console.admin.certificates', 'module' => 'admin-certificates'];
-    $consoleModuleRoutes[] = ['uri' => 'console/admin/pending-nodes', 'name' => 'console.admin.pending-nodes', 'module' => 'admin-pending-nodes'];
-    $consoleModuleRoutes[] = ['uri' => 'console/admin/topology', 'name' => 'console.admin.topology', 'module' => 'admin-topology'];
+    // 待接入节点 and 区域节点组线路 are tabs on console/admin/nodes (AdminNodes.vue),
+    // not separate pages — one route drives all three via its in-page tab bar.
     $consoleModuleRoutes[] = ['uri' => 'console/admin/workspace/l2-configs', 'name' => 'console.admin.workspace.l2-configs', 'module' => 'admin-workspace-l2-configs'];
     $consoleModuleRoutes[] = ['uri' => 'console/admin/workspace/l2-conds', 'name' => 'console.admin.workspace.l2-conds', 'module' => 'admin-workspace-l2-conds'];
     $consoleModuleRoutes[] = ['uri' => 'console/admin/workspace/l2-nodes', 'name' => 'console.admin.workspace.l2-nodes', 'module' => 'admin-workspace-l2-nodes'];

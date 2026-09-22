@@ -99,14 +99,6 @@ const MODULES: Record<
         component: AdminSites,
         props: { initialTab: 'certificates' },
     },
-    'admin-pending-nodes': {
-        component: AdminNodes,
-        props: { initialTab: 'pending' },
-    },
-    'admin-topology': {
-        component: AdminNodes,
-        props: { initialTab: 'topology' },
-    },
     'admin-security': { component: AdminSecurity },
 
     sites: { component: UserSites },

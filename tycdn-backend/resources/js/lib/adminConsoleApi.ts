@@ -1,8 +1,8 @@
 import { apiRequest } from '@/lib/apiRequest';
+import type { Paginated } from '@/lib/sharedTypes';
 import { buildUrl } from '@/lib/urlHelpers';
 
 export type { Paginated } from '@/lib/sharedTypes';
-import type { Paginated } from '@/lib/sharedTypes';
 
 export type AdminRole = 'admin' | 'user';
 
@@ -49,6 +49,7 @@ export type AdminOverviewAlert = {
     level: 'info' | 'warning' | 'danger' | string;
     title: string;
     detail: string;
+    href?: string;
 };
 
 export type AdminRecentOrder = {

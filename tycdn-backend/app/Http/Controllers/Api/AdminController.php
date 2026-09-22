@@ -795,6 +795,7 @@ class AdminController extends Controller
                 'level' => 'warning',
                 'title' => '用户未同步 CDNfly',
                 'detail' => ($usersTotal - $cdnflyMapped).' 个本地用户缺少 CDNfly 用户 ID',
+                'href' => '/console/admin/users',
             ];
         }
 
@@ -803,6 +804,7 @@ class AdminController extends Controller
                 'level' => 'warning',
                 'title' => 'API Key 未就绪',
                 'detail' => ($cdnflyMapped - $apiKeyReady).' 个已映射用户还没有本地 API Key',
+                'href' => '/console/admin/users',
             ];
         }
 
@@ -811,6 +813,7 @@ class AdminController extends Controller
                 'level' => 'info',
                 'title' => '存在待支付订单',
                 'detail' => $orderCounts['pending'].' 个订单仍在等待支付确认',
+                'href' => '/console/admin/finance?status=pending',
             ];
         }
 
@@ -819,6 +822,7 @@ class AdminController extends Controller
                 'level' => 'danger',
                 'title' => '存在开通失败服务',
                 'detail' => $serviceCounts['failed'].' 个服务实例处于 failed 状态',
+                'href' => '/console/admin/services?status=failed',
             ];
         }
 

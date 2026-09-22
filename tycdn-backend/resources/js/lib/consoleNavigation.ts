@@ -136,8 +136,6 @@ export const adminNavItems: NavItem[] = [
         icon: Server,
         children: [
             child('节点列表', 'nodes'),
-            child('待初始化节点', 'pending-nodes'),
-            child('区域、分组与线路', 'topology'),
             child('L2 配置', 'workspace/l2-configs'),
             child('节点监控', 'node-monitoring'),
             child('监控配置', 'config/node-monitor'),
