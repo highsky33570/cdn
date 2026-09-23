@@ -4,7 +4,6 @@ import {
     Activity,
     AlertCircle,
     BarChart3,
-    ChevronDown,
     Download,
     FileText,
     RefreshCw,
@@ -55,6 +54,12 @@ import {
     listUserAccessLogs as personallistUserAccessLogs,
 } from '@/lib/cdnUserApi';
 import { masterGet } from '@/lib/masterApi';
+import {
+    topTabs,
+    rankingLogUrl,
+    formatRankingMetric,
+} from '@/lib/siteAnalysis';
+import type { TopTab } from '@/lib/siteAnalysis';
 import { extractMetricSeries } from '@/lib/siteRealtime';
 import type { MetricSeries } from '@/lib/siteRealtime';
 
@@ -161,93 +166,6 @@ type MetricGroup = (typeof metricGroups)[number];
 type MetricDef = MetricGroup['metrics'][number];
 
 // ── 数据分析：Tab 定义 ────────────────────────────────
-type TopTab = {
-    key: string;
-    label: string;
-    cols: {
-        key: string;
-        label: string;
-        type: 'text' | 'bytes' | 'count' | 'action';
-    }[];
-};
-
-const topTabs: TopTab[] = [
-    {
-        key: 'top-domain',
-        label: '域名排行',
-        cols: [
-            { key: 'domain', label: '域名', type: 'text' },
-            { key: 'req', label: '请求次数', type: 'count' },
-            { key: 'traffic', label: '出站流量', type: 'bytes' },
-            { key: 'backend_traffic', label: '回源流量', type: 'bytes' },
-            { key: '_action', label: '操作', type: 'action' },
-        ],
-    },
-    {
-        key: 'top-url',
-        label: '热门URL',
-        cols: [
-            { key: 'url', label: 'URL', type: 'text' },
-            { key: 'req', label: '请求次数', type: 'count' },
-            { key: 'traffic', label: '出站流量', type: 'bytes' },
-        ],
-    },
-    {
-        key: 'top-tls-fp',
-        label: 'TLS指纹',
-        cols: [
-            { key: 'fp', label: 'TLS指纹', type: 'text' },
-            { key: 'req', label: '请求次数', type: 'count' },
-            { key: 'traffic', label: '出站流量', type: 'bytes' },
-        ],
-    },
-    {
-        key: 'top-ip',
-        label: 'Top客户端IP',
-        cols: [
-            { key: 'ip', label: '客户端IP', type: 'text' },
-            { key: 'req', label: '请求次数', type: 'count' },
-            { key: 'traffic', label: '出站流量', type: 'bytes' },
-        ],
-    },
-    {
-        key: 'top-country',
-        label: '国家排行',
-        cols: [
-            { key: 'country', label: '国家/地区', type: 'text' },
-            { key: 'req', label: '请求次数', type: 'count' },
-            { key: 'traffic', label: '出站流量', type: 'bytes' },
-        ],
-    },
-    {
-        key: 'top-province',
-        label: '省份排行',
-        cols: [
-            { key: 'province', label: '省份', type: 'text' },
-            { key: 'req', label: '请求次数', type: 'count' },
-            { key: 'traffic', label: '出站流量', type: 'bytes' },
-        ],
-    },
-    {
-        key: 'top-isp',
-        label: '运营商排行',
-        cols: [
-            { key: 'isp', label: '运营商', type: 'text' },
-            { key: 'req', label: '请求次数', type: 'count' },
-            { key: 'traffic', label: '出站流量', type: 'bytes' },
-        ],
-    },
-    {
-        key: 'top-referer',
-        label: '热门Referer',
-        cols: [
-            { key: 'referer', label: 'Referer', type: 'text' },
-            { key: 'req', label: '请求次数', type: 'count' },
-            { key: 'traffic', label: '出站流量', type: 'bytes' },
-        ],
-    },
-];
-
 // ── 通用状态 ──────────────────────────────────────────
 const errorMessage = ref('');
 
@@ -287,7 +205,11 @@ const topFilters = reactive({
     start: defaultStart(),
     end: defaultEnd(),
     domain: '',
+    server_port: '',
 });
+const topLoadedFilters = ref<Record<string, string>>({});
+const topSearchType = ref<'domain' | 'server_port'>('domain');
+let topRequestVersion = 0;
 // 排序
 const sortKey = ref('');
 const sortDir = ref<'asc' | 'desc'>('desc');
@@ -531,56 +453,85 @@ async function loadMetric(m: MetricDef): Promise<void> {
 
 // ── 数据分析 ──────────────────────────────────────────
 async function loadTop(): Promise<void> {
+    const version = ++topRequestVersion;
+    const type = activeTopTab.value;
+    const recent = topRecentTime.value;
+    const range =
+        recent === 'custom'
+            ? { start: topFilters.start, end: topFilters.end }
+            : recentTopRange(recent);
+    const context = {
+        ...range,
+        domain: topFilters.domain.trim(),
+        server_port: topFilters.server_port.trim(),
+    };
     topLoading.value = true;
     errorMessage.value = '';
 
     try {
-        const params: Record<string, string | number> = {
-            type: activeTopTab.value,
-        };
+        const duration =
+            Date.parse(range.end.replace(' ', 'T')) -
+            Date.parse(range.start.replace(' ', 'T'));
 
-        if (topRecentTime.value !== 'custom') {
-            params.recent_time = topRecentTime.value;
-        } else {
-            params.start = topFilters.start;
-            params.end = topFilters.end;
+        if (!Number.isFinite(duration) || duration <= 0 || duration > 3600000) {
+            throw new Error('请选择有效的时间范围，时间跨度不能超过1小时');
         }
 
-        if (topFilters.domain.trim()) {
-            params.domain = topFilters.domain.trim();
+        const params: Record<string, string | number> = { type };
+
+        if (recent === 'custom') {
+            Object.assign(params, range);
+        } else {
+            params.recent_time = recent;
+        }
+
+        if (context.domain) {
+            params.domain = context.domain;
+        }
+
+        if (context.server_port) {
+            params.server_port = context.server_port;
         }
 
         let nextRows: CdnflyRecord[] = [];
 
         try {
             const result = await getUserSiteTop(params);
-            nextRows = siteRankingRows(result, activeTopTab.value);
+            nextRows = siteRankingRows(result, type);
         } catch (error) {
-            if (topRecentTime.value === 'custom') {
+            if (recent === 'custom') {
                 throw error;
             }
         }
 
-        if (nextRows.length === 0 && topRecentTime.value !== 'custom') {
-            const range = recentTopRange(topRecentTime.value);
-            const fallbackParams: Record<string, string | number> = {
-                type: activeTopTab.value,
-                ...range,
-            };
+        if (version !== topRequestVersion) {
+            return;
+        }
 
-            if (topFilters.domain.trim()) {
-                fallbackParams.domain = topFilters.domain.trim();
-            }
+        if (nextRows.length === 0 && recent !== 'custom') {
+            const fallback = { ...params };
+            delete fallback.recent_time;
+            const result = await getUserSiteTop({ ...fallback, ...range });
+            nextRows = siteRankingRows(result, type);
+        }
 
-            const fallbackResult = await getUserSiteTop(fallbackParams);
-            nextRows = siteRankingRows(fallbackResult, activeTopTab.value);
+        if (version !== topRequestVersion) {
+            return;
         }
 
         topRows.value = nextRows;
+        topLoadedFilters.value = context;
     } catch (err) {
+        if (version !== topRequestVersion) {
+            return;
+        }
+
+        topRows.value = [];
         errorMessage.value = getErrorMessage(err);
     } finally {
-        topLoading.value = false;
+        if (version === topRequestVersion) {
+            topLoading.value = false;
+        }
     }
 }
 
@@ -609,17 +560,20 @@ function toggleSort(key: string): void {
     }
 }
 
-function goToLogs(): void {
-    router.visit('/console/analytics/logs');
+function goToLogs(row: CdnflyRecord): void {
+    router.visit(
+        rankingLogUrl(
+            props.scope ?? 'user',
+            activeTopTab.value,
+            rowDimension(row, activeTopTab.value),
+            topLoadedFilters.value,
+        ),
+    );
 }
 
 function cellValue(row: CdnflyRecord, col: TopTab['cols'][number]): string {
-    if (col.type === 'bytes') {
-        return formatBytes(numVal(row[col.key]));
-    }
-
-    if (col.type === 'count') {
-        return formatCount(numVal(row[col.key]));
+    if (col.type === 'bytes' || col.type === 'count') {
+        return formatRankingMetric(row[col.key], col.type);
     }
 
     // text: 尝试多个可能的字段名
@@ -1284,21 +1238,6 @@ function formatBytes(value: number): string {
 
     return `${value.toFixed(0)} B`;
 }
-function formatCount(value: number): string {
-    if (!value) {
-        return '-';
-    }
-
-    if (value >= 100000000) {
-        return `${(value / 100000000).toFixed(2)} 亿`;
-    }
-
-    if (value >= 10000) {
-        return `${(value / 10000).toFixed(1)} 万`;
-    }
-
-    return `${value}`;
-}
 function numVal(v: unknown): number {
     if (typeof v === 'number') {
         return v;
@@ -1590,11 +1529,17 @@ function formatInputDate(date: Date): string {
         <template v-else-if="props.view === 'top'">
             <Card class="analytics-ranking-panel gap-0 overflow-hidden">
                 <!-- Tab 栏 -->
-                <div class="flex flex-wrap gap-1 border-b px-4 pt-4">
+                <div
+                    class="flex flex-wrap gap-1 border-b px-4 pt-4"
+                    role="tablist"
+                    aria-label="Ranking dimensions"
+                >
                     <button
                         v-for="tab in topTabs"
                         :key="tab.key"
                         type="button"
+                        role="tab"
+                        :aria-selected="activeTopTab === tab.key"
                         class="-mb-px rounded-t-sm border px-4 py-2 text-sm font-normal transition-colors"
                         :class="
                             activeTopTab === tab.key
@@ -1645,20 +1590,28 @@ function formatInputDate(date: Date): string {
                     </template>
 
                     <!-- 域名筛选 -->
-                    <div class="flex items-center">
-                        <button
-                            type="button"
-                            class="flex h-8 items-center gap-1 rounded-l-sm border border-r-0 bg-card px-3 text-sm"
+                    <div class="flex min-w-0 items-center">
+                        <select
+                            v-model="topSearchType"
+                            aria-label="排行筛选类型"
+                            class="h-8 rounded-l-sm border border-r-0 bg-card px-3 text-sm"
                         >
-                            域名
-                            <ChevronDown
-                                class="size-3.5 text-muted-foreground"
-                            />
-                        </button>
+                            <option value="domain">域名</option>
+                            <option value="server_port">监听端口</option>
+                        </select>
                         <Input
-                            v-model="topFilters.domain"
-                            class="h-8 w-60 rounded-l-none text-sm"
-                            placeholder="输入域名，多个空格分隔"
+                            v-model="topFilters[topSearchType]"
+                            class="h-8 w-60 min-w-0 rounded-l-none text-sm"
+                            :aria-label="
+                                topSearchType === 'domain'
+                                    ? '域名筛选'
+                                    : '监听端口筛选'
+                            "
+                            :placeholder="
+                                topSearchType === 'domain'
+                                    ? '输入域名，多个空格分隔'
+                                    : '输入监听端口'
+                            "
                             @keydown.enter="loadTop"
                         />
                     </div>
@@ -1669,16 +1622,38 @@ function formatInputDate(date: Date): string {
                         <RefreshCw v-else data-icon="inline-start" />
                         刷新
                     </Button>
+                    <button
+                        v-if="topFilters.domain || topFilters.server_port"
+                        type="button"
+                        class="text-sm text-primary hover:underline"
+                        @click="
+                            topFilters.domain = '';
+                            topFilters.server_port = '';
+                            loadTop();
+                        "
+                    >
+                        清除
+                    </button>
+                    <span
+                        v-if="topFilters.domain"
+                        class="rounded border px-2 py-1 text-xs text-muted-foreground"
+                        >域名：{{ topFilters.domain }}</span
+                    >
+                    <span
+                        v-if="topFilters.server_port"
+                        class="rounded border px-2 py-1 text-xs text-muted-foreground"
+                        >监听端口：{{ topFilters.server_port }}</span
+                    >
                 </div>
 
                 <!-- 表格 -->
                 <Card
                     class="analytics-ranking-table-card gap-0 rounded-none border-0 shadow-none"
                 >
-                    <CardContent class="p-0">
-                        <div class="w-full max-w-[1100px] overflow-x-auto">
+                    <CardContent class="p-4 pt-0">
+                        <div class="w-full overflow-x-auto">
                             <table
-                                class="analytics-ranking-table w-full min-w-[900px]"
+                                class="analytics-ranking-table w-full min-w-[1000px]"
                             >
                                 <thead>
                                     <tr>
@@ -1749,7 +1724,9 @@ function formatInputDate(date: Date): string {
                                         </td>
                                     </tr>
                                     <tr
-                                        v-for="(row, index) in sortedTopRows"
+                                        v-for="(row, index) in topLoading
+                                            ? []
+                                            : sortedTopRows"
                                         :key="index"
                                         class="border-b transition-colors last:border-0 hover:bg-muted/20"
                                     >
@@ -1761,7 +1738,15 @@ function formatInputDate(date: Date): string {
                                         </td>
                                         <!-- 维度列（含进度条） -->
                                         <td class="max-w-xs px-4 py-0">
-                                            <div class="truncate">
+                                            <div
+                                                class="truncate"
+                                                :title="
+                                                    rowDimension(
+                                                        row,
+                                                        activeTopTab,
+                                                    )
+                                                "
+                                            >
                                                 {{
                                                     rowDimension(
                                                         row,
@@ -1784,7 +1769,7 @@ function formatInputDate(date: Date): string {
                                                 <button
                                                     type="button"
                                                     class="inline-flex items-center text-sm text-primary hover:underline"
-                                                    @click="goToLogs"
+                                                    @click="goToLogs(row)"
                                                 >
                                                     查看日志
                                                 </button>

@@ -53,12 +53,25 @@ if (query.get('uri_match_type') === 'prefix') {
     filters.uri_match_type = 'prefix';
 }
 
+for (const key of ['start', 'end'] as const) {
+    const value = query.get(key);
+
+    if (value !== null) {
+        filters[key] = value.replace(' ', 'T');
+    }
+}
+
 const draft = reactive({ ...filters });
 const active = ref<'query' | 'jobs'>(
     query.get('tab') === 'jobs' ? 'jobs' : 'query',
 );
-const quickType = ref<AccessFilterKey | 'timeRange' | 'uri_match_type'>('host');
-const quickValue = ref('');
+const initialQuickField =
+    accessFilterFields.find(({ key }) => key === query.get('filter')) ??
+    accessFilterFields.find(({ key }) => filters[key] !== '');
+const quickType = ref<AccessFilterKey | 'timeRange' | 'uri_match_type'>(
+    initialQuickField?.key ?? 'host',
+);
+const quickValue = ref(filters[quickType.value as AccessFilterKey]);
 const advanced = ref(false);
 const rows = ref<CdnflyRecord[]>([]),
     jobs = ref<CdnflyRecord[]>([]);

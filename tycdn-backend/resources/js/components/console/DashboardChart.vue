@@ -169,6 +169,10 @@ const axis = (n: number) =>
                         <rect
                             v-for="(point, i) in points"
                             :key="point.label"
+                            class="dashboard-bar"
+                            :style="{
+                                animationDelay: `${Math.min(i * 45, 240)}ms`,
+                            }"
                             :x="x(i) - (plotWidth / points.length) * 0.34"
                             :y="y(point.value)"
                             :width="(plotWidth / points.length) * 0.68"
@@ -250,3 +254,26 @@ const axis = (n: number) =>
         </div>
     </section>
 </template>
+
+<style scoped>
+.dashboard-bar {
+    transform-box: fill-box;
+    transform-origin: center bottom;
+    animation: bar-grow 700ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes bar-grow {
+    from {
+        transform: scaleY(0);
+    }
+    to {
+        transform: scaleY(1);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .dashboard-bar {
+        animation: none;
+    }
+}
+</style>

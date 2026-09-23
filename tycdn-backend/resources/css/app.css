@@ -442,8 +442,7 @@
     background: hsl(210 50% 98%);
 }
 
-/* Ruiyi-style resource ranking table: compact, readable and intentionally
- * narrower than the surrounding workspace so scan paths stay short. */
+/* Master-style resource rankings share six columns across every dimension. */
 .console-shell .analytics-ranking-panel,
 .console-shell .analytics-ranking-table-card {
     padding-block: 0 !important;
@@ -476,17 +475,17 @@
 }
 
 .console-shell .analytics-ranking-table th:nth-child(1) {
-    width: 104px;
+    width: 70px;
 }
 
 .console-shell .analytics-ranking-table th:nth-child(2) {
-    width: 344px;
+    width: auto;
 }
 
 .console-shell .analytics-ranking-table th:nth-child(3),
 .console-shell .analytics-ranking-table th:nth-child(4),
 .console-shell .analytics-ranking-table th:nth-child(5) {
-    width: 184px;
+    width: 150px;
 }
 
 .console-shell .analytics-ranking-table th:last-child {
