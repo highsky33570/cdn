@@ -4,6 +4,7 @@ Updates `/console/admin/workspace/l2-configs` and `/console/admin/workspace/l2-c
 
 - Two tabs, compact tables, region filter, selection, batch deletion and pagination.
 - Configuration dialog: region, name, remark, cache/global mode and round-robin/URL-hash balancing.
+- Configuration and condition dialogs use the shared overlay's horizontal and vertical centering, with scrolling retained when the content exceeds a small screen. Removed their explicit top-alignment override.
 - Condition dialog: name, remark and visual matching rules with field/operator selectors, multiline values, add/edit/remove actions and AND semantics.
 - Reads existing details before editing. Native JSON-encoded rules are decoded without changing empty values, multiline text, secondary values or additional fields. Invalid rule data blocks saving until a successful reload.
 - Configuration-node links scope both the binding list and new bindings to the selected configuration.

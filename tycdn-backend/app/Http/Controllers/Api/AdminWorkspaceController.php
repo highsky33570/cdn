@@ -65,6 +65,27 @@ class AdminWorkspaceController extends Controller
         'transfer-log' => ['/v1/master/transfer-log', ['GET']],
     ];
 
+    public function cacheQuota(Request $request, CdnflyApiService $cdnfly): JsonResponse
+    {
+        $input = $request->validate([
+            'type' => ['required', 'in:clean_url,clean_dir,pre_cache_url'],
+            'start' => ['required', 'date_format:Y-m-d'],
+        ]);
+        try {
+            $config = $cdnfly->proxyAdminRequest('GET', '/v1/configs/global-0-site-'.$input['type']);
+            $jobs = $cdnfly->proxyAdminRequest('GET', '/v1/jobs', ['type' => $input['type'], 'start' => $input['start'], 'limit' => 1]);
+            $value = $config['data']['value'] ?? null;
+            $used = $jobs['count'] ?? null;
+
+            return response()->json(['ok' => true, 'data' => [
+                'total' => is_numeric($value) ? max(0, (int) $value) : null,
+                'used' => is_numeric($used) ? max(0, (int) $used) : null,
+            ]]);
+        } catch (\Throwable $e) {
+            return $this->cdnflyFailure($e, __FUNCTION__);
+        }
+    }
+
     public function handle(Request $request, string $resource, CdnflyApiService $cdnfly, ?int $id = null): JsonResponse
     {
         abort_unless(isset(self::RESOURCES[$resource]), 404);

@@ -443,16 +443,17 @@ export async function deleteAdminSite(id: number): Promise<void> {
 
 // ─── Certs CRUD ───────────────────────────────────────
 export type AdminCertPayload = {
+    uid?: number;
     name: string;
     des?: string;
     type: 'custom' | 'lets' | 'zerossl';
-    dnsapi?: string;
+    dnsapi?: string | number | null;
     domain?: string;
     key?: string;
     cert?: string;
     auto_renew?: boolean | number;
     enable?: boolean | number;
-    reissue?: string;
+    reissue?: string | number;
 };
 
 export async function listAdminAllCerts(

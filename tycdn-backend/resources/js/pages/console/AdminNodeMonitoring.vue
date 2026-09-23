@@ -54,6 +54,7 @@ const range = ref({
 });
 const sort = ref({ key: '', descending: true });
 let request = 0;
+let chartContext = '';
 onUnmounted(() => {
     request++;
 });
@@ -192,7 +193,13 @@ async function load() {
         active = tab.value;
     error.value = '';
     rows.value = [];
-    charts.value = [];
+    const context = `${active}:${node.value}:${settings.realtime.metric}`;
+
+    if (active !== 'realtime' || context !== chartContext) {
+        charts.value = [];
+    }
+
+    chartContext = context;
     total.value = 0;
     loading.value = false;
 
@@ -207,6 +214,7 @@ async function load() {
     }
 
     let query: Record<string, string>;
+    let nextRange = range.value;
 
     if (active === 'top') {
         query = { type: settings.top.metric, recent_time: settings.top.period };
@@ -229,10 +237,10 @@ async function load() {
             return;
         }
 
-        range.value = { start: nodeDate(start), end: nodeDate(end) };
+        nextRange = { start: nodeDate(start), end: nodeDate(end) };
         query = {
             node: node.value,
-            ...range.value,
+            ...nextRange,
             ...(active === 'traffic'
                 ? { excl_nic: exclude.value.trim() }
                 : { type: settings.realtime.metric }),
@@ -254,6 +262,8 @@ async function load() {
         if (id !== request) {
             return;
         }
+
+        range.value = nextRange;
 
         if (active === 'top') {
             rows.value = extractCdnflyRows(payload);
@@ -510,12 +520,12 @@ onMounted(async () => {
                 </div>
                 <template v-else>
                     <p
-                        v-if="loading"
+                        v-if="loading && !charts.length"
                         class="p-12 text-center text-sm text-muted-foreground"
                     >
                         加载中…
                     </p>
-                    <template v-else-if="!error">
+                    <template v-else-if="!error || charts.length">
                         <p
                             v-if="tab === 'traffic' && charts.length"
                             class="mb-3 inline-block rounded-full border px-3 py-1 text-xs font-semibold"

@@ -3,14 +3,18 @@
 use App\Http\Controllers\Api\AdminAccessLogController;
 use App\Http\Controllers\Api\AdminBlockLogController;
 use App\Http\Controllers\Api\AdminCcController;
+use App\Http\Controllers\Api\AdminCertificateController;
 use App\Http\Controllers\Api\AdminConfigController;
 use App\Http\Controllers\Api\AdminController;
 use App\Http\Controllers\Api\AdminDnsController;
 use App\Http\Controllers\Api\AdminFinanceController;
+use App\Http\Controllers\Api\AdminFirewallController;
 use App\Http\Controllers\Api\AdminMonitorController;
+use App\Http\Controllers\Api\AdminNginxController;
 use App\Http\Controllers\Api\AdminNodeController;
 use App\Http\Controllers\Api\AdminRecoveryController;
 use App\Http\Controllers\Api\AdminSiteController;
+use App\Http\Controllers\Api\AdminSiteResourceController;
 use App\Http\Controllers\Api\AdminStreamController;
 use App\Http\Controllers\Api\AdminWafLogController;
 use App\Http\Controllers\Api\AdminWorkspaceController;
@@ -142,6 +146,7 @@ Route::middleware(['auth:sanctum', 'verified', 'admin', 'throttle:admin-api'])->
     Route::delete('/lines/{id}', [AdminNodeController::class, 'destroyLine'])->where('id', '[0-9,]+')->middleware('throttle:admin-write-10');
 
     // 全部网站（管理端）
+    Route::match(['GET', 'POST', 'PUT', 'DELETE'], '/site-resources/{resource}/{id?}', [AdminSiteResourceController::class, 'handle'])->whereNumber('id')->middleware('throttle:admin-write-30');
     Route::get('/sites', [AdminSiteController::class, 'index']);
     Route::post('/sites', [AdminSiteController::class, 'store'])->middleware('throttle:admin-write-20');
     Route::get('/sites/{id}', [AdminSiteController::class, 'show']);
@@ -152,6 +157,10 @@ Route::middleware(['auth:sanctum', 'verified', 'admin', 'throttle:admin-api'])->
     Route::post('/sites/{id}/certificate', [AdminSiteController::class, 'applyCertificate'])->middleware('throttle:admin-write-10');
     Route::match(['GET', 'PUT'], '/sites/{id}/waf-rules', [AdminSiteController::class, 'wafRules'])->whereNumber('id')->middleware('throttle:admin-write-20');
     Route::get('/all-certs', [AdminSiteController::class, 'certs']);
+    Route::get('/cache-quota', [AdminWorkspaceController::class, 'cacheQuota']);
+    Route::get('/all-certs/{id}', [AdminCertificateController::class, 'show'])->whereNumber('id');
+    Route::get('/certificate-users', [AdminCertificateController::class, 'users']);
+    Route::match(['GET', 'PUT'], '/certificate-defaults/{uid}', [AdminCertificateController::class, 'defaults'])->whereNumber('uid')->middleware('throttle:admin-write-30');
     Route::post('/all-certs', [AdminSiteController::class, 'storeCert'])->middleware('throttle:admin-write-20');
     Route::put('/all-certs/{id}', [AdminSiteController::class, 'updateCert'])->middleware('throttle:admin-write-20');
     Route::delete('/all-certs/{id}', [AdminSiteController::class, 'destroyCert'])->middleware('throttle:admin-write-10');
@@ -163,6 +172,9 @@ Route::middleware(['auth:sanctum', 'verified', 'admin', 'throttle:admin-api'])->
 
     // 四层转发（管理端）
     Route::get('/streams', [AdminStreamController::class, 'index']);
+    Route::get('/streams/{id}', [AdminStreamController::class, 'show'])->whereNumber('id');
+    Route::match(['GET', 'POST'], '/stream-defaults', [AdminStreamController::class, 'defaults'])->middleware('throttle:admin-write-20');
+    Route::match(['PUT', 'DELETE'], '/stream-defaults/{id}', [AdminStreamController::class, 'defaults'])->whereNumber('id')->middleware('throttle:admin-write-20');
     Route::post('/streams', [AdminStreamController::class, 'store'])->middleware('throttle:admin-write-20');
     Route::put('/streams/{id}', [AdminStreamController::class, 'update'])->middleware('throttle:admin-write-20');
     Route::put('/streams/{id}/enable', [AdminStreamController::class, 'setEnabled'])->middleware('throttle:admin-write-20');
@@ -190,6 +202,8 @@ Route::middleware(['auth:sanctum', 'verified', 'admin', 'throttle:admin-api'])->
     Route::delete('/cname-domains/{id}', [AdminDnsController::class, 'cnameDestroy'])->middleware('throttle:admin-write-10');
     // ACL 规则管理
     Route::post('/acls', [AdminSiteController::class, 'storeAcl'])->middleware('throttle:admin-write-20');
+    Route::post('/acls/update-subscription', [AdminSiteController::class, 'updateAclSubscriptions'])->middleware('throttle:admin-write-10');
+    Route::get('/acls/{id}', [AdminSiteController::class, 'showAcl'])->whereNumber('id');
     Route::put('/acls/{id}', [AdminSiteController::class, 'updateAcl'])->middleware('throttle:admin-write-20');
     Route::delete('/acls/{id}', [AdminSiteController::class, 'destroyAcl'])->middleware('throttle:admin-write-10');
 
@@ -238,6 +252,17 @@ Route::middleware(['auth:sanctum', 'verified', 'admin', 'throttle:admin-api'])->
 
     // 系统配置
     Route::get('/configs', [AdminConfigController::class, 'index']);
+    Route::get('/firewall', [AdminFirewallController::class, 'show']);
+    Route::get('/nginx', [AdminNginxController::class, 'show']);
+    Route::put('/nginx', [AdminNginxController::class, 'update'])->middleware('throttle:admin-write-60');
+    Route::get('/nginx/overrides', [AdminNginxController::class, 'overrides']);
+    Route::put('/nginx/overrides/{scope}/{id}', [AdminNginxController::class, 'update'])->whereIn('scope', ['node', 'region'])->whereNumber('id')->middleware('throttle:admin-write-20');
+    Route::delete('/nginx/overrides/{scope}/{id}', [AdminNginxController::class, 'destroy'])->whereIn('scope', ['node', 'region'])->whereNumber('id')->middleware('throttle:admin-write-10');
+    Route::put('/firewall', [AdminFirewallController::class, 'update'])->middleware('throttle:admin-write-20');
+    Route::get('/firewall/overrides', [AdminFirewallController::class, 'overrides']);
+    Route::put('/firewall/overrides/{scope}/{id}', [AdminFirewallController::class, 'update'])->whereIn('scope', ['node', 'region'])->whereNumber('id')->middleware('throttle:admin-write-20');
+    Route::delete('/firewall/overrides/{scope}/{id}', [AdminFirewallController::class, 'destroy'])->whereIn('scope', ['node', 'region'])->whereNumber('id')->middleware('throttle:admin-write-10');
+    Route::post('/firewall/images', [AdminFirewallController::class, 'images'])->middleware('throttle:admin-write-10');
     // 单项 upsert：CDNfly 用 作用域+类型+名称 定位一条配置，行里没有 id。
     Route::put('/configs', [AdminConfigController::class, 'update'])->middleware('throttle:admin-write-20');
     Route::get('/register-info', [AdminConfigController::class, 'registerInfo']);

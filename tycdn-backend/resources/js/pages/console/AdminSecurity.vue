@@ -14,6 +14,8 @@ import {
 } from 'lucide-vue-next';
 import { computed, onMounted, reactive, ref } from 'vue';
 import { toast } from 'vue-sonner';
+import AdminCcWorkspace from '@/components/console/AdminCcWorkspace.vue';
+import AdminWafWorkspace from '@/components/console/AdminWafWorkspace.vue';
 import ConsoleDataTable from '@/components/console/ConsoleDataTable.vue';
 import type { ColumnDef } from '@/components/console/ConsoleDataTable.vue';
 import ConsolePageHeader from '@/components/console/ConsolePageHeader.vue';
@@ -43,6 +45,7 @@ import {
 } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
 import Switch from '@/components/ui/switch/Switch.vue';
+import { ccFilterLabels } from '@/lib/adminCc';
 import { listAdminUsers } from '@/lib/adminConsoleApi';
 import type { AdminUserRecord, Paginated } from '@/lib/adminConsoleApi';
 import {
@@ -84,10 +87,6 @@ const stats = ref<{ admins: number; verified: number; apiKey: number }>({
 
 onMounted(async () => {
     if (props.view !== 'all') {
-        if (props.view === 'cc') {
-            void loadCcRows();
-        }
-
         return;
     }
 
@@ -170,6 +169,7 @@ const aclColumns: ColumnDef[] = [
 ];
 
 const aclTableRef = ref<InstanceType<typeof ConsoleDataTable> | null>(null);
+const wafWorkspace = ref<InstanceType<typeof AdminWafWorkspace> | null>(null);
 const saving = ref(false);
 const togglingId = ref<number | null>(null);
 const deletingId = ref<number | null>(null);
@@ -199,7 +199,7 @@ const form = reactive({
 });
 
 const dialogTitle = computed(() =>
-    editingRecord.value ? '编辑 WAF' : '新增 WAF',
+    editingRecord.value ? '编辑规则库' : '新增规则库',
 );
 
 async function toggleAclEnabled(
@@ -246,7 +246,10 @@ function openEditDialog(row: CdnflyRecord): void {
     const d = row.data;
     form.data = typeof d === 'string' ? d : JSON.stringify(d || [], null, 2);
     form.des = String(row.des ?? '');
-    form.enable = row.enable === 1 || row.enable === '1' ? '1' : '0';
+    form.enable =
+        row.enable === 1 || row.enable === '1' || row.enable === true
+            ? '1'
+            : '0';
     form.user_id = String(row.uid ?? row.user_id ?? '');
     formError.value = '';
     dialogOpen.value = true;
@@ -271,7 +274,7 @@ async function submitAcl(): Promise<void> {
         name: form.name.trim(),
         scope: form.scope,
         data: dataArr,
-        des: form.des.trim() || undefined,
+        des: form.des.trim(),
         enable: Number(form.enable),
     };
 
@@ -306,6 +309,7 @@ async function submitAcl(): Promise<void> {
 
         dialogOpen.value = false;
         aclTableRef.value?.refresh();
+        void wafWorkspace.value?.refresh();
     } catch (error) {
         formError.value = getErrorMessage(error);
     } finally {
@@ -331,6 +335,7 @@ async function confirmDelete(): Promise<void> {
         deleteOpen.value = false;
         toast.success('WAF 已删除');
         aclTableRef.value?.refresh();
+        void wafWorkspace.value?.refresh();
     } catch (error) {
         errorMessage.value = getErrorMessage(error);
     } finally {
@@ -350,16 +355,7 @@ type RuleEntry = {
     state: boolean;
 };
 
-const CC_FILTER_TYPES = [
-    'req_rate',
-    '302_challenge',
-    'browser_verify_auto',
-    'slide_filter',
-    'captcha_filter',
-    'click_filter',
-    'url_auth',
-    'delay_jump_filter',
-] as const;
+const CC_FILTER_TYPES = Object.keys(ccFilterLabels);
 
 const MATCHER_KEYS = [
     { value: 'ip', label: 'IP 地址' },
@@ -446,6 +442,7 @@ const extraForm = reactive({
 // User list for uid dropdown
 const userOptions = ref<{ id: string; name: string; email: string }[]>([]);
 const ccUid = ref('__system__');
+const ccWorkspace = ref<InstanceType<typeof AdminCcWorkspace> | null>(null);
 
 const ccDialogTitle = computed(() =>
     editingCc.value
@@ -651,9 +648,8 @@ function openCcEditDialog(record: CdnflyRecord): void {
     ccForm.sort = textValue(record.sort) || '100';
     ccForm.data = '';
     ccForm.des = textValue(record.des ?? record.remark);
-    ccForm.enable = record.enable === 0 || record.enable === false ? '0' : '1';
-    ccForm.is_show =
-        record.is_show === 0 || record.is_show === false ? '0' : '1';
+    ccForm.enable = Number(record.enable) === 0 ? '0' : '1';
+    ccForm.is_show = Number(record.is_show) === 0 ? '0' : '1';
     ccFormError.value = '';
 
     const rawData = record.data;
@@ -699,8 +695,7 @@ function openCcEditDialog(record: CdnflyRecord): void {
 async function submitCc(): Promise<void> {
     if (
         activeCcKind.value === 'rule' &&
-        (ruleEntries.value.length === 0 ||
-            ruleEntries.value.some((e) => !e.matcher || !e.filter1))
+        ruleEntries.value.some((e) => !e.matcher || !e.filter1)
     ) {
         ccFormError.value = '请为每条规则选择匹配器和第一过滤器';
 
@@ -725,7 +720,7 @@ async function submitCc(): Promise<void> {
             : undefined;
         base.extra = buildExtra();
     } else {
-        base.sort = Number(ccForm.sort) || 100;
+        base.sort = ccForm.sort.trim() === '' ? 100 : Number(ccForm.sort);
         base.is_show = Number(ccForm.is_show);
         base.data = ruleEntries.value.map((e) => ({
             ...e.raw,
@@ -791,7 +786,12 @@ async function submitCc(): Promise<void> {
         }
 
         ccDialogOpen.value = false;
-        await loadCcRows();
+
+        if (props.view === 'cc') {
+            await ccWorkspace.value?.refresh();
+        } else {
+            await loadCcRows();
+        }
     } catch (error) {
         ccFormError.value = getErrorMessage(error);
     } finally {
@@ -868,15 +868,13 @@ const displayedCcRows = computed(() => {
 </script>
 
 <template>
-    <div class="flex flex-1 flex-col gap-6 p-4 md:p-6">
+    <div
+        class="flex flex-1 flex-col gap-6"
+        :class="props.view !== 'all' ? 'p-3 md:p-5' : 'p-4 md:p-6'"
+    >
         <ConsolePageHeader
-            :title="
-                props.view === 'cc'
-                    ? 'CC规则'
-                    : props.view === 'waf'
-                      ? 'WAF规则'
-                      : '安全与权限'
-            "
+            v-if="props.view === 'all'"
+            title="安全与权限"
             :icon="ShieldCheck"
             :show-api-badge="false"
         />
@@ -961,7 +959,7 @@ const displayedCcRows = computed(() => {
         </ConsoleDataTable>
 
         <ConsoleDataTable
-            v-else-if="props.view !== 'cc'"
+            v-else-if="props.view === 'all'"
             ref="aclTableRef"
             title="全部 WAF 规则"
             :icon="ShieldCheck"
@@ -1002,8 +1000,32 @@ const displayedCcRows = computed(() => {
             </template>
         </ConsoleDataTable>
 
+        <AdminWafWorkspace
+            v-if="props.view === 'waf'"
+            ref="wafWorkspace"
+            @create="openCreateDialog"
+            @manage="openEditDialog"
+            @delete="openDeleteConfirm"
+        />
+
         <!-- CC 防护 -->
-        <Card v-if="props.view !== 'waf'">
+        <AdminCcWorkspace
+            v-if="props.view === 'cc'"
+            ref="ccWorkspace"
+            @create="
+                (kind) => {
+                    activeCcKind = kind;
+                    openCcCreateDialog();
+                }
+            "
+            @manage="
+                (kind, row) => {
+                    activeCcKind = kind;
+                    openCcEditDialog(row);
+                }
+            "
+        />
+        <Card v-if="props.view === 'all'">
             <CardHeader class="space-y-4">
                 <div
                     class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between"
@@ -1381,9 +1403,9 @@ const displayedCcRows = computed(() => {
                     <DialogDescription>
                         {{
                             activeCcKind === 'rule'
-                                ? '规则组 data 为数组格式'
+                                ? '配置规则组的匹配条件、过滤器和处理动作'
                                 : activeCcKind === 'matcher'
-                                  ? '匹配器 data 为对象格式'
+                                  ? '配置请求需要满足的匹配条件'
                                   : '配置过滤器参数'
                         }}
                     </DialogDescription>
@@ -1416,7 +1438,9 @@ const displayedCcRows = computed(() => {
                                             v-for="type in CC_FILTER_TYPES"
                                             :key="type"
                                             :value="type"
-                                            >{{ type }}</SelectItem
+                                            >{{
+                                                ccFilterLabels[type]
+                                            }}</SelectItem
                                         >
                                     </SelectGroup>
                                 </SelectContent>

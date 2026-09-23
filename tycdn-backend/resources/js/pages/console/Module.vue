@@ -8,14 +8,18 @@ import { consoleNavigationTitle } from '@/lib/consoleNavigation';
 import { masterResources } from '@/lib/masterResources';
 import AdminAccessLogs from './AdminAccessLogs.vue';
 import AdminBlockLogs from './AdminBlockLogs.vue';
+import AdminCache from './AdminCache.vue';
+import AdminCertificates from './AdminCertificates.vue';
 import AdminConfigWorkspace from './AdminConfigWorkspace.vue';
 import AdminDns from './AdminDns.vue';
 import AdminFinance from './AdminFinance.vue';
+import AdminFirewall from './AdminFirewall.vue';
 import AdminL2 from './AdminL2.vue';
 import AdminLineGroups from './AdminLineGroups.vue';
 import AdminMaintenance from './AdminMaintenance.vue';
 import AdminMasterResources from './AdminMasterResources.vue';
 import AdminMonitoring from './AdminMonitoring.vue';
+import AdminNginx from './AdminNginx.vue';
 import AdminNodeMonitoring from './AdminNodeMonitoring.vue';
 import AdminNodeMonitorSettings from './AdminNodeMonitorSettings.vue';
 import AdminNodes from './AdminNodes.vue';
@@ -84,7 +88,7 @@ const MODULES: Record<
     'admin-line-groups': {
         component: AdminLineGroups,
     },
-    'admin-cache-jobs': { component: UserCache, props: { scope: 'admin' } },
+    'admin-cache-jobs': { component: AdminCache },
     'admin-security-cc': { component: AdminSecurity, props: { view: 'cc' } },
     'admin-security-waf': { component: AdminSecurity, props: { view: 'waf' } },
     'admin-sold-packages': {
@@ -123,8 +127,7 @@ const MODULES: Record<
         props: { initialTab: 'upgrades' },
     },
     'admin-certificates': {
-        component: AdminSites,
-        props: { initialTab: 'certificates' },
+        component: AdminCertificates,
     },
     'admin-security': { component: AdminSecurity },
     'admin-workspace-blackip': { component: AdminBlockLogs },
@@ -221,6 +224,8 @@ for (const view of ['realtime', 'top', 'usage']) {
 }
 
 MODULES['admin-config-node-monitor'] = { component: AdminNodeMonitorSettings };
+MODULES['admin-config-firewall'] = { component: AdminFirewall };
+MODULES['admin-config-nginx'] = { component: AdminNginx };
 
 MODULES['admin-streams-analytics'] = {
     component: AdminStreamAnalytics,

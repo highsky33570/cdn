@@ -24,8 +24,13 @@ onUnmounted(() => observer?.disconnect());
 watch(
     () => props.chart,
     () => {
-        hover.value = null;
-        hidden.value = [];
+        hidden.value = hidden.value.filter((name) =>
+            props.chart.series.some((line) => line.name === name),
+        );
+
+        if (hover.value !== null && !times.value.includes(hover.value)) {
+            hover.value = null;
+        }
     },
 );
 const colors = ['#2d8cf0', '#19be6b', '#ff9900'];
@@ -169,7 +174,7 @@ function toggle(name: string) {
                 </g>
                 <text
                     v-for="(time, i) in ticks"
-                    :key="time"
+                    :key="i"
                     :x="x(time)"
                     y="272"
                     :text-anchor="

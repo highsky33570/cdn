@@ -364,7 +364,12 @@ class AdminSiteController extends Controller
     public function acls(Request $request): JsonResponse
     {
         try {
-            $data = $this->cdnfly->listAllAcls($request->query());
+            $query = $request->query();
+            // An explicit empty system_key excludes built-in libraries on the master.
+            if (array_key_exists('system_key', $query) && $query['system_key'] === null) {
+                $query['system_key'] = '';
+            }
+            $data = $this->cdnfly->listAllAcls($query);
 
             return response()->json(['ok' => true, 'data' => $data]);
         } catch (\Throwable $e) {
@@ -373,6 +378,33 @@ class AdminSiteController extends Controller
     }
 
     // Administrator WAF library management.
+    public function showAcl(int $id): JsonResponse
+    {
+        try {
+            $data = $this->cdnfly->proxyAdminRequest('GET', '/v1/waf-rules/'.$id);
+
+            return response()->json(['ok' => true, 'data' => $data]);
+        } catch (\Throwable $e) {
+            return $this->cdnflyFailure($e, __FUNCTION__);
+        }
+    }
+
+    public function updateAclSubscriptions(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'ids' => ['required', 'array', 'min:1', 'max:100'],
+            'ids.*' => ['required', 'integer', 'min:1', 'distinct'],
+        ]);
+
+        try {
+            $data = $this->cdnfly->proxyAdminRequest('POST', '/v1/waf-rules/update-subscription', $validated);
+
+            return response()->json(['ok' => true, 'data' => $data]);
+        } catch (\Throwable $e) {
+            return $this->cdnflyFailure($e, __FUNCTION__);
+        }
+    }
+
     public function storeAcl(Request $request): JsonResponse
     {
         $validated = $request->validate([

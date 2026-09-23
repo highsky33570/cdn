@@ -678,7 +678,7 @@ async function remove(): Promise<void> {
             "
         >
             <DialogScrollContent
-                class="my-5 w-[calc(100%_-_2rem)] self-start bg-card"
+                class="my-5 w-[calc(100%_-_2rem)] bg-card"
                 :class="
                     editTab === 'l2-configs'
                         ? 'sm:max-w-[490px]'

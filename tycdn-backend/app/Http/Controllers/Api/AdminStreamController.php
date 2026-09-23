@@ -42,6 +42,63 @@ class AdminStreamController extends Controller
         }
     }
 
+    public function show(int $id): JsonResponse
+    {
+        try {
+            return response()->json(['ok' => true, 'data' => $this->cdnfly->proxyAdminRequest('GET', '/v1/streams/'.$id)]);
+        } catch (\Throwable $e) {
+            return $this->cdnflyFailure($e, __FUNCTION__);
+        }
+    }
+
+    public function defaults(Request $request, ?int $id = null): JsonResponse
+    {
+        $payload = [];
+        if ($request->isMethod('GET')) {
+            $payload = $request->query();
+            $payload['type'] = 'stream';
+        } elseif (! $request->isMethod('DELETE')) {
+            $payload = $request->validate([
+                'uid' => ['required', 'integer', 'min:1'],
+                'name' => ['required', 'in:listen_protocol,balance_way,proxy_protocol'],
+                'value' => ['required', 'string'],
+                'scope_name' => ['required', 'in:global,group'],
+                'scope_id' => ['required', 'integer', 'min:0'],
+            ]);
+            $allowed = ['listen_protocol' => ['tcp', 'udp'], 'balance_way' => ['rr', 'ip_hash'], 'proxy_protocol' => ['0', '1']];
+            abort_unless(in_array($payload['value'], $allowed[$payload['name']], true), 422, 'Invalid default value');
+            abort_if($payload['scope_name'] === 'group' && $payload['scope_id'] < 1, 422, 'Select a stream group');
+            if ($payload['scope_name'] === 'global') {
+                $payload['scope_id'] = 0;
+            }
+            $payload['type'] = 'stream';
+        }
+        try {
+            if ($id !== null) {
+                $response = $this->cdnfly->proxyAdminRequest('GET', '/v1/user-configs', ['type' => 'stream', 'limit' => 0]);
+                $record = collect($response['data'] ?? [])->first(fn ($row) => (int) ($row['id'] ?? 0) === $id) ?? [];
+                if (($record['type'] ?? null) !== 'stream') {
+                    return response()->json(['ok' => false, 'message' => 'Stream default not found'], 404);
+                }
+                if (isset($payload['uid']) && (int) $record['uid'] !== (int) $payload['uid']) {
+                    return response()->json(['ok' => false, 'message' => 'Cannot change the setting owner'], 422);
+                }
+            }
+            if (($payload['scope_name'] ?? '') === 'group') {
+                $response = $this->cdnfly->proxyAdminRequest('GET', '/v1/stream-groups/'.$payload['scope_id']);
+                $group = $response['data'] ?? $response;
+                if ((int) ($group['uid'] ?? 0) !== (int) $payload['uid']) {
+                    return response()->json(['ok' => false, 'message' => 'Select a group owned by this user'], 422);
+                }
+            }
+            $data = $this->cdnfly->proxyAdminRequest($request->method(), '/v1/user-configs'.($id === null ? '' : '/'.$id), $payload);
+
+            return response()->json(['ok' => true, 'data' => $data]);
+        } catch (\Throwable $e) {
+            return $this->cdnflyFailure($e, __FUNCTION__);
+        }
+    }
+
     public function destroy(int $id): JsonResponse
     {
         try {
@@ -114,8 +171,13 @@ class AdminStreamController extends Controller
 
     public function storeGroup(Request $request): JsonResponse
     {
+        $validated = $request->validate([
+            'uid' => ['required', 'integer', 'min:1'],
+            'name' => ['required', 'string', 'max:255'],
+            'des' => ['nullable', 'string', 'max:1000'],
+        ]);
         try {
-            $result = $this->cdnfly->adminCreateStreamGroup($request->all());
+            $result = $this->cdnfly->adminCreateStreamGroup($validated);
 
             return response()->json(['ok' => true, 'data' => $result]);
         } catch (\Throwable $e) {

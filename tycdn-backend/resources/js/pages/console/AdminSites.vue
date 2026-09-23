@@ -3,20 +3,17 @@ import { router } from '@inertiajs/vue3';
 import {
     Check,
     Copy,
-    Eye,
-    ShieldCheck,
     FileKey2,
     Globe2,
     Pencil,
     Plus,
-    Power,
-    PowerOff,
     Save,
     Shield,
     Trash2,
 } from 'lucide-vue-next';
 import { computed, reactive, ref } from 'vue';
 import { toast } from 'vue-sonner';
+import AdminSiteWorkspace from '@/components/console/AdminSiteWorkspace.vue';
 import ConsoleDataTable from '@/components/console/ConsoleDataTable.vue';
 import type { ColumnDef } from '@/components/console/ConsoleDataTable.vue';
 import ConsoleFormDialog from '@/components/console/ConsoleFormDialog.vue';
@@ -55,7 +52,6 @@ import {
     listAdminAllCerts,
     listAdminCdnflyUserPackages,
     listAdminDnsApis,
-    listAdminSites,
     setAdminSiteEnabled,
     updateAdminCert,
     applyAdminSiteCertificate,
@@ -65,62 +61,6 @@ import type { AdminCertPayload, AdminSitePayload } from '@/lib/adminModulesApi';
 import { cdnflyJsonRows } from '@/lib/cdnflyResponse';
 import { formatDate, getErrorMessage } from '@/lib/formatters';
 import type { CdnflyRecord } from '@/lib/sharedTypes';
-
-const STATUS_ALL = 'all';
-const STATUS_RUNNING = '1';
-const STATUS_STOPPED = '0';
-
-/**
- * Field names verified against the master's own panel (chunk-0871c1ec).
- *
- * These were guessed — name/user_id/status/package_id/created_at — and CDNfly
- * uses none of them, so the list showed the site's internal name under 域名 and
- * a dash everywhere else.
- */
-const siteColumns: ColumnDef[] = [
-    { key: 'id', label: 'ID', width: '70px' },
-    { key: 'domain', label: '域名' },
-    { key: 'uid', label: '用户 ID', width: '90px' },
-    {
-        key: 'enable',
-        label: '状态',
-        width: '100px',
-        badge: true,
-        format: (v) => (v === 1 || v === '1' ? '运行中' : '已停用'),
-        badgeVariant: (v) =>
-            v === 1 || v === '1' ? 'secondary' : 'destructive',
-    },
-    // Whether the node has actually received this config. A site can look
-    // healthy here and be serving nothing.
-    {
-        key: 'sync_state',
-        label: '同步',
-        width: '100px',
-        badge: true,
-        format: (v) => SYNC_STATE_LABELS[String(v ?? '')] ?? '-',
-        badgeVariant: (v) =>
-            String(v) === 'done'
-                ? 'secondary'
-                : ['error', 'failed'].includes(String(v))
-                  ? 'destructive'
-                  : 'outline',
-    },
-    { key: 'user_package', label: '套餐 ID', width: '90px' },
-    {
-        key: 'create_at',
-        label: '创建时间',
-        width: '160px',
-        format: (v) => formatDate(v as string | null | undefined),
-    },
-];
-
-const SYNC_STATE_LABELS: Record<string, string> = {
-    done: '已同步',
-    process: '同步中',
-    pending: '待同步',
-    error: '同步失败',
-    failed: '同步失败',
-};
 
 const certColumns: ColumnDef[] = [
     { key: 'id', label: 'ID', width: '70px' },
@@ -163,7 +103,7 @@ const aclColumns: ColumnDef[] = [
     },
 ];
 
-const sitesTableRef = ref<InstanceType<typeof ConsoleDataTable> | null>(null);
+const sitesTableRef = ref<InstanceType<typeof AdminSiteWorkspace> | null>(null);
 const togglingId = ref<number | null>(null);
 type SiteTab = 'sites' | 'certificates' | 'acls';
 
@@ -272,33 +212,6 @@ async function loadUserPackages(): Promise<void> {
     }
 }
 
-const filters = reactive({
-    search: '',
-    user_id: '',
-    status: STATUS_ALL,
-});
-
-const searchParams = computed(() => {
-    const params: Record<string, string | number> = {};
-    const search = filters.search.trim();
-
-    if (search !== '') {
-        params.domain = search;
-    }
-
-    const uid = filters.user_id.trim();
-
-    if (uid !== '') {
-        params.uid = uid;
-    }
-
-    if (filters.status !== STATUS_ALL) {
-        params.enable = filters.status;
-    }
-
-    return params;
-});
-
 function isSiteRunning(row: CdnflyRecord): boolean {
     // CDNfly uses enable, not status; reading the wrong key made every site
     // look stopped and the toggle send the wrong new value.
@@ -317,8 +230,8 @@ async function toggleSiteEnabled(row: CdnflyRecord): Promise<void> {
     try {
         await setAdminSiteEnabled(id, !isSiteRunning(row));
         sitesTableRef.value?.refresh();
-    } catch {
-        // table will re-render with current state
+    } catch (error) {
+        toast.error(getErrorMessage(error));
     } finally {
         togglingId.value = null;
     }
@@ -363,10 +276,6 @@ function openCreateDialog(): void {
     createError.value = '';
     showAdvancedCreate.value = false;
     createOpen.value = true;
-
-    if (userPackages.value.length === 0) {
-        void loadUserPackages();
-    }
 }
 
 async function submitCreate(): Promise<void> {
@@ -808,111 +717,26 @@ async function confirmCertDelete(): Promise<void> {
 </script>
 
 <template>
-    <div class="flex flex-1 flex-col gap-6 p-4 md:p-6">
-        <ConsolePageHeader
-            title="全部网站"
-            :icon="Globe2"
-            :show-api-badge="false"
-        />
-
-        <div class="flex justify-end gap-2">
-            <Button variant="default" @click="openCreateDialog">
-                <Plus data-icon="inline-start" />
-                新建网站
-            </Button>
-        </div>
-
-        <ConsoleTabs v-model="activeTab" :tabs="siteTabs" />
-
-        <ConsoleDataTable
+    <div class="flex flex-1 flex-col gap-4 p-3 md:p-5">
+        <template v-if="props.initialTab !== 'sites'">
+            <ConsolePageHeader
+                title="全部证书"
+                :icon="FileKey2"
+                :show-api-badge="false"
+            />
+            <ConsoleTabs v-model="activeTab" :tabs="siteTabs" />
+        </template>
+        <AdminSiteWorkspace
             v-if="activeTab === 'sites'"
             ref="sitesTableRef"
-            title="站点列表"
-            :icon="Globe2"
-            :columns="siteColumns"
-            :fetch-fn="listAdminSites"
-            :search-params="searchParams"
-            search-placeholder="搜索域名"
-            @row-click="openDetail"
-        >
-            <template #search-fields="{ submitSearch }">
-                <div class="grid gap-3 sm:grid-cols-3">
-                    <Input
-                        v-model="filters.search"
-                        placeholder="搜索域名"
-                        @keyup.enter="submitSearch"
-                    />
-                    <Input
-                        v-model="filters.user_id"
-                        placeholder="用户 ID"
-                        @keyup.enter="submitSearch"
-                    />
-                    <Select v-model="filters.status">
-                        <SelectTrigger class="w-full">
-                            <SelectValue placeholder="全部状态" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectGroup>
-                                <SelectItem :value="STATUS_ALL">
-                                    全部状态
-                                </SelectItem>
-                                <SelectItem :value="STATUS_RUNNING">
-                                    运行中
-                                </SelectItem>
-                                <SelectItem :value="STATUS_STOPPED">
-                                    已停用
-                                </SelectItem>
-                            </SelectGroup>
-                        </SelectContent>
-                    </Select>
-                </div>
-            </template>
-
-            <template #row-actions="{ row }">
-                <Button variant="ghost" size="sm" @click="openDetail(row)">
-                    <Eye class="size-4" />
-                </Button>
-                <Button
-                    variant="ghost"
-                    size="sm"
-                    title="开启 HTTPS 并自动申请证书"
-                    :disabled="enablingHttpsId === Number(row.id)"
-                    @click="enableHttps(row)"
-                >
-                    <Spinner
-                        v-if="enablingHttpsId === Number(row.id)"
-                        class="size-4"
-                    />
-                    <ShieldCheck v-else class="size-4" />
-                </Button>
-                <Button variant="ghost" size="sm" @click="openEditDialog(row)">
-                    <Pencil class="size-4" />
-                </Button>
-                <Button
-                    variant="ghost"
-                    size="sm"
-                    :disabled="togglingId === Number(row.id)"
-                    @click="toggleSiteEnabled(row)"
-                >
-                    <Spinner
-                        v-if="togglingId === Number(row.id)"
-                        class="size-4"
-                    />
-                    <Power
-                        v-else-if="!isSiteRunning(row)"
-                        class="size-4 text-green-600"
-                    />
-                    <PowerOff v-else class="size-4 text-destructive" />
-                </Button>
-                <Button
-                    variant="ghost"
-                    size="sm"
-                    @click="openDeleteConfirm(row)"
-                >
-                    <Trash2 class="size-4 text-destructive" />
-                </Button>
-            </template>
-        </ConsoleDataTable>
+            @create="openCreateDialog"
+            @manage="openEditDialog"
+            @details="openDetail"
+            @edit="openEditDialog"
+            @certificate="enableHttps"
+            @toggle="toggleSiteEnabled"
+            @delete="openDeleteConfirm"
+        />
 
         <ConsoleDataTable
             v-else-if="activeTab === 'certificates'"

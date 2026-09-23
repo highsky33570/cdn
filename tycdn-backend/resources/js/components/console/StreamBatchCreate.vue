@@ -13,9 +13,13 @@ import { Input } from '@/components/ui/input';
 import { apiRequest } from '@/lib/apiRequest';
 import { parseStreamBatch } from '@/lib/streamBatch';
 import type { StreamBatchRow } from '@/lib/streamBatch';
-const props = withDefaults(defineProps<{ scope?: 'admin' | 'user' }>(), {
-    scope: 'user',
-});
+const props = withDefaults(
+    defineProps<{ scope?: 'admin' | 'user'; hideTrigger?: boolean }>(),
+    {
+        scope: 'user',
+        hideTrigger: false,
+    },
+);
 const emit = defineEmits<{ updated: [] }>();
 const open = ref(false),
     source = ref(''),
@@ -99,9 +103,15 @@ function show() {
     error.value = '';
     open.value = true;
 }
+defineExpose({ show });
 </script>
 <template>
-    <Button type="button" variant="outline" size="sm" @click="show"
+    <Button
+        v-if="!hideTrigger"
+        type="button"
+        variant="outline"
+        size="sm"
+        @click="show"
         >批量新增</Button
     ><Dialog
         :open="open"
