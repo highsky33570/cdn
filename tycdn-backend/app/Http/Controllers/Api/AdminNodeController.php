@@ -8,6 +8,7 @@ use App\Services\CdnflyApiService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class AdminNodeController extends Controller
 {
@@ -500,13 +501,39 @@ class AdminNodeController extends Controller
             'enable' => ['sometimes', 'integer', 'in:0,1'],
             'sort' => ['sometimes', 'integer', 'min:0'],
             'bw_limit' => ['sometimes', 'nullable', 'string', 'regex:/^\d+(?:\.\d+)?(?:Mbps|Gbps)$/'],
+            'type' => ['sometimes', Rule::in(['L1', 'L2'])],
+            'ip_location' => ['sometimes', 'array:country,province,city,isp,areacode'],
+            'ip_location.*' => ['nullable', 'string', 'max:255'],
+            'traffic_limit' => ['sometimes', 'array:enable,from_day,from_hour,traffic_total,type,excl_nic', 'required_array_keys:enable,from_day,from_hour,traffic_total,type'],
+            'traffic_limit.enable' => ['required_with:traffic_limit', 'boolean'],
+            'traffic_limit.from_day' => ['required_with:traffic_limit', 'integer', 'between:1,31'],
+            'traffic_limit.from_hour' => ['required_with:traffic_limit', 'date_format:H:i:s'],
+            'traffic_limit.traffic_total' => ['required_with:traffic_limit', 'numeric', 'min:0'],
+            'traffic_limit.type' => ['present_with:traffic_limit', 'array'],
+            'traffic_limit.type.*' => ['string', Rule::in(['inbound', 'outbound'])],
+            'traffic_limit.excl_nic' => ['sometimes', 'nullable', 'string', 'max:1000'],
+            'disable_time' => ['sometimes', 'nullable', 'string', 'max:1000', 'regex:/^(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d-(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\s+(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d-(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d)*$/'],
             'target' => ['sometimes', 'in:ip,node'],
             'disable_by' => ['sometimes', 'in:admin'],
             'des' => ['sometimes', 'nullable', 'string', 'max:1000'],
         ]);
-        foreach (['bw_limit', 'des'] as $key) {
+        foreach (['bw_limit', 'des', 'disable_time'] as $key) {
             if (array_key_exists($key, $validated)) {
                 $validated[$key] ??= '';
+            }
+        }
+
+        if (isset($validated['ip_location'])) {
+            $validated['ip_location'] = array_map(fn ($value) => $value ?? '', $validated['ip_location']);
+        }
+        if (isset($validated['traffic_limit'])) {
+            $traffic = &$validated['traffic_limit'];
+            $traffic['enable'] = (bool) $traffic['enable'];
+            $traffic['from_day'] = (int) $traffic['from_day'];
+            $traffic['traffic_total'] = (float) $traffic['traffic_total'];
+            $traffic['excl_nic'] = $traffic['excl_nic'] ?? '';
+            if ($traffic['enable'] && $traffic['type'] === []) {
+                throw ValidationException::withMessages(['traffic_limit.type' => '请选择至少一种流量类型']);
             }
         }
 

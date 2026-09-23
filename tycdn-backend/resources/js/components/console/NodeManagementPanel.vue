@@ -58,6 +58,7 @@ const tabs: { key: Tab; label: string }[] = [
 ];
 const active = ref<Tab>('nodes');
 const logIp = ref<string | null>(null);
+const logNodeId = ref<number | null>(null);
 const filters = reactive({
     search: '',
     region: 'all',
@@ -684,7 +685,10 @@ async function confirmDelete() {
                                     }}</span>
                                     <button
                                         class="ml-1 text-primary"
-                                        @click="logIp = text(row.ip)"
+                                        @click="
+                                            logNodeId = Number(row.id);
+                                            logIp = text(row.ip);
+                                        "
                                     >
                                         [日志]
                                     </button>
@@ -910,7 +914,11 @@ async function confirmDelete() {
                 </select>
             </nav>
         </div>
-        <NodeIpLogsDialog :ip="logIp" @close="logIp = null" />
+        <NodeIpLogsDialog
+            :ip="logIp"
+            :node-id="logNodeId"
+            @close="logIp = null"
+        />
         <ConfirmDeleteDialog
             :open="deleteOpen"
             title="确认删除"

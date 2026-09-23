@@ -17,6 +17,7 @@ import { computed, onMounted, reactive, ref } from 'vue';
 import { toast } from 'vue-sonner';
 import ConfirmDeleteDialog from '@/components/console/ConfirmDeleteDialog.vue';
 import ConsolePageHeader from '@/components/console/ConsolePageHeader.vue';
+import NodeEditDialog from '@/components/console/NodeEditDialog.vue';
 import NodeManagementPanel from '@/components/console/NodeManagementPanel.vue';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
@@ -59,7 +60,6 @@ import {
     listAdminNodes,
     listAdminRegions,
     unassignAdminLines,
-    updateAdminNode,
     updateAdminNodeGroup,
     updateAdminRegion,
 } from '@/lib/adminModulesApi';
@@ -68,7 +68,6 @@ import type {
     AdminLineAssignment,
     AdminNodeGroupPayload,
     AdminNodeInstallCommand,
-    AdminNodePayload,
     AdminPendingNodeInitPayload,
     AdminRegionPayload,
     CdnflyRecord,
@@ -93,11 +92,9 @@ type NodeOption = {
     label: string;
 };
 const installLoading = ref(false);
-const saving = ref(false);
 const initializing = ref(false);
 const referencesLoading = ref(false);
 const installError = ref('');
-const nodeFormError = ref('');
 const initFormError = ref('');
 const referenceError = ref('');
 const deleteConfirmOpen = ref(false);
@@ -115,16 +112,6 @@ const nodeGroups = ref<CdnflyRecord[]>([]);
 const regions = ref<CdnflyRecord[]>([]);
 const installInfo = ref<AdminNodeInstallCommand | null>(null);
 
-const form = reactive({
-    name: '',
-    ip: '',
-    region_id: '',
-    status: '1',
-    weight: '',
-    bandwidth: '',
-    des: '',
-});
-
 const initForm = reactive({
     name: '',
     des: '',
@@ -133,18 +120,6 @@ const initForm = reactive({
 });
 const regionOptions = computed(() => toOptions(regions.value));
 
-/** Region id → its name for the node list (falls back to the id, then "-"). */
-function regionLabel(regionId: unknown): string {
-    const id = asNumber(regionId);
-
-    if (!id) {
-        return '-';
-    }
-
-    const match = regions.value.find((r) => asNumber(r.id) === id);
-
-    return textValue(match?.name) || String(id);
-}
 const installCommand = computed(() => installInfo.value?.command ?? '');
 const installCommandAvailable = computed(() => installCommand.value !== '');
 
@@ -244,16 +219,7 @@ async function openInitDialog(node: CdnflyRecord): Promise<void> {
 }
 
 function openEditDialog(node: CdnflyRecord): void {
-    void loadReferenceData();
     editingNode.value = node;
-    form.name = textValue(node.name);
-    form.ip = textValue(node.ip);
-    form.region_id = idField(node.region_id);
-    form.status = idField(node.enable) || '1';
-    form.weight = idField(node.sort);
-    form.bandwidth = textValue(node.bw_limit);
-    form.des = textValue(node.des ?? node.remark);
-    nodeFormError.value = '';
     nodeDialogOpen.value = true;
 }
 
@@ -303,43 +269,6 @@ async function submitInitNode(): Promise<void> {
     }
 }
 
-async function submitNode(): Promise<void> {
-    const payload = buildPayload();
-
-    if (payload.name.trim() === '' || payload.ip.trim() === '') {
-        nodeFormError.value = '节点名称和 IP 地址不能为空';
-
-        return;
-    }
-
-    saving.value = true;
-    nodeFormError.value = '';
-
-    try {
-        const id = asNumber(editingNode.value?.id);
-
-        if (!id) {
-            nodeFormError.value = '节点 ID 缺失';
-
-            return;
-        }
-
-        await updateAdminNode(id, payload);
-        toast.success('节点已提交更新');
-        nodeDialogOpen.value = false;
-        await loadNodes();
-    } catch (error) {
-        nodeFormError.value = getErrorMessage(error);
-    } finally {
-        saving.value = false;
-    }
-}
-
-// ─── 子IP 管理 ────────────────────────────────────────
-// A node from a DDoS provider ships with a /29 (5 usable IPs). CDNfly does not
-// auto-detect the OS's secondary IPs — each extra IP must be registered as a
-// child record, after which it appears as a 副IP candidate in 线路分配 and the
-// IP-switch can rotate through them under attack.
 const subIpOpen = ref(false);
 const subIpNode = ref<CdnflyRecord | null>(null);
 const subIpRows = ref<CdnflyRecord[]>([]);
@@ -439,19 +368,6 @@ async function removeSubIp(row: CdnflyRecord): Promise<void> {
     } finally {
         subIpDeletingId.value = null;
     }
-}
-
-function buildPayload(): AdminNodePayload {
-    return {
-        name: form.name.trim(),
-        ip: form.ip.trim(),
-        enable: Number(form.status),
-        target: 'node',
-        disable_by: 'admin',
-        sort: nullableNumber(form.weight) ?? 100,
-        bw_limit: form.bandwidth.trim(),
-        des: form.des.trim() === '' ? null : form.des.trim(),
-    };
 }
 
 function toOptions(records: CdnflyRecord[]): NodeOption[] {
@@ -2187,107 +2103,11 @@ function regionNameById(id: unknown): string {
             </DialogScrollContent>
         </Dialog>
 
-        <Dialog v-model:open="nodeDialogOpen">
-            <DialogScrollContent class="sm:max-w-2xl">
-                <DialogHeader>
-                    <DialogTitle>编辑节点</DialogTitle>
-                    <DialogDescription>
-                        修改节点配置，提交后立即生效。
-                    </DialogDescription>
-                </DialogHeader>
-
-                <form class="grid gap-5" @submit.prevent="submitNode">
-                    <Alert v-if="nodeFormError" variant="destructive">
-                        <AlertCircle data-icon="alert" />
-                        <AlertTitle>提交失败</AlertTitle>
-                        <AlertDescription>{{ nodeFormError }}</AlertDescription>
-                    </Alert>
-
-                    <div class="grid gap-4 md:grid-cols-2">
-                        <div class="grid gap-2">
-                            <Label for="node-name">节点名称</Label>
-                            <Input
-                                id="node-name"
-                                v-model="form.name"
-                                autocomplete="off"
-                                required
-                            />
-                        </div>
-                        <div class="grid gap-2">
-                            <Label for="node-ip">IP 地址</Label>
-                            <Input
-                                id="node-ip"
-                                v-model="form.ip"
-                                autocomplete="off"
-                                required
-                            />
-                        </div>
-                        <div class="grid gap-2">
-                            <Label>状态</Label>
-                            <Select v-model="form.status">
-                                <SelectTrigger>
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectGroup>
-                                        <SelectItem value="1">正常</SelectItem>
-                                        <SelectItem value="0">停用</SelectItem>
-                                    </SelectGroup>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        <div class="grid gap-2">
-                            <Label for="node-weight">排序</Label>
-                            <Input
-                                id="node-weight"
-                                v-model="form.weight"
-                                min="0"
-                                type="number"
-                            />
-                        </div>
-                        <div class="grid gap-2">
-                            <Label>区域</Label>
-                            <Input
-                                :model-value="regionLabel(form.region_id)"
-                                disabled
-                            />
-                        </div>
-                        <div class="grid gap-2">
-                            <Label for="node-bandwidth">带宽</Label>
-                            <Input
-                                id="node-bandwidth"
-                                v-model="form.bandwidth"
-                                placeholder="100Mbps / 1Gbps，留空不限速"
-                            />
-                        </div>
-                    </div>
-
-                    <div class="grid gap-2">
-                        <Label for="node-des">备注</Label>
-                        <textarea
-                            id="node-des"
-                            v-model="form.des"
-                            class="min-h-24 w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-xs transition-[color,box-shadow] outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50"
-                        />
-                    </div>
-
-                    <DialogFooter>
-                        <Button
-                            variant="outline"
-                            type="button"
-                            @click="nodeDialogOpen = false"
-                        >
-                            取消
-                        </Button>
-                        <Button :disabled="saving" type="submit">
-                            <Spinner v-if="saving" data-icon="inline-start" />
-                            <Save v-else data-icon="inline-start" />
-                            保存
-                        </Button>
-                    </DialogFooter>
-                </form>
-            </DialogScrollContent>
-        </Dialog>
+        <NodeEditDialog
+            v-model:open="nodeDialogOpen"
+            :node="editingNode"
+            @saved="loadNodes"
+        />
 
         <!-- ─── Node Group Dialog ─── -->
         <Dialog v-model:open="ngDialogOpen">

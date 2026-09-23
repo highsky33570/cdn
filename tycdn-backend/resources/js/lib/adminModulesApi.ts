@@ -20,6 +20,17 @@ export type AdminNodePayload = {
     enable?: number;
     sort?: number;
     bw_limit?: string;
+    type?: 'L1' | 'L2';
+    ip_location?: Record<string, string>;
+    traffic_limit?: {
+        enable: boolean;
+        from_day: number;
+        from_hour: string;
+        traffic_total: number;
+        type: string[];
+        excl_nic: string;
+    };
+    disable_time?: string;
     target?: 'ip' | 'node';
     disable_by?: 'admin';
     des?: string | null;
