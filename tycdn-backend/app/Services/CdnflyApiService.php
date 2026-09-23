@@ -649,6 +649,40 @@ class CdnflyApiService
         ]);
     }
 
+    public function getDnsRepairStatus(): array
+    {
+        if (! $this->outboundEnabled()) {
+            return ['available' => false];
+        }
+
+        $payload = $this->parseResponse(
+            $this->adminHttp()->get('/v1/configs/global-0-system-record_repair'),
+            'get dns repair status',
+        );
+        $row = $payload['data'] ?? $payload;
+        if (array_is_list($row)) {
+            $row = $row[0] ?? [];
+        }
+
+        return [
+            'available' => true,
+            'state' => $row['state'] ?? null,
+            'ret' => $row['ret'] ?? null,
+            'task_id' => $row['task_id'] ?? null,
+        ];
+    }
+
+    public function repairDnsRecords(int $mode): array
+    {
+        return $this->upsertConfig([
+            'scope_name' => 'global',
+            'scope_id' => 0,
+            'type' => 'system',
+            'name' => 'record_repair',
+            'value' => $mode,
+        ]);
+    }
+
     public function updateLine(int $id, array $data): array
     {
         $this->ensureOutboundEnabled('update line');

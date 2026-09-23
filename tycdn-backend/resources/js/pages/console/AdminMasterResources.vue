@@ -39,9 +39,10 @@ const open = ref(false),
     saving = ref(false),
     error = ref('');
 const fields = computed(() =>
-    !editingId.value && definition.value.createFields
+    (!editingId.value && definition.value.createFields
         ? definition.value.createFields
-        : (definition.value.fields ?? []),
+        : (definition.value.fields ?? [])
+    ).filter((field) => !l2ConfigFilter || field.key !== 'l2_config_id'),
 );
 const recent = ref('1h');
 const detail = ref<CdnflyRecord | null>(null);
@@ -51,10 +52,21 @@ const nodeFilter =
     typeof window !== 'undefined'
         ? new URLSearchParams(window.location.search).get('node_id')
         : null;
+const requestedL2Config =
+    typeof window !== 'undefined'
+        ? new URLSearchParams(window.location.search).get('l2_config_id')
+        : null;
+const l2ConfigFilter =
+    props.resource === 'l2-nodes' &&
+    requestedL2Config &&
+    /^[1-9]\d*$/.test(requestedL2Config)
+        ? Number(requestedL2Config)
+        : null;
 const params = computed<Record<string, string | number>>(() => {
     const query: Record<string, string | number> = {
         ...definition.value.params,
         ...(nodeFilter ? { node_id: nodeFilter } : {}),
+        ...(l2ConfigFilter ? { l2_config_id: l2ConfigFilter } : {}),
     };
 
     if (usesTimeRange.value) {
@@ -93,6 +105,11 @@ async function edit(row?: CdnflyRecord) {
                 : (row ?? definition.value.defaults ?? {});
         original.value = configRecord(record ?? {});
         draft.value = JSON.parse(JSON.stringify(original.value));
+
+        if (!row && l2ConfigFilter) {
+            draft.value.l2_config_id = l2ConfigFilter;
+        }
+
         open.value = true;
     } catch (e) {
         toast.error(e instanceof Error ? e.message : '加载失败');
@@ -137,6 +154,10 @@ async function save() {
 
     // CDNfly creates L2 node bindings as a collection; single edits use the ID endpoint.
     if (props.resource === 'l2-nodes' && !editingId.value) {
+        if (l2ConfigFilter) {
+            payload.l2_config_id = l2ConfigFilter;
+        }
+
         payload = [payload];
     }
 

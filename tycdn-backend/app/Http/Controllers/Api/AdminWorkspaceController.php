@@ -53,6 +53,7 @@ class AdminWorkspaceController extends Controller
         'node-realtime' => ['/v1/monitor/node/realtime', ['GET']],
         'node-top' => ['/v1/monitor/node/top', ['GET']],
         'node-ip-log' => ['/v1/monitor/node/ip-log', ['GET']],
+        'ip-switch' => ['/v1/log/ip-switch', ['GET']],
         'node-traffic' => ['/v1/node-traffic', ['GET']],
         'package-monitor' => ['/v1/monitor/user-package', ['GET']],
         'package-nodes' => ['/v1/monitor/user-package/nodes', ['GET']],

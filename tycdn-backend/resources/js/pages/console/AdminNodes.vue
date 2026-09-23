@@ -157,7 +157,7 @@ onMounted(() => {
         await Promise.all([
             loadReferenceData(),
             loadRegions(),
-            loadNodeGroups(),
+            ...(props.resolutionOnly ? [] : [loadNodeGroups()]),
             loadDnsLines(),
         ]);
 
@@ -166,9 +166,10 @@ onMounted(() => {
 
             if (firstId) {
                 lineGroupId.value = String(firstId);
-                await onLineGroupChange();
             }
         }
+
+        await onLineGroupChange();
     })();
 });
 
@@ -682,9 +683,16 @@ const ngSaving = ref(false);
 const ngFormError = ref('');
 type NodeTab = 'nodes' | 'topology';
 
-const props = withDefaults(defineProps<{ initialTab?: NodeTab }>(), {
-    initialTab: 'nodes',
-});
+const props = withDefaults(
+    defineProps<{
+        initialTab?: NodeTab;
+        resolutionOnly?: boolean;
+        initialGroupId?: string;
+    }>(),
+    {
+        initialTab: 'nodes',
+    },
+);
 const activeTab = ref<NodeTab>(props.initialTab);
 
 // The install command is a once-per-node action, not something worth a
@@ -905,7 +913,7 @@ const lineLoading = ref(false);
 const lineError = ref('');
 const dnsLines = ref<AdminDnsLine[]>([]);
 
-const lineGroupId = ref<string>('');
+const lineGroupId = ref<string>(props.initialGroupId ?? '');
 const lineDnsId = ref<string>('');
 
 /** Candidate nodes, one row per IP (sub-ip=1). */
@@ -1285,7 +1293,7 @@ function regionNameById(id: unknown): string {
 <template>
     <div class="flex flex-1 flex-col gap-6 p-4 md:p-6">
         <ConsolePageHeader
-            v-if="activeTab === 'topology'"
+            v-if="activeTab === 'topology' && !resolutionOnly"
             title="线路分组"
             :icon="Server"
             :show-api-badge="false"
@@ -1305,7 +1313,7 @@ function regionNameById(id: unknown): string {
 
         <template v-if="activeTab === 'topology'">
             <!-- ─── 节点组管理 (CRUD) ─── -->
-            <Card>
+            <Card v-if="!resolutionOnly">
                 <CardHeader
                     class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between"
                 >
@@ -1470,7 +1478,7 @@ function regionNameById(id: unknown): string {
             </Card>
 
             <!-- ─── 区域管理 (CRUD) ─── -->
-            <Card>
+            <Card v-if="!resolutionOnly">
                 <CardHeader
                     class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between"
                 >
@@ -1645,6 +1653,7 @@ function regionNameById(id: unknown): string {
                     <CardTitle class="text-base">线路分配</CardTitle>
                     <div class="flex flex-wrap items-center gap-2">
                         <Select
+                            v-if="!resolutionOnly"
                             v-model="lineGroupId"
                             @update:model-value="onLineGroupChange"
                         >

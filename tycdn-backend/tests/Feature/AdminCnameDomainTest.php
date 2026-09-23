@@ -43,6 +43,13 @@ class AdminCnameDomainTest extends TestCase
         $this->assertSame(['domain' => 'cdn.tycdn.org', 'des' => '主线路'], $received);
     }
 
+    public function test_editing_can_clear_a_description(): void
+    {
+        $cdnfly = $this->mock(CdnflyApiService::class);
+        $cdnfly->shouldReceive('updateCnameDomain')->once()->with(7, ['domain' => 'example.com', 'des' => ''])->andReturn(['code' => 0]);
+        $this->actingAs($this->admin())->putJson('/api/admin/cname-domains/7', ['domain' => 'example.com', 'des' => ''])->assertOk();
+    }
+
     public function test_the_domain_is_required(): void
     {
         $this->actingAs($this->admin())

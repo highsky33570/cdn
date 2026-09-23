@@ -457,7 +457,7 @@ class AdminNodeController extends Controller
             'v4_cname_hostname' => ['sometimes', 'nullable', 'string', 'max:255'],
             'sort' => ['sometimes', 'nullable', 'integer', 'min:0'],
             'l2_config_id' => ['sometimes', 'nullable', 'integer', 'min:1'],
-            'backup_switch_type' => ['sometimes', 'nullable', 'string', Rule::in(['master_down', 'interval'])],
+            'backup_switch_type' => ['sometimes', 'nullable', 'string', Rule::in(['master_down', 'gt_online_ip', 'interval'])],
             // An object, e.g. {"ip_num":2,"interval":60,"switch_order":"rand"}.
             // CDNfly rejects a JSON string here ("数据类型错误") — it must be a map,
             // matching what the master panel's node-group edit submits.
@@ -477,6 +477,16 @@ class AdminNodeController extends Controller
         // The create endpoint has no such field; only the edit endpoint takes it.
         if ($creating) {
             unset($payload['backup_switch_policy'], $payload['v4_cname_hostname']);
+        } else {
+            // An explicitly cleared field must reach the master on edit.
+            foreach (['des', 'cname_hostname', 'v4_cname_hostname'] as $key) {
+                if (array_key_exists($key, $validated)) {
+                    $payload[$key] = $validated[$key] ?? '';
+                }
+            }
+            if (array_key_exists('l2_config_id', $validated) && $validated['l2_config_id'] === null) {
+                $payload['l2_config_id'] = null;
+            }
         }
 
         return $payload;

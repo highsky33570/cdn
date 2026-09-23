@@ -1,192 +1,584 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
-import ConsoleDataTable from '@/components/console/ConsoleDataTable.vue';
-import ConsoleTabs from '@/components/console/ConsoleTabs.vue';
-import MetricChart from '@/components/console/MetricChart.vue';
+import { RefreshCw } from 'lucide-vue-next';
+import { computed, onMounted, onUnmounted, reactive, ref } from 'vue';
+import NodeMetricChart from '@/components/console/NodeMetricChart.vue';
 import { Button } from '@/components/ui/button';
 import { apiRequest } from '@/lib/apiRequest';
 import { extractCdnflyRows } from '@/lib/cdnflyResponse';
 import { masterGet } from '@/lib/masterApi';
-import { monitorSeries } from '@/lib/monitorSeries';
-import type { MonitorSeries } from '@/lib/monitorSeries';
+import {
+    nodeCharts,
+    nodeDate,
+    nodeTraffic,
+    nodeValue,
+} from '@/lib/nodeRealtime';
+import type { NodeChart, NodeMetric, NodeUnit } from '@/lib/nodeRealtime';
 import type { CdnflyRecord } from '@/lib/sharedTypes';
-const tab = ref('realtime'),
+type Tab = 'top' | 'realtime' | 'traffic';
+const tab = ref<Tab>('top'),
     node = ref(''),
-    metric = ref('bandwidth'),
-    hours = ref('1');
-const nodes = ref<CdnflyRecord[]>([]),
-    series = ref<MonitorSeries[]>([]),
-    error = ref(''),
-    loading = ref(false);
-const tabs = [
+    nodes = ref<CdnflyRecord[]>([]);
+const metrics: { key: NodeMetric; label: string }[] = [
+    { key: 'bandwidth', label: '带宽' },
+    { key: 'tcp_conn', label: '连接' },
+    { key: 'sys_load', label: '负载' },
+    { key: 'disk_usage', label: '硬盘' },
+];
+const tabs: { key: Tab; label: string }[] = [
     { key: 'top', label: '资源排行' },
     { key: 'realtime', label: '监控指标' },
     { key: 'traffic', label: '节点流量' },
 ];
-const metrics = {
-    bandwidth: '带宽',
-    tcp_conn: 'TCP 连接数',
-    sys_load: '系统负载',
-    disk_usage: '磁盘使用率',
-};
-const topParams = computed(() => ({ type: metric.value, recent_time: '5m' }));
-const topColumns = computed(() => [
-    {
-        key: 'node_id',
-        label: '节点',
-        format: (value: unknown) => {
-            const name = nodes.value.find(
-                (row) => String(row.id) === String(value),
-            )?.name;
-
-            return name ? `${name} · #${value}` : String(value ?? '—');
-        },
+const settings = reactive({
+    top: { metric: 'bandwidth' as NodeMetric, period: '1m' },
+    realtime: {
+        metric: 'bandwidth' as NodeMetric,
+        period: '1',
+        start: '',
+        end: '',
     },
-    ...Object.entries(
+    traffic: { period: '24', start: '', end: '' },
+});
+const outbound = ref(true),
+    inbound = ref(false),
+    exclude = ref('');
+const loading = ref(false),
+    error = ref(''),
+    nodesError = ref(''),
+    rows = ref<CdnflyRecord[]>([]),
+    charts = ref<NodeChart[]>([]),
+    total = ref(0);
+const range = ref({
+    start: nodeDate(new Date(Date.now() - 3600000)),
+    end: nodeDate(new Date()),
+});
+const sort = ref({ key: '', descending: true });
+let request = 0;
+onUnmounted(() => {
+    request++;
+});
+const metric = computed(() =>
+    tab.value === 'top' ? settings.top.metric : settings.realtime.metric,
+);
+const current = computed(() => settings[tab.value]);
+const custom = computed(() =>
+    tab.value === 'traffic' ? settings.traffic : settings.realtime,
+);
+const periods = computed(() =>
+    tab.value === 'top'
+        ? [
+              ['1m', '1分钟'],
+              ['5m', '5分钟'],
+              ['30m', '30分钟'],
+              ['60m', '1小时'],
+          ]
+        : tab.value === 'realtime'
+          ? [
+                ['1', '1小时'],
+                ['6', '6小时'],
+                ['12', '12小时'],
+                ['custom', '自定义'],
+            ]
+          : [
+                ['24', '1天'],
+                ['168', '7天'],
+                ['720', '30天'],
+                ['custom', '自定义'],
+            ],
+);
+const columns = computed<{ key: string; label: string; unit?: NodeUnit }[]>(
+    () =>
         (
-            {
-                bandwidth: {
-                    nic: '网卡',
-                    outbound: '出站带宽（bps）',
-                    inbound: '入站带宽（bps）',
-                },
-                tcp_conn: { conn: '连接数' },
-                sys_load: { cpu: 'CPU（%）', mem: '内存（%）', load: '负载' },
-                disk_usage: {
-                    path: '分区',
-                    space: '空间使用率（%）',
-                    inode: 'inode 使用率（%）',
-                },
-            } as Record<string, Record<string, string>>
+            ({
+                bandwidth: [
+                    { key: 'nic', label: '网卡' },
+                    { key: 'outbound', label: '出站带宽', unit: 'bps' },
+                    { key: 'inbound', label: '入站带宽', unit: 'bps' },
+                ],
+                tcp_conn: [{ key: 'conn', label: '连接数', unit: 'count' }],
+                sys_load: [
+                    { key: 'cpu', label: 'CPU使用率', unit: '%' },
+                    { key: 'mem', label: '内存使用率', unit: '%' },
+                    { key: 'load', label: '系统负载', unit: 'load' },
+                ],
+                disk_usage: [
+                    { key: 'path', label: '分区' },
+                    { key: 'space', label: '空间使用率', unit: '%' },
+                    { key: 'inode', label: 'inode使用率', unit: '%' },
+                ],
+            }) as Record<
+                NodeMetric,
+                { key: string; label: string; unit?: NodeUnit }[]
+            >
         )[metric.value],
-    ).map(([key, label]) => ({ key, label })),
-]);
-const top = (params: Record<string, string | number>) =>
-    masterGet('node-top', params);
-const date = (d: Date) =>
-    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}:${String(d.getSeconds()).padStart(2, '0')}`;
-async function load() {
-    if (!node.value || tab.value === 'top') {
+);
+const ranked = computed(() =>
+    sort.value.key
+        ? [...rows.value].sort(
+              (a, b) =>
+                  (Number(a[sort.value.key] ?? 0) -
+                      Number(b[sort.value.key] ?? 0)) *
+                  (sort.value.descending ? -1 : 1),
+          )
+        : rows.value,
+);
+const nodeName = (row: CdnflyRecord) =>
+    `${row.node_name ?? nodes.value.find((item) => String(item.id) === String(row.node_id))?.name ?? '节点'} (${row.node_id ?? '—'})`;
+function formatCell(value: unknown, unit?: NodeUnit) {
+    if (!unit) {
+        return String(value ?? '—');
+    }
+
+    return value !== null &&
+        value !== undefined &&
+        Number.isFinite(Number(value))
+        ? nodeValue(Number(value), unit, 1)
+        : '—';
+}
+function sortBy(key: string) {
+    sort.value = {
+        key,
+        descending: sort.value.key === key ? !sort.value.descending : true,
+    };
+}
+function selectTab(value: Tab) {
+    tab.value = value;
+    void load();
+}
+function selectMetric(value: NodeMetric) {
+    if (tab.value === 'traffic') {
         return;
     }
 
-    loading.value = true;
-    error.value = '';
-
-    try {
-        const end = new Date(),
-            start = new Date(end.getTime() - Number(hours.value) * 3600000);
-        series.value = monitorSeries(
-            await masterGet(
-                tab.value === 'traffic' ? 'node-traffic' : 'node-realtime',
-                {
-                    node: node.value,
-                    start: date(start),
-                    end: date(end),
-                    ...(tab.value === 'traffic' ? {} : { type: metric.value }),
-                },
-            ),
-        );
-    } catch (e) {
-        series.value = [];
-        error.value = e instanceof Error ? e.message : '加载失败';
-    } finally {
-        loading.value = false;
-    }
+    settings[tab.value].metric = value;
+    sort.value.key = '';
+    void load();
 }
-onMounted(async () => {
+function selectPeriod(value: string) {
+    current.value.period = value;
+
+    if (value === 'custom' && !custom.value.start) {
+        custom.value.start = range.value.start.replace(' ', 'T');
+        custom.value.end = range.value.end.replace(' ', 'T');
+    }
+
+    void load();
+}
+async function loadNodes() {
+    nodesError.value = '';
+
     try {
         nodes.value = extractCdnflyRows(
             await apiRequest('/api/admin/nodes?limit=0'),
         );
-        const selected = new URLSearchParams(window.location.search).get(
-            'node_id',
-        );
+        const selected =
+            node.value ||
+            new URLSearchParams(window.location.search).get('node_id');
         node.value = String(
             nodes.value.find((item) => String(item.id) === selected)?.id ??
                 nodes.value[0]?.id ??
                 '',
         );
-        await load();
     } catch (e) {
-        error.value = e instanceof Error ? e.message : '节点加载失败';
+        nodesError.value = e instanceof Error ? e.message : '节点加载失败';
+    }
+}
+async function retryNodes() {
+    await loadNodes();
+    await load();
+}
+async function load() {
+    const id = ++request,
+        active = tab.value;
+    error.value = '';
+    rows.value = [];
+    charts.value = [];
+    total.value = 0;
+    loading.value = false;
+
+    if (active !== 'top' && !node.value) {
+        return;
+    }
+
+    if (active === 'traffic' && !outbound.value && !inbound.value) {
+        error.value = '请选择至少一种流量类型';
+
+        return;
+    }
+
+    let query: Record<string, string>;
+
+    if (active === 'top') {
+        query = { type: settings.top.metric, recent_time: settings.top.period };
+    } else {
+        const config = settings[active],
+            end =
+                config.period === 'custom' ? new Date(config.end) : new Date();
+        const start =
+            config.period === 'custom'
+                ? new Date(config.start)
+                : new Date(end.getTime() - Number(config.period) * 3600000);
+
+        if (
+            !Number.isFinite(start.getTime()) ||
+            !Number.isFinite(end.getTime()) ||
+            start >= end
+        ) {
+            error.value = '请选择有效的开始和结束时间';
+
+            return;
+        }
+
+        range.value = { start: nodeDate(start), end: nodeDate(end) };
+        query = {
+            node: node.value,
+            ...range.value,
+            ...(active === 'traffic'
+                ? { excl_nic: exclude.value.trim() }
+                : { type: settings.realtime.metric }),
+        };
+    }
+
+    loading.value = true;
+
+    try {
+        const payload = await masterGet(
+            active === 'top'
+                ? 'node-top'
+                : active === 'traffic'
+                  ? 'node-traffic'
+                  : 'node-realtime',
+            query,
+        );
+
+        if (id !== request) {
+            return;
+        }
+
+        if (active === 'top') {
+            rows.value = extractCdnflyRows(payload);
+        } else if (active === 'traffic') {
+            const result = nodeTraffic(payload, outbound.value, inbound.value);
+            charts.value = [result.chart];
+            total.value = result.total;
+        } else {
+            charts.value = nodeCharts(payload, settings.realtime.metric);
+        }
+    } catch (e) {
+        if (id === request) {
+            error.value = e instanceof Error ? e.message : '加载失败';
+        }
+    } finally {
+        if (id === request) {
+            loading.value = false;
+        }
+    }
+}
+onMounted(async () => {
+    const selected = new URLSearchParams(window.location.search).get('node_id');
+
+    if (selected) {
+        tab.value = 'realtime';
+    }
+
+    await Promise.allSettled([
+        loadNodes(),
+        selected ? Promise.resolve() : load(),
+    ]);
+
+    if (tab.value !== 'top') {
+        await load();
     }
 });
 </script>
 <template>
-    <div class="grid gap-5 p-4 md:p-6">
-        <ConsoleTabs v-model="tab" :tabs="tabs" @update:model-value="load" />
-        <div class="flex flex-wrap gap-3 rounded-xl border bg-card p-4">
-            <select
-                v-if="tab !== 'traffic'"
-                v-model="metric"
-                class="h-9 rounded-md border bg-background px-3"
-                aria-label="监控指标"
-                @change="load"
+    <div class="p-3 md:p-5">
+        <section
+            class="node-monitoring min-w-0 rounded-xl border bg-card p-4 shadow-sm md:p-5"
+        >
+            <h2 class="mb-3 text-lg font-semibold">节点实时监控</h2>
+            <div
+                role="tablist"
+                aria-label="节点实时监控"
+                class="mb-4 flex flex-wrap gap-1"
             >
-                <option v-for="(label, key) in metrics" :key="key" :value="key">
-                    {{ label }}
-                </option></select
-            ><select
-                v-if="tab !== 'top'"
-                v-model="node"
-                aria-label="选择节点"
-                class="h-9 rounded-md border bg-background px-3"
-                @change="load"
-            >
-                <option
-                    v-for="item in nodes"
-                    :key="String(item.id)"
-                    :value="String(item.id)"
+                <button
+                    v-for="item in tabs"
+                    :key="item.key"
+                    role="tab"
+                    :aria-selected="tab === item.key"
+                    :aria-controls="`node-${item.key}`"
+                    class="rounded-md px-4 py-2 text-sm"
+                    :class="
+                        tab === item.key
+                            ? 'bg-[#2d8cf0]/10 font-medium text-[#2d8cf0]'
+                            : 'text-muted-foreground'
+                    "
+                    @click="selectTab(item.key)"
                 >
-                    {{ item.name ?? item.id }}
-                </option></select
-            ><select
-                v-if="tab !== 'top'"
-                v-model="hours"
-                aria-label="时间范围"
-                class="h-9 rounded-md border bg-background px-3"
-                @change="load"
+                    {{ item.label }}
+                </button>
+            </div>
+            <div
+                class="toolbar mb-4 flex flex-wrap items-center gap-x-8 gap-y-3 rounded-md border bg-muted/20 px-3 py-3 md:px-7"
             >
-                <option value="1">近一小时</option>
-                <option value="6">近六小时</option>
-                <option value="24">近一天</option>
-                <option value="168">近七天</option></select
-            ><Button
-                v-if="tab !== 'top'"
-                variant="outline"
-                :disabled="loading"
-                @click="load"
-                >刷新</Button
-            >
-        </div>
-        <p v-if="error" class="text-sm text-destructive" role="alert">
-            {{ error }}
-        </p>
-        <ConsoleDataTable
-            v-if="tab === 'top'"
-            title="节点资源排行"
-            :fetch-fn="top"
-            :search-params="topParams"
-            :columns="topColumns"
-            client-side
-        /><template v-else
-            ><p v-if="loading" class="p-10 text-center text-muted-foreground">
-                加载中…
-            </p>
-            <div v-else-if="series.length" class="grid gap-5 xl:grid-cols-2">
-                <MetricChart
-                    v-for="(item, index) in series"
-                    :key="index"
-                    :series="item"
-                />
+                <div v-if="tab !== 'traffic'" class="flex items-center gap-3">
+                    <span>指标</span>
+                    <div class="segments" role="group" aria-label="指标">
+                        <button
+                            v-for="item in metrics"
+                            :key="item.key"
+                            :aria-pressed="metric === item.key"
+                            @click="selectMetric(item.key)"
+                        >
+                            {{ item.label }}
+                        </button>
+                    </div>
+                </div>
+                <div v-else class="flex items-center gap-3">
+                    <span>类型</span
+                    ><label class="flex items-center gap-1"
+                        ><input
+                            v-model="outbound"
+                            type="checkbox"
+                            class="accent-[#2d8cf0]"
+                            @change="load"
+                        />出站流量</label
+                    ><label class="flex items-center gap-1"
+                        ><input
+                            v-model="inbound"
+                            type="checkbox"
+                            class="accent-[#2d8cf0]"
+                            @change="load"
+                        />入站流量</label
+                    >
+                </div>
+                <div class="flex items-center gap-3">
+                    <span>时间</span>
+                    <div class="segments" role="group" aria-label="时间">
+                        <button
+                            v-for="[value, label] in periods"
+                            :key="value"
+                            :aria-pressed="current.period === value"
+                            @click="selectPeriod(value)"
+                        >
+                            {{ label }}
+                        </button>
+                    </div>
+                </div>
+                <label v-if="tab !== 'top'" class="flex items-center gap-3"
+                    >节点<select
+                        v-model="node"
+                        aria-label="节点"
+                        class="h-8 w-[200px] max-w-full rounded border bg-card px-2"
+                        @change="load"
+                    >
+                        <option v-if="!nodes.length" value="">暂无节点</option>
+                        <option
+                            v-for="item in nodes"
+                            :key="String(item.id)"
+                            :value="String(item.id)"
+                        >
+                            {{ item.name ?? item.id }}
+                        </option>
+                    </select></label
+                >
+                <label v-if="tab === 'traffic'" class="flex items-center gap-3"
+                    >排除网卡<input
+                        v-model="exclude"
+                        aria-label="排除网卡"
+                        class="h-8 w-[190px] rounded border bg-card px-2"
+                        placeholder="排除网卡，多个网卡用空格分隔"
+                        @keyup.enter="load"
+                /></label>
+                <Button
+                    size="sm"
+                    class="h-8 bg-[#2d8cf0] px-4 text-white hover:bg-[#57a3f3]"
+                    :disabled="loading"
+                    @click="load"
+                    ><RefreshCw
+                        class="mr-1 size-3"
+                        :class="{ 'animate-spin': loading }"
+                    />刷新</Button
+                >
+                <div
+                    v-if="tab !== 'top' && current.period === 'custom'"
+                    class="flex w-full flex-wrap items-center gap-3"
+                >
+                    <label
+                        >开始时间
+                        <input
+                            v-model="custom.start"
+                            type="datetime-local"
+                            aria-label="开始时间"
+                            class="rounded border bg-card p-1"
+                            @change="load" /></label
+                    ><label
+                        >结束时间
+                        <input
+                            v-model="custom.end"
+                            type="datetime-local"
+                            aria-label="结束时间"
+                            class="rounded border bg-card p-1"
+                            @change="load"
+                    /></label>
+                </div>
             </div>
             <p
-                v-else-if="!error"
-                class="rounded-xl border bg-card p-12 text-center text-muted-foreground"
+                v-if="nodesError"
+                role="alert"
+                class="mb-3 text-sm text-destructive"
             >
-                {{ nodes.length ? '所选时段暂无监测样本' : '暂无节点' }}
-            </p></template
-        >
+                {{ nodesError }}
+                <button class="underline" @click="retryNodes">
+                    重试加载节点
+                </button>
+            </p>
+            <div :id="`node-${tab}`" role="tabpanel" :aria-busy="loading">
+                <p
+                    v-if="error"
+                    role="alert"
+                    class="p-6 text-center text-sm text-destructive"
+                >
+                    {{ error }}
+                    <button class="underline" @click="load">重试</button>
+                </p>
+                <div v-if="tab === 'top'" class="overflow-x-auto">
+                    <table class="w-full min-w-[620px] text-left text-xs">
+                        <thead class="bg-muted/20">
+                            <tr>
+                                <th>排行</th>
+                                <th>节点</th>
+                                <th
+                                    v-for="column in columns"
+                                    :key="column.key"
+                                    :aria-sort="
+                                        sort.key === column.key
+                                            ? sort.descending
+                                                ? 'descending'
+                                                : 'ascending'
+                                            : undefined
+                                    "
+                                >
+                                    <button
+                                        v-if="column.unit"
+                                        class="flex items-center gap-1"
+                                        @click="sortBy(column.key)"
+                                    >
+                                        {{ column.label }}
+                                        <span class="text-muted-foreground">{{
+                                            sort.key === column.key
+                                                ? sort.descending
+                                                    ? '↓'
+                                                    : '↑'
+                                                : '↕'
+                                        }}</span></button
+                                    ><span v-else>{{ column.label }}</span>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-if="loading || !ranked.length">
+                                <td
+                                    :colspan="columns.length + 2"
+                                    class="text-center text-muted-foreground"
+                                >
+                                    {{
+                                        loading
+                                            ? '加载中…'
+                                            : error
+                                              ? '数据加载失败'
+                                              : '暂无数据'
+                                    }}
+                                </td>
+                            </tr>
+                            <tr
+                                v-for="(row, index) in ranked"
+                                v-else
+                                :key="`${row.node_id}-${row.nic ?? row.path ?? index}`"
+                            >
+                                <td>{{ index + 1 }}</td>
+                                <td>{{ nodeName(row) }}</td>
+                                <td v-for="column in columns" :key="column.key">
+                                    {{
+                                        formatCell(row[column.key], column.unit)
+                                    }}
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <template v-else>
+                    <p
+                        v-if="loading"
+                        class="p-12 text-center text-sm text-muted-foreground"
+                    >
+                        加载中…
+                    </p>
+                    <template v-else-if="!error">
+                        <p
+                            v-if="tab === 'traffic' && charts.length"
+                            class="mb-3 inline-block rounded-full border px-3 py-1 text-xs font-semibold"
+                        >
+                            总流量: {{ nodeValue(total, 'MB') }}
+                        </p>
+                        <div class="grid min-w-0 gap-3">
+                            <NodeMetricChart
+                                v-for="chart in charts"
+                                :key="chart.title"
+                                :chart="chart"
+                                :range="range"
+                            />
+                        </div>
+                        <p
+                            v-if="!charts.length"
+                            class="p-12 text-center text-sm text-muted-foreground"
+                        >
+                            {{ nodes.length ? '暂无数据' : '暂无节点' }}
+                        </p>
+                    </template>
+                </template>
+            </div>
+        </section>
     </div>
 </template>
+<style scoped>
+.toolbar {
+    font-size: 12px;
+}
+.segments {
+    display: inline-flex;
+}
+.segments button {
+    border: 1px solid var(--border);
+    background: var(--card);
+    padding: 5px 13px;
+    white-space: nowrap;
+}
+.segments button + button {
+    margin-left: -1px;
+}
+.segments button:first-child {
+    border-radius: 4px 0 0 4px;
+}
+.segments button:last-child {
+    border-radius: 0 4px 4px 0;
+}
+.segments button[aria-pressed='true'] {
+    position: relative;
+    border-color: #2d8cf0;
+    color: #2d8cf0;
+    background: color-mix(in srgb, #2d8cf0 4%, var(--card));
+}
+th {
+    padding: 10px;
+    font-weight: 500;
+}
+td {
+    padding: 15px 10px;
+}
+th,
+td {
+    border-bottom: 1px solid var(--border);
+}
+</style>

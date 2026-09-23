@@ -181,6 +181,8 @@ Route::middleware(['auth:sanctum', 'verified', 'admin', 'throttle:admin-api'])->
     // 全局 DNS 设置：主控口中的「请先设置DNS」，与上面的 DNS API 凭据无关
     Route::get('/dns-setting', [AdminDnsController::class, 'dnsSettingShow']);
     Route::put('/dns-setting', [AdminDnsController::class, 'dnsSettingUpdate'])->middleware('throttle:admin-write-20');
+    Route::get('/dns-setting/status', [AdminDnsController::class, 'dnsStatus']);
+    Route::post('/dns-setting/repair', [AdminDnsController::class, 'dnsRepair'])->middleware('throttle:admin-write-20');
     // CNAME 域名：主控在生成 DNS 线路前要求至少存在一个
     Route::get('/cname-domains', [AdminDnsController::class, 'cnameIndex']);
     Route::post('/cname-domains', [AdminDnsController::class, 'cnameStore'])->middleware('throttle:admin-write-20');

@@ -290,6 +290,35 @@ class AdminNodeGroupCrudTest extends TestCase
         $this->assertSame(7, $received['l2_config_id']);
     }
 
+    public function test_editing_can_clear_optional_fields_and_preserve_zero_sort(): void
+    {
+        $this->mock(CdnflyApiService::class)
+            ->shouldReceive('updateNodeGroup')->once()->with(3, [
+                'sort' => 0,
+                'des' => '',
+                'cname_hostname' => '',
+                'v4_cname_hostname' => '',
+                'l2_config_id' => null,
+            ])->andReturn(['code' => 0]);
+
+        $this->actingAs($this->admin())->putJson('/api/admin/node-groups/3', [
+            'sort' => '0', 'des' => '', 'cname_hostname' => '',
+            'v4_cname_hostname' => '', 'l2_config_id' => null,
+        ])->assertOk();
+    }
+
+    public function test_master_online_ip_failover_mode_is_supported(): void
+    {
+        $this->mock(CdnflyApiService::class)
+            ->shouldReceive('updateNodeGroup')->once()
+            ->with(3, ['backup_switch_type' => 'gt_online_ip'])
+            ->andReturn(['code' => 0]);
+
+        $this->actingAs($this->admin())->putJson('/api/admin/node-groups/3', [
+            'backup_switch_type' => 'gt_online_ip',
+        ])->assertOk();
+    }
+
     private function admin(): User
     {
         return User::factory()->create(['role' => 'admin']);

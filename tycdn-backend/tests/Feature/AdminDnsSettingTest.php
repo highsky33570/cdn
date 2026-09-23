@@ -211,6 +211,56 @@ class AdminDnsSettingTest extends TestCase
             ->assertForbidden();
     }
 
+    public function test_dns_status_reads_the_repair_task_result(): void
+    {
+        $this->fakeCdnfly();
+        Http::fake([
+            'https://panel.example.test/v1/configs/global-0-system-record_repair' => Http::response([
+                'code' => 0, 'data' => ['state' => 'failed', 'ret' => 'Provider rejected request', 'task_id' => 9],
+            ]),
+        ]);
+        $this->actingAs($this->admin())->getJson('/api/admin/dns-setting/status')
+            ->assertOk()->assertJsonPath('data.available', true)
+            ->assertJsonPath('data.state', 'failed')->assertJsonPath('data.ret', 'Provider rejected request');
+    }
+
+    public function test_repair_and_cleanup_use_the_native_config_commands(): void
+    {
+        $this->fakeCdnfly();
+        Http::fake(['https://panel.example.test/v1/configs' => Http::response(['code' => 0])]);
+        $admin = $this->admin();
+        foreach ([1, 2] as $mode) {
+            $this->actingAs($admin)->postJson('/api/admin/dns-setting/repair', ['mode' => $mode])->assertOk();
+            Http::assertSent(fn ($request) => $request->method() === 'PUT'
+                && $request['name'] === 'record_repair' && $request['value'] === $mode
+                && $request['scope_name'] === 'global' && $request['scope_id'] === 0 && $request['type'] === 'system');
+        }
+        Http::assertSentCount(2);
+    }
+
+    public function test_invalid_repair_modes_do_not_reach_the_master(): void
+    {
+        Http::fake();
+        $this->actingAs($this->admin())->postJson('/api/admin/dns-setting/repair', ['mode' => 3])
+            ->assertUnprocessable()->assertJsonValidationErrors('mode');
+        Http::assertNothingSent();
+    }
+
+    public function test_non_admin_cannot_read_dns_status_or_submit_repair(): void
+    {
+        $this->actingAs(User::factory()->create(['role' => 'user']))
+            ->getJson('/api/admin/dns-setting/status')->assertForbidden();
+        $this->postJson('/api/admin/dns-setting/repair', ['mode' => 1])->assertForbidden();
+    }
+
+    public function test_upstream_status_errors_are_not_reported_as_success(): void
+    {
+        $this->fakeCdnfly();
+        Http::fake(['https://panel.example.test/v1/configs/*' => Http::response(['code' => 500, 'msg' => 'unavailable'], 500)]);
+        $this->actingAs($this->admin())->getJson('/api/admin/dns-setting/status')
+            ->assertStatus(500)->assertJsonPath('ok', false);
+    }
+
     private function fakeCdnfly(): void
     {
         config([

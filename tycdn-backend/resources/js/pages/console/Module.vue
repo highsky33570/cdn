@@ -11,10 +11,13 @@ import AdminBlockLogs from './AdminBlockLogs.vue';
 import AdminConfigWorkspace from './AdminConfigWorkspace.vue';
 import AdminDns from './AdminDns.vue';
 import AdminFinance from './AdminFinance.vue';
+import AdminL2 from './AdminL2.vue';
+import AdminLineGroups from './AdminLineGroups.vue';
 import AdminMaintenance from './AdminMaintenance.vue';
 import AdminMasterResources from './AdminMasterResources.vue';
 import AdminMonitoring from './AdminMonitoring.vue';
 import AdminNodeMonitoring from './AdminNodeMonitoring.vue';
+import AdminNodeMonitorSettings from './AdminNodeMonitorSettings.vue';
 import AdminNodes from './AdminNodes.vue';
 import AdminOverview from './AdminOverview.vue';
 import AdminPackages from './AdminPackages.vue';
@@ -79,8 +82,7 @@ const MODULES: Record<
     'admin-sites': { component: AdminSites },
     'admin-nodes': { component: AdminNodes },
     'admin-line-groups': {
-        component: AdminNodes,
-        props: { initialTab: 'topology' },
+        component: AdminLineGroups,
     },
     'admin-cache-jobs': { component: UserCache, props: { scope: 'admin' } },
     'admin-security-cc': { component: AdminSecurity, props: { view: 'cc' } },
@@ -197,6 +199,13 @@ for (const resource of Object.keys(masterResources)) {
 
 MODULES['admin-workspace-attack-log'] = { component: AdminWafLogs };
 
+for (const resource of ['l2-configs', 'l2-conds']) {
+    MODULES[`admin-workspace-${resource}`] = {
+        component: AdminL2,
+        props: { initialTab: resource },
+    };
+}
+
 for (const { key: section } of settingsSections) {
     MODULES[`admin-config-${section}`] = {
         component: AdminConfigWorkspace,
@@ -210,6 +219,8 @@ for (const view of ['realtime', 'top', 'usage']) {
         props: { view, scope: 'admin' },
     };
 }
+
+MODULES['admin-config-node-monitor'] = { component: AdminNodeMonitorSettings };
 
 MODULES['admin-streams-analytics'] = {
     component: AdminStreamAnalytics,

@@ -124,6 +124,25 @@ class AdminDnsController extends Controller
     // /v1/nodes in the master and are keyed with the master api-key, so they
     // go through here rather than the per-user proxy.
 
+    public function dnsStatus(): JsonResponse
+    {
+        try {
+            return response()->json(['ok' => true, 'data' => $this->cdnfly->getDnsRepairStatus()]);
+        } catch (\Throwable $e) {
+            return $this->cdnflyFailure($e, __FUNCTION__);
+        }
+    }
+
+    public function dnsRepair(Request $request): JsonResponse
+    {
+        $validated = $request->validate(['mode' => ['required', 'integer', 'in:1,2']]);
+        try {
+            return response()->json(['ok' => true, 'data' => $this->cdnfly->repairDnsRecords((int) $validated['mode'])]);
+        } catch (\Throwable $e) {
+            return $this->cdnflyFailure($e, __FUNCTION__);
+        }
+    }
+
     public function cnameIndex(Request $request): JsonResponse
     {
         try {
@@ -143,7 +162,7 @@ class AdminDnsController extends Controller
         ]);
 
         try {
-            $result = $this->cdnfly->createCnameDomain($validated + ['des' => '']);
+            $result = $this->cdnfly->createCnameDomain(array_replace($validated, ['des' => $validated['des'] ?? '']));
 
             return response()->json(['ok' => true, 'data' => $result], 201);
         } catch (\Throwable $e) {
@@ -159,7 +178,7 @@ class AdminDnsController extends Controller
         ]);
 
         try {
-            $result = $this->cdnfly->updateCnameDomain($id, $validated + ['des' => '']);
+            $result = $this->cdnfly->updateCnameDomain($id, array_replace($validated, ['des' => $validated['des'] ?? '']));
 
             return response()->json(['ok' => true, 'data' => $result]);
         } catch (\Throwable $e) {

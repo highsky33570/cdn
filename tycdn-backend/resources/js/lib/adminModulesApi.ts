@@ -192,7 +192,11 @@ export type AdminNodeGroupPayload = {
     region_id: number;
     name: string;
     des?: string;
-    backup_switch_type?: 'master_down' | 'interval';
+    cname_hostname?: string;
+    v4_cname_hostname?: string;
+    sort?: number;
+    l2_config_id?: number | null;
+    backup_switch_type?: 'master_down' | 'gt_online_ip' | 'interval';
     // CDNfly wants an object here, not a JSON string.
     backup_switch_policy?: {
         ip_num: number;
