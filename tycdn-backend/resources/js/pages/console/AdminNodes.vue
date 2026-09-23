@@ -1,30 +1,23 @@
-<script setup lang="ts">
-import { Link } from '@inertiajs/vue3';
+﻿<script setup lang="ts">
+import { usePage } from '@inertiajs/vue3';
 import {
     AlertCircle,
     Check,
     ChevronDown,
     ChevronRight,
-    ClipboardList,
     Copy,
     Pencil,
     Plus,
-    Power,
-    PowerOff,
     RefreshCw,
     Save,
-    Search,
     Server,
-    Share2,
-    Terminal,
     Trash2,
 } from 'lucide-vue-next';
 import { computed, onMounted, reactive, ref } from 'vue';
 import { toast } from 'vue-sonner';
 import ConfirmDeleteDialog from '@/components/console/ConfirmDeleteDialog.vue';
 import ConsolePageHeader from '@/components/console/ConsolePageHeader.vue';
-import ConsoleTabs from '@/components/console/ConsoleTabs.vue';
-import type { ConsoleTab } from '@/components/console/ConsoleTabs.vue';
+import NodeManagementPanel from '@/components/console/NodeManagementPanel.vue';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -58,16 +51,13 @@ import {
     listAdminNodeIps,
     deleteAdminNode,
     deleteAdminNodeGroup,
-    deleteAdminPendingNode,
     deleteAdminRegion,
     getAdminNodeInstallCommand,
     initializeAdminPendingNode,
     listAdminLines,
     listAdminNodeGroups,
     listAdminNodes,
-    listAdminPendingNodes,
     listAdminRegions,
-    setAdminNodeEnabled,
     unassignAdminLines,
     updateAdminNode,
     updateAdminNodeGroup,
@@ -88,23 +78,25 @@ import {
     extractCdnflyTotal as extractTotal,
 } from '@/lib/cdnflyResponse';
 
-const NODE_STATUS_ALL = 'all';
+const managementPanel = ref<InstanceType<typeof NodeManagementPanel> | null>(
+    null,
+);
+
+const linkedNodeId = new URLSearchParams(usePage().url.split('?')[1] ?? '').get(
+    'node_id',
+);
+const nodeGroupQuery: Record<string, string | number> =
+    linkedNodeId && /^\d+$/.test(linkedNodeId) ? { node_id: linkedNodeId } : {};
 
 type NodeOption = {
     id: string;
     label: string;
 };
-
-const loading = ref(false);
 const installLoading = ref(false);
-const pendingLoading = ref(false);
 const saving = ref(false);
 const initializing = ref(false);
 const referencesLoading = ref(false);
-const togglingNodeId = ref<number | null>(null);
-const errorMessage = ref('');
 const installError = ref('');
-const pendingError = ref('');
 const nodeFormError = ref('');
 const initFormError = ref('');
 const referenceError = ref('');
@@ -115,30 +107,13 @@ const deleteConfirmAction = ref<(() => Promise<void>) | null>(null);
 const deleteConfirmError = ref('');
 const deleteConfirmLoading = ref(false);
 const commandCopied = ref(false);
-const pendingListRequested = ref(false);
 const nodeDialogOpen = ref(false);
 const initDialogOpen = ref(false);
 const editingNode = ref<CdnflyRecord | null>(null);
 const selectedPendingNode = ref<CdnflyRecord | null>(null);
-const page = ref(1);
-const pendingPage = ref(1);
-const total = ref<number | null>(null);
-const pendingTotal = ref<number | null>(null);
-const nodes = ref<CdnflyRecord[]>([]);
-const pendingNodes = ref<CdnflyRecord[]>([]);
 const nodeGroups = ref<CdnflyRecord[]>([]);
 const regions = ref<CdnflyRecord[]>([]);
 const installInfo = ref<AdminNodeInstallCommand | null>(null);
-
-const filters = reactive({
-    search: '',
-    status: NODE_STATUS_ALL,
-    per_page: '20',
-});
-
-const pendingFilters = reactive({
-    per_page: '10',
-});
 
 const form = reactive({
     name: '',
@@ -156,9 +131,6 @@ const initForm = reactive({
     region_id: '',
     type: 'L1' as 'L1' | 'L2',
 });
-
-const rows = computed(() => nodes.value);
-const pendingRows = computed(() => pendingNodes.value);
 const regionOptions = computed(() => toOptions(regions.value));
 
 /** Region id → its name for the node list (falls back to the id, then "-"). */
@@ -175,63 +147,20 @@ function regionLabel(regionId: unknown): string {
 }
 const installCommand = computed(() => installInfo.value?.command ?? '');
 const installCommandAvailable = computed(() => installCommand.value !== '');
-const hasPreviousPage = computed(() => page.value > 1);
-const hasNextPage = computed(() => {
-    const perPage = Number(filters.per_page);
-
-    if (typeof total.value === 'number') {
-        return page.value * perPage < total.value;
-    }
-
-    return rows.value.length >= perPage;
-});
-const hasPreviousPendingPage = computed(() => pendingPage.value > 1);
-const hasNextPendingPage = computed(() => {
-    const perPage = Number(pendingFilters.per_page);
-
-    if (typeof pendingTotal.value === 'number') {
-        return pendingPage.value * perPage < pendingTotal.value;
-    }
-
-    return pendingRows.value.length >= perPage;
-});
-const paginationText = computed(() => {
-    if (total.value === null) {
-        return `第 ${page.value} 页`;
-    }
-
-    if (total.value === 0) {
-        return '暂无节点';
-    }
-
-    return `${total.value} 条节点`;
-});
-const pendingPaginationText = computed(() => {
-    if (pendingTotal.value === null) {
-        return `第 ${pendingPage.value} 页`;
-    }
-
-    if (pendingTotal.value === 0) {
-        return '暂无待初始化节点';
-    }
-
-    return `${pendingTotal.value} 条待初始化节点`;
-});
 
 onMounted(() => {
+    if (activeTab.value !== 'topology') {
+        return;
+    }
+
     void (async () => {
         await Promise.all([
-            loadNodes(),
             loadReferenceData(),
-            loadInstallCommand(),
             loadRegions(),
             loadNodeGroups(),
-            // the DNS line list, not assignments — those need a node group chosen first
             loadDnsLines(),
         ]);
 
-        // Default 线路分配 to the first node group so its bound nodes and
-        // candidate IPs load immediately, instead of an empty "选择节点组".
         if (lineGroupId.value === '' && nodeGroups.value.length > 0) {
             const firstId = asNumber(nodeGroups.value[0].id);
 
@@ -243,35 +172,13 @@ onMounted(() => {
     })();
 });
 
-async function loadNodes(targetPage = page.value): Promise<void> {
-    loading.value = true;
-    errorMessage.value = '';
+function openInstallDialog(): void {
+    installDialogOpen.value = true;
+    void loadInstallCommand();
+}
 
-    try {
-        const params: Record<string, string | number> = {
-            page: targetPage,
-            limit: Number(filters.per_page),
-        };
-
-        const search = filters.search.trim();
-
-        if (search !== '') {
-            params.search = search;
-        }
-
-        if (filters.status !== NODE_STATUS_ALL) {
-            params.enable = filters.status;
-        }
-
-        const result = await listAdminNodes(params);
-        nodes.value = extractRows(result);
-        total.value = extractTotal(result, nodes.value.length);
-        page.value = targetPage;
-    } catch (error) {
-        errorMessage.value = getErrorMessage(error);
-    } finally {
-        loading.value = false;
-    }
+async function loadNodes(): Promise<void> {
+    await managementPanel.value?.refresh();
 }
 
 async function loadInstallCommand(): Promise<void> {
@@ -288,34 +195,13 @@ async function loadInstallCommand(): Promise<void> {
     }
 }
 
-async function loadPendingNodes(targetPage = pendingPage.value): Promise<void> {
-    pendingLoading.value = true;
-    pendingError.value = '';
-    pendingListRequested.value = true;
-
-    try {
-        const result = await listAdminPendingNodes({
-            page: targetPage,
-            limit: Number(pendingFilters.per_page),
-        });
-
-        pendingNodes.value = extractRows(result);
-        pendingTotal.value = extractTotal(result, pendingNodes.value.length);
-        pendingPage.value = targetPage;
-    } catch (error) {
-        pendingError.value = getErrorMessage(error);
-    } finally {
-        pendingLoading.value = false;
-    }
-}
-
 async function loadReferenceData(): Promise<void> {
     referencesLoading.value = true;
     referenceError.value = '';
 
     try {
         const [groupsResult, regionsResult] = await Promise.all([
-            listAdminNodeGroups({ page: 1, limit: 200 }),
+            listAdminNodeGroups({ page: 1, limit: 200, ...nodeGroupQuery }),
             listAdminRegions({ limit: 0 }),
         ]);
 
@@ -326,11 +212,6 @@ async function loadReferenceData(): Promise<void> {
     } finally {
         referencesLoading.value = false;
     }
-}
-
-function submitSearch(): void {
-    page.value = 1;
-    void loadNodes(1);
 }
 
 function refreshInstallCommand(): void {
@@ -349,7 +230,8 @@ async function copyInstallCommand(): Promise<void> {
     }, 1800);
 }
 
-function openInitDialog(node: CdnflyRecord): void {
+async function openInitDialog(node: CdnflyRecord): Promise<void> {
+    await loadReferenceData();
     selectedPendingNode.value = node;
     initForm.name = '';
     initForm.des = '';
@@ -361,6 +243,7 @@ function openInitDialog(node: CdnflyRecord): void {
 }
 
 function openEditDialog(node: CdnflyRecord): void {
+    void loadReferenceData();
     editingNode.value = node;
     form.name = textValue(node.name);
     form.ip = textValue(node.ip);
@@ -411,7 +294,7 @@ async function submitInitNode(): Promise<void> {
         await initializeAdminPendingNode(payload);
         toast.success('节点初始化请求已提交');
         initDialogOpen.value = false;
-        await Promise.all([loadPendingNodes(), loadNodes()]);
+        await loadNodes();
     } catch (error) {
         initFormError.value = getErrorMessage(error);
     } finally {
@@ -449,92 +332,6 @@ async function submitNode(): Promise<void> {
     } finally {
         saving.value = false;
     }
-}
-
-function openDeleteNode(node: CdnflyRecord) {
-    const id = asNumber(node.id);
-
-    if (!id) {
-        errorMessage.value = '节点 ID 缺失';
-
-        return;
-    }
-
-    deleteConfirmTitle.value = '确认删除';
-    deleteConfirmDesc.value = `确认删除节点「${nodeName(node)}」？该操作会提交到 CDNfly，删除后不可恢复。`;
-    deleteConfirmError.value = '';
-    deleteConfirmAction.value = async () => {
-        deleteConfirmLoading.value = true;
-
-        try {
-            await deleteAdminNode(id);
-            deleteConfirmOpen.value = false;
-            toast.success('节点删除请求已提交');
-            await loadNodes();
-        } catch (error) {
-            deleteConfirmError.value = getErrorMessage(error);
-        } finally {
-            deleteConfirmLoading.value = false;
-        }
-    };
-    deleteConfirmOpen.value = true;
-}
-
-async function setNodeEnabled(
-    node: CdnflyRecord,
-    enable: boolean,
-): Promise<void> {
-    const id = asNumber(node.id);
-
-    if (!id) {
-        errorMessage.value = '节点 ID 缺失';
-
-        return;
-    }
-
-    const action = enable ? '启用' : '禁用';
-
-    togglingNodeId.value = id;
-    errorMessage.value = '';
-
-    try {
-        await setAdminNodeEnabled(id, enable);
-        toast.success(`节点${action}请求已提交`);
-        await loadNodes();
-    } catch (error) {
-        errorMessage.value = getErrorMessage(error);
-    } finally {
-        togglingNodeId.value = null;
-    }
-}
-
-function openDeletePendingNode(node: CdnflyRecord) {
-    const id = asNumber(node.id);
-
-    if (!id) {
-        pendingError.value = '待初始化节点 ID 缺失';
-
-        return;
-    }
-
-    deleteConfirmTitle.value = '确认删除';
-    deleteConfirmDesc.value = `确认删除待初始化节点 #${id}？`;
-    deleteConfirmError.value = '';
-    deleteConfirmAction.value = async () => {
-        deleteConfirmLoading.value = true;
-
-        try {
-            await deleteAdminPendingNode(id);
-            deleteConfirmOpen.value = false;
-            toast.success('待初始化节点删除请求已提交');
-            await loadPendingNodes();
-        } catch (error) {
-            deleteConfirmError.value = getErrorMessage(error);
-        } finally {
-            deleteConfirmLoading.value = false;
-        }
-    };
-    deleteConfirmOpen.value = true;
 }
 
 // ─── 子IP 管理 ────────────────────────────────────────
@@ -613,6 +410,7 @@ async function submitSubIps(): Promise<void> {
         toast.success('子 IP 已添加');
         subIpInput.value = '';
         await loadSubIps();
+        await loadNodes();
     } catch (error) {
         subIpError.value = getErrorMessage(error);
     } finally {
@@ -634,6 +432,7 @@ async function removeSubIp(row: CdnflyRecord): Promise<void> {
         await deleteAdminNode(id);
         toast.success('子 IP 已移除');
         await loadSubIps();
+        await loadNodes();
     } catch (error) {
         subIpError.value = getErrorMessage(error);
     } finally {
@@ -691,8 +490,8 @@ function asNumber(value: unknown): number | null {
     return null;
 }
 
-function nullableNumber(value: string): number | null {
-    const trimmed = value.trim();
+function nullableNumber(value: string | number): number | null {
+    const trimmed = String(value).trim();
 
     if (trimmed === '') {
         return null;
@@ -731,102 +530,6 @@ function pendingNodeIp(node: CdnflyRecord): string {
     return textValue(node.ip) || textValue(node.addr) || '-';
 }
 
-function nodeRate(value: unknown): string {
-    if (value === undefined || value === null) {
-        return '—';
-    }
-
-    let n = Number(value);
-
-    if (!Number.isFinite(n)) {
-        return String(value);
-    }
-
-    const units = ['bps', 'Kbps', 'Mbps', 'Gbps'];
-    let index = 0;
-
-    while (n >= 1000 && index < 3) {
-        n /= 1000;
-        index++;
-    }
-
-    return `${n.toFixed(index ? 2 : 0)} ${units[index]}`;
-}
-
-function nodeStatusLabel(node: CdnflyRecord): string {
-    if (!nodeEnabled(node)) {
-        const reason = textValue(node.disable_by);
-
-        return reason === '' ? '禁用' : `禁用（${reason}）`;
-    }
-
-    const state = textValue(node.state);
-
-    if (state === 'pending') {
-        return '待同步';
-    }
-
-    if (state === 'process') {
-        return '同步中';
-    }
-
-    if (state === 'failed') {
-        return '同步失败';
-    }
-
-    return '正常';
-}
-
-function nodeStatusVariant(
-    node: CdnflyRecord,
-): 'secondary' | 'outline' | 'destructive' {
-    if (!nodeEnabled(node)) {
-        return 'outline';
-    }
-
-    return textValue(node.state) === 'failed' ? 'destructive' : 'secondary';
-}
-
-function nodeEnabled(node: CdnflyRecord): boolean {
-    return isEnabledValue(node.enable ?? node.status);
-}
-
-function isEnabledValue(value: unknown): boolean {
-    return value === 1 || value === '1' || value === true;
-}
-
-function formatDate(value: unknown): string {
-    if (!value) {
-        return '-';
-    }
-
-    return String(value).slice(0, 16);
-}
-
-function nextPage(): void {
-    if (hasNextPage.value) {
-        void loadNodes(page.value + 1);
-    }
-}
-
-function prevPage(): void {
-    if (hasPreviousPage.value) {
-        void loadNodes(page.value - 1);
-    }
-}
-
-function nextPendingPage(): void {
-    if (hasNextPendingPage.value) {
-        void loadPendingNodes(pendingPage.value + 1);
-    }
-}
-
-function prevPendingPage(): void {
-    if (hasPreviousPendingPage.value) {
-        void loadPendingNodes(pendingPage.value - 1);
-    }
-}
-
 // ─── Region CRUD ──────────────────────────────────────
 const regionLoading = ref(false);
 const regionError = ref('');
@@ -863,9 +566,6 @@ async function loadRegions(targetPage = regionPage.value): Promise<void> {
         regionRows.value = extractRows(result);
         regionTotal.value = extractTotal(result, regionRows.value.length);
         regionPage.value = targetPage;
-        // Also refresh the reference data for dropdowns
-        regions.value =
-            regionRows.value.length > 0 ? regionRows.value : regions.value;
     } catch (error) {
         regionError.value = getErrorMessage(error);
     } finally {
@@ -903,7 +603,7 @@ async function submitRegion(): Promise<void> {
     const payload: AdminRegionPayload = {
         name: regionForm.name.trim(),
         des: regionForm.des.trim(),
-        sort: Number(regionForm.sort) || 100,
+        sort: nullableNumber(regionForm.sort) ?? 100,
         l2_check_port: Number(regionForm.l2_check_port) || 80,
     };
 
@@ -928,7 +628,13 @@ async function submitRegion(): Promise<void> {
         }
 
         regionDialogOpen.value = false;
-        await loadRegions();
+
+        if (managementPanel.value) {
+            await managementPanel.value.reload();
+        } else {
+            await loadRegions();
+        }
+
         // Refresh reference data for node form dropdowns
         await loadReferenceData();
     } catch (error) {
@@ -974,36 +680,12 @@ const ngError = ref('');
 const ngDialogOpen = ref(false);
 const ngSaving = ref(false);
 const ngFormError = ref('');
-/**
- * The page carried five stacked tables with no hierarchy — nodes, pending
- * nodes, node groups, regions, lines — so finding anything meant scrolling
- * past everything. They are now tabs, ordered by the dependency chain an
- * operator actually follows: 区域 -> 节点组 -> 线路 -> 节点.
- */
-type NodeTab = 'nodes' | 'pending' | 'topology';
+type NodeTab = 'nodes' | 'topology';
 
 const props = withDefaults(defineProps<{ initialTab?: NodeTab }>(), {
     initialTab: 'nodes',
 });
 const activeTab = ref<NodeTab>(props.initialTab);
-
-const nodeTabs = computed<ConsoleTab[]>(() => [
-    { key: 'nodes' as const, label: '节点', icon: Server, count: total.value },
-    {
-        key: 'pending' as const,
-        label: '待接入',
-        icon: ClipboardList,
-        // the count is the point of this tab — an operator needs to see at a
-        // glance that a freshly installed node is waiting
-        count: pendingRows.value.length,
-    },
-    {
-        key: 'topology' as const,
-        label: '区域·节点组·线路',
-        icon: Share2,
-        count: 0,
-    },
-]);
 
 // The install command is a once-per-node action, not something worth a
 // permanent block at the top of every visit.
@@ -1039,6 +721,7 @@ async function loadNodeGroups(targetPage = ngPage.value): Promise<void> {
 
     try {
         const result = await listAdminNodeGroups({
+            ...nodeGroupQuery,
             page: targetPage,
             limit: 20,
         });
@@ -1602,559 +1285,23 @@ function regionNameById(id: unknown): string {
 <template>
     <div class="flex flex-1 flex-col gap-6 p-4 md:p-6">
         <ConsolePageHeader
-            title="节点管理"
+            v-if="activeTab === 'topology'"
+            title="线路分组"
             :icon="Server"
             :show-api-badge="false"
         />
 
-        <!-- top bar: tabs on the left, the once-per-node action on the right -->
-        <ConsoleTabs v-model="activeTab" :tabs="nodeTabs">
-            <template #actions>
-                <Button variant="outline" @click="installDialogOpen = true">
-                    <Terminal data-icon="inline-start" />
-                    执行命令
-                </Button>
-            </template>
-        </ConsoleTabs>
-
-        <template v-if="activeTab === 'nodes'">
-            <Card class="gap-4">
-                <CardContent class="pt-6">
-                    <div class="flex flex-wrap items-center gap-2">
-                        <div class="relative w-full sm:w-72">
-                            <Search
-                                class="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
-                            />
-                            <Input
-                                v-model="filters.search"
-                                class="pl-9"
-                                placeholder="搜索节点名称、IP、ID"
-                                @keyup.enter="submitSearch"
-                            />
-                        </div>
-                        <Select v-model="filters.status">
-                            <SelectTrigger class="w-32">
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectGroup>
-                                    <SelectItem :value="NODE_STATUS_ALL">
-                                        全部状态
-                                    </SelectItem>
-                                    <SelectItem value="1">启用</SelectItem>
-                                    <SelectItem value="0">禁用</SelectItem>
-                                </SelectGroup>
-                            </SelectContent>
-                        </Select>
-                        <Select v-model="filters.per_page">
-                            <SelectTrigger class="w-28">
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectGroup>
-                                    <SelectItem value="20">20 条</SelectItem>
-                                    <SelectItem value="50">50 条</SelectItem>
-                                    <SelectItem value="100">100 条</SelectItem>
-                                </SelectGroup>
-                            </SelectContent>
-                        </Select>
-                        <div class="flex flex-wrap gap-2">
-                            <Button :disabled="loading" @click="submitSearch">
-                                <Spinner
-                                    v-if="loading"
-                                    data-icon="inline-start"
-                                />
-                                <Search v-else data-icon="inline-start" />
-                                搜索
-                            </Button>
-                            <Button
-                                variant="outline"
-                                :disabled="loading"
-                                @click="loadNodes()"
-                            >
-                                <RefreshCw data-icon="inline-start" />
-                                刷新
-                            </Button>
-                        </div>
-                    </div>
-                </CardContent>
-            </Card>
-
-            <Alert v-if="errorMessage" variant="destructive">
-                <AlertCircle data-icon="alert" />
-                <AlertTitle>节点管理请求失败</AlertTitle>
-                <AlertDescription>{{ errorMessage }}</AlertDescription>
-            </Alert>
-
-            <Alert v-if="referenceError" variant="destructive">
-                <AlertCircle data-icon="alert" />
-                <AlertTitle>节点引用数据加载失败</AlertTitle>
-                <AlertDescription>{{ referenceError }}</AlertDescription>
-            </Alert>
-
-            <Card>
-                <CardHeader
-                    class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between"
-                >
-                    <CardTitle class="text-base">节点列表</CardTitle>
-                    <span class="text-sm text-muted-foreground">
-                        {{ paginationText }}
-                    </span>
-                </CardHeader>
-                <CardContent>
-                    <div class="overflow-x-auto rounded-md border">
-                        <table class="w-full min-w-[1040px] text-sm">
-                            <thead
-                                class="border-y bg-muted/50 text-muted-foreground"
-                            >
-                                <tr>
-                                    <th class="px-6 py-3 text-left font-medium">
-                                        节点
-                                    </th>
-                                    <th class="px-4 py-3 text-left font-medium">
-                                        状态
-                                    </th>
-                                    <th class="px-4 py-3 text-left font-medium">
-                                        区域
-                                    </th>
-                                    <th class="px-4 py-3 text-left font-medium">
-                                        监控
-                                    </th>
-                                    <th class="px-4 py-3 text-left font-medium">
-                                        实时带宽
-                                    </th>
-                                    <th class="px-4 py-3 text-left font-medium">
-                                        月流量
-                                    </th>
-                                    <th class="px-4 py-3 text-left font-medium">
-                                        排序
-                                    </th>
-                                    <th class="px-4 py-3 text-left font-medium">
-                                        创建时间
-                                    </th>
-                                    <th
-                                        class="w-72 px-6 py-3 text-right font-medium"
-                                    >
-                                        操作
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr v-if="loading && rows.length === 0">
-                                    <td
-                                        class="px-6 py-16 text-center"
-                                        colspan="9"
-                                    >
-                                        <Spinner />
-                                    </td>
-                                </tr>
-                                <tr
-                                    v-for="node in rows"
-                                    :key="textValue(node.id) || nodeName(node)"
-                                    class="border-b last:border-b-0"
-                                >
-                                    <td class="px-6 py-4">
-                                        <div class="font-medium">
-                                            {{ nodeName(node) }}
-                                        </div>
-                                        <div
-                                            class="text-xs text-muted-foreground"
-                                        >
-                                            ID {{ textValue(node.id) || '-' }} /
-                                            {{ textValue(node.ip) || '-' }}
-                                        </div>
-                                    </td>
-                                    <td class="px-4 py-4">
-                                        <Badge
-                                            :variant="nodeStatusVariant(node)"
-                                        >
-                                            {{ nodeStatusLabel(node) }}
-                                        </Badge>
-                                    </td>
-                                    <td class="px-4 py-4 text-muted-foreground">
-                                        {{ regionLabel(node.region_id) }}
-                                    </td>
-                                    <td class="px-4 py-4">
-                                        <span>{{
-                                            Number(node.check_on)
-                                                ? node.check_protocol
-                                                : '未开启'
-                                        }}</span
-                                        ><Link
-                                            :href="`/console/admin/workspace/node-ip-log?node_id=${node.id}`"
-                                            class="mt-1 block text-xs text-primary"
-                                            >查看日志</Link
-                                        >
-                                    </td>
-                                    <td class="px-4 py-4 text-xs">
-                                        <Link
-                                            :href="`/console/admin/node-monitoring?node_id=${node.id}`"
-                                            class="text-primary"
-                                            >↑ {{ nodeRate(node.outbound)
-                                            }}<br />↓
-                                            {{ nodeRate(node.inbound) }}</Link
-                                        >
-                                    </td>
-                                    <td class="px-4 py-4">
-                                        {{
-                                            node.month_traffic === undefined
-                                                ? '—'
-                                                : `${node.month_traffic} GB`
-                                        }}
-                                    </td>
-                                    <td class="px-4 py-4">
-                                        {{ node.sort ?? '—' }}
-                                    </td>
-                                    <td class="px-4 py-4 text-muted-foreground">
-                                        {{
-                                            formatDate(
-                                                node.created_at ??
-                                                    node.create_at,
-                                            )
-                                        }}
-                                    </td>
-                                    <td class="px-6 py-4">
-                                        <div class="flex justify-end gap-2">
-                                            <Button
-                                                :variant="
-                                                    nodeEnabled(node)
-                                                        ? 'outline'
-                                                        : 'default'
-                                                "
-                                                size="sm"
-                                                :disabled="
-                                                    togglingNodeId ===
-                                                    asNumber(node.id)
-                                                "
-                                                @click="
-                                                    setNodeEnabled(
-                                                        node,
-                                                        !nodeEnabled(node),
-                                                    )
-                                                "
-                                            >
-                                                <Spinner
-                                                    v-if="
-                                                        togglingNodeId ===
-                                                        asNumber(node.id)
-                                                    "
-                                                    data-icon="inline-start"
-                                                />
-                                                <PowerOff
-                                                    v-else-if="
-                                                        nodeEnabled(node)
-                                                    "
-                                                    data-icon="inline-start"
-                                                />
-                                                <Power
-                                                    v-else
-                                                    data-icon="inline-start"
-                                                />
-                                                {{
-                                                    nodeEnabled(node)
-                                                        ? '禁用'
-                                                        : '启用'
-                                                }}
-                                            </Button>
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                @click="openSubIpDialog(node)"
-                                            >
-                                                <Server
-                                                    data-icon="inline-start"
-                                                />
-                                                子IP
-                                            </Button>
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                @click="openEditDialog(node)"
-                                            >
-                                                <Pencil
-                                                    data-icon="inline-start"
-                                                />
-                                                编辑
-                                            </Button>
-                                            <Button
-                                                variant="destructive"
-                                                size="sm"
-                                                @click="openDeleteNode(node)"
-                                            >
-                                                <Trash2
-                                                    data-icon="inline-start"
-                                                />
-                                                删除
-                                            </Button>
-                                        </div>
-                                    </td>
-                                </tr>
-                                <tr v-if="!loading && rows.length === 0">
-                                    <td
-                                        class="px-6 py-16 text-center text-muted-foreground"
-                                        colspan="9"
-                                    >
-                                        暂无节点
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </CardContent>
-            </Card>
-
-            <div class="flex items-center justify-end gap-2">
-                <Button
-                    variant="outline"
-                    size="sm"
-                    :disabled="!hasPreviousPage || loading"
-                    @click="prevPage"
-                >
-                    上一页
-                </Button>
-                <span class="text-sm text-muted-foreground">
-                    第 {{ page }} 页
-                </span>
-                <Button
-                    variant="outline"
-                    size="sm"
-                    :disabled="!hasNextPage || loading"
-                    @click="nextPage"
-                >
-                    下一页
-                </Button>
-            </div>
-        </template>
-
-        <template v-if="activeTab === 'pending'">
-            <Card>
-                <CardHeader
-                    class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between"
-                >
-                    <div class="flex items-start gap-3">
-                        <div
-                            class="flex size-10 shrink-0 items-center justify-center rounded-md border bg-card"
-                        >
-                            <ClipboardList class="size-5" />
-                        </div>
-                        <div>
-                            <CardTitle class="text-base">节点接入</CardTitle>
-                            <p class="mt-1 text-sm text-muted-foreground">
-                                节点回传后在此填写名称、备注、区域和类型完成接入。
-                            </p>
-                        </div>
-                    </div>
-                    <Button
-                        variant="outline"
-                        :disabled="pendingLoading"
-                        @click="loadPendingNodes()"
-                    >
-                        <RefreshCw data-icon="inline-start" />
-                        刷新列表
-                    </Button>
-                </CardHeader>
-                <CardContent class="grid gap-6">
-                    <Alert v-if="pendingError" variant="destructive">
-                        <AlertCircle data-icon="alert" />
-                        <AlertTitle>待初始化节点加载失败</AlertTitle>
-                        <AlertDescription>{{ pendingError }}</AlertDescription>
-                    </Alert>
-
-                    <div class="grid gap-3">
-                        <div
-                            class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between"
-                        >
-                            <div>
-                                <div class="font-medium">待初始化节点</div>
-                                <div class="text-sm text-muted-foreground">
-                                    在节点机执行「执行命令」中的安装命令，节点回传后点击刷新。
-                                </div>
-                            </div>
-                            <div class="flex items-center gap-2">
-                                <Select v-model="pendingFilters.per_page">
-                                    <SelectTrigger class="w-28">
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectGroup>
-                                            <SelectItem value="10"
-                                                >10 条</SelectItem
-                                            >
-                                            <SelectItem value="20"
-                                                >20 条</SelectItem
-                                            >
-                                            <SelectItem value="50"
-                                                >50 条</SelectItem
-                                            >
-                                            <SelectItem value="100"
-                                                >100 条</SelectItem
-                                            >
-                                        </SelectGroup>
-                                    </SelectContent>
-                                </Select>
-                                <Button
-                                    variant="default"
-                                    :disabled="pendingLoading"
-                                    @click="loadPendingNodes(1)"
-                                >
-                                    <RefreshCw data-icon="inline-start" />
-                                    已执行安装命令，刷新待初始化列表
-                                </Button>
-                            </div>
-                        </div>
-
-                        <div class="overflow-x-auto rounded-md border">
-                            <table class="w-full min-w-[720px] text-sm">
-                                <thead
-                                    class="border-b bg-muted/40 text-muted-foreground"
-                                >
-                                    <tr>
-                                        <th
-                                            class="w-28 px-4 py-3 text-left font-medium"
-                                        >
-                                            ID
-                                        </th>
-                                        <th
-                                            class="px-4 py-3 text-left font-medium"
-                                        >
-                                            IP
-                                        </th>
-                                        <th
-                                            class="px-4 py-3 text-left font-medium"
-                                        >
-                                            回传时间
-                                        </th>
-                                        <th
-                                            class="w-52 px-4 py-3 text-right font-medium"
-                                        >
-                                            操作
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr
-                                        v-if="
-                                            pendingListRequested &&
-                                            pendingLoading &&
-                                            pendingRows.length === 0
-                                        "
-                                    >
-                                        <td
-                                            class="px-4 py-12 text-center"
-                                            colspan="4"
-                                        >
-                                            <Spinner />
-                                        </td>
-                                    </tr>
-                                    <tr
-                                        v-for="node in pendingRows"
-                                        :key="textValue(node.id)"
-                                        class="border-b last:border-b-0"
-                                    >
-                                        <td class="px-4 py-3">
-                                            #{{ textValue(node.id) || '-' }}
-                                        </td>
-                                        <td class="px-4 py-3 font-mono">
-                                            {{ pendingNodeIp(node) }}
-                                        </td>
-                                        <td
-                                            class="px-4 py-3 text-muted-foreground"
-                                        >
-                                            {{
-                                                formatDate(
-                                                    node.create_at ??
-                                                        node.created_at,
-                                                )
-                                            }}
-                                        </td>
-                                        <td class="px-4 py-3">
-                                            <div class="flex justify-end gap-2">
-                                                <Button
-                                                    size="sm"
-                                                    @click="
-                                                        openInitDialog(node)
-                                                    "
-                                                >
-                                                    <Plus
-                                                        data-icon="inline-start"
-                                                    />
-                                                    初始化
-                                                </Button>
-                                                <Button
-                                                    size="sm"
-                                                    variant="outline"
-                                                    @click="
-                                                        openDeletePendingNode(
-                                                            node,
-                                                        )
-                                                    "
-                                                >
-                                                    <Trash2
-                                                        data-icon="inline-start"
-                                                    />
-                                                    删除
-                                                </Button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    <tr
-                                        v-if="
-                                            pendingListRequested &&
-                                            !pendingLoading &&
-                                            pendingRows.length === 0
-                                        "
-                                    >
-                                        <td
-                                            class="px-4 py-12 text-center text-muted-foreground"
-                                            colspan="4"
-                                        >
-                                            暂无待初始化节点
-                                        </td>
-                                    </tr>
-                                    <tr v-if="!pendingListRequested">
-                                        <td
-                                            class="px-4 py-12 text-center text-muted-foreground"
-                                            colspan="4"
-                                        >
-                                            先在节点机执行安装命令，然后刷新待初始化列表。
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-
-                        <div
-                            v-if="pendingListRequested"
-                            class="flex items-center justify-end gap-2"
-                        >
-                            <span class="text-sm text-muted-foreground">
-                                {{ pendingPaginationText }}
-                            </span>
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                :disabled="
-                                    !hasPreviousPendingPage || pendingLoading
-                                "
-                                @click="prevPendingPage"
-                            >
-                                上一页
-                            </Button>
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                :disabled="
-                                    !hasNextPendingPage || pendingLoading
-                                "
-                                @click="nextPendingPage"
-                            >
-                                下一页
-                            </Button>
-                        </div>
-                    </div>
-                </CardContent>
-            </Card>
-        </template>
+        <NodeManagementPanel
+            v-if="activeTab !== 'topology'"
+            ref="managementPanel"
+            @install="openInstallDialog"
+            @edit="openEditDialog"
+            @initialize="openInitDialog"
+            @sub-ips="openSubIpDialog"
+            @add-region="openAddRegion"
+            @edit-region="openEditRegion"
+            @regions-changed="loadReferenceData"
+        />
 
         <template v-if="activeTab === 'topology'">
             <!-- ─── 节点组管理 (CRUD) ─── -->
@@ -2867,7 +2014,7 @@ function regionNameById(id: unknown): string {
                     <DialogTitle>节点安装命令</DialogTitle>
                     <DialogDescription>
                         以 root
-                        登录新节点机执行。执行完成后节点会自动回传，到「待接入」完成初始化。
+                        登录新节点机执行。执行完成后节点会自动回传，到「待初始化」完成初始化。
                     </DialogDescription>
                 </DialogHeader>
 
@@ -2921,7 +2068,7 @@ function regionNameById(id: unknown): string {
                 <DialogHeader>
                     <DialogTitle>初始化节点</DialogTitle>
                     <DialogDescription>
-                        提交字段：pending_node_id、region_id、name、des、type。
+                        设置节点名称、区域和类型，完成初始化后即可分配线路。
                     </DialogDescription>
                 </DialogHeader>
 

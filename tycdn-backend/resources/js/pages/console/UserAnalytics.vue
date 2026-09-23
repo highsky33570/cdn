@@ -55,6 +55,8 @@ import {
     listUserAccessLogs as personallistUserAccessLogs,
 } from '@/lib/cdnUserApi';
 import { masterGet } from '@/lib/masterApi';
+import { extractMetricSeries } from '@/lib/siteRealtime';
+import type { MetricSeries } from '@/lib/siteRealtime';
 
 type AnalyticsView = 'realtime' | 'top' | 'logs' | 'usage';
 
@@ -157,11 +159,6 @@ const metricGroups = [
 
 type MetricGroup = (typeof metricGroups)[number];
 type MetricDef = MetricGroup['metrics'][number];
-type MetricSeries = {
-    label: string;
-    color: string;
-    points: [number, number][];
-};
 
 // ── 数据分析：Tab 定义 ────────────────────────────────
 type TopTab = {
@@ -316,7 +313,8 @@ const otherFilters = reactive({
 
 // ── 访问日志专属状态 ──────────────────────────────────
 const logsTab = ref<'query' | 'jobs'>('query');
-const initialLogIp = new URLSearchParams(usePage().url.split('?')[1] ?? '').get('addr') ?? '';
+const initialLogIp =
+    new URLSearchParams(usePage().url.split('?')[1] ?? '').get('addr') ?? '';
 const showAdvanced = ref(initialLogIp !== '');
 const logsFilters = reactive({
     host: '',
@@ -750,158 +748,21 @@ function watchThemeForCharts(): void {
     });
 }
 
-let chartJsLoaded = false;
+let chartJsPromise: Promise<void> | null = null;
 async function ensureChartJs(): Promise<void> {
-    if (
-        chartJsLoaded ||
-        (window as unknown as Record<string, unknown>)['Chart']
-    ) {
-        chartJsLoaded = true;
-
+    if ((window as unknown as Record<string, unknown>)['Chart']) {
         return;
     }
 
-    await loadScript(
+    // The four metrics load together; share one script and Chart instance registry.
+    chartJsPromise ??= loadScript(
         'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js',
-    );
-    chartJsLoaded = true;
-}
+    ).catch((error) => {
+        chartJsPromise = null;
 
-function extractMetricSeries(
-    result: unknown,
-    metric: MetricDef,
-): MetricSeries[] {
-    const raw = (result as { data?: unknown } | null)?.data;
-    const colors = ['#4f72d8', '#7ac36a', '#f5a623', '#ef5b5b', '#8b5cf6'];
-    const collected: Array<{ label: string; points: [number, number][] }> = [];
-
-    if (Array.isArray(raw)) {
-        const direct = pointRows(raw);
-
-        if (direct.length > 0) {
-            collected.push({ label: metric.label, points: direct });
-        } else {
-            const groups = new Map<string, [number, number][]>();
-
-            for (const item of raw) {
-                if (!item || typeof item !== 'object' || Array.isArray(item)) {
-                    continue;
-                }
-
-                const row = item as CdnflyRecord;
-                const timestamp = timestampValue(
-                    row.time ?? row.timestamp ?? row.ts ?? row.date,
-                );
-
-                if (timestamp === null) {
-                    continue;
-                }
-
-                const explicitLabel = textValue(
-                    row.status ?? row.code ?? row.name ?? row.series,
-                );
-                const explicitValue = numericValue(
-                    row.value ?? row.count ?? row.rate,
-                );
-
-                if (explicitLabel && explicitValue !== null) {
-                    const values = groups.get(explicitLabel) ?? [];
-                    values.push([timestamp, explicitValue]);
-                    groups.set(explicitLabel, values);
-                    continue;
-                }
-
-                for (const [key, value] of Object.entries(row)) {
-                    if (['time', 'timestamp', 'ts', 'date'].includes(key)) {
-                        continue;
-                    }
-
-                    const number = numericValue(value);
-
-                    if (number !== null) {
-                        const values = groups.get(key) ?? [];
-                        values.push([timestamp, number]);
-                        groups.set(key, values);
-                    }
-                }
-            }
-
-            for (const [label, values] of groups) {
-                collected.push({ label, points: values });
-            }
-        }
-    } else if (raw && typeof raw === 'object') {
-        for (const [label, value] of Object.entries(raw)) {
-            const data =
-                value && typeof value === 'object' && !Array.isArray(value)
-                    ? (value as { data?: unknown }).data
-                    : value;
-            const values = pointRows(data);
-
-            if (values.length > 0) {
-                collected.push({ label, points: values });
-            }
-        }
-    }
-
-    return collected.map((item, index) => ({
-        label: item.label,
-        color:
-            collected.length === 1
-                ? metric.color
-                : colors[index % colors.length],
-        points: normalizePercentPoints(item.points, metric.unit),
-    }));
-}
-
-function pointRows(value: unknown): [number, number][] {
-    if (!Array.isArray(value)) {
-        return [];
-    }
-
-    return value
-        .filter(
-            (item): item is unknown[] =>
-                Array.isArray(item) && item.length >= 2,
-        )
-        .map((item) => [timestampValue(item[0]), numericValue(item[1])])
-        .filter(
-            (item): item is [number, number] =>
-                item[0] !== null && item[1] !== null,
-        );
-}
-
-function timestampValue(value: unknown): number | null {
-    const numeric = Number(value);
-
-    if (Number.isFinite(numeric)) {
-        return numeric < 10_000_000_000 ? numeric * 1000 : numeric;
-    }
-
-    const parsed = Date.parse(String(value ?? ''));
-
-    return Number.isNaN(parsed) ? null : parsed;
-}
-
-function numericValue(value: unknown): number | null {
-    const parsed = Number(value);
-
-    return Number.isFinite(parsed) ? parsed : null;
-}
-
-function normalizePercentPoints(
-    points: [number, number][],
-    unit: string,
-): [number, number][] {
-    if (unit !== 'percent') {
-        return points;
-    }
-
-    const max = Math.max(...points.map(([, value]) => value), 0);
-
-    return max > 0 && max <= 1
-        ? points.map(([timestamp, value]) => [timestamp, value * 100])
-        : points;
+        throw error;
+    });
+    await chartJsPromise;
 }
 
 async function renderChart(
@@ -969,9 +830,9 @@ async function renderChart(
             interaction: { mode: 'index', intersect: false },
             plugins: {
                 legend: {
-                    display: series.length > 1,
+                    display: series.length > 1 || m.key.startsWith('status-'),
                     position: 'top',
-                    align: 'center',
+                    align: m.key.startsWith('status-') ? 'end' : 'center',
                     labels: {
                         color: theme.tick,
                         usePointStyle: true,
@@ -982,7 +843,10 @@ async function renderChart(
                 },
                 tooltip: {
                     callbacks: {
-                        label: (ctx: { parsed: { y: number } }) => {
+                        label: (ctx: {
+                            parsed: { y: number };
+                            dataset: { label?: string };
+                        }) => {
                             const scale =
                                 m.unit === 'bits/s'
                                     ? 1000 / 8
@@ -993,7 +857,7 @@ async function renderChart(
                                         : 1;
                             const raw = ctx.parsed.y * scale;
 
-                            return ` ${formatValue(raw, m.unit)}`;
+                            return ` ${ctx.dataset.label ?? m.label}: ${formatValue(raw, m.unit)}`;
                         },
                     },
                 },
@@ -1538,12 +1402,16 @@ function formatInputDate(date: Date): string {
         <template v-if="props.view === 'realtime'">
             <Card class="gap-0 overflow-hidden">
                 <!-- 分组 Tab -->
-                <div class="flex gap-6 overflow-x-auto border-b px-5 pt-3">
+                <div
+                    class="flex flex-wrap gap-x-6 border-b px-5 pt-3"
+                    data-realtime-tabs
+                >
                     <button
                         v-for="g in metricGroups"
                         :key="g.key"
                         type="button"
-                        class="-mb-px border-b-2 px-1 py-3 text-sm font-medium transition-colors"
+                        class="border-b-2 px-1 py-3 text-sm font-medium transition-colors"
+                        :aria-pressed="activeGroup === g.key"
                         :class="
                             activeGroup === g.key
                                 ? 'border-primary text-primary'
@@ -1667,7 +1535,8 @@ function formatInputDate(date: Date): string {
                     <Card
                         v-for="m in activeGroupDef.metrics"
                         :key="m.key"
-                        class="gap-0 rounded-none border-0 shadow-none"
+                        :data-metric="m.key"
+                        class="min-w-0 gap-0 rounded-none border-0 shadow-none"
                     >
                         <CardHeader
                             class="flex flex-row items-center justify-between px-5 pt-5 pb-2"

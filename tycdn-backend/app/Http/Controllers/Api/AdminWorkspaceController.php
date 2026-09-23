@@ -34,7 +34,11 @@ class AdminWorkspaceController extends Controller
         'messages' => ['/v1/messages', ['GET', 'POST', 'PUT', 'DELETE']],
         'tasks' => ['/v1/tasks', ['GET', 'PUT']],
         'overview' => ['/v1/admin/overview', ['GET']],
-        'license' => ['/v1/common/auth', ['GET']],
+        'master-account' => ['/v1/user', ['GET']],
+        'new-user-count' => ['/v1/new-user/count', ['GET']],
+        'package-sold-count' => ['/v1/package-sold/count', ['GET']],
+        'agent-check' => ['/v1/maintain/agent-check', ['POST']],
+        'license' => ['/v1/common/auth', ['GET', 'POST']],
         'usage-count' => ['/v1/monitor/usage-count', ['GET']],
         'usage' => ['/v1/monitor/usage', ['GET']],
         'site-realtime' => ['/v1/monitor/site/realtime', ['GET']],
@@ -66,6 +70,9 @@ class AdminWorkspaceController extends Controller
         [$path, $methods] = self::RESOURCES[$resource];
         abort_unless(in_array($request->method(), $methods, true), 405);
         abort_if($request->isMethod('DELETE') && $id === null, 405);
+        if (in_array($resource, ['master-account', 'agent-check', 'license', 'new-user-count', 'package-sold-count'], true)) {
+            abort_if($id !== null, 404);
+        }
         if ($resource === 'tasks' && $request->isMethod('PUT')) {
             $request->validate(['enable' => ['required', 'integer', 'in:0']]);
             abort_if($id === null, 405);
@@ -100,8 +107,15 @@ class AdminWorkspaceController extends Controller
             $payload['start'] = substr($range['start'], 0, 10);
             $payload['end'] = $end->format('Y-m-d');
         }
+        if ($resource === 'master-account' || ($request->isMethod('POST') && in_array($resource, ['agent-check', 'license'], true))) {
+            $payload = [];
+        }
         try {
             $data = $cdnfly->proxyAdminRequest($request->method(), $path.($id === null ? '' : '/'.$id), $payload);
+            if ($resource === 'master-account') {
+                $account = $data['data'] ?? $data;
+                $data = ['data' => array_intersect_key($account, array_flip(['id', 'name']))];
+            }
 
             return response()->json(['ok' => true, 'data' => ConfigSecrets::mask($data)]);
         } catch (\Throwable $e) {

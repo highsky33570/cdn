@@ -43,6 +43,7 @@ const stream = await import(
 
 test('stream queries use master periods, second-precision custom ranges and TCP/UDP ports', () => {
     const now = new Date(2026, 8, 23, 15, 45, 12);
+
     for (const period of ['1', '6', '12']) {
         const range = stream.streamRange(period, { start: '', end: '' }, now);
         assert.equal(
@@ -52,6 +53,7 @@ test('stream queries use master periods, second-precision custom ranges and TCP/
         );
         assert.equal(range.end, '2026-09-23 15:45:12');
     }
+
     const range = stream.streamRange('custom', {
         start: '2026-09-22T01:02:03',
         end: '2026-09-23T04:05',
@@ -69,6 +71,7 @@ test('stream queries use master periods, second-precision custom ranges and TCP/
             port: '88/TCP 99/UDP',
         },
     );
+
     for (const custom of [
         { start: '', end: '' },
         { start: '2026-09-23T04:05', end: '2026-09-23T04:05' },
@@ -869,5 +872,86 @@ test('node monitoring decodes nested interface series and preserves real empty d
             },
             { name: '入站流量（B）', points: [[1700000000000, 0]] },
         ],
+    );
+});
+
+const nodeManagement = await import(
+    moduleUrl(resolve('resources/js/lib/nodeManagement.ts'))
+);
+
+test('node list sends master filters and explicitly requests secondary IPs', () => {
+    assert.deepEqual(
+        nodeManagement.nodeListQuery(
+            { search: '  156.234  ', region: '2', status: '0', type: 'L2' },
+            3,
+            30,
+        ),
+        {
+            'sub-ip': 1,
+            page: 3,
+            limit: 30,
+            search: '156.234',
+            region_id: '2',
+            enable: '0',
+            type: 'L2',
+        },
+    );
+    assert.deepEqual(
+        nodeManagement.nodeListQuery(
+            { search: ' ', region: 'all', status: 'all', type: 'all' },
+            1,
+            10,
+        ),
+        { 'sub-ip': 1, page: 1, limit: 10 },
+    );
+});
+test('secondary IPs stay under their node without increasing the node total', () => {
+    const rows = [
+        { id: 6, pid: 0 },
+        { id: 7, pid: 6 },
+        { id: 8, pid: 6 },
+        { id: 1, pid: 0 },
+        { id: 99, pid: 42 },
+    ];
+    const tree = nodeManagement.nodeTree(rows);
+    assert.equal(tree.length, 2);
+    assert.deepEqual(
+        tree[0].children.map((r) => r.id),
+        [7, 8],
+    );
+    assert.deepEqual(tree[1].children, []);
+    assert.equal(rows.length, 5);
+});
+test('node bandwidth is already bits per second and unknown measurements remain unknown', () => {
+    assert.equal(nodeManagement.nodeBandwidth(3384), '3.38 Kbps');
+    assert.equal(nodeManagement.nodeBandwidth(900000), '0.90 Mbps');
+    assert.equal(nodeManagement.nodeBandwidth(900000000), '0.90 Gbps');
+
+    for (const value of [0, null, undefined, '', 'invalid']) {
+        assert.equal(nodeManagement.nodeBandwidth(value), '未知');
+    }
+});
+test('node status distinguishes sync failure, disabled reasons, and secondary IPs', () => {
+    assert.equal(
+        nodeManagement.nodeStatus({ enable: 1, pid: 0, state: 'failed' }).label,
+        '同步失败',
+    );
+    assert.equal(
+        nodeManagement.nodeStatus({ enable: 0, disable_by: 'sync_error' })
+            .label,
+        '禁用（同步错误）',
+    );
+    assert.equal(
+        nodeManagement.nodeStatus({ enable: 1, pid: 6 }).label,
+        '正常',
+    );
+    assert.equal(
+        nodeManagement.nodeStatus({ enable: 1, pid: 0 }).label,
+        '状态未知',
+    );
+    assert.equal(
+        nodeManagement.nodeStatus({ enable: 1, pid: 0, state: 'process' })
+            .label,
+        '同步中',
     );
 });
