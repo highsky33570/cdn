@@ -23,6 +23,13 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
 import {
     createAdminNodeGroup,
@@ -188,8 +195,7 @@ const form = reactive({
     interval: '60',
     switch_order: 'rand',
 });
-const advanced = ref(false),
-    l2Loading = ref(false),
+const l2Loading = ref(false),
     l2Error = ref('');
 const policySnapshot = () =>
     JSON.stringify([
@@ -204,7 +210,6 @@ async function openEditor(row: CdnflyRecord | null = null): Promise<void> {
     const version = ++editorVersion;
     editing.value = row;
     formError.value = '';
-    advanced.value = false;
     l2Error.value = '';
     let policy: Record<string, unknown> = {};
 
@@ -644,7 +649,8 @@ const resolving = ref<CdnflyRecord | null>(null);
             "
         >
             <DialogScrollContent
-                class="my-5 w-[calc(100%_-_2rem)] self-start bg-card sm:max-w-[490px]"
+                class="my-5 w-[calc(100%_-_2rem)] bg-card sm:max-w-[490px]"
+                :class="editing ? 'line-group-editor' : ''"
             >
                 <DialogHeader
                     ><DialogTitle>{{
@@ -666,7 +672,7 @@ const resolving = ref<CdnflyRecord | null>(null);
                     >
                         {{ formError }}
                     </div>
-                    <div class="form-row">
+                    <div v-if="!editing" class="form-row">
                         <Label for="group-region">区域：</Label
                         ><select
                             id="group-region"
@@ -731,38 +737,68 @@ const resolving = ref<CdnflyRecord | null>(null);
                     </div>
                     <template v-if="editing">
                         <div class="form-row">
-                            <Label for="group-l2">L2配置：</Label
-                            ><select
-                                id="group-l2"
-                                v-model="form.l2_config_id"
-                                :disabled="l2Loading || !!l2Error"
-                                class="h-8 rounded border bg-background px-2 text-sm"
-                            >
-                                <option value="">无</option>
-                                <option
-                                    v-if="
-                                        form.l2_config_id &&
-                                        !l2Configs.some(
-                                            (c) =>
-                                                String(c.id) ===
-                                                form.l2_config_id,
-                                        )
+                            <Label for="group-l2">L2配置：</Label>
+                            <div class="relative min-w-0">
+                                <Select
+                                    :model-value="form.l2_config_id"
+                                    :disabled="l2Loading || !!l2Error"
+                                    @update:model-value="
+                                        form.l2_config_id = String($event ?? '')
                                     "
-                                    :value="form.l2_config_id"
                                 >
-                                    {{
-                                        editing.l2_config_name ||
-                                        form.l2_config_id
-                                    }}
-                                </option>
-                                <option
-                                    v-for="config in l2Configs"
-                                    :key="String(config.id)"
-                                    :value="String(config.id)"
+                                    <SelectTrigger
+                                        id="group-l2"
+                                        class="w-full"
+                                        :class="{ 'pr-12': form.l2_config_id }"
+                                        ><SelectValue
+                                            :placeholder="
+                                                l2Loading ? '加载中…' : '请选择'
+                                            "
+                                    /></SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem
+                                            v-if="
+                                                form.l2_config_id &&
+                                                !l2Configs.some(
+                                                    (c) =>
+                                                        String(c.id) ===
+                                                        form.l2_config_id,
+                                                )
+                                            "
+                                            :value="form.l2_config_id"
+                                            >{{
+                                                editing.l2_config_name ||
+                                                form.l2_config_id
+                                            }}</SelectItem
+                                        >
+                                        <SelectItem
+                                            v-for="config in l2Configs"
+                                            :key="String(config.id)"
+                                            :value="String(config.id)"
+                                            >{{ config.name }}</SelectItem
+                                        >
+                                        <div
+                                            v-if="
+                                                !l2Configs.length &&
+                                                !form.l2_config_id
+                                            "
+                                            class="py-1 text-center text-xs text-muted-foreground"
+                                        >
+                                            无匹配数据
+                                        </div>
+                                    </SelectContent>
+                                </Select>
+                                <button
+                                    v-if="form.l2_config_id"
+                                    type="button"
+                                    class="absolute top-1/2 right-7 -translate-y-1/2 text-muted-foreground"
+                                    :disabled="l2Loading || !!l2Error"
+                                    aria-label="清除L2配置"
+                                    @click="form.l2_config_id = ''"
                                 >
-                                    {{ config.name }}
-                                </option>
-                            </select>
+                                    ×
+                                </button>
+                            </div>
                         </div>
                         <p
                             v-if="l2Error"
@@ -771,65 +807,80 @@ const resolving = ref<CdnflyRecord | null>(null);
                         >
                             {{ l2Error }}
                         </p>
-                        <button
-                            type="button"
-                            class="text-left text-sm text-primary"
-                            :aria-expanded="advanced"
-                            @click="advanced = !advanced"
-                        >
-                            备用IP切换设置
-                        </button>
-                        <template v-if="advanced">
-                            <div class="form-row">
-                                <Label for="group-switch">备用IP切换：</Label
-                                ><select
-                                    id="group-switch"
-                                    v-model="form.backup_switch_type"
-                                    class="h-8 min-w-0 rounded border bg-background px-2 text-sm"
+                        <div class="form-row switch-row">
+                            <Label>备用IP切换:</Label>
+                            <div
+                                role="group"
+                                aria-label="备用IP切换"
+                                class="switch-options"
+                            >
+                                <button
+                                    type="button"
+                                    :aria-pressed="
+                                        form.backup_switch_type ===
+                                        'master_down'
+                                    "
+                                    @click="
+                                        form.backup_switch_type = 'master_down'
+                                    "
                                 >
-                                    <option value="master_down">
-                                        有主IP下线时
-                                    </option>
-                                    <option value="gt_online_ip">
-                                        在线IP数少于备用IP数时
-                                    </option>
-                                    <option value="interval">间隔切换</option>
+                                    有主IP下线时
+                                </button>
+                                <button
+                                    type="button"
+                                    :aria-pressed="
+                                        form.backup_switch_type ===
+                                        'gt_online_ip'
+                                    "
+                                    @click="
+                                        form.backup_switch_type = 'gt_online_ip'
+                                    "
+                                >
+                                    在线IP数少于备用IP数时
+                                </button>
+                                <button
+                                    type="button"
+                                    :aria-pressed="
+                                        form.backup_switch_type === 'interval'
+                                    "
+                                    @click="
+                                        form.backup_switch_type = 'interval'
+                                    "
+                                >
+                                    间隔切换
+                                </button>
+                            </div>
+                        </div>
+                        <template v-if="form.backup_switch_type === 'interval'">
+                            <div class="form-row">
+                                <Label for="group-ip-num">启用IP数：</Label
+                                ><Input
+                                    id="group-ip-num"
+                                    v-model="form.ip_num"
+                                    type="number"
+                                    min="1"
+                                />
+                            </div>
+                            <div class="form-row">
+                                <Label for="group-interval">间隔秒数：</Label
+                                ><Input
+                                    id="group-interval"
+                                    v-model="form.interval"
+                                    type="number"
+                                    min="1"
+                                />
+                            </div>
+                            <div class="form-row">
+                                <Label for="group-order">切换次序：</Label
+                                ><select
+                                    id="group-order"
+                                    v-model="form.switch_order"
+                                    class="h-8 rounded border bg-background px-2 text-sm"
+                                >
+                                    <option value="seq">顺序</option>
+                                    <option value="rand">随机</option>
                                 </select>
                             </div>
-                            <template
-                                v-if="form.backup_switch_type === 'interval'"
-                            >
-                                <div class="form-row">
-                                    <Label for="group-ip-num">启用IP数：</Label
-                                    ><Input
-                                        id="group-ip-num"
-                                        v-model="form.ip_num"
-                                        type="number"
-                                        min="1"
-                                    />
-                                </div>
-                                <div class="form-row">
-                                    <Label for="group-interval"
-                                        >间隔秒数：</Label
-                                    ><Input
-                                        id="group-interval"
-                                        v-model="form.interval"
-                                        type="number"
-                                        min="1"
-                                    />
-                                </div>
-                                <div class="form-row">
-                                    <Label for="group-order">切换次序：</Label
-                                    ><select
-                                        id="group-order"
-                                        v-model="form.switch_order"
-                                        class="h-8 rounded border bg-background px-2 text-sm"
-                                    >
-                                        <option value="seq">顺序</option>
-                                        <option value="rand">随机</option>
-                                    </select>
-                                </div>
-                            </template>
                         </template>
                     </template>
                 </form>
@@ -908,5 +959,81 @@ const resolving = ref<CdnflyRecord | null>(null);
 }
 .form-row input {
     height: 32px;
+}
+:global(.line-group-editor) {
+    max-width: 420px;
+    padding: 0;
+    gap: 0;
+}
+:global(.line-group-editor [data-slot='dialog-header']) {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    text-align: left;
+}
+:global(.line-group-editor [data-slot='dialog-title']) {
+    font-size: 14px;
+    font-weight: 400;
+}
+.line-group-editor .group-form {
+    padding: 20px 15px 27px;
+    gap: 21px;
+}
+.line-group-editor .form-row {
+    grid-template-columns: 70px minmax(0, 1fr);
+    gap: 10px;
+}
+.line-group-editor .form-row :deep(label) {
+    font-size: 12px;
+    white-space: nowrap;
+}
+.line-group-editor .form-row :deep(input),
+.line-group-editor .form-row :deep([data-slot='select-trigger']),
+.line-group-editor .form-row select {
+    height: 28px;
+    min-height: 28px;
+    border-radius: 3px;
+    padding: 3px 7px;
+    font-size: 12px;
+    box-shadow: none;
+}
+.line-group-editor .switch-row {
+    align-items: start;
+}
+.line-group-editor .switch-row :deep(label) {
+    padding-top: 5px;
+}
+.switch-options {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: start;
+}
+.switch-options button {
+    border: 1px solid var(--border);
+    background: var(--card);
+    border-radius: 2px;
+    padding: 5px 12px;
+    font-size: 12px;
+    line-height: 16px;
+    white-space: nowrap;
+}
+.switch-options button[aria-pressed='true'] {
+    border-color: #2d8cf0;
+    color: #2d8cf0;
+    position: relative;
+}
+:global(.line-group-editor [data-slot='dialog-footer']) {
+    padding: 10px 15px;
+    flex-direction: row;
+    justify-content: flex-end;
+}
+:global(.line-group-editor [data-slot='dialog-footer'] button) {
+    height: 28px;
+    border-radius: 3px;
+    padding: 4px 12px;
+    font-size: 12px;
+}
+:global(.line-group-editor [data-slot='dialog-footer'] button[type='submit']) {
+    background: #2d8cf0;
+    color: white;
 }
 </style>
