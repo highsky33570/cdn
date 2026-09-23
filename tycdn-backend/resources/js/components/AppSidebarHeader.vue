@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import UserMenuContent from '@/components/UserMenuContent.vue';
-import { consoleNavigationTitle } from '@/lib/consoleNavigation';
+import { adminNavItems, consoleNavigationTitle } from '@/lib/consoleNavigation';
 import type { BreadcrumbItem } from '@/types';
 
 const props = withDefaults(
@@ -134,6 +134,17 @@ const effectiveBreadcrumbs = computed(() => {
     const title = consoleNavigationTitle(path);
 
     if (title) {
+        const group = adminNavItems.find((item) =>
+            item.children?.some((child) => child.href === path),
+        );
+
+        if (group) {
+            return [
+                { title: group.title, href: group.href },
+                { title, href: path },
+            ];
+        }
+
         return [
             {
                 title: path.startsWith('/console/admin')

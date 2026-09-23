@@ -28,6 +28,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
+import { apiRequest } from '@/lib/apiRequest';
 import { formatDate, getErrorMessage, textValue } from '@/lib/cdnRecord';
 import {
     createUserJobs,
@@ -36,6 +37,11 @@ import {
     listUserJobs,
 } from '@/lib/cdnUserApi';
 import type { CdnJobPayload, CdnflyRecord } from '@/lib/cdnUserApi';
+import { masterGet } from '@/lib/masterApi';
+
+const props = withDefaults(defineProps<{ scope?: 'user' | 'admin' }>(), {
+    scope: 'user',
+});
 
 const TYPE_ALL = 'all';
 const JOB_TYPES = [
@@ -98,7 +104,10 @@ async function loadJobs(targetPage = page.value): Promise<void> {
             params.key2 = encodeURIComponent(filters.key2.trim());
         }
 
-        const result = await listUserJobs(params);
+        const result =
+            props.scope === 'admin'
+                ? await masterGet('cache-jobs', params)
+                : await listUserJobs(params);
         const nextRows = extractCdnflyRows(result);
 
         jobs.value = nextRows;
@@ -137,7 +146,15 @@ async function submitJobs(): Promise<void> {
     formError.value = '';
 
     try {
-        await createUserJobs(jobsPayload);
+        if (props.scope === 'admin') {
+            await apiRequest('/api/admin/workspace/cache-jobs', {
+                method: 'POST',
+                body: JSON.stringify(jobsPayload),
+            });
+        } else {
+            await createUserJobs(jobsPayload);
+        }
+
         toast.success(`已提交 ${jobsPayload.length} 个缓存任务`);
         form.urls = '';
         filters.type = form.type;

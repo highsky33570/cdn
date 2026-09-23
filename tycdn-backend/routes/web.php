@@ -136,6 +136,19 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     $consoleModuleRoutes[] = ['uri' => 'console/streams/groups', 'name' => 'console.streams.groups', 'module' => 'stream-groups'];
     $consoleModuleRoutes[] = ['uri' => 'console/admin/workspace/stream-groups', 'name' => 'console.admin.workspace.stream-groups', 'module' => 'admin-workspace-stream-groups'];
+    foreach ([
+        'line-groups' => 'admin-line-groups',
+        'cache/jobs' => 'admin-cache-jobs',
+        'security/cc' => 'admin-security-cc',
+        'security/waf' => 'admin-security-waf',
+        'sold-packages' => 'admin-sold-packages',
+        'finance/recharge' => 'admin-finance-recharge',
+        'finance/orders' => 'admin-finance-orders',
+        'finance/recharge-count' => 'admin-finance-recharge-count',
+        'message-query' => 'admin-message-query',
+    ] as $path => $module) {
+        $consoleModuleRoutes[] = ['uri' => 'console/admin/'.$path, 'name' => 'console.admin.'.str_replace('/', '.', $path), 'module' => $module];
+    }
     foreach ($consoleModuleRoutes as $route) {
         $consoleRoute = Route::inertia($route['uri'], 'console/Module', [
             'moduleKey' => $route['module'],

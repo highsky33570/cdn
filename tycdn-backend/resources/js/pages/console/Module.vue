@@ -18,6 +18,7 @@ import AdminNodeMonitoring from './AdminNodeMonitoring.vue';
 import AdminNodes from './AdminNodes.vue';
 import AdminOverview from './AdminOverview.vue';
 import AdminPackages from './AdminPackages.vue';
+import AdminPanelRecords from './AdminPanelRecords.vue';
 import AdminSecurity from './AdminSecurity.vue';
 import AdminSites from './AdminSites.vue';
 import AdminStreamAnalytics from './AdminStreamAnalytics.vue';
@@ -77,6 +78,33 @@ const MODULES: Record<
     'admin-packages': { component: AdminPackages },
     'admin-sites': { component: AdminSites },
     'admin-nodes': { component: AdminNodes },
+    'admin-line-groups': {
+        component: AdminNodes,
+        props: { initialTab: 'topology' },
+    },
+    'admin-cache-jobs': { component: UserCache, props: { scope: 'admin' } },
+    'admin-security-cc': { component: AdminSecurity, props: { view: 'cc' } },
+    'admin-security-waf': { component: AdminSecurity, props: { view: 'waf' } },
+    'admin-sold-packages': {
+        component: AdminFinance,
+        props: { initialTab: 'packages' },
+    },
+    'admin-finance-recharge': {
+        component: AdminUsers,
+        props: { title: '用户充值' },
+    },
+    'admin-finance-orders': {
+        component: AdminPanelRecords,
+        props: { view: 'orders' },
+    },
+    'admin-finance-recharge-count': {
+        component: AdminPanelRecords,
+        props: { view: 'recharge-count' },
+    },
+    'admin-message-query': {
+        component: AdminPanelRecords,
+        props: { view: 'messages' },
+    },
     'admin-dns': { component: AdminDns },
     'admin-streams': { component: AdminStreams },
     'admin-finance': { component: AdminFinance },

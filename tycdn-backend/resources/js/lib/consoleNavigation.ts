@@ -8,7 +8,6 @@ import {
     Package,
     Server,
     Settings,
-    Users,
 } from 'lucide-vue-next';
 import type { NavItem } from '@/types';
 export const mainNavItems: NavItem[] = [
@@ -82,7 +81,7 @@ const child = (title: string, href: string): NavItem => ({
     href: '/console/admin/' + href,
 });
 export const adminNavItems: NavItem[] = [
-    { title: '管理概览', href: '/console/admin', icon: Activity },
+    { title: '服务概览', href: '/console/admin', icon: Activity },
     {
         title: '统计分析',
         href: '/console/admin/analytics/realtime',
@@ -92,8 +91,21 @@ export const adminNavItems: NavItem[] = [
             child('数据分析', 'analytics/top'),
             child('拉黑日志', 'workspace/history-blackip'),
             child('访问日志', 'analytics/logs'),
-            child('WAF 攻击日志', 'workspace/attack-log'),
+            child('WAF日志', 'workspace/attack-log'),
             child('四层实时监控', 'streams/analytics'),
+        ],
+    },
+    {
+        title: '节点管理',
+        href: '/console/admin/nodes',
+        icon: Server,
+        children: [
+            child('节点列表', 'nodes'),
+            child('线路分组', 'line-groups'),
+            child('L2配置', 'workspace/l2-configs'),
+            child('DNS配置', 'dns'),
+            child('监控配置', 'config/node-monitor'),
+            child('实时监控', 'node-monitoring'),
         ],
     },
     {
@@ -103,16 +115,27 @@ export const adminNavItems: NavItem[] = [
         children: [
             child('网站列表', 'sites'),
             child('证书管理', 'certificates'),
-            child('CC 与 WAF 规则', 'security'),
+            child('刷新预热', 'cache/jobs'),
+            child('CC规则', 'security/cc'),
+            child('WAF规则', 'security/waf'),
         ],
     },
     {
         title: '四层转发',
         href: '/console/admin/streams',
         icon: Network,
+        children: [child('转发列表', 'streams')],
+    },
+    {
+        title: '全局配置',
+        href: '/console/admin/config/firewall',
+        icon: Settings,
         children: [
-            child('转发列表与分组', 'streams'),
-            child('默认设置', 'config/stream-defaults'),
+            child('防火墙配置', 'config/firewall'),
+            child('Nginx配置', 'config/nginx'),
+            child('资源配置', 'config/resources'),
+            child('默认配置', 'config/defaults'),
+            child('错误页面', 'config/errors'),
         ],
     },
     {
@@ -121,38 +144,22 @@ export const adminNavItems: NavItem[] = [
         icon: Package,
         children: [
             child('基础套餐', 'packages'),
-            child('套餐分组', 'package-groups'),
+            child('已售套餐', 'sold-packages'),
             child('升级包', 'package-upgrades'),
             child('流量包', 'workspace/traffic-packages'),
-            child('营销管理', 'workspace/discounts'),
+            child('营销配置', 'workspace/discounts'),
             child('套餐监控', 'workspace/package-monitor'),
             child('用量查询', 'analytics/usage'),
         ],
     },
     {
-        title: '节点管理',
-        href: '/console/admin/nodes',
-        icon: Server,
+        title: '财务管理',
+        href: '/console/admin/finance/recharge',
+        icon: CreditCard,
         children: [
-            child('节点列表', 'nodes'),
-            child('L2 配置', 'workspace/l2-configs'),
-            child('节点监控', 'node-monitoring'),
-            child('监控配置', 'config/node-monitor'),
-            child('节点 IP 日志', 'workspace/node-ip-log'),
-            child('DNS 管理', 'dns'),
-        ],
-    },
-    { title: '用户管理', href: '/console/admin/users', icon: Users },
-    {
-        title: '全局配置',
-        href: '/console/admin/config/firewall',
-        icon: Settings,
-        children: [
-            child('防火墙配置', 'config/firewall'),
-            child('Nginx 配置', 'config/nginx'),
-            child('资源配置', 'config/resources'),
-            child('网站默认设置', 'config/defaults'),
-            child('错误页面', 'config/errors'),
+            child('用户充值', 'finance/recharge'),
+            child('所有订单', 'finance/orders'),
+            child('充值统计', 'finance/recharge-count'),
         ],
     },
     {
@@ -160,22 +167,30 @@ export const adminNavItems: NavItem[] = [
         href: '/console/admin/settings',
         icon: Settings,
         children: [
-            child('系统设置', 'settings'),
-            child('任务管理', 'workspace/tasks'),
-            child('系统维护', 'maintenance'),
+            child('系统配置', 'settings'),
+            child('后台任务', 'workspace/tasks'),
+            child('用户列表', 'users'),
+            child('系统日志', 'monitoring'),
+            child('维护升级', 'maintenance'),
             child('公告管理', 'workspace/messages'),
-            child('登录与操作日志', 'monitoring'),
+            child('消息查询', 'message-query'),
         ],
     },
-    {
-        // 订单 / 服务实例 / CDNfly 用户套餐 are tabs on this one page.
-        title: '本地财务',
-        href: '/console/admin/finance',
-        icon: CreditCard,
-    },
+];
+// Console-only tools remain accessible without changing the master's menu order.
+export const adminUtilityNavItems: NavItem[] = [
+    child('本地财务', 'finance'),
+    child('套餐分组', 'package-groups'),
+    child('四层默认设置', 'config/stream-defaults'),
+    child('节点 IP 日志', 'workspace/node-ip-log'),
+    child('安全与权限', 'security'),
 ];
 export function consoleNavigationTitle(path: string): string | undefined {
-    for (const group of [...adminNavItems, ...mainNavItems]) {
+    for (const group of [
+        ...adminNavItems,
+        ...mainNavItems,
+        ...adminUtilityNavItems,
+    ]) {
         const child = group.children?.find((item) => item.href === path);
 
         if (child) {

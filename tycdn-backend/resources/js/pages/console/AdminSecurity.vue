@@ -72,6 +72,9 @@ import { formatDate, getErrorMessage } from '@/lib/formatters';
 import type { CdnflyRecord } from '@/lib/sharedTypes';
 
 const DEFAULT_DATA_JSON = '[]';
+const props = withDefaults(defineProps<{ view?: 'all' | 'cc' | 'waf' }>(), {
+    view: 'all',
+});
 
 const stats = ref<{ admins: number; verified: number; apiKey: number }>({
     admins: 0,
@@ -80,6 +83,14 @@ const stats = ref<{ admins: number; verified: number; apiKey: number }>({
 });
 
 onMounted(async () => {
+    if (props.view !== 'all') {
+        if (props.view === 'cc') {
+            void loadCcRows();
+        }
+
+        return;
+    }
+
     try {
         const data: Paginated<AdminUserRecord> = await listAdminUsers({
             role: 'admin',
@@ -166,7 +177,7 @@ const errorMessage = ref('');
 const formError = ref('');
 type SecurityTab = 'admins' | 'acls';
 
-const activeTab = ref<SecurityTab>('admins');
+const activeTab = ref<SecurityTab>(props.view === 'waf' ? 'acls' : 'admins');
 
 const securityTabs: ConsoleTab[] = [
     { key: 'admins', label: '管理员', icon: ShieldCheck },
@@ -392,7 +403,7 @@ const ccKinds: Array<{ key: CcKind; label: string }> = [
     { key: 'rule', label: '规则组' },
 ];
 
-const activeCcKind = ref<CcKind>('matcher');
+const activeCcKind = ref<CcKind>(props.view === 'cc' ? 'rule' : 'matcher');
 const ccDialogOpen = ref(false);
 const editingCc = ref<CdnflyRecord | null>(null);
 const ccPage = ref(1);
@@ -859,7 +870,13 @@ const displayedCcRows = computed(() => {
 <template>
     <div class="flex flex-1 flex-col gap-6 p-4 md:p-6">
         <ConsolePageHeader
-            title="安全与权限"
+            :title="
+                props.view === 'cc'
+                    ? 'CC规则'
+                    : props.view === 'waf'
+                      ? 'WAF规则'
+                      : '安全与权限'
+            "
             :icon="ShieldCheck"
             :show-api-badge="false"
         />
@@ -870,7 +887,7 @@ const displayedCcRows = computed(() => {
             <AlertDescription>{{ errorMessage }}</AlertDescription>
         </Alert>
 
-        <div class="grid gap-4 xl:grid-cols-3">
+        <div v-if="props.view === 'all'" class="grid gap-4 xl:grid-cols-3">
             <Card class="gap-4">
                 <CardHeader class="flex flex-row items-center gap-3">
                     <div
@@ -918,10 +935,14 @@ const displayedCcRows = computed(() => {
             </Card>
         </div>
 
-        <ConsoleTabs v-model="activeTab" :tabs="securityTabs" />
+        <ConsoleTabs
+            v-if="props.view === 'all'"
+            v-model="activeTab"
+            :tabs="securityTabs"
+        />
 
         <ConsoleDataTable
-            v-if="activeTab === 'admins'"
+            v-if="props.view === 'all' && activeTab === 'admins'"
             title="管理员列表"
             :icon="Users"
             :columns="adminColumns"
@@ -940,7 +961,7 @@ const displayedCcRows = computed(() => {
         </ConsoleDataTable>
 
         <ConsoleDataTable
-            v-else
+            v-else-if="props.view !== 'cc'"
             ref="aclTableRef"
             title="全部 WAF 规则"
             :icon="ShieldCheck"
@@ -982,7 +1003,7 @@ const displayedCcRows = computed(() => {
         </ConsoleDataTable>
 
         <!-- CC 防护 -->
-        <Card>
+        <Card v-if="props.view !== 'waf'">
             <CardHeader class="space-y-4">
                 <div
                     class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between"

@@ -14,7 +14,11 @@ import {
     SidebarMenuItem,
     SidebarRail,
 } from '@/components/ui/sidebar';
-import { mainNavItems, adminNavItems } from '@/lib/consoleNavigation';
+import {
+    mainNavItems,
+    adminNavItems,
+    adminUtilityNavItems,
+} from '@/lib/consoleNavigation';
 import type { User } from '@/types';
 
 const page = usePage();
@@ -57,6 +61,23 @@ const adminScope = computed(
         </SidebarContent>
 
         <SidebarFooter>
+            <details
+                v-if="adminScope"
+                class="mx-2 text-sm group-data-[collapsible=icon]:hidden"
+            >
+                <summary
+                    class="cursor-pointer rounded-md px-3 py-2 text-muted-foreground hover:bg-sidebar-accent"
+                >
+                    控制台工具
+                </summary>
+                <Link
+                    v-for="item in adminUtilityNavItems"
+                    :key="item.title"
+                    :href="item.href"
+                    class="block rounded-md px-3 py-2 text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground"
+                    >{{ item.title }}</Link
+                >
+            </details>
             <Link
                 v-if="isAdmin"
                 :href="adminScope ? '/console' : '/console/admin'"

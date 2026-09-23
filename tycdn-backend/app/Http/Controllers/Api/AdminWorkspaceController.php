@@ -17,6 +17,10 @@ class AdminWorkspaceController extends Controller
     use ReportsCdnflyFailures;
 
     public const RESOURCES = [
+        'cache-jobs' => ['/v1/jobs', ['GET', 'POST']],
+        'master-orders' => ['/v1/orders', ['GET']],
+        'recharge-count' => ['/v1/order/count', ['GET']],
+        'message-query' => ['/v1/messages', ['GET']],
         'stream-groups' => ['/v1/stream-groups', ['GET', 'POST', 'PUT', 'DELETE']],
         'stream-top' => ['/v1/monitor/stream/top', ['GET']],
         'l2-configs' => ['/v1/l2-configs', ['GET', 'POST', 'PUT', 'DELETE']],
@@ -68,6 +72,15 @@ class AdminWorkspaceController extends Controller
             $payload = ['enable' => 0];
         } else {
             $payload = $request->isMethod('GET') ? $request->query() : $request->all();
+        }
+        if ($resource === 'cache-jobs' && $request->isMethod('POST')) {
+            $request->validate([
+                '*' => ['required', 'array:type,data'],
+                '*.type' => ['required', 'in:clean_url,clean_dir,pre_cache_url'],
+                '*.data' => ['required', 'array:url'],
+                '*.data.url' => ['required', 'string', 'max:8192'],
+            ]);
+            abort_unless(array_is_list($payload) && count($payload) > 0 && count($payload) <= 1000, 422);
         }
         if ($resource === 'usage-count' && $request->isMethod('GET')) {
             $range = $request->validate([

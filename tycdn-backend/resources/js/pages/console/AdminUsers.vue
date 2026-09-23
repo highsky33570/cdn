@@ -73,6 +73,10 @@ import type {
 import { listAdminPackages } from '@/lib/adminPackagesApi';
 import { extractCdnflyRows } from '@/lib/cdnflyResponse';
 
+const props = withDefaults(defineProps<{ title?: string }>(), {
+    title: '用户列表',
+});
+
 const ROLE_ALL = 'all';
 
 const loading = ref(false);
@@ -679,7 +683,7 @@ function detailPaginationText<T>(payload: Paginated<T> | null): string {
 <template>
     <div class="flex flex-1 flex-col gap-6 p-4 md:p-6">
         <ConsolePageHeader
-            title="用户管理"
+            :title="props.title"
             :icon="Users"
             :show-api-badge="false"
         />

@@ -32,11 +32,11 @@ const props = withDefaults(
     },
 );
 
-const { isCurrentUrl, isCurrentOrParentUrl } = useCurrentUrl();
+const { currentUrl, isCurrentUrl, isCurrentOrParentUrl } = useCurrentUrl();
 const { isMobile, openMobile, setOpen, setOpenMobile, state } = useSidebar();
 
 function isChildActive(item: NavItem) {
-    return toUrl(item.href) === '/console/sites'
+    return ['/console/sites', '/console/admin/sites'].includes(toUrl(item.href))
         ? isCurrentOrParentUrl(item.href)
         : isCurrentUrl(item.href);
 }
@@ -114,6 +114,16 @@ watch(state, (value) => {
 watch(openMobile, (value) => {
     if (isMobile.value && !value) {
         resetOpenMenus();
+    }
+});
+
+watch(currentUrl, () => {
+    if (!isMobile.value && state.value !== 'collapsed') {
+        for (const item of props.items) {
+            if (item.children?.length && isActive(item)) {
+                setMenuOpen(item, true);
+            }
+        }
     }
 });
 </script>
