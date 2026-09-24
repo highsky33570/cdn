@@ -34,10 +34,28 @@ import {
     extractCdnflyRows,
     extractCdnflyTotal,
 } from '@/lib/cdnflyResponse';
+import {
+    listUserAccessLogs,
+    listAccessLogJobs,
+    getUserAccessLog,
+    createFilteredAccessLogJob,
+} from '@/lib/cdnUserApi';
 import { formatDate, getErrorMessage, textValue } from '@/lib/formatters';
 import { masterGet } from '@/lib/masterApi';
 import type { CdnflyRecord } from '@/lib/sharedTypes';
 
+const props = withDefaults(defineProps<{ scope?: 'admin' | 'user' }>(), {
+    scope: 'admin',
+});
+const userScope = computed(() => props.scope === 'user');
+const columns = computed(() =>
+    userScope.value
+        ? accessLogColumns.slice(0, 18).map((column) => ({
+              ...column,
+              width: Math.round(column.width * 1.25),
+          }))
+        : accessLogColumns,
+);
 const filters = reactive(defaultAccessFilters());
 const query = new URLSearchParams(usePage().url.split('?')[1] ?? '');
 
@@ -143,11 +161,14 @@ async function load(target = currentPage.value): Promise<void> {
 
     try {
         if (tab === 'query') {
-            const result = await masterGet('access-log', {
+            const params = {
                 ...accessLogParams(filters),
                 page: target,
                 limit: logSize.value,
-            });
+            };
+            const result = userScope.value
+                ? await listUserAccessLogs(params)
+                : await masterGet('access-log', params);
 
             if (version !== requestVersion) {
                 return;
@@ -157,9 +178,14 @@ async function load(target = currentPage.value): Promise<void> {
             logTotal.value = extractCdnflyTotal(result, rows.value.length);
             logPage.value = target;
         } else {
-            const result = await apiRequest(
-                `/api/admin/access-log-jobs?page=${target}&limit=${jobSize.value}`,
-            );
+            const result = userScope.value
+                ? await listAccessLogJobs({
+                      page: target,
+                      limit: jobSize.value,
+                  })
+                : await apiRequest(
+                      `/api/admin/access-log-jobs?page=${target}&limit=${jobSize.value}`,
+                  );
 
             if (version !== requestVersion) {
                 return;
@@ -204,6 +230,11 @@ function clearFilters(): void {
 function removeFilter(key: AccessFilterKey): void {
     filters[key] = '';
     draft[key] = '';
+
+    if (quickType.value === key) {
+        quickValue.value = '';
+    }
+
     void load(1);
 }
 function openAdvanced(): void {
@@ -260,10 +291,17 @@ async function applyDownload(): Promise<void> {
     applying.value = true;
 
     try {
-        await apiRequest('/api/admin/access-log-jobs', {
-            method: 'POST',
-            body: JSON.stringify(accessLogParams(filters)),
-        });
+        const params = accessLogParams(filters);
+
+        if (userScope.value) {
+            await createFilteredAccessLogJob(params);
+        } else {
+            await apiRequest('/api/admin/access-log-jobs', {
+                method: 'POST',
+                body: JSON.stringify(params),
+            });
+        }
+
         toast.success('申请成功，下载链接请到申请记录中等待获取');
         active.value = 'jobs';
         await load(1);
@@ -284,7 +322,9 @@ async function download(row: CdnflyRecord): Promise<void> {
 
     try {
         const response = await fetch(
-            `/api/admin/access-log-jobs/${id}/download`,
+            userScope.value
+                ? `/api/cdn/access-log-downloads/${id}`
+                : `/api/admin/access-log-jobs/${id}/download`,
             {
                 credentials: 'same-origin',
                 headers: {
@@ -325,13 +365,24 @@ const detail = ref<CdnflyRecord>({}),
     detailTab = ref<'req_header' | 'resp_header' | 'req_body'>('req_header');
 const showBase64 = ref(false);
 let detailVersion = 0;
-const detailText = computed(() =>
-    detailTab.value === 'req_body'
+const detailText = computed(() => {
+    if (
+        userScope.value &&
+        detailTab.value !== 'req_body' &&
+        (!detail.value[detailTab.value] ||
+            detail.value[detailTab.value] === '-')
+    ) {
+        return detailTab.value === 'req_header'
+            ? '未开启记录请求头'
+            : '未开启记录响应头';
+    }
+
+    return detailTab.value === 'req_body'
         ? showBase64.value
             ? textValue(detail.value.req_body)
             : decodeAccessBody(textValue(detail.value.req_body))
-        : accessHeaderText(detail.value[detailTab.value]),
-);
+        : accessHeaderText(detail.value[detailTab.value]);
+});
 async function showDetail(row: CdnflyRecord): Promise<void> {
     const id = ++detailVersion;
     detail.value = {};
@@ -342,9 +393,11 @@ async function showDetail(row: CdnflyRecord): Promise<void> {
     detailLoading.value = true;
 
     try {
-        const result = await apiRequest(
-            `/api/admin/access-logs/${encodeURIComponent(textValue(row._id))}`,
-        );
+        const result = userScope.value
+            ? await getUserAccessLog(textValue(row._id))
+            : await apiRequest(
+                  `/api/admin/access-logs/${encodeURIComponent(textValue(row._id))}`,
+              );
 
         if (id === detailVersion) {
             detail.value = extractCdnflyRecord(result) ?? {};
@@ -372,7 +425,10 @@ onUnmounted(() => {
 </script>
 
 <template>
-    <div class="console-page min-w-0 p-4 md:p-6">
+    <div
+        class="console-page min-w-0 p-4 md:p-6"
+        :class="{ 'user-access-log': userScope }"
+    >
         <section
             class="access-log-card min-w-0 rounded-xl border bg-card p-4 text-card-foreground shadow-sm"
             aria-label="访问日志"
@@ -411,7 +467,7 @@ onUnmounted(() => {
             >
                 <template v-if="active === 'query'">
                     <div
-                        class="mb-3 flex flex-wrap items-center justify-between gap-3"
+                        class="access-toolbar mb-3 flex flex-wrap items-center justify-between gap-3"
                     >
                         <form
                             class="flex max-w-full items-stretch"
@@ -640,7 +696,7 @@ onUnmounted(() => {
                         >
                     </div>
                 </template>
-                <div v-else class="mb-3 flex justify-end">
+                <div v-else class="access-refresh mb-3 flex justify-end">
                     <Button size="sm" :disabled="loading" @click="load()"
                         ><RefreshCw data-icon="inline-start" />刷新</Button
                     >
@@ -651,7 +707,7 @@ onUnmounted(() => {
                         v-if="active === 'query'"
                         class="access-table access-query-table table-fixed text-left text-sm"
                         :style="{
-                            width: `${accessLogColumns.reduce((sum, col) => sum + col.width, 130)}px`,
+                            width: `${columns.reduce((sum, col) => sum + col.width, 130)}px`,
                         }"
                     >
                         <caption class="sr-only">
@@ -659,7 +715,7 @@ onUnmounted(() => {
                         </caption>
                         <colgroup>
                             <col
-                                v-for="col in accessLogColumns"
+                                v-for="col in columns"
                                 :key="col.key"
                                 :style="{ width: `${col.width}px` }"
                             />
@@ -667,10 +723,7 @@ onUnmounted(() => {
                         </colgroup>
                         <thead class="bg-muted/40 text-muted-foreground">
                             <tr>
-                                <th
-                                    v-for="col in accessLogColumns"
-                                    :key="col.key"
-                                >
+                                <th v-for="col in columns" :key="col.key">
                                     {{ col.label }}
                                 </th>
                                 <th>操作</th>
@@ -678,7 +731,10 @@ onUnmounted(() => {
                         </thead>
                         <tbody>
                             <tr v-if="error">
-                                <td :colspan="23" class="text-destructive">
+                                <td
+                                    :colspan="columns.length + 1"
+                                    class="text-destructive"
+                                >
                                     <span role="alert">{{ error }}</span
                                     ><Button
                                         variant="link"
@@ -689,7 +745,7 @@ onUnmounted(() => {
                                 </td>
                             </tr>
                             <tr v-else-if="loading">
-                                <td :colspan="23" class="h-24">
+                                <td :colspan="columns.length + 1" class="h-24">
                                     <Spinner /><span class="sr-only"
                                         >加载中</span
                                     >
@@ -701,13 +757,27 @@ onUnmounted(() => {
                                     :key="textValue(row._id) || index"
                                 >
                                     <td
-                                        v-for="col in accessLogColumns"
+                                        v-for="col in columns"
                                         :key="col.key"
                                         :title="accessLogCell(row, col.key)"
                                     >
-                                        <span class="block truncate">{{
-                                            accessLogCell(row, col.key)
-                                        }}</span>
+                                        <span
+                                            :class="
+                                                userScope &&
+                                                [
+                                                    'host',
+                                                    'tls_fp',
+                                                    'country',
+                                                    'isp',
+                                                    'sip',
+                                                ].includes(col.key)
+                                                    ? 'block break-words whitespace-normal'
+                                                    : 'block truncate'
+                                            "
+                                            >{{
+                                                accessLogCell(row, col.key)
+                                            }}</span
+                                        >
                                     </td>
                                     <td>
                                         <Button
@@ -722,7 +792,7 @@ onUnmounted(() => {
                                 </tr>
                                 <tr v-if="!rows.length">
                                     <td
-                                        :colspan="23"
+                                        :colspan="columns.length + 1"
                                         class="h-24 text-muted-foreground"
                                     >
                                         暂无数据
@@ -900,10 +970,12 @@ onUnmounted(() => {
             </div>
         </section>
         <Dialog v-model:open="detailOpen"
-            ><DialogContent class="max-h-[85vh] overflow-y-auto sm:max-w-2xl"
+            ><DialogContent
+                class="max-h-[85vh] overflow-y-auto sm:max-w-2xl"
+                :class="{ 'user-access-detail': userScope }"
                 ><DialogHeader
                     ><DialogTitle>更多日志</DialogTitle
-                    ><DialogDescription
+                    ><DialogDescription :class="{ 'sr-only': userScope }"
                         >请求头、响应头与请求体</DialogDescription
                     ></DialogHeader
                 >
@@ -981,5 +1053,153 @@ onUnmounted(() => {
 .access-query-table th,
 .access-query-table td {
     border: 1px solid var(--border);
+}
+.user-access-log .access-log-card {
+    border-radius: 0;
+    border: 0;
+    box-shadow: none;
+}
+.user-access-log [role='tablist'],
+.user-access-detail [role='tablist'] {
+    gap: 1.25rem;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 1.25rem;
+}
+.user-access-log [role='tab'],
+.user-access-detail [role='tab'] {
+    border-radius: 0;
+    border-bottom: 2px solid transparent;
+    background: transparent;
+    padding: 0.75rem 1.25rem;
+    margin-bottom: -1px;
+    font-weight: 400;
+    font-size: 1rem;
+}
+.user-access-log [role='tab'][aria-selected='true'],
+.user-access-detail [role='tab'][aria-selected='true'] {
+    border-bottom-color: var(--primary);
+    color: var(--primary);
+}
+.user-access-log .access-toolbar,
+.user-access-log .access-refresh,
+.user-access-log nav {
+    justify-content: flex-start;
+}
+.user-access-log .access-toolbar form select:first-child {
+    width: 5rem;
+}
+.user-access-log .access-toolbar form input {
+    width: 13rem;
+    flex: 1 1 auto;
+}
+.user-access-log .access-toolbar input,
+.user-access-log .access-toolbar button,
+.user-access-log .access-toolbar select,
+.user-access-log .access-refresh button,
+.user-access-log nav button,
+.user-access-log nav select {
+    height: 2.5rem;
+    font-size: 1rem;
+}
+.user-access-log nav button {
+    min-width: 2.5rem;
+}
+.user-access-log nav {
+    margin-top: 1.5rem;
+}
+.user-access-log .access-table {
+    font-size: 1rem;
+}
+.user-access-log .access-table th {
+    height: 3rem;
+    padding: 0.75rem 1.375rem;
+}
+.user-access-log .access-table td {
+    height: 3.75rem;
+    padding: 0.5rem 1.375rem;
+    line-height: 1.625;
+}
+.user-access-log .access-table td[colspan] {
+    height: 3.75rem;
+}
+.user-access-log [aria-busy] {
+    scrollbar-color: #909090 var(--muted);
+    scrollbar-width: auto;
+    overflow-x: scroll;
+}
+.user-access-log .access-table:not(.access-query-table) {
+    min-width: 1450px;
+}
+.user-access-log .access-table,
+.user-access-log nav,
+.user-access-log [role='tab'],
+.user-access-detail [role='tab'] {
+    font-size: 16px;
+}
+.user-access-log .access-table th {
+    height: 48px;
+}
+.user-access-log .access-table td,
+.user-access-log .access-table td[colspan] {
+    height: 60px;
+}
+.user-access-log [aria-label='已应用筛选'] {
+    font-size: 14px;
+}
+.user-access-log .access-toolbar input,
+.user-access-log .access-toolbar button,
+.user-access-log .access-toolbar select,
+.user-access-log .access-refresh button,
+.user-access-log nav button,
+.user-access-log nav select {
+    height: 40px;
+    font-size: 16px;
+}
+.user-access-log .access-toolbar form input,
+.user-access-log .access-toolbar form select:not(:first-child) {
+    border-radius: 0;
+}
+.user-access-log .access-toolbar form button {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+}
+.user-access-detail {
+    gap: 0;
+    padding: 0;
+    border-radius: 0.375rem;
+}
+.user-access-detail > :deep([data-slot='dialog-header']) {
+    padding: 1.25rem;
+    border-bottom: 1px solid var(--border);
+}
+.user-access-detail [role='tablist'] {
+    margin: 1rem 1rem 0;
+}
+.user-access-detail pre {
+    margin: 0;
+    padding: 1.25rem 1rem;
+    border: 0;
+    background: transparent;
+    font-family: inherit;
+    font-size: 1rem;
+    line-height: 1.65;
+}
+.user-access-detail > label {
+    padding: 0 1rem 1rem;
+}
+.user-access-detail > :deep([data-slot='dialog-footer']) {
+    padding: 1rem;
+    border-top: 1px solid var(--border);
+}
+@media (max-width: 640px) {
+    .user-access-log .access-log-card {
+        padding: 0.75rem;
+    }
+    .user-access-log .access-toolbar form {
+        width: 100%;
+    }
+    .user-access-log .access-toolbar form input {
+        width: 0;
+    }
 }
 </style>

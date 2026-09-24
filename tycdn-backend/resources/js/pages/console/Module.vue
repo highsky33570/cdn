@@ -47,11 +47,15 @@ import AdminTrafficPackages from './AdminTrafficPackages.vue';
 import AdminUsage from './AdminUsage.vue';
 import AdminWafLogs from './AdminWafLogs.vue';
 import UserAccount from './UserAccount.vue';
+import UserAccountLogs from './UserAccountLogs.vue';
 import UserAnalytics from './UserAnalytics.vue';
+import UserApiKey from './UserApiKey.vue';
 import UserBilling from './UserBilling.vue';
 import UserCache from './UserCache.vue';
 import UserCertificates from './UserCertificates.vue';
+import UserMessageQuery from './UserMessageQuery.vue';
 import UserMessages from './UserMessages.vue';
+import UserOrders from './UserOrders.vue';
 import UserSecurity from './UserSecurity.vue';
 import UserSites from './UserSites.vue';
 import UserStreams from './UserStreams.vue';
@@ -147,14 +151,14 @@ const MODULES: Record<
 
     'security-acls': { component: UserSecurity, props: { view: 'acls' } },
     'security-cc': { component: UserSecurity, props: { view: 'cc' } },
-    'security-blackip': { component: UserSecurity, props: { view: 'blackip' } },
+    'security-blackip': { component: AdminBlockLogs, props: { scope: 'user' } },
 
     'analytics-realtime': {
         component: UserAnalytics,
         props: { view: 'realtime' },
     },
     'analytics-top': { component: UserAnalytics, props: { view: 'top' } },
-    'analytics-logs': { component: UserAnalytics, props: { view: 'logs' } },
+    'analytics-logs': { component: AdminAccessLogs, props: { scope: 'user' } },
     'analytics-usage': { component: UserAnalytics, props: { view: 'usage' } },
 
     streams: { component: UserStreams, props: { view: 'list' } },
@@ -163,8 +167,8 @@ const MODULES: Record<
         props: { resource: 'stream-groups', scope: 'user' },
     },
     'streams-analytics': {
-        component: UserStreams,
-        props: { view: 'analytics' },
+        component: AdminStreamAnalytics,
+        props: { scope: 'user' },
     },
 
     'billing-packages': { component: UserBilling, props: { view: 'packages' } },
@@ -177,27 +181,21 @@ const MODULES: Record<
         props: { view: 'traffic-packs' },
     },
     'billing-usage': { component: UserBilling, props: { view: 'usage' } },
-    'billing-orders': { component: UserBilling, props: { view: 'orders' } },
+    'billing-orders': { component: UserOrders },
 
-    messages: { component: UserMessages, props: { view: 'messages' } },
+    messages: { component: UserMessageQuery },
     'message-subscriptions': {
         component: UserMessages,
-        props: { view: 'subscriptions' },
     },
 
     'account-profile': { component: UserAccount, props: { view: 'profile' } },
-    'account-balance': {
-        component: UserAccount,
-        props: { view: 'profile', initialAction: 'recharge' },
-    },
     'account-certification': {
         component: UserAccount,
         props: { view: 'certification' },
     },
-    'account-api-key': { component: UserAccount, props: { view: 'api-key' } },
+    'account-api-key': { component: UserApiKey },
     'account-login-logs': {
-        component: UserAccount,
-        props: { view: 'login-logs' },
+        component: UserAccountLogs,
     },
 };
 

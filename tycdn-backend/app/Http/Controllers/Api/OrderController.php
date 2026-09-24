@@ -8,14 +8,22 @@ use App\Models\ServiceInstance;
 use App\Services\CdnflyProvisionService;
 use App\Services\EpusdtCheckoutService;
 use App\Support\OrderStatus;
+use App\Support\OrderType;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
+use Illuminate\Validation\Rule;
 
 class OrderController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
         $user = $request->user();
+        $filters = $request->validate([
+            'order_type' => ['nullable', Rule::in(OrderType::all())],
+            'start' => ['nullable', 'required_with:end', 'date_format:Y-m-d'],
+            'end' => ['nullable', 'required_with:start', 'date_format:Y-m-d', 'after_or_equal:start'],
+        ]);
         $perPage = min(max((int) $request->integer('limit', 20), 1), 100);
         $status = trim((string) $request->input('status', ''));
         $search = trim((string) $request->input('search', ''));
@@ -23,6 +31,9 @@ class OrderController extends Controller
         $orders = Order::query()
             ->with(['product:id,name,slug', 'targetServiceInstance:id,status,service_name,opened_at,extra'])
             ->where('user_id', $user->id)
+            ->when($filters['order_type'] ?? null, fn ($query, $type) => $query->where('order_type', $type))
+            ->when($filters['start'] ?? null, fn ($query, $start) => $query->where('created_at', '>=', Carbon::parse($start)->startOfDay()))
+            ->when($filters['end'] ?? null, fn ($query, $end) => $query->where('created_at', '<', Carbon::parse($end)->addDay()->startOfDay()))
             ->when($status !== '', fn ($query) => $query->where('status', $status))
             ->when($search !== '', function ($query) use ($search): void {
                 $query->where(function ($inner) use ($search): void {

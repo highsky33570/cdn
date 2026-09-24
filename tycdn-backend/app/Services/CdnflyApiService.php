@@ -1689,12 +1689,22 @@ class CdnflyApiService
 
     public function exportAdminBlackIps(string $resource, array $query = []): Response
     {
+        return $this->exportBlackIps($this->adminHttp(), $resource, $query);
+    }
+
+    public function exportUserBlackIps(User $user, string $resource, array $query = []): Response
+    {
+        return $this->exportBlackIps($this->userHttp($user), $resource, $query);
+    }
+
+    private function exportBlackIps(PendingRequest $http, string $resource, array $query): Response
+    {
         $path = match ($resource) {
             'blackip' => '/v1/monitor/site/blackip',
             'history-blackip' => '/v1/monitor/site/history-blackip',
             default => throw new \InvalidArgumentException('Unsupported block-log export'),
         };
-        $response = $this->adminHttp()->withOptions(['stream' => true])
+        $response = $http->withOptions(['stream' => true])
             ->get($path, [...$query, 'action' => 'export']);
         if (! $response->successful() || ! str_starts_with(strtolower($response->header('Content-Type')), 'text/plain')) {
             $this->parseResponse($response, 'export block log');

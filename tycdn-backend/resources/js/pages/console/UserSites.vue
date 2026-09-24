@@ -3,24 +3,17 @@ import { router } from '@inertiajs/vue3';
 import {
     AlertCircle,
     CheckCircle2,
-    Globe2,
+    ChevronDown,
     LoaderCircle,
-    Pencil,
-    Plus,
-    RefreshCw,
     Save,
-    Search,
-    Trash2,
     XCircle,
 } from 'lucide-vue-next';
 import { computed, onMounted, reactive, ref, watch } from 'vue';
 import { toast } from 'vue-sonner';
 import ConfirmDeleteDialog from '@/components/console/ConfirmDeleteDialog.vue';
-import ConsolePageHeader from '@/components/console/ConsolePageHeader.vue';
+import PackagePagination from '@/components/console/PackagePagination.vue';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
     Dialog,
     DialogDescription,
@@ -29,6 +22,12 @@ import {
     DialogScrollContent,
     DialogTitle,
 } from '@/components/ui/dialog';
+import {
+    DropdownMenu,
+    DropdownMenuTrigger,
+    DropdownMenuContent,
+    DropdownMenuItem,
+} from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -40,7 +39,13 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
-import Switch from '@/components/ui/switch/Switch.vue';
+import {
+    siteCname,
+    sitePorts,
+    siteObject,
+    siteStatus,
+    csvCell,
+} from '@/lib/adminSiteWorkspace';
 import {
     formatDate,
     getErrorMessage,
@@ -52,6 +57,9 @@ import {
 } from '@/lib/cdnRecord';
 import {
     createUserConfig,
+    createUserCert,
+    createUserJobs,
+    getUserSite,
     createUserDnsApi,
     createUserSite,
     createUserSiteGroup,
@@ -84,9 +92,12 @@ import type {
 
 type SiteTab = 'sites' | 'groups' | 'defaults' | 'dnsapi' | 'resolve';
 
-const props = withDefaults(defineProps<{ initialTab?: SiteTab }>(), {
-    initialTab: 'sites',
-});
+const props = withDefaults(
+    defineProps<{ initialTab?: SiteTab; embedded?: boolean }>(),
+    {
+        initialTab: 'sites',
+    },
+);
 
 const TABS: { key: SiteTab; label: string }[] = [
     { key: 'sites', label: '网站列表' },
@@ -252,8 +263,12 @@ const userPackages = ref<{ id: number; label: string; hint: string }[]>([]);
 const userPackagesLoaded = ref(false);
 const siteFilters = reactive({
     domain: '',
+    id: '',
+    cname: '',
+    groups: '',
+    user_package: '',
     enable: ENABLE_ALL,
-    per_page: '20',
+    per_page: '10',
 });
 const siteForm = reactive({
     domain: '',
@@ -267,6 +282,7 @@ const siteForm = reactive({
 const groupDialogOpen = ref(false);
 const editingGroup = ref<CdnflyRecord | null>(null);
 const groupPage = ref(1);
+const groupSize = ref(10);
 const groupTotal = ref(0);
 const groupRows = ref<CdnflyRecord[]>([]);
 const groupForm = reactive({ name: '', des: '' });
@@ -277,7 +293,7 @@ const editingConfig = ref<CdnflyRecord | null>(null);
 const configPage = ref(1);
 const configTotal = ref(0);
 const configRows = ref<CdnflyRecord[]>([]);
-const configFilters = reactive({ type: 'all', per_page: '20' });
+const configFilters = reactive({ type: 'site', per_page: '10' });
 const configForm = reactive({
     type: 'site',
     name: '',
@@ -294,7 +310,7 @@ const editingDns = ref<CdnflyRecord | null>(null);
 const dnsPage = ref(1);
 const dnsTotal = ref(0);
 const dnsRows = ref<CdnflyRecord[]>([]);
-const dnsFilters = reactive({ search: '', per_page: '20' });
+const dnsFilters = reactive({ search: '', per_page: '10' });
 const dnsForm = reactive({
     name: '',
     type: 'CloudFlare',
@@ -306,7 +322,13 @@ const dnsForm = reactive({
 const resolvePage = ref(1);
 const resolveTotal = ref(0);
 const resolveRows = ref<CdnflyRecord[]>([]);
-const resolveFilters = reactive({ domain: '', site_id: '', per_page: '20' });
+const resolveFilters = reactive({
+    domain: '',
+    site_id: '',
+    dnsapi_state: '',
+    task_state: '',
+    per_page: '10',
+});
 const resolveSelected = ref<Set<number>>(new Set());
 const resolveChecking = ref(false);
 const resolveSelectAll = ref(false);
@@ -332,6 +354,7 @@ const displayedDnsRows = computed(() => {
 });
 
 watch(activeTab, (tab) => {
+    selected.value = [];
     errorMessage.value = '';
 
     if (tab === 'sites' && siteRows.value.length === 0) {
@@ -356,12 +379,13 @@ watch(activeTab, (tab) => {
 });
 
 onMounted(() => {
-    void loadSites();
+    void loadActive();
     void loadUserPackages();
 });
 
 // ── 网站列表 ──
 async function loadSites(p = sitePage.value) {
+    selected.value = [];
     loading.value = true;
     errorMessage.value = '';
 
@@ -371,8 +395,16 @@ async function loadSites(p = sitePage.value) {
             limit: Number(siteFilters.per_page),
         };
 
-        if (siteFilters.domain.trim()) {
-            params.domain = siteFilters.domain.trim();
+        for (const key of [
+            'domain',
+            'id',
+            'cname',
+            'groups',
+            'user_package',
+        ] as const) {
+            if (siteFilters[key].trim()) {
+                params[key] = siteFilters[key].trim();
+            }
         }
 
         if (siteFilters.enable !== ENABLE_ALL) {
@@ -607,11 +639,12 @@ async function toggleSiteEnabled(s: CdnflyRecord, checked: boolean) {
 
 // ── 分组管理 ──
 async function loadGroups(p = groupPage.value) {
+    selected.value = [];
     loading.value = true;
     errorMessage.value = '';
 
     try {
-        const r = await listUserSiteGroups({ page: p, limit: 20 });
+        const r = await listUserSiteGroups({ page: p, limit: groupSize.value });
         groupRows.value = extractCdnflyRows(r);
         groupTotal.value = extractCdnflyTotal(r, groupRows.value.length);
         groupPage.value = p;
@@ -682,6 +715,7 @@ async function submitGroup() {
 
 // ── 默认设置 ──
 async function loadConfigs(p = configPage.value) {
+    selected.value = [];
     loading.value = true;
     errorMessage.value = '';
 
@@ -811,6 +845,7 @@ function configLabel(name: string): string {
 
 // ── DNS API ──
 async function loadDns(p = dnsPage.value) {
+    selected.value = [];
     loading.value = true;
     errorMessage.value = '';
 
@@ -907,29 +942,6 @@ async function submitDns() {
     }
 }
 
-function maskedAuth(r: CdnflyRecord): string {
-    const auth = r.auth;
-
-    if (!auth) {
-        return '-';
-    }
-
-    if (typeof auth === 'string') {
-        try {
-            return Object.keys(JSON.parse(auth)).join(', ') || '-';
-        } catch {
-            return '已配置';
-        }
-    }
-
-    if (typeof auth === 'object' && !Array.isArray(auth)) {
-        return Object.keys(auth).join(', ') || '-';
-    }
-
-    return '已配置';
-}
-
-// ── 解析检测 ──
 async function loadResolve(p = resolvePage.value) {
     loading.value = true;
     errorMessage.value = '';
@@ -946,6 +958,14 @@ async function loadResolve(p = resolvePage.value) {
 
         if (resolveFilters.site_id.trim()) {
             params.site_id = resolveFilters.site_id.trim();
+        }
+
+        if (resolveFilters.dnsapi_state) {
+            params.dnsapi_state = resolveFilters.dnsapi_state;
+        }
+
+        if (resolveFilters.task_state) {
+            params.task_state = resolveFilters.task_state;
         }
 
         const r = await listUserDomains(params);
@@ -1200,1077 +1220,970 @@ function taskStateLabel(v: unknown): string {
     return TASK_STATE_LABELS[s] ?? textValue(v);
 }
 
-function taskStateVariant(v: unknown): 'secondary' | 'destructive' | 'outline' {
-    const s = String(v ?? '').toLowerCase();
-
-    if (s === 'done') {
-        return 'secondary';
+const selected = ref<number[]>([]);
+const busy = ref(false);
+const exporting = ref(false);
+const quickField = ref<'domain' | 'id' | 'cname'>('domain');
+const activeRows = computed(
+    () =>
+        ({
+            sites: siteRows.value,
+            groups: groupRows.value,
+            defaults: configRows.value,
+            dnsapi: displayedDnsRows.value,
+            resolve: resolveRows.value,
+        })[activeTab.value],
+);
+const currentPage = computed(
+    () =>
+        ({
+            sites: sitePage.value,
+            groups: groupPage.value,
+            defaults: configPage.value,
+            dnsapi: dnsPage.value,
+            resolve: resolvePage.value,
+        })[activeTab.value],
+);
+const currentTotal = computed(
+    () =>
+        ({
+            sites: siteTotal.value,
+            groups: groupTotal.value,
+            defaults: configTotal.value,
+            dnsapi: dnsTotal.value,
+            resolve: resolveTotal.value,
+        })[activeTab.value],
+);
+const currentSize = computed(() =>
+    Number(
+        {
+            sites: siteFilters.per_page,
+            groups: groupSize.value,
+            defaults: configFilters.per_page,
+            dnsapi: dnsFilters.per_page,
+            resolve: resolveFilters.per_page,
+        }[activeTab.value],
+    ),
+);
+const allSelected = computed(
+    () =>
+        activeRows.value.length > 0 &&
+        activeRows.value.every((row) =>
+            activeTab.value === 'resolve'
+                ? resolveSelected.value.has(Number(row.id))
+                : selected.value.includes(Number(row.id)),
+        ),
+);
+type SiteColumn = { key: string; label: string; width?: number };
+const tableColumns = computed<SiteColumn[]>(() => {
+    if (activeTab.value === 'sites') {
+        return [
+            { key: 'id', label: 'ID', width: 90 },
+            { key: 'domain', label: '域名', width: 190 },
+            { key: 'ports', label: '监听端口', width: 125 },
+            { key: 'origin', label: '源站', width: 125 },
+            { key: 'cname', label: 'CNAME', width: 200 },
+            { key: 'https', label: 'HTTPS', width: 125 },
+            { key: 'package', label: '套餐', width: 125 },
+            { key: 'groups', label: '分组', width: 125 },
+            { key: 'status', label: '状态', width: 185 },
+            { key: 'created', label: '添加时间', width: 210 },
+            { key: 'actions', label: '操作', width: 160 },
+        ];
     }
 
-    if (s === 'failed') {
-        return 'destructive';
+    if (activeTab.value === 'resolve') {
+        return [
+            { key: 'id', label: 'ID', width: 120 },
+            { key: 'site_id', label: '网站ID', width: 130 },
+            { key: 'domain', label: '域名' },
+            { key: 'cname', label: 'CNAME' },
+            { key: 'resolve', label: '解析状态', width: 160 },
+            { key: 'dns_api', label: 'DNS API', width: 160 },
+            { key: 'task', label: '任务状态', width: 160 },
+        ];
     }
 
-    return 'outline';
+    return [
+        { key: 'id', label: 'ID', width: 100 },
+        ...(activeTab.value === 'defaults'
+            ? [
+                  { key: 'config', label: '设置项' },
+                  { key: 'value', label: '设置值' },
+                  { key: 'scope', label: '生效范围' },
+              ]
+            : [
+                  { key: 'name', label: '名称' },
+                  ...(activeTab.value === 'dnsapi'
+                      ? [{ key: 'type', label: '类型' }]
+                      : []),
+                  { key: 'des', label: '备注' },
+              ]),
+        { key: 'actions', label: '操作', width: 180 },
+    ];
+});
+function hasHttps(row: CdnflyRecord): boolean {
+    return Object.keys(siteObject(row.https_listen)).length > 0;
+}
+function cellValue(row: CdnflyRecord, key: string): string {
+    if (key === 'ports') {
+        return sitePorts(row).join(' ');
+    }
+
+    if (key === 'origin') {
+        return backendText(row);
+    }
+
+    if (key === 'cname') {
+        return siteCname(row);
+    }
+
+    if (key === 'package') {
+        return `${sitePackageName(row)} (id: ${sitePackageId(row)})`;
+    }
+
+    if (key === 'groups') {
+        return textValue(row.group_name ?? row.groups);
+    }
+
+    if (key === 'created') {
+        return fmtDate(row.create_at2 ?? row.create_at);
+    }
+
+    if (key === 'config') {
+        return configLabel(textValue(row.name));
+    }
+
+    if (key === 'scope') {
+        return row.scope_name === 'group'
+            ? `网站分组 (${row.scope_id})`
+            : '全局';
+    }
+
+    if (key === 'dns_api') {
+        return row.dns_api && row.dns_api !== '0' ? '已配置' : '未配置';
+    }
+
+    if (key === 'task') {
+        return row.state ? taskStateLabel(row.state) : '';
+    }
+
+    return textValue(row[key]);
+}
+async function loadActive(page = currentPage.value) {
+    selected.value = [];
+    await {
+        sites: loadSites,
+        groups: loadGroups,
+        defaults: loadConfigs,
+        dnsapi: loadDns,
+        resolve: loadResolve,
+    }[activeTab.value](page);
+}
+function changePageSize(size: number) {
+    if (activeTab.value === 'groups') {
+        groupSize.value = size;
+    } else {
+        ({
+            sites: siteFilters,
+            defaults: configFilters,
+            dnsapi: dnsFilters,
+            resolve: resolveFilters,
+        })[activeTab.value].per_page = String(size);
+    }
+
+    void loadActive(1);
+}
+function selectRow(id: number) {
+    if (activeTab.value === 'resolve') {
+        toggleResolveSelect(id);
+
+        return;
+    }
+
+    selected.value = selected.value.includes(id)
+        ? selected.value.filter((item) => item !== id)
+        : [...selected.value, id];
+}
+function selectAll() {
+    if (activeTab.value === 'resolve') {
+        toggleResolveSelectAll();
+
+        return;
+    }
+
+    selected.value = allSelected.value
+        ? []
+        : activeRows.value.map((row) => Number(row.id));
+}
+function editRow(row: CdnflyRecord) {
+    ({
+        sites: openSiteEdit,
+        groups: openGroupEdit,
+        defaults: openConfigEdit,
+        dnsapi: openDnsEdit,
+        resolve: openSiteEdit,
+    })[activeTab.value](row);
+}
+function clearSiteFilters() {
+    Object.assign(siteFilters, {
+        domain: '',
+        id: '',
+        cname: '',
+        groups: '',
+        user_package: '',
+        enable: ENABLE_ALL,
+    });
+    void loadSites(1);
+}
+function clearResolveFilters() {
+    Object.assign(resolveFilters, {
+        domain: '',
+        site_id: '',
+        dnsapi_state: '',
+        task_state: '',
+    });
+    void loadResolve(1);
+}
+type BulkAction =
+    | 'enable'
+    | 'disable'
+    | 'delete'
+    | 'edit'
+    | 'certificate'
+    | 'cache'
+    | 'unlock';
+const bulkOpen = ref(false),
+    bulkError = ref(''),
+    bulkAction = ref<BulkAction>('edit');
+const bulkField = ref<'groups' | 'user_package'>('groups'),
+    bulkValue = ref('');
+const bulkTitle = computed(
+    () =>
+        ({
+            enable: '启用网站',
+            disable: '禁用网站',
+            delete: '删除所选记录',
+            edit: '批量修改',
+            certificate: '申请证书',
+            cache: '清空缓存',
+            unlock: '解锁黑名单',
+        })[bulkAction.value],
+);
+const pendingCertificates = new Map<number, number>();
+function openBulk(action: BulkAction) {
+    bulkAction.value = action;
+    bulkError.value = '';
+    bulkValue.value = '';
+    bulkOpen.value = true;
+}
+async function runBulk(action: BulkAction) {
+    if (busy.value || !selected.value.length) {
+        return;
+    }
+
+    const tab = activeTab.value;
+    const targets = [...selected.value];
+    const failures: number[] = [];
+    const messages: string[] = [];
+
+    if (
+        action === 'edit' &&
+        bulkField.value === 'user_package' &&
+        !/^[1-9]\d*$/.test(bulkValue.value.trim())
+    ) {
+        bulkError.value = '请输入有效的用户套餐ID';
+
+        return;
+    }
+
+    busy.value = true;
+    bulkError.value = '';
+
+    for (const id of targets) {
+        try {
+            if (action === 'delete') {
+                if (tab === 'sites') {
+                    const site = extractCdnflyRecord(await getUserSite(id));
+
+                    if (!site || isSiteEnabled(site)) {
+                        throw new Error('请先禁用网站并等待配置同步完成');
+                    }
+
+                    await deleteUserSite(id);
+                } else {
+                    await {
+                        groups: deleteUserSiteGroup,
+                        defaults: deleteUserConfig,
+                        dnsapi: deleteUserDnsApi,
+                        resolve: deleteUserSite,
+                    }[tab](id);
+                }
+            } else if (action === 'enable' || action === 'disable') {
+                await updateUserSite(id, {
+                    enable: action === 'enable' ? 1 : 0,
+                });
+            } else if (action === 'edit') {
+                await updateUserSite(
+                    id,
+                    bulkField.value === 'groups'
+                        ? { groups: bulkValue.value.trim() }
+                        : { user_package: Number(bulkValue.value) },
+                );
+            } else if (action === 'unlock') {
+                await createUserJobs([
+                    {
+                        type: 'unlock_ip',
+                        data: { site_id: id, key1: 'site_id' },
+                    },
+                ]);
+            } else {
+                const site = extractCdnflyRecord(await getUserSite(id));
+
+                if (!site || !textValue(site.domain)) {
+                    throw new Error('网站域名缺失');
+                }
+
+                if (action === 'cache') {
+                    await createUserJobs(
+                        textValue(site.domain)
+                            .trim()
+                            .split(/\s+/)
+                            .flatMap((domain) =>
+                                ['http', 'https'].map((protocol) => ({
+                                    type: 'clean_dir',
+                                    data: { url: `${protocol}://${domain}/` },
+                                })),
+                            ),
+                    );
+                } else {
+                    if (!isSiteEnabled(site)) {
+                        throw new Error('请先启用网站');
+                    }
+
+                    if (hasHttps(site)) {
+                        throw new Error('网站已开启HTTPS，无需重复申请');
+                    }
+
+                    let certId = pendingCertificates.get(id);
+
+                    if (!certId) {
+                        const domain = textValue(site.domain);
+                        const result = await createUserCert({
+                            name: `${domain.split(/\s+/)[0]}免费证书`,
+                            domain,
+                            des: '一键申请',
+                        });
+                        const record = extractCdnflyRecord(result);
+                        certId = Number(record?.id ?? result.id ?? result.data);
+
+                        if (!Number.isSafeInteger(certId) || certId <= 0) {
+                            throw new Error(
+                                '证书已申请，但未返回ID，请到证书列表手动绑定',
+                            );
+                        }
+
+                        pendingCertificates.set(id, certId);
+                    }
+
+                    await updateUserSite(id, {
+                        https_listen: { cert: certId },
+                    });
+                    pendingCertificates.delete(id);
+                }
+            }
+        } catch (e) {
+            failures.push(id);
+            messages.push(`#${id}: ${getErrorMessage(e)}`);
+        }
+    }
+
+    await loadActive();
+    selected.value = failures;
+    busy.value = false;
+
+    if (failures.length) {
+        bulkError.value = messages.join('；');
+        errorMessage.value = bulkError.value;
+    } else {
+        bulkOpen.value = false;
+        toast.success(`已处理 ${targets.length} 项`);
+    }
+}
+async function exportSites() {
+    exporting.value = true;
+
+    try {
+        const params: Record<string, string | number> = { limit: 200 };
+
+        for (const key of [
+            'domain',
+            'id',
+            'cname',
+            'groups',
+            'user_package',
+        ] as const) {
+            if (siteFilters[key].trim()) {
+                params[key] = siteFilters[key].trim();
+            }
+        }
+
+        if (siteFilters.enable !== ENABLE_ALL) {
+            params.enable = siteFilters.enable;
+        }
+
+        const exported: CdnflyRecord[] = [];
+        let total = 1;
+
+        for (let page = 1; exported.length < total; page++) {
+            const result = await listUserSites({ ...params, page });
+            const rows = extractCdnflyRows(result);
+            total = extractCdnflyTotal(result, rows.length);
+
+            if (!rows.length) {
+                break;
+            }
+
+            const fresh = rows.filter(
+                (row) => !exported.some((previous) => previous.id === row.id),
+            );
+
+            if (!fresh.length) {
+                throw new Error('导出分页未返回新数据，请重试');
+            }
+
+            exported.push(...fresh);
+        }
+
+        const columns = tableColumns.value.filter(
+            (column) => column.key !== 'actions',
+        );
+        const csv = [
+            columns.map((column) => csvCell(column.label)).join(','),
+            ...exported.map((row) =>
+                columns
+                    .map((column) =>
+                        csvCell(
+                            column.key === 'https'
+                                ? hasHttps(row)
+                                    ? '是'
+                                    : '否'
+                                : column.key === 'status'
+                                  ? siteStatus(row).text
+                                  : cellValue(row, column.key),
+                        ),
+                    )
+                    .join(','),
+            ),
+        ].join('\r\n');
+        const url = URL.createObjectURL(
+            new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' }),
+        );
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'sites.csv';
+        link.click();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch (e) {
+        errorMessage.value = getErrorMessage(e);
+    } finally {
+        exporting.value = false;
+    }
 }
 </script>
 
 <template>
-    <div class="flex flex-1 flex-col gap-6 p-4 md:p-6">
-        <ConsolePageHeader
-            title="站点管理"
-            :icon="Globe2"
-            :show-api-badge="false"
-        />
-
-        <!-- Tab bar -->
-        <div class="flex gap-1 border-b">
-            <button
-                v-for="tab in TABS"
-                :key="tab.key"
-                type="button"
-                class="-mb-px border-b-2 px-4 py-2 text-sm font-medium transition-colors"
-                :class="
-                    activeTab === tab.key
-                        ? 'border-primary text-primary'
-                        : 'border-transparent text-muted-foreground hover:text-foreground'
-                "
-                @click="activeTab = tab.key"
-            >
-                {{ tab.label }}
-            </button>
-        </div>
-
-        <Alert v-if="errorMessage" variant="destructive">
-            <AlertCircle data-icon="alert" />
-            <AlertTitle>请求失败</AlertTitle>
-            <AlertDescription>{{ errorMessage }}</AlertDescription>
-        </Alert>
-
-        <!-- ═══ 网站列表 ═══ -->
-        <template v-if="activeTab === 'sites'">
-            <Card class="gap-4">
-                <CardContent class="pt-6">
-                    <div class="grid gap-3 xl:grid-cols-[1fr_160px_120px_auto]">
-                        <div class="relative">
-                            <Search
-                                class="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
-                            />
-                            <Input
-                                v-model="siteFilters.domain"
-                                class="pl-9"
-                                placeholder="搜索域名"
-                                @keyup.enter="loadSites(1)"
-                            />
-                        </div>
-                        <Select v-model="siteFilters.enable">
-                            <SelectTrigger class="w-full"
-                                ><SelectValue
-                            /></SelectTrigger>
-                            <SelectContent
-                                ><SelectGroup>
-                                    <SelectItem :value="ENABLE_ALL"
-                                        >全部状态</SelectItem
-                                    >
-                                    <SelectItem value="1">启用</SelectItem>
-                                    <SelectItem value="0">禁用</SelectItem>
-                                </SelectGroup></SelectContent
-                            >
-                        </Select>
-                        <Select v-model="siteFilters.per_page">
-                            <SelectTrigger class="w-full"
-                                ><SelectValue
-                            /></SelectTrigger>
-                            <SelectContent
-                                ><SelectGroup>
-                                    <SelectItem value="20">20 条</SelectItem>
-                                    <SelectItem value="50">50 条</SelectItem>
-                                </SelectGroup></SelectContent
-                            >
-                        </Select>
-                        <div class="flex flex-wrap gap-2">
-                            <Button :disabled="loading" @click="loadSites(1)"
-                                ><Spinner
-                                    v-if="loading"
-                                    data-icon="inline-start"
-                                /><Search
-                                    v-else
-                                    data-icon="inline-start"
-                                />搜索</Button
-                            >
-                            <Button
-                                variant="outline"
-                                :disabled="loading"
-                                @click="loadSites()"
-                                ><RefreshCw
-                                    data-icon="inline-start"
-                                />刷新</Button
-                            >
-                            <Button @click="openSiteCreate"
-                                ><Plus
-                                    data-icon="inline-start"
-                                />创建站点</Button
-                            >
-                        </div>
-                    </div>
-                </CardContent>
-            </Card>
-
-            <Card class="gap-0 overflow-hidden">
-                <CardHeader
-                    class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between"
-                >
-                    <div class="flex items-center gap-3">
-                        <div
-                            class="flex size-10 items-center justify-center rounded-md border bg-card"
-                        >
-                            <Globe2 class="size-5" />
-                        </div>
-                        <CardTitle class="text-base">站点列表</CardTitle>
-                    </div>
-                    <div class="text-sm text-muted-foreground">
-                        {{
-                            siteTotal === 0 ? '暂无站点' : `${siteTotal} 个站点`
-                        }}
-                    </div>
-                </CardHeader>
-                <CardContent class="p-0">
-                    <div class="overflow-x-auto">
-                        <table class="w-full min-w-[960px] table-fixed text-sm">
-                            <colgroup>
-                                <col style="width: 24%" />
-                                <col style="width: 10%" />
-                                <col style="width: 12%" />
-                                <col style="width: 24%" />
-                                <col style="width: 10%" />
-                                <col style="width: 10%" />
-                                <col style="width: 10%" />
-                            </colgroup>
-                            <thead
-                                class="border-y bg-muted/50 text-muted-foreground"
-                            >
-                                <tr>
-                                    <th
-                                        class="px-4 py-2.5 text-left font-medium"
-                                    >
-                                        域名
-                                    </th>
-                                    <th
-                                        class="px-2 py-2.5 text-center font-medium"
-                                    >
-                                        状态
-                                    </th>
-                                    <th
-                                        class="px-2 py-2.5 text-center font-medium"
-                                    >
-                                        用户套餐
-                                    </th>
-                                    <th
-                                        class="px-3 py-2.5 text-left font-medium"
-                                    >
-                                        源站
-                                    </th>
-                                    <th
-                                        class="px-2 py-2.5 text-center font-medium"
-                                    >
-                                        分组
-                                    </th>
-                                    <th
-                                        class="px-3 py-2.5 text-left font-medium"
-                                    >
-                                        创建时间
-                                    </th>
-                                    <th
-                                        class="px-4 py-2.5 text-right font-medium"
-                                    >
-                                        操作
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr v-if="loading && siteRows.length === 0">
-                                    <td
-                                        class="px-6 py-16 text-center"
-                                        colspan="7"
-                                    >
-                                        <Spinner />
-                                    </td>
-                                </tr>
-                                <tr
-                                    v-for="site in siteRows"
-                                    :key="textValue(site.id)"
-                                    class="border-b last:border-b-0"
-                                >
-                                    <td class="px-4 py-3">
-                                        <div class="truncate font-medium">
-                                            {{ siteName(site) }}
-                                        </div>
-                                        <div
-                                            class="text-xs text-muted-foreground"
-                                        >
-                                            #{{ textValue(site.id) || '-' }}
-                                        </div>
-                                    </td>
-                                    <td class="px-2 py-3 text-center">
-                                        <Switch
-                                            :checked="isSiteEnabled(site)"
-                                            :disabled="
-                                                togglingId ===
-                                                numberValue(site.id)
-                                            "
-                                            @update:checked="
-                                                toggleSiteEnabled(site, $event)
-                                            "
-                                        />
-                                    </td>
-                                    <td
-                                        class="px-2 py-3 text-center text-muted-foreground"
-                                    >
-                                        {{ sitePackageName(site) }}
-                                    </td>
-                                    <td class="px-3 py-3">
-                                        <div class="truncate font-mono text-xs">
-                                            {{ backendText(site) }}
-                                        </div>
-                                    </td>
-                                    <td
-                                        class="px-2 py-3 text-center text-muted-foreground"
-                                    >
-                                        {{ textValue(site.groups) || '-' }}
-                                    </td>
-                                    <td class="px-3 py-3 text-muted-foreground">
-                                        {{ fmtDate(site.create_at2) }}
-                                    </td>
-                                    <td class="px-4 py-3">
-                                        <div class="flex justify-end gap-1.5">
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                @click="openSiteEdit(site)"
-                                                ><Pencil
-                                                    data-icon="inline-start"
-                                                />编辑</Button
-                                            >
-                                            <Button
-                                                variant="destructive"
-                                                size="sm"
-                                                @click="
-                                                    openDelete(
-                                                        site,
-                                                        `站点「${siteName(site)}」`,
-                                                    )
-                                                "
-                                                ><Trash2
-                                                    data-icon="inline-start"
-                                                />删除</Button
-                                            >
-                                        </div>
-                                    </td>
-                                </tr>
-                                <tr v-if="!loading && siteRows.length === 0">
-                                    <td
-                                        class="px-6 py-16 text-center text-muted-foreground"
-                                        colspan="7"
-                                    >
-                                        暂无站点
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </CardContent>
-            </Card>
-            <div class="flex items-center justify-end gap-2">
-                <Button
-                    variant="outline"
-                    size="sm"
-                    :disabled="sitePage <= 1 || loading"
-                    @click="loadSites(sitePage - 1)"
-                    >上一页</Button
-                >
-                <span class="text-sm text-muted-foreground"
-                    >第 {{ sitePage }} 页</span
-                >
-                <Button
-                    variant="outline"
-                    size="sm"
-                    :disabled="
-                        sitePage * Number(siteFilters.per_page) >= siteTotal ||
-                        loading
-                    "
-                    @click="loadSites(sitePage + 1)"
-                    >下一页</Button
-                >
-            </div>
-        </template>
-
-        <!-- ═══ 分组管理 ═══ -->
-        <template v-else-if="activeTab === 'groups'">
-            <div class="flex items-center justify-between">
-                <p class="text-sm text-muted-foreground">
-                    {{ groupTotal === 0 ? '暂无分组' : `${groupTotal} 个分组` }}
-                </p>
-                <div class="flex gap-2">
-                    <Button
-                        variant="outline"
-                        :disabled="loading"
-                        @click="loadGroups()"
-                        ><RefreshCw data-icon="inline-start" />刷新</Button
-                    >
-                    <Button @click="openGroupCreate"
-                        ><Plus data-icon="inline-start" />新建分组</Button
-                    >
-                </div>
-            </div>
-            <Card>
-                <CardContent class="p-0">
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-sm">
-                            <thead class="border-b bg-muted/30">
-                                <tr>
-                                    <th
-                                        class="w-20 px-4 py-3 text-left font-medium text-muted-foreground"
-                                    >
-                                        ID
-                                    </th>
-                                    <th
-                                        class="px-4 py-3 text-left font-medium text-muted-foreground"
-                                    >
-                                        名称
-                                    </th>
-                                    <th
-                                        class="px-4 py-3 text-left font-medium text-muted-foreground"
-                                    >
-                                        备注
-                                    </th>
-                                    <th
-                                        class="w-40 px-4 py-3 text-right font-medium text-muted-foreground"
-                                    >
-                                        操作
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr v-if="loading">
-                                    <td
-                                        colspan="4"
-                                        class="px-4 py-12 text-center"
-                                    >
-                                        <Spinner class="mx-auto" />
-                                    </td>
-                                </tr>
-                                <tr
-                                    v-for="g in groupRows"
-                                    :key="textValue(g.id)"
-                                    class="border-b last:border-0 hover:bg-muted/20"
-                                >
-                                    <td class="px-4 py-3 text-muted-foreground">
-                                        {{ textValue(g.id) }}
-                                    </td>
-                                    <td class="px-4 py-3 font-medium">
-                                        {{ textValue(g.name) }}
-                                    </td>
-                                    <td class="px-4 py-3 text-muted-foreground">
-                                        {{ textValue(g.des) || '-' }}
-                                    </td>
-                                    <td class="px-4 py-3">
-                                        <div class="flex justify-end gap-1.5">
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                @click="openGroupEdit(g)"
-                                                ><Pencil
-                                                    data-icon="inline-start"
-                                                />编辑</Button
-                                            >
-                                            <Button
-                                                variant="destructive"
-                                                size="sm"
-                                                @click="
-                                                    openDelete(
-                                                        g,
-                                                        `分组「${textValue(g.name)}」`,
-                                                    )
-                                                "
-                                                ><Trash2
-                                                    data-icon="inline-start"
-                                                />删除</Button
-                                            >
-                                        </div>
-                                    </td>
-                                </tr>
-                                <tr v-if="!loading && groupRows.length === 0">
-                                    <td
-                                        colspan="4"
-                                        class="px-4 py-16 text-center text-muted-foreground"
-                                    >
-                                        暂无分组
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </CardContent>
-            </Card>
-            <div class="flex items-center justify-end gap-2">
-                <Button
-                    variant="outline"
-                    size="sm"
-                    :disabled="groupPage <= 1 || loading"
-                    @click="loadGroups(groupPage - 1)"
-                    >上一页</Button
-                >
-                <span class="text-sm text-muted-foreground"
-                    >第 {{ groupPage }} 页</span
-                >
-                <Button
-                    variant="outline"
-                    size="sm"
-                    :disabled="groupPage * 20 >= groupTotal || loading"
-                    @click="loadGroups(groupPage + 1)"
-                    >下一页</Button
-                >
-            </div>
-        </template>
-
-        <!-- ═══ 默认设置 ═══ -->
-        <template v-else-if="activeTab === 'defaults'">
-            <div class="flex flex-wrap items-center justify-between gap-2">
-                <div class="flex items-center gap-2">
-                    <Select v-model="configFilters.type">
-                        <SelectTrigger class="w-32"
-                            ><SelectValue
-                        /></SelectTrigger>
-                        <SelectContent
-                            ><SelectGroup>
-                                <SelectItem value="all">全部类别</SelectItem>
-                                <SelectItem
-                                    v-for="t in CONFIG_TYPE_OPTIONS"
-                                    :key="t.value"
-                                    :value="t.value"
-                                    >{{ t.label }}</SelectItem
-                                >
-                            </SelectGroup></SelectContent
-                        >
-                    </Select>
-                    <Button :disabled="loading" @click="loadConfigs(1)"
-                        ><Search data-icon="inline-start" />查询</Button
-                    >
-                </div>
-                <div class="flex gap-2">
-                    <Button
-                        variant="outline"
-                        :disabled="loading"
-                        @click="loadConfigs()"
-                        ><RefreshCw data-icon="inline-start" />刷新</Button
-                    >
-                    <Button @click="openConfigCreate"
-                        ><Plus data-icon="inline-start" />添加配置</Button
-                    >
-                </div>
-            </div>
-            <Card>
-                <CardContent class="p-0">
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-sm">
-                            <thead class="border-b bg-muted/30">
-                                <tr>
-                                    <th
-                                        class="px-4 py-3 text-left font-medium text-muted-foreground"
-                                    >
-                                        配置项
-                                    </th>
-                                    <th
-                                        class="w-20 px-4 py-3 text-left font-medium text-muted-foreground"
-                                    >
-                                        类别
-                                    </th>
-                                    <th
-                                        class="px-4 py-3 text-left font-medium text-muted-foreground"
-                                    >
-                                        当前值
-                                    </th>
-                                    <th
-                                        class="w-28 px-4 py-3 text-left font-medium text-muted-foreground"
-                                    >
-                                        生效范围
-                                    </th>
-                                    <th
-                                        class="w-20 px-4 py-3 text-center font-medium text-muted-foreground"
-                                    >
-                                        状态
-                                    </th>
-                                    <th
-                                        class="w-40 px-4 py-3 text-right font-medium text-muted-foreground"
-                                    >
-                                        操作
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr v-if="loading">
-                                    <td
-                                        colspan="6"
-                                        class="px-4 py-12 text-center"
-                                    >
-                                        <Spinner class="mx-auto" />
-                                    </td>
-                                </tr>
-                                <tr
-                                    v-for="c in configRows"
-                                    :key="textValue(c.id)"
-                                    class="border-b last:border-0 hover:bg-muted/20"
-                                >
-                                    <td class="px-4 py-3">
-                                        <div class="font-medium">
-                                            {{ configLabel(textValue(c.name)) }}
-                                        </div>
-                                        <div
-                                            class="font-mono text-xs text-muted-foreground"
-                                        >
-                                            {{ textValue(c.name) }}
-                                        </div>
-                                    </td>
-                                    <td class="px-4 py-3 text-muted-foreground">
-                                        {{ textValue(c.type) }}
-                                    </td>
-                                    <td class="px-4 py-3">
-                                        <div
-                                            class="max-w-xs truncate font-mono text-xs"
-                                        >
-                                            {{ textValue(c.value) || '-' }}
-                                        </div>
-                                    </td>
-                                    <td class="px-4 py-3 text-muted-foreground">
-                                        {{
-                                            textValue(c.scope_name) === 'group'
-                                                ? `分组: ${textValue(c.site_group_name) || c.scope_id}`
-                                                : '全局'
-                                        }}
-                                    </td>
-                                    <td class="px-4 py-3 text-center">
-                                        <Badge
-                                            :variant="
-                                                c.enable === 1 ||
-                                                c.enable === true
-                                                    ? 'secondary'
-                                                    : 'outline'
-                                            "
-                                            >{{
-                                                c.enable === 1 ||
-                                                c.enable === true
-                                                    ? '启用'
-                                                    : '禁用'
-                                            }}</Badge
-                                        >
-                                    </td>
-                                    <td class="px-4 py-3">
-                                        <div class="flex justify-end gap-1.5">
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                @click="openConfigEdit(c)"
-                                                ><Pencil
-                                                    data-icon="inline-start"
-                                                />编辑</Button
-                                            >
-                                            <Button
-                                                variant="destructive"
-                                                size="sm"
-                                                @click="
-                                                    openDelete(
-                                                        c,
-                                                        `配置「${configLabel(textValue(c.name))}」`,
-                                                    )
-                                                "
-                                                ><Trash2
-                                                    data-icon="inline-start"
-                                                />删除</Button
-                                            >
-                                        </div>
-                                    </td>
-                                </tr>
-                                <tr v-if="!loading && configRows.length === 0">
-                                    <td
-                                        colspan="6"
-                                        class="px-4 py-16 text-center text-muted-foreground"
-                                    >
-                                        暂无配置
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </CardContent>
-            </Card>
+    <div
+        class="console-page user-sites min-w-0"
+        :class="props.embedded ? 'embedded-sites' : 'p-4 md:p-6'"
+    >
+        <section class="sites-workspace bg-card text-card-foreground">
             <div
-                class="flex items-center justify-between text-sm text-muted-foreground"
+                v-if="!props.embedded"
+                class="sites-tabs"
+                role="tablist"
+                aria-label="网站管理"
             >
-                <span>共 {{ configTotal }} 条</span>
-                <div class="flex items-center gap-2">
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        :disabled="configPage <= 1 || loading"
-                        @click="loadConfigs(configPage - 1)"
-                        >上一页</Button
-                    >
-                    <span>第 {{ configPage }} 页</span>
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        :disabled="
-                            configPage * Number(configFilters.per_page) >=
-                                configTotal || loading
-                        "
-                        @click="loadConfigs(configPage + 1)"
-                        >下一页</Button
-                    >
-                </div>
-            </div>
-        </template>
-
-        <!-- ═══ DNS API ═══ -->
-        <template v-else-if="activeTab === 'dnsapi'">
-            <Card>
-                <CardHeader
-                    class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between"
-                >
-                    <div>
-                        <CardTitle>DNS API 列表</CardTitle>
-                        <p class="mt-1 text-sm text-muted-foreground">
-                            {{
-                                dnsTotal === 0
-                                    ? '暂无'
-                                    : `${dnsTotal} 个 DNS API`
-                            }}
-                        </p>
-                    </div>
-                    <div class="flex flex-col gap-2 sm:flex-row">
-                        <div class="relative">
-                            <Search
-                                class="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
-                            /><Input
-                                v-model="dnsFilters.search"
-                                class="w-full pl-9 sm:w-64"
-                                placeholder="搜索名称或服务商"
-                            />
-                        </div>
-                        <Button :disabled="loading" @click="loadDns(1)"
-                            ><Search data-icon="inline-start" />查询</Button
-                        >
-                        <Button
-                            variant="outline"
-                            :disabled="loading"
-                            @click="loadDns()"
-                            ><RefreshCw data-icon="inline-start" />刷新</Button
-                        >
-                        <Button @click="openDnsCreate"
-                            ><Plus data-icon="inline-start" />新增</Button
-                        >
-                    </div>
-                </CardHeader>
-                <CardContent>
-                    <div class="overflow-x-auto border-y">
-                        <table class="w-full min-w-[820px] table-fixed text-sm">
-                            <colgroup>
-                                <col style="width: 22%" />
-                                <col style="width: 16%" />
-                                <col style="width: 22%" />
-                                <col style="width: 12%" />
-                                <col style="width: 14%" />
-                                <col style="width: 14%" />
-                            </colgroup>
-                            <thead class="border-b text-muted-foreground">
-                                <tr>
-                                    <th class="px-4 py-3 text-left font-medium">
-                                        名称
-                                    </th>
-                                    <th class="px-4 py-3 text-left font-medium">
-                                        服务商
-                                    </th>
-                                    <th class="px-4 py-3 text-left font-medium">
-                                        凭据字段
-                                    </th>
-                                    <th
-                                        class="px-4 py-3 text-center font-medium"
-                                    >
-                                        状态
-                                    </th>
-                                    <th class="px-4 py-3 text-left font-medium">
-                                        更新时间
-                                    </th>
-                                    <th
-                                        class="px-4 py-3 text-right font-medium"
-                                    >
-                                        操作
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr v-if="loading">
-                                    <td
-                                        class="px-4 py-12 text-center"
-                                        colspan="6"
-                                    >
-                                        <Spinner class="mx-auto" />
-                                    </td>
-                                </tr>
-                                <tr
-                                    v-for="r in displayedDnsRows"
-                                    :key="textValue(r.id)"
-                                    class="border-b"
-                                >
-                                    <td class="px-4 py-3">
-                                        <div class="font-medium">
-                                            {{ recordName(r) }}
-                                        </div>
-                                        <div
-                                            class="text-xs text-muted-foreground"
-                                        >
-                                            #{{ textValue(r.id) }}
-                                        </div>
-                                    </td>
-                                    <td class="px-4 py-3">
-                                        {{ textValue(r.type) || '-' }}
-                                    </td>
-                                    <td
-                                        class="truncate px-4 py-3 text-muted-foreground"
-                                    >
-                                        {{ maskedAuth(r) }}
-                                    </td>
-                                    <td class="px-4 py-3 text-center">
-                                        <Badge variant="outline">{{
-                                            r.enable === 0 || r.enable === false
-                                                ? '禁用'
-                                                : '可用'
-                                        }}</Badge>
-                                    </td>
-                                    <td class="px-4 py-3 text-muted-foreground">
-                                        {{
-                                            formatDate(
-                                                r.update_at2 ?? r.created_at,
-                                            )
-                                        }}
-                                    </td>
-                                    <td class="px-4 py-3">
-                                        <div class="flex justify-end gap-1.5">
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                @click="openDnsEdit(r)"
-                                                ><Pencil
-                                                    data-icon="inline-start"
-                                                />编辑</Button
-                                            >
-                                            <Button
-                                                variant="destructive"
-                                                size="sm"
-                                                @click="
-                                                    openDelete(
-                                                        r,
-                                                        `DNS API「${recordName(r)}」`,
-                                                    )
-                                                "
-                                                ><Trash2
-                                                    data-icon="inline-start"
-                                                />删除</Button
-                                            >
-                                        </div>
-                                    </td>
-                                </tr>
-                                <tr
-                                    v-if="
-                                        !loading &&
-                                        displayedDnsRows.length === 0
-                                    "
-                                >
-                                    <td
-                                        class="px-6 py-16 text-center text-muted-foreground"
-                                        colspan="6"
-                                    >
-                                        暂无 DNS API
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </CardContent>
-            </Card>
-            <div class="flex items-center justify-end gap-2">
-                <Button
-                    variant="outline"
-                    size="sm"
-                    :disabled="dnsPage <= 1 || loading"
-                    @click="loadDns(dnsPage - 1)"
-                    >上一页</Button
-                >
-                <span class="text-sm text-muted-foreground"
-                    >第 {{ dnsPage }} 页</span
-                >
-                <Button
-                    variant="outline"
-                    size="sm"
-                    :disabled="
-                        dnsPage * Number(dnsFilters.per_page) >= dnsTotal ||
-                        loading
-                    "
-                    @click="loadDns(dnsPage + 1)"
-                    >下一页</Button
-                >
-            </div>
-        </template>
-
-        <!-- ═══ 解析检测 ═══ -->
-        <template v-else-if="activeTab === 'resolve'">
-            <div class="flex flex-wrap items-center gap-2">
-                <Button
-                    :disabled="resolveChecking || resolveSelected.size === 0"
-                    @click="syncResolve"
-                >
-                    <Spinner
-                        v-if="resolveChecking"
-                        data-icon="inline-start"
-                    /><RefreshCw v-else data-icon="inline-start" />同步解析
-                </Button>
-                <div
-                    class="flex h-9 items-center gap-1.5 rounded-md border px-3"
-                >
-                    <span
-                        class="text-xs whitespace-nowrap text-muted-foreground"
-                        >域名</span
-                    >
-                    <input
-                        v-model="resolveFilters.domain"
-                        class="w-36 bg-transparent text-sm outline-none placeholder:text-muted-foreground/60"
-                        placeholder="请输入域名"
-                        @keydown.enter="loadResolve(1)"
-                    />
-                </div>
-                <div
-                    class="flex h-9 items-center gap-1.5 rounded-md border px-3"
-                >
-                    <span
-                        class="text-xs whitespace-nowrap text-muted-foreground"
-                        >网站ID</span
-                    >
-                    <input
-                        v-model="resolveFilters.site_id"
-                        class="w-28 bg-transparent text-sm outline-none placeholder:text-muted-foreground/60"
-                        placeholder="请输入网站ID"
-                        @keydown.enter="loadResolve(1)"
-                    />
-                </div>
                 <button
-                    type="button"
-                    class="text-sm text-muted-foreground hover:text-foreground"
-                    @click="
-                        resolveFilters.domain = '';
-                        resolveFilters.site_id = '';
-                        void loadResolve(1);
-                    "
+                    v-for="tab in TABS"
+                    :key="tab.key"
+                    :id="`sites-tab-${tab.key}`"
+                    role="tab"
+                    :aria-selected="activeTab === tab.key"
+                    aria-controls="sites-panel"
+                    :disabled="busy || loading || exporting"
+                    @click="activeTab = tab.key"
                 >
-                    清除
+                    {{ tab.label }}
                 </button>
-                <Button
-                    class="ml-auto"
-                    :disabled="loading"
-                    @click="loadResolve(1)"
-                    ><Search data-icon="inline-start" />查询</Button
-                >
             </div>
-            <Card>
-                <CardContent class="p-0">
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-sm">
-                            <thead class="border-b bg-muted/30">
-                                <tr>
-                                    <th class="w-10 px-4 py-3">
-                                        <input
-                                            type="checkbox"
-                                            class="size-4 rounded border-input"
-                                            :checked="resolveSelectAll"
-                                            @change="toggleResolveSelectAll"
-                                        />
-                                    </th>
-                                    <th
-                                        class="w-16 px-4 py-3 text-left font-medium text-muted-foreground"
-                                    >
-                                        ID
-                                    </th>
-                                    <th
-                                        class="w-20 px-4 py-3 text-left font-medium text-muted-foreground"
-                                    >
-                                        网站ID
-                                    </th>
-                                    <th
-                                        class="px-4 py-3 text-left font-medium text-muted-foreground"
-                                    >
-                                        域名
-                                    </th>
-                                    <th
-                                        class="px-4 py-3 text-left font-medium text-muted-foreground"
-                                    >
-                                        CNAME
-                                    </th>
-                                    <th
-                                        class="w-24 px-4 py-3 text-left font-medium text-muted-foreground"
-                                    >
-                                        解析状态
-                                    </th>
-                                    <th
-                                        class="w-24 px-4 py-3 text-left font-medium text-muted-foreground"
-                                    >
-                                        DNS API
-                                    </th>
-                                    <th
-                                        class="w-24 px-4 py-3 text-left font-medium text-muted-foreground"
-                                    >
-                                        任务状态
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr v-if="loading">
-                                    <td
-                                        colspan="8"
-                                        class="px-4 py-12 text-center"
-                                    >
-                                        <Spinner class="mx-auto" />
-                                    </td>
-                                </tr>
-                                <tr
-                                    v-for="d in resolveRows"
-                                    :key="textValue(d.id)"
-                                    class="border-b transition-colors last:border-0 hover:bg-muted/20"
+            <Alert v-if="errorMessage" variant="destructive" class="mb-4"
+                ><AlertCircle /><AlertTitle>请求失败</AlertTitle
+                ><AlertDescription
+                    >{{ errorMessage }}
+                    <Button variant="link" @click="loadActive()"
+                        >重试</Button
+                    ></AlertDescription
+                ></Alert
+            >
+            <div
+                id="sites-panel"
+                role="tabpanel"
+                :aria-labelledby="`sites-tab-${activeTab}`"
+                :aria-busy="loading"
+            >
+                <div v-if="activeTab === 'sites'" class="sites-toolbar">
+                    <Button @click="openSiteCreate">添加网站</Button>
+                    <Button
+                        variant="outline"
+                        :disabled="!selected.length || busy"
+                        @click="openBulk('edit')"
+                        >批量修改</Button
+                    >
+                    <Button
+                        variant="outline"
+                        :disabled="!selected.length || busy"
+                        @click="openBulk('certificate')"
+                        >申请证书</Button
+                    >
+                    <DropdownMenu
+                        ><DropdownMenuTrigger as-child
+                            ><Button
+                                variant="outline"
+                                :disabled="!selected.length || busy"
+                                >更多操作<ChevronDown
+                                    class="size-4" /></Button></DropdownMenuTrigger
+                        ><DropdownMenuContent>
+                            <DropdownMenuItem @select="runBulk('enable')"
+                                >启用</DropdownMenuItem
+                            ><DropdownMenuItem @select="runBulk('disable')"
+                                >禁用</DropdownMenuItem
+                            ><DropdownMenuItem @select="openBulk('delete')"
+                                >删除</DropdownMenuItem
+                            ><DropdownMenuItem @select="openBulk('unlock')"
+                                >解锁黑名单</DropdownMenuItem
+                            ><DropdownMenuItem @select="openBulk('cache')"
+                                >清空缓存</DropdownMenuItem
+                            >
+                        </DropdownMenuContent></DropdownMenu
+                    >
+                    <form class="quick-search" @submit.prevent="loadSites(1)">
+                        <select v-model="quickField" aria-label="搜索类型">
+                            <option value="domain">域名</option>
+                            <option value="id">ID</option>
+                            <option value="cname">CNAME</option></select
+                        ><Input
+                            v-model="siteFilters[quickField]"
+                            aria-label="网站搜索"
+                            :placeholder="
+                                quickField === 'domain'
+                                    ? '输入域名,模糊搜索'
+                                    : `输入${quickField === 'id' ? 'ID' : 'CNAME'}`
+                            "
+                        /><Button :disabled="loading" type="submit"
+                            >查询</Button
+                        >
+                    </form>
+                    <Button
+                        variant="outline"
+                        :disabled="exporting || loading"
+                        @click="exportSites"
+                        >{{ exporting ? '导出中…' : '导出' }}</Button
+                    >
+                    <Button
+                        variant="link"
+                        :aria-expanded="showAdvanced"
+                        @click="showAdvanced = !showAdvanced"
+                        >高级搜索</Button
+                    >
+                </div>
+                <form
+                    v-if="activeTab === 'sites' && showAdvanced"
+                    class="advanced-search"
+                    aria-label="高级搜索"
+                    @submit.prevent="loadSites(1)"
+                >
+                    <label
+                        >启用状态<select v-model="siteFilters.enable">
+                            <option value="all">全部状态</option>
+                            <option value="1">启用</option>
+                            <option value="0">禁用</option>
+                        </select></label
+                    >
+                    <label>网站ID<Input v-model="siteFilters.id" /></label
+                    ><label>CNAME<Input v-model="siteFilters.cname" /></label
+                    ><label>分组ID<Input v-model="siteFilters.groups" /></label
+                    ><label
+                        >套餐ID<Input v-model="siteFilters.user_package"
+                    /></label>
+                    <Button type="submit" :disabled="loading">查询</Button
+                    ><Button
+                        variant="link"
+                        type="button"
+                        @click="clearSiteFilters"
+                        >清除</Button
+                    >
+                </form>
+                <div
+                    v-if="['groups', 'defaults', 'dnsapi'].includes(activeTab)"
+                    class="sites-toolbar"
+                >
+                    <Button
+                        @click="
+                            activeTab === 'groups'
+                                ? openGroupCreate()
+                                : activeTab === 'defaults'
+                                  ? openConfigCreate()
+                                  : openDnsCreate()
+                        "
+                        >{{
+                            activeTab === 'groups'
+                                ? '新增分组'
+                                : activeTab === 'defaults'
+                                  ? '新增设置'
+                                  : '新增DNS API'
+                        }}</Button
+                    >
+                    <Button
+                        variant="outline"
+                        :disabled="!selected.length || busy"
+                        @click="openBulk('delete')"
+                        >删除</Button
+                    >
+                </div>
+                <form
+                    v-if="activeTab === 'resolve'"
+                    class="sites-toolbar resolve-toolbar"
+                    @submit.prevent="loadResolve(1)"
+                >
+                    <Button
+                        type="button"
+                        :disabled="resolveChecking || !resolveSelected.size"
+                        @click="syncResolve"
+                        >同步解析</Button
+                    >
+                    <select
+                        v-model="resolveFilters.dnsapi_state"
+                        aria-label="DNS API状态"
+                        @change="loadResolve(1)"
+                    >
+                        <option value="">请选择DNS API状态</option>
+                        <option value="set">DNS API已设置</option>
+                        <option value="not_set">DNS API未设置</option>
+                    </select>
+                    <select
+                        v-model="resolveFilters.task_state"
+                        aria-label="任务状态"
+                        @change="loadResolve(1)"
+                    >
+                        <option value="">请选择任务状态</option>
+                        <option value="done">任务已完成</option>
+                        <option value="pending">任务待同步</option>
+                        <option value="process">任务同步中</option>
+                        <option value="failed">任务同步失败</option>
+                    </select>
+                    <label class="input-group"
+                        >域名<Input
+                            v-model="resolveFilters.domain"
+                            placeholder="请输入域名"
+                            @change="loadResolve(1)" /></label
+                    ><label class="input-group"
+                        >网站ID<Input
+                            v-model="resolveFilters.site_id"
+                            placeholder="请输入网站ID"
+                            @change="loadResolve(1)"
+                    /></label>
+                    <Button
+                        type="button"
+                        variant="link"
+                        @click="clearResolveFilters"
+                        >清除</Button
+                    >
+                </form>
+                <div class="sites-table-scroll">
+                    <table
+                        class="sites-table"
+                        :class="{
+                            'site-list-table': activeTab === 'sites',
+                            'resolve-table': activeTab === 'resolve',
+                        }"
+                    >
+                        <colgroup>
+                            <col style="width: 60px" />
+                            <col
+                                v-for="column in tableColumns"
+                                :key="column.key"
+                                :style="
+                                    column.width
+                                        ? { width: column.width + 'px' }
+                                        : {}
+                                "
+                            />
+                        </colgroup>
+                        <thead>
+                            <tr>
+                                <th>
+                                    <input
+                                        type="checkbox"
+                                        aria-label="选择当前页"
+                                        :checked="allSelected"
+                                        :disabled="
+                                            loading ||
+                                            busy ||
+                                            !activeRows.length
+                                        "
+                                        @change="selectAll"
+                                    />
+                                </th>
+                                <th
+                                    v-for="column in tableColumns"
+                                    :key="column.key"
                                 >
-                                    <td class="px-4 py-3">
+                                    {{ column.label }}
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-if="loading">
+                                <td
+                                    :colspan="tableColumns.length + 1"
+                                    class="empty-cell"
+                                >
+                                    <Spinner class="mx-auto" />
+                                </td>
+                            </tr>
+                            <template v-else
+                                ><tr
+                                    v-for="row in activeRows"
+                                    :key="textValue(row.id)"
+                                >
+                                    <td>
                                         <input
                                             type="checkbox"
-                                            class="size-4 rounded border-input"
+                                            :aria-label="`选择 ${row.id}`"
                                             :checked="
-                                                resolveSelected.has(
-                                                    Number(d.id),
-                                                )
+                                                activeTab === 'resolve'
+                                                    ? resolveSelected.has(
+                                                          Number(row.id),
+                                                      )
+                                                    : selected.includes(
+                                                          Number(row.id),
+                                                      )
                                             "
-                                            @change="
-                                                toggleResolveSelect(
-                                                    Number(d.id),
-                                                )
-                                            "
+                                            :disabled="busy"
+                                            @change="selectRow(Number(row.id))"
                                         />
-                                    </td>
-                                    <td class="px-4 py-3 text-muted-foreground">
-                                        {{ textValue(d.id) }}
-                                    </td>
-                                    <td class="px-4 py-3 text-muted-foreground">
-                                        {{ textValue(d.site_id) }}
-                                    </td>
-                                    <td class="px-4 py-3 font-mono text-xs">
-                                        {{ textValue(d.domain) }}
                                     </td>
                                     <td
-                                        class="px-4 py-3 font-mono text-xs text-muted-foreground"
+                                        v-for="column in tableColumns"
+                                        :key="column.key"
                                     >
-                                        {{ textValue(d.cname) || '-' }}
-                                    </td>
-                                    <td class="px-4 py-3">
-                                        <LoaderCircle
-                                            v-if="
-                                                resolveCheckState(d) ===
-                                                'checking'
-                                            "
-                                            class="size-4 animate-spin text-muted-foreground"
-                                            aria-label="检测中"
-                                        />
-                                        <CheckCircle2
-                                            v-else-if="
-                                                resolveCheckState(d) ===
-                                                'resolved'
-                                            "
-                                            class="size-4 text-emerald-500"
-                                            aria-label="解析正确"
-                                        />
-                                        <XCircle
-                                            v-else-if="
-                                                resolveCheckState(d) ===
-                                                'unresolved'
-                                            "
-                                            class="size-4 text-red-500"
-                                            aria-label="解析错误"
-                                        />
-                                        <AlertCircle
-                                            v-else
-                                            class="size-4 text-amber-500"
-                                            aria-label="检测失败"
-                                        />
-                                    </td>
-                                    <td class="px-4 py-3">
-                                        <Badge
-                                            :variant="
-                                                d.dns_api
-                                                    ? 'secondary'
-                                                    : 'outline'
-                                            "
-                                            >{{
-                                                d.dns_api ? '已配置' : '未配置'
-                                            }}</Badge
+                                        <template
+                                            v-if="column.key === 'actions'"
+                                            ><div class="row-actions">
+                                                <Button
+                                                    variant="link"
+                                                    :disabled="busy"
+                                                    @click="editRow(row)"
+                                                    >{{
+                                                        activeTab === 'sites'
+                                                            ? '管理'
+                                                            : '编辑'
+                                                    }}</Button
+                                                >
+                                                <DropdownMenu
+                                                    v-if="activeTab === 'sites'"
+                                                    ><DropdownMenuTrigger
+                                                        as-child
+                                                        ><Button
+                                                            variant="link"
+                                                            :disabled="busy"
+                                                            >更多<ChevronDown
+                                                                class="size-4" /></Button></DropdownMenuTrigger
+                                                    ><DropdownMenuContent
+                                                        ><DropdownMenuItem
+                                                            @select="
+                                                                toggleSiteEnabled(
+                                                                    row,
+                                                                    false,
+                                                                )
+                                                            "
+                                                            >禁用</DropdownMenuItem
+                                                        ><DropdownMenuItem
+                                                            @select="
+                                                                toggleSiteEnabled(
+                                                                    row,
+                                                                    true,
+                                                                )
+                                                            "
+                                                            >启用</DropdownMenuItem
+                                                        ><DropdownMenuItem
+                                                            @select="
+                                                                openDelete(
+                                                                    row,
+                                                                    `网站「${siteName(row)}」`,
+                                                                )
+                                                            "
+                                                            >删除</DropdownMenuItem
+                                                        ></DropdownMenuContent
+                                                    ></DropdownMenu
+                                                >
+                                                <Button
+                                                    v-else
+                                                    variant="link"
+                                                    :disabled="busy"
+                                                    @click="
+                                                        openDelete(
+                                                            row,
+                                                            recordName(row),
+                                                        )
+                                                    "
+                                                    >删除</Button
+                                                >
+                                            </div></template
                                         >
-                                    </td>
-                                    <td class="px-4 py-3">
-                                        <Badge
-                                            :variant="taskStateVariant(d.state)"
-                                            :title="textValue(d.ret)"
+                                        <Button
+                                            v-else-if="
+                                                activeTab === 'sites' &&
+                                                column.key === 'domain'
+                                            "
+                                            variant="link"
+                                            class="domain-link"
+                                            @click="openSiteEdit(row)"
+                                            >{{ siteName(row) }}</Button
+                                        >
+                                        <template
+                                            v-else-if="column.key === 'https'"
+                                            ><CheckCircle2
+                                                v-if="hasHttps(row)"
+                                                class="status-icon text-emerald-500"
+                                                aria-label="HTTPS已启用" /><XCircle
+                                                v-else
+                                                class="status-icon text-muted-foreground"
+                                                aria-label="HTTPS未启用"
+                                        /></template>
+                                        <span
+                                            v-else-if="column.key === 'status'"
+                                            class="site-status"
+                                            :data-tone="siteStatus(row).tone"
+                                            ><i />{{
+                                                siteStatus(row).text
+                                            }}</span
+                                        >
+                                        <template
+                                            v-else-if="column.key === 'resolve'"
+                                            ><LoaderCircle
+                                                v-if="
+                                                    resolveCheckState(row) ===
+                                                    'checking'
+                                                "
+                                                class="status-icon animate-spin"
+                                                aria-label="检测中" /><CheckCircle2
+                                                v-else-if="
+                                                    resolveCheckState(row) ===
+                                                    'resolved'
+                                                "
+                                                class="status-icon text-emerald-500"
+                                                aria-label="解析正确" /><XCircle
+                                                v-else
+                                                class="status-icon text-red-500"
+                                                :aria-label="
+                                                    resolveCheckState(row) ===
+                                                    'error'
+                                                        ? '检测失败'
+                                                        : '解析错误'
+                                                "
+                                        /></template>
+                                        <span
+                                            v-else
+                                            class="cell-value"
+                                            :title="cellValue(row, column.key)"
                                             >{{
-                                                taskStateLabel(d.state)
-                                            }}</Badge
+                                                cellValue(row, column.key)
+                                            }}</span
                                         >
                                     </td>
                                 </tr>
-                                <tr v-if="!loading && resolveRows.length === 0">
+                                <tr v-if="!activeRows.length">
                                     <td
-                                        colspan="8"
-                                        class="px-4 py-16 text-center text-muted-foreground"
+                                        class="empty-cell"
+                                        :colspan="tableColumns.length + 1"
                                     >
                                         暂无数据
                                     </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </CardContent>
-            </Card>
-            <div
-                class="flex items-center justify-between text-sm text-muted-foreground"
-            >
-                <span
-                    >共 {{ resolveTotal }} 条 · 已选
-                    {{ resolveSelected.size }} 条</span
-                >
-                <div class="flex items-center gap-2">
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        :disabled="resolvePage <= 1 || loading"
-                        @click="loadResolve(resolvePage - 1)"
-                        >上一页</Button
-                    >
-                    <span>第 {{ resolvePage }} 页</span>
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        :disabled="
-                            resolvePage * Number(resolveFilters.per_page) >=
-                                resolveTotal || loading
-                        "
-                        @click="loadResolve(resolvePage + 1)"
-                        >下一页</Button
-                    >
+                                </tr></template
+                            >
+                        </tbody>
+                    </table>
                 </div>
+                <PackagePagination
+                    class="sites-pagination"
+                    :page="currentPage"
+                    :page-size="currentSize"
+                    :total="currentTotal"
+                    :disabled="loading || busy"
+                    numbered
+                    edge-links
+                    @update:page="loadActive($event)"
+                    @update:page-size="changePageSize"
+                />
             </div>
-        </template>
+        </section>
+        <Dialog v-model:open="bulkOpen"
+            ><DialogScrollContent class="sm:max-w-lg"
+                ><DialogHeader
+                    ><DialogTitle>{{ bulkTitle }}</DialogTitle
+                    ><DialogDescription
+                        >已选择 {{ selected.length }} 项</DialogDescription
+                    ></DialogHeader
+                >
+                <form class="grid gap-4" @submit.prevent="runBulk(bulkAction)">
+                    <p v-if="bulkError" role="alert" class="text-destructive">
+                        {{ bulkError }}
+                    </p>
+                    <template v-if="bulkAction === 'edit'"
+                        ><Label for="bulk-site-field">修改项</Label
+                        ><select
+                            id="bulk-site-field"
+                            v-model="bulkField"
+                            class="h-10 rounded border bg-background px-3"
+                        >
+                            <option value="groups">分组ID（逗号分隔）</option>
+                            <option value="user_package">
+                                用户套餐ID
+                            </option></select
+                        ><Label for="bulk-site-value">设置值</Label
+                        ><Input
+                            id="bulk-site-value"
+                            v-model="bulkValue"
+                            :required="bulkField !== 'groups'"
+                    /></template>
+                    <p v-else>
+                        {{
+                            bulkAction === 'delete'
+                                ? '确认删除所选记录？删除后不可恢复。网站需先禁用。'
+                                : bulkAction === 'unlock'
+                                  ? '解锁所选网站的全部黑名单IP。'
+                                  : bulkAction === 'cache'
+                                    ? '清空所选网站的HTTP和HTTPS缓存。'
+                                    : '为未开启HTTPS的网站申请免费证书并绑定。'
+                        }}
+                    </p>
+                    <DialogFooter
+                        ><Button
+                            type="button"
+                            variant="outline"
+                            :disabled="busy"
+                            @click="bulkOpen = false"
+                            >取消</Button
+                        ><Button type="submit" :disabled="busy">{{
+                            busy ? '处理中…' : '确定'
+                        }}</Button></DialogFooter
+                    >
+                </form>
+            </DialogScrollContent></Dialog
+        >
 
-        <!-- ── 站点弹窗 ── -->
         <Dialog v-model:open="siteDialogOpen">
             <DialogScrollContent class="sm:max-w-3xl">
                 <DialogHeader
@@ -2713,3 +2626,266 @@ function taskStateVariant(v: unknown): 'secondary' | 'destructive' | 'outline' {
         />
     </div>
 </template>
+
+<style scoped>
+.sites-workspace {
+    padding: 16px;
+    min-width: 0;
+}
+.embedded-sites .sites-workspace {
+    padding: 0;
+}
+.sites-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 20px;
+}
+.sites-tabs button {
+    padding: 12px 20px;
+    font-size: 16px;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    color: var(--muted-foreground);
+}
+.sites-tabs button[aria-selected='true'] {
+    color: var(--primary);
+    border-color: var(--primary);
+}
+.sites-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 18px;
+}
+.sites-toolbar > button,
+.sites-toolbar select,
+.sites-toolbar input,
+.quick-search button {
+    height: 40px;
+    font-size: 16px;
+}
+.sites-toolbar select,
+.advanced-search select {
+    border: 1px solid var(--border);
+    background: var(--card);
+    border-radius: 4px;
+    padding: 0 12px;
+}
+.quick-search {
+    display: flex;
+    max-width: 100%;
+    min-width: 0;
+}
+.quick-search select {
+    width: 78px;
+    flex-shrink: 0;
+    border-right: 0;
+    border-radius: 4px 0 0 4px;
+    background: var(--muted);
+}
+.quick-search input {
+    width: 210px;
+    min-width: 0;
+    border-radius: 0;
+}
+.quick-search button {
+    border-radius: 0 4px 4px 0;
+}
+.input-group {
+    display: flex;
+    align-items: center;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: var(--muted);
+    padding-left: 10px;
+    gap: 8px;
+    white-space: nowrap;
+}
+.input-group input {
+    width: 190px;
+    border: 0;
+    border-left: 1px solid var(--border);
+    border-radius: 0 4px 4px 0;
+}
+.resolve-toolbar select {
+    width: 245px;
+    max-width: 100%;
+}
+.advanced-search {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: end;
+    gap: 12px;
+    border: 1px solid var(--border);
+    padding: 16px;
+    margin-bottom: 18px;
+    background: var(--muted);
+}
+.advanced-search label {
+    display: grid;
+    gap: 6px;
+    max-width: 210px;
+}
+.advanced-search select {
+    height: 36px;
+}
+.sites-table-scroll {
+    max-width: 100%;
+    overflow-x: auto;
+    scrollbar-width: auto;
+    scrollbar-color: #909090 var(--muted);
+}
+.sites-table {
+    width: 100%;
+    table-layout: fixed;
+    min-width: 700px;
+    text-align: left;
+    font-size: 16px;
+}
+.site-list-table {
+    min-width: 1720px;
+}
+.resolve-table {
+    min-width: 1200px;
+}
+.sites-table th {
+    height: 48px;
+    padding: 10px 18px;
+    background: var(--muted);
+    color: var(--muted-foreground);
+    font-weight: 600;
+}
+.sites-table td {
+    height: 60px;
+    padding: 10px 18px;
+    border-bottom: 1px solid var(--border);
+}
+.sites-table tbody tr:hover {
+    background: color-mix(in srgb, var(--muted) 40%, transparent);
+}
+.sites-table input[type='checkbox'] {
+    width: 19px;
+    height: 19px;
+    accent-color: var(--primary);
+    vertical-align: middle;
+}
+.cell-value {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.site-list-table .cell-value,
+.resolve-table .cell-value {
+    white-space: nowrap;
+}
+.site-list-table td:nth-child(8) .cell-value {
+    white-space: normal;
+    overflow-wrap: anywhere;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-height: 24px;
+}
+.site-list-table td:nth-child(8) {
+    padding: 6px 12px;
+}
+.row-actions {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    white-space: nowrap;
+}
+.row-actions button,
+.domain-link {
+    height: auto;
+    padding: 0;
+    font-size: 16px;
+}
+.domain-link {
+    display: block;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-align: left;
+}
+.status-icon {
+    width: 16px;
+    height: 16px;
+}
+.site-status {
+    display: inline-flex;
+    gap: 8px;
+    align-items: center;
+    font-size: 14px;
+    white-space: nowrap;
+}
+.site-status i {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #19be6b;
+}
+.site-status[data-tone='danger'] i {
+    background: #f43f5e;
+}
+.site-status[data-tone='warning'] i {
+    background: #f59e0b;
+}
+.site-status[data-tone='muted'] i {
+    background: #9ca3af;
+}
+.empty-cell {
+    text-align: center;
+    color: var(--muted-foreground);
+}
+.sites-pagination {
+    justify-content: flex-start;
+    margin-top: 26px;
+    font-size: 16px;
+}
+.sites-pagination :deep(button),
+.sites-pagination :deep(select) {
+    height: 40px;
+    min-width: 40px;
+    font-size: 16px;
+}
+.sites-pagination :deep(button[aria-current='page']) {
+    background: var(--card);
+    color: var(--primary);
+    border: 1px solid var(--primary);
+}
+@media (max-width: 640px) {
+    .sites-workspace {
+        padding: 12px;
+    }
+    .sites-tabs {
+        gap: 0;
+    }
+    .sites-tabs button {
+        padding: 10px 12px;
+        font-size: 14px;
+    }
+    .quick-search {
+        width: 100%;
+    }
+    .quick-search input {
+        flex: 1;
+        width: 0;
+    }
+    .input-group {
+        max-width: 100%;
+    }
+    .input-group input {
+        width: 0;
+        min-width: 0;
+        flex: 1;
+    }
+    .resolve-toolbar .input-group {
+        width: 100%;
+    }
+}
+</style>

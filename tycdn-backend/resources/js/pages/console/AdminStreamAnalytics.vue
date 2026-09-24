@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
+import { getUserStreamRealtime, getUserStreamTop } from '@/lib/cdnUserApi';
 import { getErrorMessage } from '@/lib/formatters';
 import { masterGet } from '@/lib/masterApi';
 import {
@@ -24,6 +25,10 @@ import type {
     StreamSeries,
 } from '@/lib/streamAnalytics';
 
+const props = withDefaults(defineProps<{ scope?: 'admin' | 'user' }>(), {
+    scope: 'admin',
+});
+const userScope = computed(() => props.scope === 'user');
 const query = new URLSearchParams(usePage().url.split('?')[1] ?? '');
 const active = ref<'traffic' | 'ranking'>(
     query.get('tab') === 'ranking' ? 'ranking' : 'traffic',
@@ -64,10 +69,14 @@ async function loadMetric(type: StreamMetric): Promise<void> {
     state.series = emptySeries();
 
     try {
-        const data = await masterGet(
-            'stream-realtime',
-            streamRealtimeParams(type, applied.value, applied.value.port),
+        const params = streamRealtimeParams(
+            type,
+            applied.value,
+            applied.value.port,
         );
+        const data = userScope.value
+            ? await getUserStreamRealtime(params)
+            : await masterGet('stream-realtime', params);
 
         if (!disposed && version === versions[type]) {
             state.series = streamSeries(data);
@@ -122,10 +131,13 @@ async function loadTop(): Promise<void> {
     topRows.value = [];
 
     try {
-        const result = await masterGet('stream-top', {
+        const params = {
             recent_time: recent.value,
             type: 'top-ports',
-        });
+        };
+        const result = userScope.value
+            ? await getUserStreamTop(params)
+            : await masterGet('stream-top', params);
 
         if (!disposed && version === topVersion) {
             topRows.value = streamRanks(result);
@@ -183,9 +195,12 @@ onUnmounted(() => {
 });
 </script>
 <template>
-    <div class="console-page min-w-0 p-4 md:p-6">
+    <div
+        class="console-page min-w-0 p-4 md:p-6"
+        :class="{ 'user-stream-analytics': userScope }"
+    >
         <section
-            class="min-w-0 rounded-xl border bg-card p-4 text-card-foreground shadow-sm"
+            class="stream-analytics-panel min-w-0 rounded-xl border bg-card p-4 text-card-foreground shadow-sm"
             aria-label="四层实时监控"
         >
             <div
@@ -222,7 +237,7 @@ onUnmounted(() => {
             >
                 <template v-if="active === 'traffic'">
                     <form
-                        class="mb-4 flex flex-wrap items-center gap-2 rounded-md border bg-muted/20 p-3"
+                        class="stream-toolbar mb-4 flex flex-wrap items-center gap-2 rounded-md border bg-muted/20 p-3"
                         aria-label="带宽流量查询"
                         @submit.prevent="loadCharts"
                     >
@@ -231,7 +246,7 @@ onUnmounted(() => {
                             aria-label="端口"
                             placeholder="输入端口，如88/TCP 99/UDP"
                             class="h-8 w-64 max-w-full text-sm"
-                            @change="loadCharts()"
+                            @change="!userScope && loadCharts()"
                         />
                         <div
                             class="inline-flex max-w-full rounded-md border bg-card"
@@ -283,7 +298,10 @@ onUnmounted(() => {
                                 /></div
                         ></template>
                         <Button size="sm" type="submit" :disabled="chartLoading"
-                            ><Search class="size-3.5" />查询</Button
+                            ><Search
+                                v-if="!userScope"
+                                class="size-3.5"
+                            />查询</Button
                         >
                     </form>
                     <p
@@ -293,7 +311,9 @@ onUnmounted(() => {
                     >
                         {{ validationError }}
                     </p>
-                    <div class="grid min-w-0 gap-4 lg:grid-cols-2">
+                    <div
+                        class="stream-charts grid min-w-0 gap-4 lg:grid-cols-2"
+                    >
                         <StreamMetricChart
                             v-for="type in metrics"
                             :key="type"
@@ -308,7 +328,7 @@ onUnmounted(() => {
                 </template>
                 <template v-else>
                     <div
-                        class="mb-4 flex flex-wrap items-center gap-2 rounded-md border bg-muted/20 p-3"
+                        class="stream-toolbar mb-4 flex flex-wrap items-center gap-2 rounded-md border bg-muted/20 p-3"
                     >
                         <div
                             class="inline-flex rounded-md border bg-card"
@@ -339,11 +359,14 @@ onUnmounted(() => {
                             size="sm"
                             :disabled="topLoading"
                             @click="loadTop"
-                            ><RefreshCw class="size-3.5" />刷新</Button
+                            ><RefreshCw
+                                v-if="!userScope"
+                                class="size-3.5"
+                            />刷新</Button
                         >
                     </div>
                     <div
-                        class="w-full max-w-[850px] overflow-x-auto rounded-md border"
+                        class="stream-ranking w-full max-w-[850px] overflow-x-auto rounded-md border"
                         :aria-busy="topLoading"
                     >
                         <table
@@ -352,7 +375,9 @@ onUnmounted(() => {
                         >
                             <thead class="bg-muted/30 text-muted-foreground">
                                 <tr>
-                                    <th class="w-[16.5%] px-3 py-2 font-semibold">
+                                    <th
+                                        class="w-[16.5%] px-3 py-2 font-semibold"
+                                    >
                                         排行
                                     </th>
                                     <th class="px-3 py-2 font-semibold">
@@ -452,3 +477,109 @@ onUnmounted(() => {
         </section>
     </div>
 </template>
+
+<style scoped>
+.user-stream-analytics .stream-analytics-panel {
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+}
+.user-stream-analytics [role='tablist'] {
+    gap: 20px;
+    margin-bottom: 20px;
+    border-bottom: 1px solid var(--border);
+}
+.user-stream-analytics [role='tab'] {
+    margin-bottom: -1px;
+    padding: 12px 20px;
+    border-radius: 0;
+    border-bottom: 2px solid transparent;
+    background: transparent;
+    font-size: 16px;
+    font-weight: 400;
+}
+.user-stream-analytics [role='tab'][aria-selected='true'] {
+    color: var(--primary);
+    border-bottom-color: var(--primary);
+}
+.user-stream-analytics .stream-toolbar {
+    gap: 10px;
+    margin-bottom: 20px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+}
+.user-stream-analytics .stream-toolbar input {
+    height: 40px;
+    font-size: 16px;
+}
+.user-stream-analytics input[aria-label='端口'] {
+    width: 313px;
+}
+.user-stream-analytics .stream-toolbar button {
+    height: 40px;
+    padding: 0 19px;
+    font-size: 16px;
+    font-weight: 400;
+}
+.user-stream-analytics .stream-toolbar [role='group'] {
+    flex-wrap: wrap;
+}
+.user-stream-analytics .stream-toolbar button[aria-pressed='true'] {
+    height: 42px;
+    background: transparent;
+    border-radius: 0;
+}
+.user-stream-analytics .stream-toolbar button[aria-pressed='true']:first-child {
+    border-radius: 4px 0 0 4px;
+}
+.user-stream-analytics .stream-toolbar button[aria-pressed='true']:last-child {
+    border-radius: 0 4px 4px 0;
+}
+.user-stream-analytics :deep(.stream-chart) {
+    min-height: 420px;
+    padding: 4px;
+    border: 0;
+    border-radius: 0;
+}
+.user-stream-analytics :deep(.stream-chart h3) {
+    font-size: 16px;
+}
+.user-stream-analytics :deep(.stream-chart svg) {
+    height: 350px;
+}
+.user-stream-analytics :deep(.stream-chart svg text) {
+    font-size: 12px;
+}
+.user-stream-analytics .stream-ranking {
+    max-width: 1000px;
+    border: 0;
+    border-radius: 0;
+    border-bottom: 1px solid var(--border);
+}
+.user-stream-analytics .stream-ranking th {
+    height: 48px;
+    padding: 10px 22px;
+    font-size: 16px;
+}
+.user-stream-analytics .stream-ranking td {
+    height: 60px;
+    padding: 12px 22px;
+    font-size: 16px;
+}
+@media (max-width: 640px) {
+    .user-stream-analytics .stream-analytics-panel {
+        padding: 12px;
+    }
+    .user-stream-analytics .stream-toolbar button {
+        padding: 0 10px;
+        font-size: 14px;
+    }
+    .user-stream-analytics :deep(.stream-chart) {
+        min-height: 350px;
+    }
+    .user-stream-analytics :deep(.stream-chart svg) {
+        height: 300px;
+    }
+}
+</style>

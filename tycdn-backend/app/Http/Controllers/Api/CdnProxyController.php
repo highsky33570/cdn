@@ -53,6 +53,7 @@ class CdnProxyController extends Controller
         // api-key：只读。写入/删除会导致 Laravel 端存储的凭证失同步，需通过专用接口操作。
         '/v1/api-key' => ['GET'],
         '/v1/log/login' => ['GET'],
+        '/v1/log/op' => ['GET'],
         '/v1/user/overview' => ['GET'],
         '/v1/user/certify' => ['GET', 'POST'],
     ];

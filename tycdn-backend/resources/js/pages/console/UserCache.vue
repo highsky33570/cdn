@@ -1,538 +1,882 @@
 <script setup lang="ts">
-import {
-    AlertCircle,
-    ArrowUpToLine,
-    ChevronLeft,
-    ChevronRight,
-    Clock3,
-    Flame,
-    RefreshCw,
-    Search,
-    Send,
-} from 'lucide-vue-next';
-import { computed, onMounted, reactive, ref } from 'vue';
+import { Search } from 'lucide-vue-next';
+import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { toast } from 'vue-sonner';
-import ConsolePageHeader from '@/components/console/ConsolePageHeader.vue';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import PackagePagination from '@/components/console/PackagePagination.vue';
 import {
-    Select,
-    SelectContent,
-    SelectGroup,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
-import { Spinner } from '@/components/ui/spinner';
+    Dialog,
+    DialogScrollContent,
+    DialogHeader,
+    DialogTitle,
+    DialogDescription,
+    DialogFooter,
+} from '@/components/ui/dialog';
 import { apiRequest } from '@/lib/apiRequest';
-import { formatDate, getErrorMessage, textValue } from '@/lib/cdnRecord';
+import {
+    cacheModes,
+    cacheUrls,
+    validCacheUrl,
+    cacheJobPayload,
+    cacheJobQuery,
+    cacheJobStatus,
+    cacheJobUrl,
+} from '@/lib/cacheJobs';
+import type { CacheMode } from '@/lib/cacheJobs';
+import { getErrorMessage, textValue } from '@/lib/cdnRecord';
 import {
     createUserJobs,
+    listUserJobs,
     extractCdnflyRows,
     extractCdnflyTotal,
-    listUserJobs,
 } from '@/lib/cdnUserApi';
-import type { CdnJobPayload, CdnflyRecord } from '@/lib/cdnUserApi';
-import { masterGet } from '@/lib/masterApi';
+import type { CdnflyRecord } from '@/lib/cdnUserApi';
 
-const props = withDefaults(defineProps<{ scope?: 'user' | 'admin' }>(), {
-    scope: 'user',
+const tab = ref<'submit' | 'history'>('submit');
+const mode = ref<CacheMode>('clean_url'),
+    input = ref('');
+const submitting = ref(false),
+    formError = ref(''),
+    listError = ref('');
+const quota = ref<{ total: number | null; used: number | null }>({
+    total: null,
+    used: null,
 });
-
-const TYPE_ALL = 'all';
-const JOB_TYPES = [
-    { value: 'clean_url', label: '刷新 URL', icon: RefreshCw },
-    { value: 'clean_dir', label: '刷新目录', icon: ArrowUpToLine },
-    { value: 'pre_cache_url', label: '预热 URL', icon: Flame },
-] as const;
-
-const loading = ref(false);
-const submitting = ref(false);
-const errorMessage = ref('');
-const formError = ref('');
-const page = ref(1);
-const total = ref(0);
-const jobs = ref<CdnflyRecord[]>([]);
-
-const filters = reactive({
-    type: TYPE_ALL,
-    key1: '',
-    key2: '',
-    per_page: '20',
-});
-
-const form = reactive({
-    type: 'clean_url',
-    urls: '',
-});
-
-const hasPreviousPage = computed(() => page.value > 1);
-const hasNextPage = computed(
-    () => page.value * Number(filters.per_page) < total.value,
+const quotaLoading = ref(false),
+    quotaError = ref('');
+const remaining = computed(() =>
+    quota.value.total === null || quota.value.used === null
+        ? null
+        : Math.max(0, quota.value.total - quota.value.used),
 );
-const paginationText = computed(() =>
-    total.value === 0 ? '暂无任务' : `${total.value} 个任务`,
+const rows = ref<CdnflyRecord[]>([]),
+    selected = ref<string[]>([]);
+const page = ref(1),
+    pageSize = ref(10),
+    total = ref(0),
+    loading = ref(false);
+const typeFilter = ref(''),
+    keyword = ref('');
+const allSelected = computed(
+    () =>
+        rows.value.length > 0 &&
+        rows.value.every((row) => selected.value.includes(textValue(row.id))),
 );
+const detail = ref<CdnflyRecord | null>(null);
+const detailText = computed(() => {
+    if (!detail.value) {
+        return '';
+    }
 
-onMounted(() => {
-    void loadJobs();
+    const value =
+        detail.value.ret ||
+        detail.value.msg ||
+        detail.value.error ||
+        detail.value.result ||
+        detail.value.progress ||
+        cacheJobStatus(detail.value).label;
+
+    return typeof value === 'object'
+        ? JSON.stringify(value, null, 2)
+        : String(value);
+});
+let quotaRequest = 0,
+    listRequest = 0;
+onMounted(() => void loadQuota());
+onUnmounted(() => {
+    quotaRequest++;
+    listRequest++;
 });
 
-async function loadJobs(targetPage = page.value): Promise<void> {
-    loading.value = true;
-    errorMessage.value = '';
+async function loadQuota() {
+    const request = ++quotaRequest;
+    quotaLoading.value = true;
+    quotaError.value = '';
+    quota.value = { total: null, used: null };
+    const date = new Date();
+    const start = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 
     try {
-        const params: Record<string, string | number> = {
-            page: targetPage,
-            limit: Number(filters.per_page),
-        };
+        const result = await apiRequest<{
+            total: number | null;
+            used: number | null;
+        }>(
+            `/api/cdn/cache-quota?${new URLSearchParams({ type: mode.value, start })}`,
+        );
 
-        if (filters.type !== TYPE_ALL) {
-            params.type = filters.type;
+        if (request === quotaRequest) {
+            quota.value = result;
         }
-
-        if (filters.key1.trim() !== '') {
-            params.key1 = filters.key1.trim();
-        }
-
-        if (filters.key2.trim() !== '') {
-            params.key2 = encodeURIComponent(filters.key2.trim());
-        }
-
-        const result =
-            props.scope === 'admin'
-                ? await masterGet('cache-jobs', params)
-                : await listUserJobs(params);
-        const nextRows = extractCdnflyRows(result);
-
-        jobs.value = nextRows;
-        total.value = extractCdnflyTotal(result, nextRows.length);
-        page.value = targetPage;
     } catch (error) {
-        errorMessage.value = getErrorMessage(error);
+        if (request === quotaRequest) {
+            quotaError.value = getErrorMessage(error);
+        }
     } finally {
-        loading.value = false;
+        if (request === quotaRequest) {
+            quotaLoading.value = false;
+        }
     }
 }
-
-function submitSearch(): void {
-    page.value = 1;
-    void loadJobs(1);
-}
-
-async function submitJobs(): Promise<void> {
-    const urls = form.urls
-        .split(/\r?\n/)
-        .map((item) => item.trim())
-        .filter(Boolean);
-
-    if (urls.length === 0) {
-        formError.value = '至少填写一个 URL 或目录';
-
+function changeMode(value: CacheMode) {
+    if (submitting.value || mode.value === value) {
         return;
     }
 
-    const jobsPayload: CdnJobPayload[] = urls.map((url) => ({
-        type: form.type,
-        data: { url },
-    }));
+    mode.value = value;
+    formError.value = '';
+    void loadQuota();
+}
+function changeTab(value: 'submit' | 'history') {
+    if (submitting.value || tab.value === value) {
+        return;
+    }
+
+    tab.value = value;
+
+    if (value === 'history') {
+        void loadJobs(1);
+    } else {
+        void loadQuota();
+    }
+}
+function tabKey(event: KeyboardEvent) {
+    if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) {
+        return;
+    }
+
+    event.preventDefault();
+    changeTab(
+        event.key === 'Home'
+            ? 'submit'
+            : event.key === 'End'
+              ? 'history'
+              : tab.value === 'submit'
+                ? 'history'
+                : 'submit',
+    );
+    document.getElementById(`cache-tab-${tab.value}`)?.focus();
+}
+async function submit() {
+    if (submitting.value) {
+        return;
+    }
+
+    const urls = cacheUrls(input.value);
+    formError.value = !urls.length
+        ? '请填写至少一个 URL'
+        : urls.some((url) => !validCacheUrl(url))
+          ? 'URL 需要以 http:// 或 https:// 开头，且不能包含空格'
+          : urls.length > 1000
+            ? '单次最多提交 1000 个任务'
+            : quota.value.total &&
+                remaining.value !== null &&
+                urls.length > remaining.value
+              ? '输入条数超过今日剩余限额'
+              : '';
+
+    if (formError.value) {
+        return;
+    }
 
     submitting.value = true;
-    formError.value = '';
 
     try {
-        if (props.scope === 'admin') {
-            await apiRequest('/api/admin/workspace/cache-jobs', {
-                method: 'POST',
-                body: JSON.stringify(jobsPayload),
-            });
-        } else {
-            await createUserJobs(jobsPayload);
-        }
-
-        toast.success(`已提交 ${jobsPayload.length} 个缓存任务`);
-        form.urls = '';
-        filters.type = form.type;
-        await loadJobs(1);
+        await createUserJobs(
+            urls.map((url) => ({ type: mode.value, data: { url } })),
+        );
+        input.value = '';
+        toast.success('提交成功，请到操作记录里查看进度。');
+        void loadQuota();
     } catch (error) {
         formError.value = getErrorMessage(error);
     } finally {
         submitting.value = false;
     }
 }
+async function loadJobs(target = page.value) {
+    const request = ++listRequest;
+    loading.value = true;
+    listError.value = '';
+    selected.value = [];
+    page.value = target;
 
-function prevPage(): void {
-    if (hasPreviousPage.value) {
-        void loadJobs(page.value - 1);
-    }
-}
+    try {
+        const result = await listUserJobs(
+            cacheJobQuery(
+                typeFilter.value,
+                keyword.value,
+                target,
+                pageSize.value,
+            ),
+        );
 
-function nextPage(): void {
-    if (hasNextPage.value) {
-        void loadJobs(page.value + 1);
-    }
-}
-
-function typeLabel(value: unknown): string {
-    const type = textValue(value);
-
-    return JOB_TYPES.find((item) => item.value === type)?.label || type || '-';
-}
-
-/**
- * A cache job's target list, readably.
- *
- * `data` is a JSON array of URLs/paths (or a plain string). Dumping the raw
- * array showed customers `["https://…","https://…"]`; they want the targets,
- * with a count when there are several.
- */
-function jobDataText(value: unknown): string {
-    let parsed: unknown = value;
-
-    if (typeof value === 'string') {
-        const text = value.trim();
-
-        if (text === '') {
-            return '-';
+        if (request !== listRequest) {
+            return;
         }
 
-        if (!text.startsWith('[') && !text.startsWith('{')) {
-            return text;
+        rows.value = extractCdnflyRows(result);
+        total.value = extractCdnflyTotal(result, rows.value.length);
+
+        if (target > 1 && !rows.value.length) {
+            void loadJobs(Math.max(1, Math.ceil(total.value / pageSize.value)));
         }
-
-        try {
-            parsed = JSON.parse(text);
-        } catch {
-            return text;
+    } catch (error) {
+        if (request === listRequest) {
+            listError.value = getErrorMessage(error);
+            rows.value = [];
+            total.value = 0;
+        }
+    } finally {
+        if (request === listRequest) {
+            loading.value = false;
         }
     }
-
-    if (!Array.isArray(parsed)) {
-        return textValue(value) || '-';
-    }
-
-    const items = parsed
-        .map((item) => textValue(item))
-        .filter((item) => item !== '');
-
-    if (items.length === 0) {
-        return '-';
-    }
-
-    return items.length === 1 ? items[0] : `${items[0]} 等 ${items.length} 项`;
 }
-
-function stateLabel(value: unknown): string {
-    const state = textValue(value);
-
-    if (state === 'done') {
-        return '完成';
+async function resubmit(
+    jobs = rows.value.filter((row) =>
+        selected.value.includes(textValue(row.id)),
+    ),
+) {
+    if (submitting.value || loading.value) {
+        return;
     }
 
-    if (state === 'process') {
-        return '执行中';
+    if (!jobs.length) {
+        toast.warning('请选择要重新提交的任务');
+
+        return;
     }
 
-    if (state === 'pending') {
-        return '排队中';
-    }
+    submitting.value = true;
+    listError.value = '';
 
-    return state || '-';
+    try {
+        await createUserJobs(jobs.map(cacheJobPayload));
+        toast.success('重新提交成功');
+        await loadJobs();
+    } catch (error) {
+        listError.value = getErrorMessage(error);
+    } finally {
+        submitting.value = false;
+    }
 }
-
-function stateVariant(value: unknown): 'default' | 'outline' | 'secondary' {
-    const state = textValue(value);
-
-    if (state === 'done') {
-        return 'secondary';
-    }
-
-    if (state === 'process') {
-        return 'default';
-    }
-
-    return 'outline';
+function typeLabel(type: unknown) {
+    return (
+        cacheModes
+            .find((item) => item.value === type)
+            ?.label.replace('刷新 URL', '刷新URL') ||
+        textValue(type) ||
+        '-'
+    );
+}
+function createdAt(row: CdnflyRecord) {
+    return (
+        textValue(row.create_at2 || row.created_at || row.create_at)
+            .replace('T', ' ')
+            .slice(0, 19) || '-'
+    );
 }
 </script>
 
 <template>
-    <div class="flex flex-1 flex-col gap-6 p-4 md:p-6">
-        <ConsolePageHeader
-            title="刷新预热"
-            :icon="Clock3"
-            :show-api-badge="false"
-        />
-
-        <Alert v-if="errorMessage" variant="destructive">
-            <AlertCircle data-icon="alert" />
-            <AlertTitle>请求失败</AlertTitle>
-            <AlertDescription>{{ errorMessage }}</AlertDescription>
-        </Alert>
-        <Card class="ruiyi-cache-card">
-            <CardHeader class="border-b">
-                <CardTitle>提交任务</CardTitle>
-                <p class="text-sm text-muted-foreground">
-                    提交刷新 URL、刷新目录或预热 URL 任务，每行填写一个地址。
-                </p>
-            </CardHeader>
-            <CardContent>
-                <form class="grid gap-4" @submit.prevent="submitJobs">
-                    <Alert v-if="formError" variant="destructive">
-                        <AlertCircle data-icon="alert" />
-                        <AlertTitle>提交失败</AlertTitle>
-                        <AlertDescription>{{ formError }}</AlertDescription>
-                    </Alert>
-
-                    <div class="flex flex-wrap items-center gap-3">
-                        <Label class="w-20 shrink-0">任务类型</Label>
-                        <div class="flex flex-wrap gap-2">
-                            <Button
-                                v-for="type in JOB_TYPES"
-                                :key="type.value"
-                                type="button"
-                                size="sm"
-                                :variant="
-                                    form.type === type.value
-                                        ? 'default'
-                                        : 'outline'
-                                "
-                                @click="form.type = type.value"
+    <div class="min-w-0 p-4 md:p-6">
+        <section class="user-cache-workspace">
+            <nav
+                class="cache-tabs"
+                role="tablist"
+                aria-label="刷新预热"
+                @keydown="tabKey"
+            >
+                <button
+                    v-for="item in [
+                        { value: 'submit', label: '刷新预热' },
+                        { value: 'history', label: '操作记录' },
+                    ] as const"
+                    :id="`cache-tab-${item.value}`"
+                    :key="item.value"
+                    type="button"
+                    role="tab"
+                    :aria-selected="tab === item.value"
+                    :aria-controls="`cache-panel-${item.value}`"
+                    :tabindex="tab === item.value ? 0 : -1"
+                    :disabled="submitting"
+                    @click="changeTab(item.value)"
+                >
+                    {{ item.label }}
+                </button>
+            </nav>
+            <div
+                v-if="tab === 'submit'"
+                id="cache-panel-submit"
+                role="tabpanel"
+                aria-labelledby="cache-tab-submit"
+            >
+                <form
+                    class="cache-form"
+                    :aria-busy="submitting"
+                    @submit.prevent="submit"
+                >
+                    <fieldset
+                        class="cache-form-row mode-row"
+                        :disabled="submitting"
+                    >
+                        <legend class="sr-only">操作类型</legend>
+                        <span class="row-label" aria-hidden="true"
+                            >操作类型:</span
+                        >
+                        <div class="cache-radios">
+                            <label v-for="item in cacheModes" :key="item.value"
+                                ><input
+                                    type="radio"
+                                    name="cache-mode"
+                                    :value="item.value"
+                                    :checked="mode === item.value"
+                                    @change="changeMode(item.value)"
+                                />{{ typeLabel(item.value) }}</label
                             >
-                                <component
-                                    :is="type.icon"
-                                    data-icon="inline-start"
-                                />
-                                {{ type.label }}
-                            </Button>
                         </div>
-                    </div>
-
-                    <div class="flex items-start gap-3">
-                        <Label for="cache-urls" class="w-20 shrink-0 pt-2">
-                            URL / 目录
-                        </Label>
-                        <div class="min-w-0 flex-1">
+                    </fieldset>
+                    <div class="cache-form-row">
+                        <label class="row-label url-label" for="cache-urls"
+                            >URL:</label
+                        >
+                        <div class="url-field">
                             <textarea
                                 id="cache-urls"
-                                v-model="form.urls"
-                                class="min-h-32 w-full rounded-sm border border-input bg-background px-3 py-2 font-mono text-sm shadow-none transition-[color,box-shadow] outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-[2px] focus-visible:ring-ring/30 disabled:cursor-not-allowed disabled:opacity-50"
-                                placeholder="https://www.example.com/assets/app.js"
+                                v-model="input"
+                                placeholder="一行一条URL"
                                 spellcheck="false"
+                                :disabled="submitting"
+                                :aria-invalid="!!formError"
+                                aria-describedby="cache-quota cache-form-error"
                             />
-                            <p class="mt-1 text-xs text-muted-foreground">
-                                刷新目录请填写目录地址；预热任务仅支持 URL。
+                            <p
+                                id="cache-quota"
+                                class="quota-hint"
+                                :aria-busy="quotaLoading"
+                                aria-live="polite"
+                            >
+                                <template v-if="quotaLoading"
+                                    >正在读取今日额度…</template
+                                >
+                                <template v-else-if="quotaError"
+                                    >额度暂不可用
+                                    <button
+                                        type="button"
+                                        class="text-action"
+                                        :title="quotaError"
+                                        @click="loadQuota"
+                                    >
+                                        重试
+                                    </button></template
+                                >
+                                <template v-else-if="quota.total === 0"
+                                    >每日不限额</template
+                                >
+                                <template v-else
+                                    >每日限额{{
+                                        quota.total ?? '未知'
+                                    }}次，今日剩余{{
+                                        remaining ?? '未知'
+                                    }}次</template
+                                >
                             </p>
+                            <p
+                                v-if="formError"
+                                id="cache-form-error"
+                                class="error-message"
+                                role="alert"
+                            >
+                                {{ formError }}
+                            </p>
+                            <button
+                                class="cache-button primary submit-button"
+                                type="submit"
+                                :disabled="submitting"
+                            >
+                                {{ submitting ? '提交中…' : '提交' }}
+                            </button>
                         </div>
                     </div>
-
-                    <div class="flex justify-end border-t pt-4">
-                        <Button
-                            type="submit"
-                            class="min-w-28"
-                            :disabled="submitting"
+                </form>
+            </div>
+            <div
+                v-else
+                id="cache-panel-history"
+                role="tabpanel"
+                aria-labelledby="cache-tab-history"
+                :aria-busy="loading || submitting"
+            >
+                <form class="cache-toolbar" @submit.prevent="loadJobs(1)">
+                    <button
+                        type="button"
+                        class="cache-button primary"
+                        :disabled="loading || submitting"
+                        @click="resubmit()"
+                    >
+                        {{ submitting ? '提交中…' : '重新提交' }}
+                    </button>
+                    <select
+                        v-model="typeFilter"
+                        aria-label="任务类型"
+                        :disabled="submitting"
+                        @change="loadJobs(1)"
+                    >
+                        <option value="">所有类型</option>
+                        <option
+                            v-for="item in cacheModes"
+                            :key="item.value"
+                            :value="item.value"
                         >
-                            <Spinner
-                                v-if="submitting"
-                                data-icon="inline-start"
-                            />
-                            <Send v-else data-icon="inline-start" />
-                            提交任务
-                        </Button>
+                            {{ typeLabel(item.value) }}
+                        </option>
+                    </select>
+                    <div class="cache-search">
+                        <input
+                            v-model="keyword"
+                            aria-label="URL或域名"
+                            placeholder="URL或域名"
+                            :disabled="submitting"
+                        /><button
+                            type="submit"
+                            aria-label="查询"
+                            :disabled="loading || submitting"
+                        >
+                            <Search :size="18" />
+                        </button>
                     </div>
                 </form>
-            </CardContent>
-        </Card>
-
-        <Card class="ruiyi-cache-card">
-            <CardHeader class="border-b">
-                <div
-                    class="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between"
-                >
-                    <div class="flex items-center gap-3">
-                        <CardTitle>任务记录</CardTitle>
-                        <span class="text-sm text-muted-foreground">
-                            {{ paginationText }}
-                        </span>
-                    </div>
-                    <form
-                        class="grid gap-2 md:grid-cols-[140px_220px_260px_auto]"
-                        @submit.prevent="submitSearch"
+                <p v-if="listError" role="alert" class="error-message">
+                    {{ listError }}
+                    <button
+                        class="text-action"
+                        type="button"
+                        :disabled="loading || submitting"
+                        @click="loadJobs()"
                     >
-                        <Select v-model="filters.type">
-                            <SelectTrigger>
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectGroup>
-                                    <SelectItem :value="TYPE_ALL">
-                                        全部类型
-                                    </SelectItem>
-                                    <SelectItem
-                                        v-for="type in JOB_TYPES"
-                                        :key="type.value"
-                                        :value="type.value"
-                                    >
-                                        {{ type.label }}
-                                    </SelectItem>
-                                </SelectGroup>
-                            </SelectContent>
-                        </Select>
-                        <Input
-                            v-model="filters.key1"
-                            placeholder="域名 / site_id"
-                        />
-                        <Input v-model="filters.key2" placeholder="URL" />
-                        <Button type="submit" :disabled="loading">
-                            <Spinner v-if="loading" data-icon="inline-start" />
-                            <Search v-else data-icon="inline-start" />
-                            查询
-                        </Button>
-                    </form>
-                </div>
-            </CardHeader>
-            <CardContent>
-                <div class="overflow-x-auto">
-                    <table class="w-full min-w-[900px] table-fixed text-sm">
+                        重试
+                    </button>
+                </p>
+                <div class="cache-table-scroll">
+                    <table>
                         <colgroup>
-                            <col style="width: 10%" />
-                            <col style="width: 14%" />
+                            <col style="width: 6%" />
+                            <col style="width: 17%" />
+                            <col style="width: 12%" />
+                            <col style="width: 22%" />
+                            <col style="width: 12%" />
                             <col style="width: 20%" />
-                            <col style="width: 26%" />
-                            <col style="width: 10%" />
-                            <col style="width: 10%" />
-                            <col style="width: 10%" />
+                            <col style="width: 11%" />
                         </colgroup>
-                        <thead class="border-b text-muted-foreground">
+                        <thead>
                             <tr>
-                                <th class="px-4 py-3 text-left font-medium">
-                                    ID
+                                <th>
+                                    <input
+                                        type="checkbox"
+                                        aria-label="全选当前页"
+                                        :checked="allSelected"
+                                        :indeterminate="
+                                            selected.length > 0 && !allSelected
+                                        "
+                                        :disabled="
+                                            loading ||
+                                            submitting ||
+                                            !rows.length
+                                        "
+                                        @change="
+                                            selected = allSelected
+                                                ? []
+                                                : rows.map((row) =>
+                                                      textValue(row.id),
+                                                  )
+                                        "
+                                    />
                                 </th>
-                                <th class="px-4 py-3 text-left font-medium">
-                                    类型
-                                </th>
-                                <th class="px-4 py-3 text-left font-medium">
-                                    域名 / site_id
-                                </th>
-                                <th class="px-4 py-3 text-left font-medium">
-                                    数据
-                                </th>
-                                <th class="px-4 py-3 text-center font-medium">
-                                    进度
-                                </th>
-                                <th class="px-4 py-3 text-center font-medium">
-                                    状态
-                                </th>
-                                <th class="px-4 py-3 text-left font-medium">
-                                    创建时间
-                                </th>
+                                <th>JobId / TaskId</th>
+                                <th>类型</th>
+                                <th>URL</th>
+                                <th>状态</th>
+                                <th>创建时间</th>
+                                <th>操作</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <tr
-                                v-if="loading"
-                                class="border-b text-muted-foreground"
-                            >
-                                <td class="px-4 py-12 text-center" colspan="7">
-                                    <Spinner class="mx-auto" />
-                                </td>
+                            <tr v-if="loading">
+                                <td colspan="7" class="empty">加载中…</td>
                             </tr>
-                            <tr
-                                v-for="job in jobs"
-                                :key="textValue(job.id)"
-                                class="border-b"
-                            >
-                                <td class="px-4 py-3">
-                                    #{{ textValue(job.id) || '-' }}
-                                </td>
-                                <td class="px-4 py-3">
-                                    {{ typeLabel(job.type) }}
-                                </td>
-                                <td class="px-4 py-3">
-                                    <div class="truncate">
-                                        {{ textValue(job.key1) || '-' }}
-                                    </div>
-                                </td>
-                                <td class="px-4 py-3">
-                                    <div
-                                        class="truncate font-mono text-xs text-muted-foreground"
-                                    >
-                                        {{
-                                            textValue(job.key2) ||
-                                            jobDataText(job.data)
-                                        }}
-                                    </div>
-                                </td>
-                                <td class="px-4 py-3 text-center">
-                                    {{ textValue(job.progress) || '-' }}
-                                </td>
-                                <td class="px-4 py-3 text-center">
-                                    <Badge :variant="stateVariant(job.state)">
-                                        {{ stateLabel(job.state) }}
-                                    </Badge>
-                                </td>
-                                <td class="px-4 py-3 text-muted-foreground">
-                                    {{ formatDate(job.create_at2) }}
-                                </td>
-                            </tr>
-                            <tr v-if="!loading && jobs.length === 0">
-                                <td
-                                    class="px-6 py-16 text-center text-muted-foreground"
-                                    colspan="7"
+                            <template v-else>
+                                <tr
+                                    v-for="row in rows"
+                                    :key="textValue(row.id)"
                                 >
-                                    暂无任务
-                                </td>
-                            </tr>
+                                    <td>
+                                        <input
+                                            v-model="selected"
+                                            type="checkbox"
+                                            :value="textValue(row.id)"
+                                            :aria-label="`选择 ${row.id}`"
+                                            :disabled="submitting"
+                                        />
+                                    </td>
+                                    <td>
+                                        {{ row.id
+                                        }}<span
+                                            v-if="row.task_id"
+                                            class="task-id"
+                                            >{{ row.task_id }}</span
+                                        >
+                                    </td>
+                                    <td>{{ typeLabel(row.type) }}</td>
+                                    <td
+                                        class="url-cell"
+                                        :title="cacheJobUrl(row)"
+                                    >
+                                        {{ cacheJobUrl(row) || '-' }}
+                                    </td>
+                                    <td>
+                                        <button
+                                            type="button"
+                                            class="job-status"
+                                            :data-tone="
+                                                cacheJobStatus(row).tone
+                                            "
+                                            @click="detail = row"
+                                        >
+                                            {{ cacheJobStatus(row).label }}
+                                        </button>
+                                    </td>
+                                    <td>{{ createdAt(row) }}</td>
+                                    <td>
+                                        <button
+                                            class="text-action"
+                                            type="button"
+                                            :disabled="submitting"
+                                            @click="resubmit([row])"
+                                        >
+                                            重新提交
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr v-if="!rows.length">
+                                    <td colspan="7" class="empty">
+                                        {{
+                                            listError
+                                                ? '加载失败，请重试'
+                                                : '暂无数据'
+                                        }}
+                                    </td>
+                                </tr>
+                            </template>
                         </tbody>
                     </table>
                 </div>
-
-                <div class="ruiyi-pagination flex items-center gap-1 pt-4">
-                    <span class="mr-2 text-sm text-muted-foreground">
-                        Total {{ total }} {{ total === 1 ? 'item' : 'items' }}
-                    </span>
-                    <Button
-                        variant="outline"
-                        size="icon-sm"
-                        :disabled="!hasPreviousPage || loading"
-                        aria-label="上一页"
-                        @click="prevPage"
+                <PackagePagination
+                    v-model:page="page"
+                    v-model:page-size="pageSize"
+                    class="cache-pagination"
+                    :total="total"
+                    :disabled="loading || submitting"
+                    numbered
+                    edge-links
+                    @update:page="loadJobs($event)"
+                    @update:page-size="loadJobs(1)"
+                />
+            </div>
+        </section>
+        <Dialog :open="!!detail" @update:open="!$event && (detail = null)">
+            <DialogScrollContent
+                ><DialogHeader
+                    ><DialogTitle>任务详情</DialogTitle
+                    ><DialogDescription
+                        >JobId: {{ detail?.id }}</DialogDescription
+                    ></DialogHeader
+                >
+                <pre class="text-sm break-all whitespace-pre-wrap">{{
+                    detailText
+                }}</pre>
+                <DialogFooter
+                    ><button
+                        class="cache-button"
+                        type="button"
+                        @click="detail = null"
                     >
-                        <ChevronLeft />
-                    </Button>
-                    <Button size="icon-sm" variant="outline" class="is-current">
-                        {{ page }}
-                    </Button>
-                    <Button
-                        variant="outline"
-                        size="icon-sm"
-                        :disabled="!hasNextPage || loading"
-                        aria-label="下一页"
-                        @click="nextPage"
-                    >
-                        <ChevronRight />
-                    </Button>
-                    <Select
-                        v-model="filters.per_page"
-                        @update:model-value="loadJobs(1)"
-                    >
-                        <SelectTrigger class="ml-2 w-24">
-                            <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectGroup>
-                                <SelectItem value="10">10 /page</SelectItem>
-                                <SelectItem value="20">20 /page</SelectItem>
-                                <SelectItem value="50">50 /page</SelectItem>
-                            </SelectGroup>
-                        </SelectContent>
-                    </Select>
-                </div>
-            </CardContent>
-        </Card>
+                        关闭
+                    </button></DialogFooter
+                ></DialogScrollContent
+            >
+        </Dialog>
     </div>
 </template>
+
+<style scoped>
+.user-cache-workspace {
+    background: var(--card);
+    color: var(--foreground);
+    padding: 0 14px 24px;
+    min-width: 0;
+    font-size: 16px;
+}
+.cache-tabs {
+    display: flex;
+    gap: 20px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 20px;
+}
+.cache-tabs button {
+    padding: 14px 20px;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    white-space: nowrap;
+}
+.cache-tabs button[aria-selected='true'] {
+    color: var(--primary);
+    border-bottom-color: var(--primary);
+}
+.cache-form {
+    padding: 8px 0 20px;
+}
+.cache-form-row {
+    display: flex;
+    gap: 24px;
+    align-items: flex-start;
+}
+.row-label {
+    width: 96px;
+    flex-shrink: 0;
+    text-align: right;
+}
+.mode-row {
+    margin-bottom: 38px;
+}
+.cache-radios {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+.cache-radios label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+}
+input[type='radio'],
+input[type='checkbox'] {
+    width: 19px;
+    height: 19px;
+    accent-color: var(--primary);
+    vertical-align: middle;
+}
+.url-label {
+    padding-top: 8px;
+}
+.url-field {
+    width: 625px;
+    max-width: 100%;
+    min-width: 0;
+}
+textarea {
+    width: 100%;
+    height: 275px;
+    display: block;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: var(--card);
+    padding: 8px 10px;
+    resize: vertical;
+    outline: none;
+}
+textarea::placeholder,
+.cache-search input::placeholder {
+    color: var(--muted-foreground);
+    opacity: 0.55;
+}
+textarea:focus,
+.cache-search:focus-within {
+    border-color: var(--primary);
+}
+.quota-hint {
+    margin-top: 4px;
+    color: var(--muted-foreground);
+    font-size: 14px;
+    line-height: 22px;
+}
+.cache-button {
+    height: 40px;
+    padding: 0 19px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: var(--card);
+    font-size: 16px;
+    white-space: nowrap;
+}
+.cache-button.primary {
+    background: var(--primary);
+    color: var(--primary-foreground);
+    border-color: var(--primary);
+}
+.submit-button {
+    margin-top: 34px;
+}
+button:not(:disabled) {
+    cursor: pointer;
+}
+button:disabled,
+select:disabled,
+input:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+button:focus-visible,
+input:focus-visible,
+select:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+}
+.cache-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 18px;
+}
+.cache-toolbar select {
+    width: 187px;
+    height: 40px;
+    padding: 0 10px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: var(--card);
+}
+.cache-search {
+    display: flex;
+    width: 269px;
+    height: 40px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+}
+.cache-search input {
+    min-width: 0;
+    flex: 1;
+    padding: 0 10px;
+    outline: none;
+}
+.cache-search button {
+    width: 40px;
+    display: grid;
+    place-items: center;
+    color: var(--muted-foreground);
+}
+.cache-table-scroll {
+    overflow-x: auto;
+}
+table {
+    width: 100%;
+    font-size: 16px;
+    color: var(--muted-foreground);
+    min-width: 1000px;
+    table-layout: fixed;
+    border-collapse: collapse;
+}
+th {
+    background: color-mix(in srgb, var(--muted) 55%, var(--card));
+    height: 48px;
+    font-weight: 600;
+    text-align: left;
+}
+th,
+td {
+    padding: 10px 20px;
+    border-bottom: 1px solid var(--border);
+}
+td {
+    height: 60px;
+    overflow-wrap: anywhere;
+}
+th:first-child,
+td:first-child {
+    text-align: center;
+}
+tbody tr:hover {
+    background: color-mix(in srgb, var(--primary) 4%, var(--card));
+}
+.url-cell {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.task-id {
+    display: block;
+    font-size: 13px;
+    color: var(--muted-foreground);
+}
+.empty {
+    text-align: center;
+    color: var(--muted-foreground);
+}
+.text-action {
+    color: var(--primary);
+}
+.job-status {
+    text-align: left;
+}
+.job-status[data-tone='success'] {
+    color: #19be6b;
+}
+.job-status[data-tone='danger'],
+.error-message {
+    color: var(--destructive);
+}
+.job-status[data-tone='warning'] {
+    color: #b7791f;
+}
+.job-status[data-tone='info'] {
+    color: var(--primary);
+}
+.error-message {
+    margin: 12px 0;
+    font-size: 14px;
+}
+.cache-pagination {
+    justify-content: flex-start;
+    margin-top: 26px;
+    font-size: 16px;
+}
+.cache-pagination :deep(button),
+.cache-pagination :deep(select) {
+    height: 40px;
+    min-width: 40px;
+    font-size: 16px;
+}
+.cache-pagination :deep(button[aria-current='page']) {
+    background: var(--card);
+    color: var(--primary);
+    border: 1px solid var(--primary);
+}
+@media (max-width: 640px) {
+    .user-cache-workspace {
+        padding: 0 10px 20px;
+    }
+    .cache-form-row {
+        gap: 10px;
+    }
+    .row-label {
+        width: 72px;
+        font-size: 14px;
+    }
+    .cache-radios {
+        gap: 12px;
+        font-size: 14px;
+    }
+    .cache-tabs {
+        gap: 0;
+    }
+    .cache-tabs button {
+        padding: 12px 16px;
+    }
+    .cache-search {
+        width: 100%;
+    }
+    .url-field {
+        flex: 1;
+    }
+}
+</style>

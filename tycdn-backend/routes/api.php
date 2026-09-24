@@ -26,6 +26,8 @@ use App\Http\Controllers\Api\AdminWafLogController;
 use App\Http\Controllers\Api\AdminWorkspaceController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CdnApiKeyController;
+use App\Http\Controllers\Api\CdnBlockLogController;
+use App\Http\Controllers\Api\CdnCacheQuotaController;
 use App\Http\Controllers\Api\CdnCertController;
 use App\Http\Controllers\Api\CdnLogDownloadController;
 use App\Http\Controllers\Api\CdnProxyController;
@@ -83,6 +85,8 @@ Route::middleware(['auth:sanctum', 'verified', 'cdnfly.apikey'])->prefix('cdn')-
     Route::apiResource('certs', CdnCertController::class);
 
     Route::get('access-log-downloads/{id}', CdnLogDownloadController::class)->whereNumber('id');
+    Route::get('cache-quota', CdnCacheQuotaController::class);
+    Route::get('block-logs/{resource}/export', [CdnBlockLogController::class, 'export'])->whereIn('resource', ['blackip', 'history-blackip']);
 
     // 通用代理（ACL、DNS API、站点分组等）
     Route::any('proxy/{path}', [CdnProxyController::class, 'handle'])->where('path', '.*');

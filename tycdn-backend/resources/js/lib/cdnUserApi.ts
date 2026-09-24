@@ -454,6 +454,21 @@ export async function listAccessLogJobs(
     return proxyGet('/v1/jobs', { ...params, type: 'down_http_access_log' });
 }
 
+export async function getUserAccessLog(id: string): Promise<CdnflyRecord> {
+    return apiRequest<CdnflyRecord>(
+        proxyPath(`/v1/monitor/site/access-log/${encodeURIComponent(id)}`),
+    );
+}
+
+export async function createFilteredAccessLogJob(
+    data: Record<string, string | number>,
+): Promise<CdnflyRecord> {
+    return proxyRequest('/v1/jobs', 'POST', {
+        type: 'down_http_access_log',
+        data,
+    });
+}
+
 export async function createAccessLogJob(
     start: string,
     end: string,
@@ -611,6 +626,12 @@ export async function listUserLoginLogs(
 
 export async function getUserOverview(): Promise<CdnflyRecord> {
     return proxyRequest('/v1/user/overview', 'GET');
+}
+
+export async function listUserOperationLogs(
+    params: Record<string, string | number> = {},
+): Promise<CdnflyListData> {
+    return proxyGet('/v1/log/op', params);
 }
 
 export async function getUserCertify(): Promise<CdnflyRecord> {

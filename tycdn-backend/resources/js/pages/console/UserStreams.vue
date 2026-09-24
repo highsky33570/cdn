@@ -3,23 +3,16 @@ import { router } from '@inertiajs/vue3';
 import {
     AlertCircle,
     BarChart3,
-    ExternalLink,
     Network,
-    Plus,
     RefreshCw,
     Save,
-    Search,
-    Trash2,
 } from 'lucide-vue-next';
 import { computed, nextTick, onMounted, reactive, ref } from 'vue';
-import { toast } from 'vue-sonner';
 import ConsolePageHeader from '@/components/console/ConsolePageHeader.vue';
-import StreamBatchCreate from '@/components/console/StreamBatchCreate.vue';
-import StreamBulkActions from '@/components/console/StreamBulkActions.vue';
+import UserStreamWorkspace from '@/components/console/UserStreamWorkspace.vue';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { DateRangePicker } from '@/components/ui/date-range-picker';
 import {
     Dialog,
@@ -44,21 +37,16 @@ import { cdnflyStreamSeries } from '@/lib/cdnflyResponse';
 import {
     formatDate,
     getErrorMessage,
-    numberValue,
     recordId,
     textValue,
-    yesNo,
 } from '@/lib/cdnRecord';
 import {
     createUserStream,
-    deleteUserStream,
     extractCdnflyRows,
-    extractCdnflyTotal,
     getUserStreamRealtime,
     getUserStreamTop,
     listUserPackages,
     listUserStreamGroups,
-    listUserStreams,
 } from '@/lib/cdnUserApi';
 import type { CdnflyRecord } from '@/lib/cdnUserApi';
 
@@ -71,29 +59,14 @@ const props = defineProps<{
     scope?: 'admin' | 'user';
 }>();
 
-const selectedStreams = ref<number[]>([]);
+const workspace = ref<InstanceType<typeof UserStreamWorkspace> | null>(null);
 const packages = ref<CdnflyRecord[]>([]);
 const streamGroups = ref<CdnflyRecord[]>([]);
 
-const loading = ref(false);
 const saving = ref(false);
-const deletingId = ref<number | null>(null);
 const errorMessage = ref('');
 const formError = ref('');
 const dialogOpen = ref(false);
-
-const page = ref(1);
-const total = ref(0);
-const streams = ref<CdnflyRecord[]>([]);
-
-const filters = reactive({
-    listen_port: '',
-    group: '',
-    id: '',
-    user_package: '',
-    enable: 'all',
-    per_page: '20',
-});
 
 // ── 实时曲线状态 ──────────────────────────────────────
 const rtLoading = ref(false);
@@ -138,10 +111,6 @@ const description = computed(() =>
         ? '四层转发实时带宽/流量曲线与端口排行统计。'
         : '维护 TCP/UDP 四层转发规则。',
 );
-const hasPreviousPage = computed(() => page.value > 1);
-const hasNextPage = computed(
-    () => page.value * Number(filters.per_page) < total.value,
-);
 const dialogTitle = computed(() => '新增转发');
 
 onMounted(() => {
@@ -168,46 +137,13 @@ async function loadStreamGroups(): Promise<void> {
     }
 }
 
-async function loadCurrent(targetPage = page.value): Promise<void> {
+async function loadCurrent(): Promise<void> {
     if (props.view === 'analytics') {
         await loadRealtime();
-
-        return;
     }
-
-    await loadStreams(targetPage);
 }
-
-async function loadStreams(targetPage = page.value): Promise<void> {
-    loading.value = true;
-    errorMessage.value = '';
-
-    try {
-        const params: Record<string, string | number> = {
-            page: targetPage,
-            limit: Number(filters.per_page),
-        };
-
-        setOptional(params, 'listen_port', filters.listen_port);
-        setOptional(params, 'group', filters.group);
-        setOptional(params, 'id', filters.id);
-        setOptional(params, 'user_package', filters.user_package);
-
-        if (filters.enable !== 'all') {
-            params.enable = filters.enable;
-        }
-
-        const result = await listUserStreams(params);
-        const nextRows = extractCdnflyRows(result);
-
-        streams.value = nextRows;
-        total.value = extractCdnflyTotal(result, nextRows.length);
-        page.value = targetPage;
-    } catch (error) {
-        errorMessage.value = getErrorMessage(error);
-    } finally {
-        loading.value = false;
-    }
+async function loadStreams(): Promise<void> {
+    await workspace.value?.refresh();
 }
 
 // ── 实时曲线 ─────────────────────────────────────────
@@ -446,6 +382,7 @@ function formatMetric(value: number, unit: 'bytes' | 'count'): string {
 }
 
 function openCreateDialog(): void {
+    void loadStreamGroups();
     form.user_package = '';
     form.listen_protocol = 'tcp';
     form.listen_port = '';
@@ -481,15 +418,22 @@ async function submitStream(): Promise<void> {
         return;
     }
 
-    const backendPort = requiredNumber(form.backend_port, '回源端口');
-
-    if (backendPort === null) {
-        return;
-    }
-
+    let backendPort: number;
+    let listenPort: number;
     let userPackage: number;
 
     try {
+        backendPort = requiredNumber(form.backend_port, '回源端口');
+        listenPort = requiredNumber(form.listen_port, '监听端口');
+
+        if (
+            ![backendPort, listenPort].every(
+                (port) => Number.isInteger(port) && port >= 1 && port <= 65535,
+            )
+        ) {
+            throw new Error('端口必须是 1 到 65535 之间的整数');
+        }
+
         userPackage = requiredNumber(form.user_package, '套餐');
     } catch (error) {
         formError.value = getErrorMessage(error);
@@ -505,7 +449,7 @@ async function submitStream(): Promise<void> {
             listen: [
                 {
                     protocol: form.listen_protocol,
-                    port: Number(form.listen_port),
+                    port: listenPort,
                 },
             ],
             backend_port: backendPort,
@@ -533,143 +477,14 @@ async function submitStream(): Promise<void> {
     }
 }
 
-async function removeStream(record: CdnflyRecord): Promise<void> {
-    const id = recordId(record);
-
-    if (!id) {
-        errorMessage.value = '转发 ID 缺失';
-
-        return;
-    }
-
-    deletingId.value = id;
-    errorMessage.value = '';
-
-    try {
-        await deleteUserStream(id);
-        toast.success('转发删除请求已提交');
-        await loadStreams();
-    } catch (error) {
-        errorMessage.value = getErrorMessage(error);
-    } finally {
-        deletingId.value = null;
-    }
-}
-
-function prevPage(): void {
-    if (hasPreviousPage.value) {
-        void loadStreams(page.value - 1);
-    }
-}
-
-function nextPage(): void {
-    if (hasNextPage.value) {
-        void loadStreams(page.value + 1);
-    }
-}
-
-function streamCname(record: CdnflyRecord): string {
-    const hostname = textValue(record.cname_hostname);
-    const domain = textValue(record.cname_domain);
-
-    if (hostname && domain) {
-        return `${hostname}.${domain}`;
-    }
-
-    return '';
-}
-
-/** [{addr,state,weight}] or a JSON string of it. */
-function parseRows(raw: unknown): Record<string, unknown>[] {
-    let value: unknown = raw;
-
-    if (typeof raw === 'string') {
-        try {
-            value = JSON.parse(raw);
-        } catch {
-            return [];
-        }
-    }
-
-    return Array.isArray(value)
-        ? (value.filter((r) => r && typeof r === 'object') as Record<
-              string,
-              unknown
-          >[])
-        : [];
-}
-
-/**
- * Listen ports, the way the master's own panel shows them: a tcp port bare, any
- * other protocol suffixed `/proto`. Was dumping the raw
- * [{"protocol":"tcp","port":"88"}] JSON.
- */
-function listenText(record: CdnflyRecord): string {
-    const rows = parseRows(record.listen);
-
-    if (rows.length === 0) {
-        return textValue(record.listen) || '-';
-    }
-
-    const ports = rows
-        .map((r) => {
-            const port = textValue(r.port);
-
-            if (port === '') {
-                return '';
-            }
-
-            const proto = textValue(r.protocol);
-
-            return proto === '' || proto === 'tcp' ? port : `${port}/${proto}`;
-        })
-        .filter((p) => p !== '');
-
-    return ports.length > 0 ? ports.join(' ') : '-';
-}
-
-/** Primary origin address, "+N" when several, was raw backend JSON. */
-function backendText(record: CdnflyRecord): string {
-    const rows = parseRows(record.backend);
-
-    if (rows.length === 0) {
-        return textValue(record.backend) || '-';
-    }
-
-    const addrs = rows.map((r) => textValue(r.addr)).filter((a) => a !== '');
-
-    if (addrs.length === 0) {
-        return '-';
-    }
-
-    const port = textValue(record.backend_port);
-    const head = port !== '' ? `${addrs[0]}:${port}` : addrs[0];
-
-    return addrs.length === 1 ? head : `${head} +${addrs.length - 1}`;
-}
-
 function requiredNumber(value: string, label: string): number {
-    const parsed = optionalNumber(value);
+    const parsed = Number(value);
 
-    if (parsed === null) {
+    if (!value.trim() || !Number.isFinite(parsed)) {
         throw new Error(`${label} 必须是数字`);
     }
 
     return parsed;
-}
-
-function optionalNumber(value: string): number | null {
-    return numberValue(value);
-}
-
-function setOptional(
-    params: Record<string, string | number>,
-    key: string,
-    value: string,
-): void {
-    if (value.trim() !== '') {
-        params[key] = value.trim();
-    }
 }
 
 function defaultStart(): string {
@@ -696,6 +511,7 @@ function formatInputDate(date: Date): string {
 <template>
     <div class="flex flex-1 flex-col gap-6 p-4 md:p-6">
         <ConsolePageHeader
+            v-if="props.view === 'analytics'"
             eyebrow="用户端 / 四层转发"
             :title="title"
             :description="description"
@@ -983,288 +799,13 @@ function formatInputDate(date: Date): string {
             </Card>
         </template>
 
-        <template v-else>
-            <Card class="gap-4">
-                <CardContent class="pt-6">
-                    <form
-                        class="grid gap-3 md:grid-cols-2 xl:grid-cols-[repeat(4,minmax(0,1fr))_160px_120px_auto]"
-                        @submit.prevent="loadStreams(1)"
-                    >
-                        <Input
-                            v-model="filters.listen_port"
-                            placeholder="监听端口"
-                        />
-                        <Input v-model="filters.group" placeholder="转发组" />
-                        <Input v-model="filters.id" placeholder="转发 ID" />
-                        <Input
-                            v-model="filters.user_package"
-                            placeholder="套餐 ID"
-                        />
-                        <Select v-model="filters.enable">
-                            <SelectTrigger><SelectValue /></SelectTrigger>
-                            <SelectContent>
-                                <SelectGroup>
-                                    <SelectItem value="all"
-                                        >全部状态</SelectItem
-                                    >
-                                    <SelectItem value="1">启用</SelectItem>
-                                    <SelectItem value="0">禁用</SelectItem>
-                                </SelectGroup>
-                            </SelectContent>
-                        </Select>
-                        <Select v-model="filters.per_page">
-                            <SelectTrigger><SelectValue /></SelectTrigger>
-                            <SelectContent>
-                                <SelectGroup>
-                                    <SelectItem value="20">20 条</SelectItem>
-                                    <SelectItem value="50">50 条</SelectItem>
-                                </SelectGroup>
-                            </SelectContent>
-                        </Select>
-                        <div class="flex flex-wrap gap-2">
-                            <Button type="submit" :disabled="loading">
-                                <Spinner
-                                    v-if="loading"
-                                    data-icon="inline-start"
-                                />
-                                <Search v-else data-icon="inline-start" />
-                                搜索
-                            </Button>
-                            <Button
-                                type="button"
-                                variant="outline"
-                                :disabled="loading"
-                                @click="loadStreams()"
-                            >
-                                <RefreshCw data-icon="inline-start" />
-                                刷新
-                            </Button>
-                            <StreamBatchCreate
-                                @updated="loadStreams()"
-                            /><StreamBulkActions
-                                :ids="selectedStreams"
-                                @updated="
-                                    selectedStreams = [];
-                                    loadStreams();
-                                "
-                            />
-                            <Button type="button" @click="openCreateDialog">
-                                <Plus data-icon="inline-start" />
-                                新增转发
-                            </Button>
-                        </div>
-                    </form>
-                </CardContent>
-            </Card>
-
-            <Card class="gap-0 overflow-hidden">
-                <CardHeader
-                    class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between"
-                >
-                    <div class="flex items-center gap-3">
-                        <div
-                            class="flex size-10 items-center justify-center rounded-md border bg-card"
-                        >
-                            <Network class="size-5" />
-                        </div>
-                        <CardTitle class="text-base">转发列表</CardTitle>
-                    </div>
-                    <div class="text-sm text-muted-foreground">
-                        {{ total === 0 ? '暂无转发' : `${total} 条转发` }}
-                    </div>
-                </CardHeader>
-                <CardContent class="p-0">
-                    <div class="overflow-x-auto">
-                        <table
-                            class="w-full min-w-[1100px] table-fixed text-sm"
-                        >
-                            <colgroup>
-                                <col style="width: 7%" />
-                                <col style="width: 15%" />
-                                <col style="width: 18%" />
-                                <col style="width: 20%" />
-                                <col style="width: 8%" />
-                                <col style="width: 8%" />
-                                <col style="width: 12%" />
-                                <col style="width: 12%" />
-                            </colgroup>
-                            <thead
-                                class="border-y bg-muted/50 text-muted-foreground"
-                            >
-                                <tr>
-                                    <th class="px-4 py-3 text-left font-medium">
-                                        ID
-                                    </th>
-                                    <th class="px-4 py-3 text-left font-medium">
-                                        监听
-                                    </th>
-                                    <th class="px-4 py-3 text-left font-medium">
-                                        回源
-                                    </th>
-                                    <th class="px-4 py-3 text-left font-medium">
-                                        CNAME
-                                    </th>
-                                    <th class="px-4 py-3 text-left font-medium">
-                                        套餐
-                                    </th>
-                                    <th
-                                        class="px-4 py-3 text-center font-medium"
-                                    >
-                                        状态
-                                    </th>
-                                    <th class="px-4 py-3 text-left font-medium">
-                                        更新时间
-                                    </th>
-                                    <th
-                                        class="px-4 py-3 text-right font-medium"
-                                    >
-                                        操作
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr v-if="loading" class="border-b">
-                                    <td
-                                        class="px-4 py-12 text-center"
-                                        colspan="8"
-                                    >
-                                        <Spinner class="mx-auto" />
-                                    </td>
-                                </tr>
-                                <tr
-                                    v-for="stream in streams"
-                                    :key="textValue(stream.id)"
-                                    class="border-b last:border-b-0"
-                                >
-                                    <td class="px-4 py-3">
-                                        <input
-                                            v-model="selectedStreams"
-                                            type="checkbox"
-                                            :value="Number(stream.id)"
-                                            :aria-label="`选择转发 ${stream.id}`"
-                                            class="mr-2"
-                                        />#{{ textValue(stream.id) || '-' }}
-                                    </td>
-                                    <td class="px-4 py-3">
-                                        <div class="truncate font-mono text-xs">
-                                            {{ listenText(stream) }}
-                                        </div>
-                                    </td>
-                                    <td class="px-4 py-3">
-                                        <div class="truncate font-mono text-xs">
-                                            {{ backendText(stream) }}
-                                        </div>
-                                    </td>
-                                    <td class="px-4 py-3">
-                                        <div
-                                            v-if="streamCname(stream)"
-                                            class="flex items-center gap-1"
-                                        >
-                                            <span
-                                                class="truncate font-mono text-xs"
-                                            >
-                                                {{ streamCname(stream) }}
-                                            </span>
-                                        </div>
-                                        <span
-                                            v-else
-                                            class="text-muted-foreground"
-                                            >-</span
-                                        >
-                                    </td>
-                                    <td class="px-4 py-3">
-                                        {{
-                                            textValue(stream.user_package) ||
-                                            '-'
-                                        }}
-                                    </td>
-                                    <td class="px-4 py-3 text-center">
-                                        <Badge variant="secondary">
-                                            {{ yesNo(stream.enable) }}
-                                        </Badge>
-                                    </td>
-                                    <td class="px-4 py-3 text-muted-foreground">
-                                        {{
-                                            formatDate(
-                                                stream.update_at2 ??
-                                                    stream.create_at2,
-                                            )
-                                        }}
-                                    </td>
-                                    <td class="px-4 py-3">
-                                        <div class="flex justify-end gap-1.5">
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                @click="goToDetail(stream)"
-                                            >
-                                                <ExternalLink
-                                                    data-icon="inline-start"
-                                                />
-                                                详情
-                                            </Button>
-                                            <Button
-                                                variant="destructive"
-                                                size="sm"
-                                                :disabled="
-                                                    deletingId ===
-                                                    recordId(stream)
-                                                "
-                                                @click="removeStream(stream)"
-                                            >
-                                                <Spinner
-                                                    v-if="
-                                                        deletingId ===
-                                                        recordId(stream)
-                                                    "
-                                                    data-icon="inline-start"
-                                                />
-                                                <Trash2
-                                                    v-else
-                                                    data-icon="inline-start"
-                                                />
-                                                删除
-                                            </Button>
-                                        </div>
-                                    </td>
-                                </tr>
-                                <tr v-if="!loading && streams.length === 0">
-                                    <td
-                                        class="px-6 py-16 text-center text-muted-foreground"
-                                        colspan="8"
-                                    >
-                                        暂无转发
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </CardContent>
-            </Card>
-        </template>
-
-        <div
-            v-if="props.view === 'list'"
-            class="flex items-center justify-end gap-2"
-        >
-            <Button
-                variant="outline"
-                size="sm"
-                :disabled="!hasPreviousPage || loading"
-                @click="prevPage"
-            >
-                上一页
-            </Button>
-            <span class="text-sm text-muted-foreground">第 {{ page }} 页</span>
-            <Button
-                variant="outline"
-                size="sm"
-                :disabled="!hasNextPage || loading"
-                @click="nextPage"
-            >
-                下一页
-            </Button>
-        </div>
+        <UserStreamWorkspace
+            v-else
+            ref="workspace"
+            :packages="packages"
+            @create="openCreateDialog"
+            @manage="goToDetail"
+        />
 
         <Dialog v-model:open="dialogOpen">
             <DialogScrollContent class="sm:max-w-md">

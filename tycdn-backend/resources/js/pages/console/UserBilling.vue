@@ -7,10 +7,7 @@ import {
     ChevronLeft,
     ChevronRight,
     CreditCard,
-    ExternalLink,
     Package,
-    ReceiptText,
-    RefreshCw,
     Save,
     Search,
     ShoppingCart,
@@ -61,23 +58,15 @@ import {
 import type { CdnflyRecord } from '@/lib/cdnUserApi';
 import {
     createBillingOrder,
-    listBillingOrders,
     listBillingProducts,
     listBillingServiceInstances,
-    provisionBillingOrder,
 } from '@/lib/localBillingApi';
 import type {
-    LocalBillingOrder,
     LocalBillingProduct,
     LocalBillingServiceInstance,
 } from '@/lib/localBillingApi';
 
-type BillingView =
-    | 'packages'
-    | 'subscriptions'
-    | 'orders'
-    | 'traffic-packs'
-    | 'usage';
+type BillingView = 'packages' | 'subscriptions' | 'traffic-packs' | 'usage';
 
 type SubscriptionRow = LocalBillingServiceInstance & {
     source_package?: CdnflyRecord;
@@ -89,7 +78,6 @@ const props = defineProps<{
 
 const loading = ref(false);
 const saving = ref(false);
-const provisioning = ref<string | null>(null);
 const errorMessage = ref('');
 const formError = ref('');
 const purchaseDialogOpen = ref(false);
@@ -101,7 +89,6 @@ const total = ref(0);
 const productCatalog = ref<LocalBillingProduct[]>([]);
 const products = ref<LocalBillingProduct[]>([]);
 const services = ref<SubscriptionRow[]>([]);
-const orders = ref<LocalBillingOrder[]>([]);
 const trafficPacks = ref<CdnflyRecord[]>([]);
 const userPackages = ref<CdnflyRecord[]>([]);
 
@@ -138,7 +125,6 @@ const title = computed(() => {
     const map: Record<BillingView, string> = {
         packages: '套餐购买',
         subscriptions: '我的套餐',
-        orders: '消费记录',
         'traffic-packs': '流量包',
         usage: '用量查询',
     };
@@ -151,7 +137,6 @@ const description = computed(() => {
         packages: '使用本地商品目录创建 EPUSDT 订单，并跳转到支付收银台。',
         subscriptions:
             '展示本地服务实例状态，已支付但未开通的套餐会显示为待同步。',
-        orders: '展示本地下单、EPUSDT 支付状态与套餐开通进度。',
         'traffic-packs': '流量包仍保持只读，等待确认真实购买字段后再开放。',
         usage: '查看套餐流量、带宽等资源用量。选择套餐后可查看详细使用数据。',
     };
@@ -163,7 +148,6 @@ const icon = computed(() => {
     const map: Record<BillingView, typeof CreditCard> = {
         packages: CreditCard,
         subscriptions: Package,
-        orders: ReceiptText,
         'traffic-packs': CreditCard,
         usage: BarChart3,
     };
@@ -178,10 +162,6 @@ const activeRows = computed(() => {
 
     if (props.view === 'subscriptions') {
         return services.value;
-    }
-
-    if (props.view === 'orders') {
-        return orders.value;
     }
 
     if (props.view === 'usage') {
@@ -203,12 +183,6 @@ onMounted(() => {
 async function loadCurrent(targetPage = page.value): Promise<void> {
     if (props.view === 'subscriptions') {
         await loadServices(targetPage);
-
-        return;
-    }
-
-    if (props.view === 'orders') {
-        await loadOrders(targetPage);
 
         return;
     }
@@ -379,34 +353,6 @@ function cdnflyPackageToService(record: CdnflyRecord): SubscriptionRow {
             null,
         source_package: record,
     };
-}
-
-async function loadOrders(targetPage = page.value): Promise<void> {
-    loading.value = true;
-    errorMessage.value = '';
-
-    try {
-        const params = basePageParams(targetPage);
-        const search = filters.search.trim();
-
-        if (filters.status !== 'all') {
-            params.status = filters.status;
-        }
-
-        if (search !== '') {
-            params.search = search;
-        }
-
-        const result = await listBillingOrders(params);
-
-        orders.value = result.items;
-        total.value = result.total;
-        page.value = result.page;
-    } catch (error) {
-        errorMessage.value = getErrorMessage(error);
-    } finally {
-        loading.value = false;
-    }
 }
 
 async function loadTrafficPacks(targetPage = page.value): Promise<void> {
@@ -891,44 +837,6 @@ async function submitPurchase(): Promise<void> {
     }
 }
 
-async function continueToPayment(order: LocalBillingOrder): Promise<void> {
-    const paymentUrl = order.gateway_payment_url?.trim();
-
-    if (!paymentUrl) {
-        errorMessage.value = '当前订单没有可继续支付的链接';
-
-        return;
-    }
-
-    window.location.assign(paymentUrl);
-}
-
-async function retryProvision(order: LocalBillingOrder): Promise<void> {
-    provisioning.value = order.order_no;
-    errorMessage.value = '';
-
-    try {
-        const result = await provisionBillingOrder(order.order_no);
-        const nextStatus = textValue(result.status) || 'queued';
-        toast.success(
-            nextStatus === 'success'
-                ? '已提交开通请求'
-                : nextStatus === 'queued'
-                  ? '已记录待开通状态，系统将稍后自动同步'
-                  : '已触发开通重试',
-        );
-        await loadOrders(page.value);
-
-        if (props.view === 'subscriptions') {
-            await loadServices();
-        }
-    } catch (error) {
-        errorMessage.value = getErrorMessage(error);
-    } finally {
-        provisioning.value = null;
-    }
-}
-
 function submitSearch(): void {
     page.value = 1;
     void loadCurrent(1);
@@ -980,33 +888,6 @@ function productDescription(product: LocalBillingProduct): string {
     }
 
     return '-';
-}
-
-function orderStatusText(order: LocalBillingOrder): string {
-    if (order.status === 'active') {
-        return '已开通';
-    }
-
-    if (
-        order.status === 'paid' &&
-        order.service_instance?.status === 'pending'
-    ) {
-        return '已支付 / 待开通';
-    }
-
-    if (order.status === 'paid') {
-        return '已支付';
-    }
-
-    if (order.status === 'pending' && order.gateway_status === 'pending') {
-        return '待支付';
-    }
-
-    if (order.status === 'expired') {
-        return '已过期';
-    }
-
-    return order.status;
 }
 
 function serviceStatusText(service: LocalBillingServiceInstance): string {
@@ -1165,43 +1046,6 @@ function trafficPackMetric(record: CdnflyRecord): string {
                 </form>
 
                 <form
-                    v-else-if="props.view === 'orders'"
-                    class="grid gap-3 xl:grid-cols-[1fr_160px_120px_auto]"
-                    @submit.prevent="submitSearch"
-                >
-                    <Input
-                        v-model="filters.search"
-                        placeholder="搜索订单号或商品名称"
-                    />
-                    <Select v-model="filters.status">
-                        <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                            <SelectGroup>
-                                <SelectItem value="all">全部状态</SelectItem>
-                                <SelectItem value="pending">待支付</SelectItem>
-                                <SelectItem value="paid">已支付</SelectItem>
-                                <SelectItem value="active">已开通</SelectItem>
-                                <SelectItem value="expired">已过期</SelectItem>
-                            </SelectGroup>
-                        </SelectContent>
-                    </Select>
-                    <Select v-model="filters.per_page">
-                        <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                            <SelectGroup>
-                                <SelectItem value="20">20 条</SelectItem>
-                                <SelectItem value="50">50 条</SelectItem>
-                            </SelectGroup>
-                        </SelectContent>
-                    </Select>
-                    <Button type="submit" :disabled="loading">
-                        <Spinner v-if="loading" data-icon="inline-start" />
-                        <Search v-else data-icon="inline-start" />
-                        查询
-                    </Button>
-                </form>
-
-                <form
                     v-else-if="props.view !== 'subscriptions'"
                     class="grid gap-3 xl:grid-cols-[1fr_120px_auto]"
                     @submit.prevent="submitSearch"
@@ -1247,27 +1091,7 @@ function trafficPackMetric(record: CdnflyRecord): string {
                             <col style="width: 12%" />
                         </colgroup>
                         <thead class="border-b text-muted-foreground">
-                            <tr v-if="props.view === 'orders'">
-                                <th class="px-4 py-3 text-left font-medium">
-                                    订单
-                                </th>
-                                <th class="px-4 py-3 text-left font-medium">
-                                    商品
-                                </th>
-                                <th class="px-4 py-3 text-left font-medium">
-                                    金额
-                                </th>
-                                <th class="px-4 py-3 text-left font-medium">
-                                    状态
-                                </th>
-                                <th class="px-4 py-3 text-left font-medium">
-                                    创建时间
-                                </th>
-                                <th class="px-4 py-3 text-right font-medium">
-                                    操作
-                                </th>
-                            </tr>
-                            <tr v-else-if="props.view === 'subscriptions'">
+                            <tr v-if="props.view === 'subscriptions'">
                                 <th class="px-4 py-3 text-left font-medium">
                                     ID
                                 </th>
@@ -1358,111 +1182,6 @@ function trafficPackMetric(record: CdnflyRecord): string {
                                     <Spinner class="mx-auto" />
                                 </td>
                             </tr>
-                            <template v-else-if="props.view === 'orders'">
-                                <tr
-                                    v-for="order in orders"
-                                    :key="order.order_no"
-                                    class="border-b"
-                                >
-                                    <td class="px-4 py-3">
-                                        <div class="truncate font-medium">
-                                            {{ order.order_no }}
-                                        </div>
-                                        <div
-                                            class="text-xs text-muted-foreground"
-                                        >
-                                            {{ order.gateway_provider ?? '-' }}
-                                            /
-                                            {{ order.gateway_trade_id ?? '-' }}
-                                        </div>
-                                    </td>
-                                    <td class="px-4 py-3">
-                                        <div class="truncate font-medium">
-                                            {{ order.product_name ?? '-' }}
-                                        </div>
-                                        <div
-                                            class="text-xs text-muted-foreground"
-                                        >
-                                            {{ order.billing_cycle ?? '-' }}
-                                        </div>
-                                    </td>
-                                    <td class="px-4 py-3">
-                                        {{ formatMoney(order.amount_usdt) }}
-                                    </td>
-                                    <td class="px-4 py-3">
-                                        <div class="flex flex-col gap-1">
-                                            <Badge variant="secondary">{{
-                                                orderStatusText(order)
-                                            }}</Badge>
-                                            <span
-                                                v-if="
-                                                    order.service_instance
-                                                        ?.queue_reason
-                                                "
-                                                class="text-xs text-muted-foreground"
-                                            >
-                                                {{
-                                                    order.service_instance
-                                                        .queue_reason
-                                                }}
-                                            </span>
-                                        </div>
-                                    </td>
-                                    <td class="px-4 py-3 text-muted-foreground">
-                                        {{ formatDate(order.created_at) }}
-                                    </td>
-                                    <td class="px-4 py-3">
-                                        <div class="flex justify-end gap-1.5">
-                                            <Button
-                                                v-if="
-                                                    order.status ===
-                                                        'pending' &&
-                                                    order.gateway_payment_url
-                                                "
-                                                variant="outline"
-                                                size="sm"
-                                                @click="
-                                                    continueToPayment(order)
-                                                "
-                                            >
-                                                <ExternalLink
-                                                    data-icon="inline-start"
-                                                />
-                                                继续支付
-                                            </Button>
-                                            <Button
-                                                v-else-if="
-                                                    order.status === 'paid' &&
-                                                    !order.provisioned_at
-                                                "
-                                                variant="outline"
-                                                size="sm"
-                                                :disabled="
-                                                    provisioning ===
-                                                    order.order_no
-                                                "
-                                                @click="retryProvision(order)"
-                                            >
-                                                <Spinner
-                                                    v-if="
-                                                        provisioning ===
-                                                        order.order_no
-                                                    "
-                                                    data-icon="inline-start"
-                                                />
-                                                <RefreshCw
-                                                    v-else
-                                                    data-icon="inline-start"
-                                                />
-                                                重试开通
-                                            </Button>
-                                            <Badge v-else variant="outline"
-                                                >只读</Badge
-                                            >
-                                        </div>
-                                    </td>
-                                </tr>
-                            </template>
                             <template
                                 v-else-if="props.view === 'subscriptions'"
                             >

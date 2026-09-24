@@ -1,23 +1,21 @@
 <script setup lang="ts">
 import {
     AlertCircle,
-    Pencil,
     Plus,
     Save,
     Search,
     ShieldCheck,
-    Trash2,
     UnlockKeyhole,
     X,
 } from 'lucide-vue-next';
 import { computed, onMounted, reactive, ref } from 'vue';
 import { toast } from 'vue-sonner';
-import ConfirmDeleteDialog from '@/components/console/ConfirmDeleteDialog.vue';
 import ConsolePageHeader from '@/components/console/ConsolePageHeader.vue';
+import UserAclWorkspace from '@/components/console/UserAclWorkspace.vue';
+import UserCcWorkspace from '@/components/console/UserCcWorkspace.vue';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { DateRangePicker } from '@/components/ui/date-range-picker';
 import {
     Dialog,
@@ -49,25 +47,18 @@ import {
     numberValue,
     recordId,
     textValue,
-    yesNo,
 } from '@/lib/cdnRecord';
 import {
     createUserAcl,
     createUserCcFilter,
     createUserCcMatcher,
     createUserCcRule,
-    deleteUserAcl,
-    deleteUserCcFilter,
-    deleteUserCcMatcher,
-    deleteUserCcRule,
     extractCdnflyRows,
     extractCdnflyTotal,
-    listUserAcls,
     getUserBlackIpCount,
     listUserBlackIps,
     listUserCcFilters,
     listUserCcMatchers,
-    listUserCcRules,
     listUserHistoryBlackIps,
     unlockUserBlackIps,
     updateUserAcl,
@@ -162,22 +153,9 @@ const saving = ref(false);
 const errorMessage = ref('');
 const formError = ref('');
 
-const deleteOpen = ref(false);
-const deleting = ref(false);
-const deleteError = ref('');
-const deleteTarget = ref<CdnflyRecord | null>(null);
-const deleteKind = ref<'acl' | CcKind>('acl');
-
+const aclWorkspace = ref<InstanceType<typeof UserAclWorkspace> | null>(null);
 const aclDialogOpen = ref(false);
 const editingAcl = ref<CdnflyRecord | null>(null);
-const aclPage = ref(1);
-const aclTotal = ref(0);
-const aclRows = ref<CdnflyRecord[]>([]);
-const aclFilters = reactive({
-    search: '',
-    enable: 'all',
-    per_page: '20',
-});
 const aclForm = reactive({
     name: '',
     data: '[]',
@@ -186,16 +164,9 @@ const aclForm = reactive({
 });
 
 const activeCcKind = ref<CcKind>('rule');
+const ccWorkspace = ref<InstanceType<typeof UserCcWorkspace> | null>(null);
 const ccDialogOpen = ref(false);
 const editingCc = ref<CdnflyRecord | null>(null);
-const ccPage = ref(1);
-const ccTotal = ref(0);
-const ccRows = ref<CdnflyRecord[]>([]);
-const ccFilters = reactive({
-    search: '',
-    enable: 'all',
-    per_page: '20',
-});
 const ccForm = reactive({
     name: '',
     type: 'captcha_filter',
@@ -286,55 +257,18 @@ const ccDialogTitle = computed(() =>
         ? `编辑${ccKindLabel(activeCcKind.value)}`
         : `新增${ccKindLabel(activeCcKind.value)}`,
 );
-const hasAclPreviousPage = computed(() => aclPage.value > 1);
-const hasAclNextPage = computed(
-    () => aclPage.value * Number(aclFilters.per_page) < aclTotal.value,
-);
-const hasCcPreviousPage = computed(() => ccPage.value > 1);
-const hasCcNextPage = computed(
-    () => ccPage.value * Number(ccFilters.per_page) < ccTotal.value,
-);
 const hasBlackIpPreviousPage = computed(() => blackIpPage.value > 1);
 const hasBlackIpNextPage = computed(
     () =>
         blackIpPage.value * Number(blackIpFilters.per_page) <
         blackIpTotal.value,
 );
-const displayedAclRows = computed(() => {
-    const keyword = aclFilters.search.trim().toLowerCase();
-
-    if (keyword === '') {
-        return aclRows.value;
-    }
-
-    return aclRows.value.filter((row) =>
-        [row.name, row.des, row.scope]
-            .map((value) => textValue(value).toLowerCase())
-            .some((value) => value.includes(keyword)),
-    );
-});
-const displayedCcRows = computed(() => {
-    const keyword = ccFilters.search.trim().toLowerCase();
-
-    if (keyword === '') {
-        return ccRows.value;
-    }
-
-    return ccRows.value.filter((row) =>
-        [row.name, row.des, row.type]
-            .map((value) => textValue(value).toLowerCase())
-            .some((value) => value.includes(keyword)),
-    );
-});
-
 onMounted(() => {
     void reloadCurrentView();
 });
 
 async function reloadCurrentView(): Promise<void> {
-    if (props.view === 'cc') {
-        await loadCcRows();
-
+    if (props.view === 'cc' || props.view === 'acls') {
         return;
     }
 
@@ -343,39 +277,10 @@ async function reloadCurrentView(): Promise<void> {
 
         return;
     }
-
-    await loadAclRows();
 }
 
-async function loadAclRows(targetPage = aclPage.value): Promise<void> {
-    loading.value = true;
-    errorMessage.value = '';
-
-    try {
-        const params: Record<string, string | number> = {
-            page: targetPage,
-            limit: Number(aclFilters.per_page),
-        };
-
-        if (aclFilters.search.trim()) {
-            params.name = aclFilters.search.trim();
-        }
-
-        if (aclFilters.enable !== 'all') {
-            params.enable = aclFilters.enable;
-        }
-
-        const result = await listUserAcls(params);
-        const rows = extractCdnflyRows(result);
-
-        aclRows.value = rows;
-        aclTotal.value = extractCdnflyTotal(result, rows.length);
-        aclPage.value = targetPage;
-    } catch (error) {
-        errorMessage.value = getErrorMessage(error);
-    } finally {
-        loading.value = false;
-    }
+async function loadAclRows(): Promise<void> {
+    await aclWorkspace.value?.refresh();
 }
 
 function openAclCreateDialog(): void {
@@ -402,7 +307,7 @@ async function submitAcl(): Promise<void> {
     const name = aclForm.name.trim();
 
     if (name === '') {
-        formError.value = 'WAF 名称不能为空';
+        formError.value = 'ACL 名称不能为空';
 
         return;
     }
@@ -438,16 +343,16 @@ async function submitAcl(): Promise<void> {
             const id = recordId(editingAcl.value);
 
             if (!id) {
-                formError.value = 'WAF ID 缺失';
+                formError.value = 'ACL ID 缺失';
 
                 return;
             }
 
             await updateUserAcl(id, payload);
-            toast.success('WAF 更新请求已提交');
+            toast.success('ACL 更新请求已提交');
         } else {
             await createUserAcl(payload);
-            toast.success('WAF 创建请求已提交');
+            toast.success('ACL 创建请求已提交');
         }
 
         aclDialogOpen.value = false;
@@ -459,83 +364,18 @@ async function submitAcl(): Promise<void> {
     }
 }
 
-function openDeleteAcl(record: CdnflyRecord): void {
-    deleteTarget.value = record;
-    deleteKind.value = 'acl';
-    deleteError.value = '';
-    deleteOpen.value = true;
+async function loadCcRows(): Promise<void> {
+    await ccWorkspace.value?.refresh();
 }
 
-async function confirmDelete(): Promise<void> {
-    const id = recordId(deleteTarget.value!);
-
-    if (!id) {
-        return;
-    }
-
-    deleting.value = true;
-
-    try {
-        if (deleteKind.value === 'acl') {
-            await deleteUserAcl(id);
-            toast.success('WAF 删除请求已提交');
-        } else {
-            await ccDelete(deleteKind.value as CcKind, id);
-            toast.success(
-                `${ccKindLabel(deleteKind.value as CcKind)}删除请求已提交`,
-            );
-        }
-
-        deleteOpen.value = false;
-
-        if (deleteKind.value === 'acl') {
-            await loadAclRows();
-        } else {
-            await loadCcRows();
-        }
-    } catch (error) {
-        deleteError.value = getErrorMessage(error);
-    } finally {
-        deleting.value = false;
-    }
-}
-
-async function loadCcRows(targetPage = ccPage.value): Promise<void> {
-    loading.value = true;
-    errorMessage.value = '';
-
-    try {
-        const params: Record<string, string | number> = {
-            page: targetPage,
-            limit: Number(ccFilters.per_page),
-            internal_self: 1,
-        };
-
-        if (ccFilters.search.trim()) {
-            params.name = ccFilters.search.trim();
-        }
-
-        if (ccFilters.enable !== 'all') {
-            params.enable = ccFilters.enable;
-        }
-
-        const result = await ccList(activeCcKind.value, params);
-        const rows = extractCdnflyRows(result);
-
-        ccRows.value = rows;
-        ccTotal.value = extractCdnflyTotal(result, rows.length);
-        ccPage.value = targetPage;
-    } catch (error) {
-        errorMessage.value = getErrorMessage(error);
-    } finally {
-        loading.value = false;
-    }
-}
-
-function selectCcKind(kind: CcKind): void {
+function createCc(kind: CcKind): void {
     activeCcKind.value = kind;
-    ccPage.value = 1;
-    void loadCcRows(1);
+    openCcCreateDialog();
+}
+
+function manageCc(kind: CcKind, record: CdnflyRecord): void {
+    activeCcKind.value = kind;
+    openCcEditDialog(record);
 }
 
 function buildMatcherData(): Record<string, unknown>[] {
@@ -590,8 +430,8 @@ async function loadRuleFormOptions(): Promise<void> {
 
     try {
         const [matchers, filters] = await Promise.all([
-            ccList('matcher', { limit: 200, internal_self: 1 }),
-            ccList('filter', { limit: 200, internal_self: 1 }),
+            listUserCcMatchers({ limit: 200, internal_self: 1 }),
+            listUserCcFilters({ limit: 200, internal_self: 1 }),
         ]);
         matcherOptions.value = extractCdnflyRows(matchers).map((r) => ({
             id: String(r.id),
@@ -753,13 +593,6 @@ async function submitCc(): Promise<void> {
     } finally {
         saving.value = false;
     }
-}
-
-function openDeleteCc(record: CdnflyRecord): void {
-    deleteTarget.value = record;
-    deleteKind.value = activeCcKind.value;
-    deleteError.value = '';
-    deleteOpen.value = true;
 }
 
 async function loadBlackIps(targetPage = blackIpPage.value): Promise<void> {
@@ -973,18 +806,6 @@ function buildCcPayload():
     };
 }
 
-async function ccList(kind: CcKind, params: Record<string, string | number>) {
-    if (kind === 'filter') {
-        return listUserCcFilters(params);
-    }
-
-    if (kind === 'rule') {
-        return listUserCcRules(params);
-    }
-
-    return listUserCcMatchers(params);
-}
-
 function ccCreate(
     kind: CcKind,
     payload: CdnCcMatcherPayload | CdnCcFilterPayload | CdnCcRulePayload,
@@ -1016,44 +837,8 @@ function ccUpdate(
     return updateUserCcMatcher(id, payload as Partial<CdnCcMatcherPayload>);
 }
 
-function ccDelete(kind: CcKind, id: number) {
-    if (kind === 'filter') {
-        return deleteUserCcFilter(id);
-    }
-
-    if (kind === 'rule') {
-        return deleteUserCcRule(id);
-    }
-
-    return deleteUserCcMatcher(id);
-}
-
 function ccKindLabel(kind: CcKind): string {
     return ccKinds.find((item) => item.key === kind)?.label ?? '资源';
-}
-
-function prevAclPage(): void {
-    if (hasAclPreviousPage.value) {
-        void loadAclRows(aclPage.value - 1);
-    }
-}
-
-function nextAclPage(): void {
-    if (hasAclNextPage.value) {
-        void loadAclRows(aclPage.value + 1);
-    }
-}
-
-function prevCcPage(): void {
-    if (hasCcPreviousPage.value) {
-        void loadCcRows(ccPage.value - 1);
-    }
-}
-
-function nextCcPage(): void {
-    if (hasCcNextPage.value) {
-        void loadCcRows(ccPage.value + 1);
-    }
 }
 
 function prevBlackIpPage(): void {
@@ -1066,28 +851,6 @@ function nextBlackIpPage(): void {
     if (hasBlackIpNextPage.value) {
         void loadBlackIps(blackIpPage.value + 1);
     }
-}
-
-function recordName(record: CdnflyRecord): string {
-    return textValue(record.name) || `#${textValue(record.id)}`;
-}
-
-function dataCount(value: unknown): string {
-    try {
-        const parsed = typeof value === 'string' ? JSON.parse(value) : value;
-
-        if (Array.isArray(parsed)) {
-            return `${parsed.length} 条`;
-        }
-
-        if (parsed && typeof parsed === 'object') {
-            return `${Object.keys(parsed).length} 项`;
-        }
-    } catch {
-        return '已配置';
-    }
-
-    return '-';
 }
 
 function requiredNumber(value: string, label: string): number {
@@ -1124,6 +887,7 @@ function omitEnable<TPayload extends { enable?: unknown }>(
 <template>
     <div class="flex flex-1 flex-col gap-6 p-4 md:p-6">
         <ConsolePageHeader
+            v-if="props.view === 'blackip'"
             eyebrow="用户端 / 安全防护"
             :title="pageTitle"
             :description="pageDescription"
@@ -1142,379 +906,19 @@ function omitEnable<TPayload extends { enable?: unknown }>(
             <AlertDescription>{{ formError }}</AlertDescription>
         </Alert>
 
-        <template v-if="props.view === 'acls'">
-            <Card class="gap-4">
-                <CardContent class="pt-6">
-                <form
-                    class="grid gap-3 xl:grid-cols-[1fr_160px_120px_auto]"
-                    @submit.prevent="loadAclRows(1)"
-                >
-                    <Input v-model="aclFilters.search" placeholder="搜索名称" />
-                    <Select v-model="aclFilters.enable">
-                        <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                            <SelectGroup>
-                                <SelectItem value="all">全部状态</SelectItem>
-                                <SelectItem value="1">启用</SelectItem>
-                                <SelectItem value="0">禁用</SelectItem>
-                            </SelectGroup>
-                        </SelectContent>
-                    </Select>
-                    <Select v-model="aclFilters.per_page">
-                        <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                            <SelectGroup>
-                                <SelectItem value="10">10 条</SelectItem>
-                                <SelectItem value="20">20 条</SelectItem>
-                                <SelectItem value="50">50 条</SelectItem>
-                            </SelectGroup>
-                        </SelectContent>
-                    </Select>
-                    <div class="flex flex-wrap gap-2">
-                        <Button type="submit" :disabled="loading">
-                            <Spinner v-if="loading" data-icon="inline-start" />
-                            <Search v-else data-icon="inline-start" />
-                            搜索
-                        </Button>
-                        <Button type="button" @click="openAclCreateDialog">
-                            <Plus data-icon="inline-start" />
-                            新增 ACL
-                        </Button>
-                    </div>
-                </form>
-                </CardContent>
-            </Card>
+        <UserAclWorkspace
+            v-if="props.view === 'acls'"
+            ref="aclWorkspace"
+            @create="openAclCreateDialog"
+            @manage="openAclEditDialog"
+        />
 
-            <Card class="gap-0 overflow-hidden">
-                <CardHeader
-                    class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between"
-                >
-                    <div class="flex items-center gap-3">
-                        <div
-                            class="flex size-10 items-center justify-center rounded-md border bg-card"
-                        >
-                            <ShieldCheck class="size-5" />
-                        </div>
-                        <CardTitle class="text-base">ACL 规则列表</CardTitle>
-                    </div>
-                    <div class="text-sm text-muted-foreground">
-                        {{ aclTotal === 0 ? '暂无 ACL' : `${aclTotal} 个 ACL` }}
-                    </div>
-                </CardHeader>
-                <CardContent class="p-0">
-                <div class="overflow-x-auto">
-                    <table class="w-full min-w-[880px] table-fixed text-sm">
-                        <colgroup>
-                            <col style="width: 22%" />
-                            <col style="width: 14%" />
-                            <col style="width: 14%" />
-                            <col style="width: 14%" />
-                            <col style="width: 18%" />
-                            <col style="width: 18%" />
-                        </colgroup>
-                        <thead
-                            class="border-y bg-muted/50 text-muted-foreground"
-                        >
-                            <tr>
-                                <th class="px-4 py-3 text-left font-medium">
-                                    名称
-                                </th>
-                                <th class="px-4 py-3 text-left font-medium">
-                                    作用域
-                                </th>
-                                <th class="px-4 py-3 text-left font-medium">
-                                    规则
-                                </th>
-                                <th class="px-4 py-3 text-center font-medium">
-                                    状态
-                                </th>
-                                <th class="px-4 py-3 text-left font-medium">
-                                    更新时间
-                                </th>
-                                <th class="px-4 py-3 text-right font-medium">
-                                    操作
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr v-if="loading" class="border-b">
-                                <td class="px-4 py-12 text-center" colspan="6">
-                                    <Spinner class="mx-auto" />
-                                </td>
-                            </tr>
-                            <tr
-                                v-for="acl in displayedAclRows"
-                                :key="textValue(acl.id)"
-                                class="border-b last:border-b-0"
-                            >
-                                <td class="px-4 py-3">
-                                    <div class="font-medium">
-                                        {{ recordName(acl) }}
-                                    </div>
-                                    <div class="text-xs text-muted-foreground">
-                                        #{{ textValue(acl.id) || '-' }}
-                                    </div>
-                                </td>
-                                <td class="px-4 py-3">
-                                    <Badge variant="outline">
-                                        {{
-                                            acl.scope === 'global'
-                                                ? '全局'
-                                                : '用户'
-                                        }}
-                                    </Badge>
-                                </td>
-                                <td class="px-4 py-3">
-                                    {{ dataCount(acl.data) }}
-                                </td>
-                                <td class="px-4 py-3 text-center">
-                                    <Badge variant="secondary">
-                                        {{ yesNo(acl.enable) }}
-                                    </Badge>
-                                </td>
-                                <td class="px-4 py-3 text-muted-foreground">
-                                    {{
-                                        formatDate(
-                                            acl.update_at2 ?? acl.create_at2,
-                                        )
-                                    }}
-                                </td>
-                                <td class="px-4 py-3">
-                                    <div class="flex justify-end gap-1.5">
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            @click="openAclEditDialog(acl)"
-                                            :disabled="acl.scope === 'global'"
-                                        >
-                                            <Pencil data-icon="inline-start" />
-                                            编辑
-                                        </Button>
-                                        <Button
-                                            variant="destructive"
-                                            size="sm"
-                                            @click="openDeleteAcl(acl)"
-                                            :disabled="acl.scope === 'global'"
-                                        >
-                                            <Trash2 data-icon="inline-start" />
-                                            删除
-                                        </Button>
-                                    </div>
-                                </td>
-                            </tr>
-                            <tr
-                                v-if="!loading && displayedAclRows.length === 0"
-                            >
-                                <td
-                                    class="px-6 py-16 text-center text-muted-foreground"
-                                    colspan="6"
-                                >
-                                    暂无 WAF
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-                </CardContent>
-            </Card>
-        </template>
-
-        <template v-else-if="props.view === 'cc'">
-            <div class="flex gap-1 border-b">
-                <button
-                    v-for="kind in ccKinds"
-                    :key="kind.key"
-                    type="button"
-                    class="-mb-px border-b-2 px-4 py-2 text-sm font-medium transition-colors"
-                    :class="
-                        activeCcKind === kind.key
-                            ? 'border-primary text-primary'
-                            : 'border-transparent text-muted-foreground hover:text-foreground'
-                    "
-                    @click="selectCcKind(kind.key)"
-                >
-                    {{ kind.label }}
-                </button>
-            </div>
-
-            <Card class="gap-4">
-                <CardContent class="pt-6">
-                <form
-                    class="grid gap-3 xl:grid-cols-[1fr_160px_120px_auto]"
-                    @submit.prevent="loadCcRows(1)"
-                >
-                    <Input v-model="ccFilters.search" placeholder="搜索名称" />
-                    <Select v-model="ccFilters.enable">
-                        <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                            <SelectGroup>
-                                <SelectItem value="all">全部状态</SelectItem>
-                                <SelectItem value="1">启用</SelectItem>
-                                <SelectItem value="0">禁用</SelectItem>
-                            </SelectGroup>
-                        </SelectContent>
-                    </Select>
-                    <Select v-model="ccFilters.per_page">
-                        <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                            <SelectGroup>
-                                <SelectItem value="10">10 条</SelectItem>
-                                <SelectItem value="20">20 条</SelectItem>
-                                <SelectItem value="50">50 条</SelectItem>
-                            </SelectGroup>
-                        </SelectContent>
-                    </Select>
-                    <div class="flex flex-wrap gap-2">
-                        <Button type="submit" :disabled="loading">
-                            <Spinner v-if="loading" data-icon="inline-start" />
-                            <Search v-else data-icon="inline-start" />
-                            搜索
-                        </Button>
-                        <Button type="button" @click="openCcCreateDialog">
-                            <Plus data-icon="inline-start" />
-                            新增{{ ccKindLabel(activeCcKind) }}
-                        </Button>
-                    </div>
-                </form>
-                </CardContent>
-            </Card>
-
-            <Card class="gap-0 overflow-hidden">
-                <CardHeader
-                    class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between"
-                >
-                    <div class="flex items-center gap-3">
-                        <div
-                            class="flex size-10 items-center justify-center rounded-md border bg-card"
-                        >
-                            <ShieldCheck class="size-5" />
-                        </div>
-                        <CardTitle class="text-base">
-                            CC {{ ccKindLabel(activeCcKind) }}列表
-                        </CardTitle>
-                    </div>
-                    <div class="text-sm text-muted-foreground">
-                        {{
-                            ccTotal === 0 ? '暂无资源' : `${ccTotal} 个资源`
-                        }}
-                    </div>
-                </CardHeader>
-                <CardContent class="p-0">
-                <div class="overflow-x-auto">
-                    <table class="w-full min-w-[900px] table-fixed text-sm">
-                        <colgroup>
-                            <col style="width: 22%" />
-                            <col style="width: 16%" />
-                            <col style="width: 20%" />
-                            <col style="width: 12%" />
-                            <col style="width: 14%" />
-                            <col style="width: 16%" />
-                        </colgroup>
-                        <thead
-                            class="border-y bg-muted/50 text-muted-foreground"
-                        >
-                            <tr>
-                                <th class="px-4 py-3 text-left font-medium">
-                                    名称
-                                </th>
-                                <th class="px-4 py-3 text-left font-medium">
-                                    类型 / 动作
-                                </th>
-                                <th class="px-4 py-3 text-left font-medium">
-                                    规则数据
-                                </th>
-                                <th class="px-4 py-3 text-center font-medium">
-                                    状态
-                                </th>
-                                <th class="px-4 py-3 text-left font-medium">
-                                    更新时间
-                                </th>
-                                <th class="px-4 py-3 text-right font-medium">
-                                    操作
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr v-if="loading" class="border-b">
-                                <td class="px-4 py-12 text-center" colspan="6">
-                                    <Spinner class="mx-auto" />
-                                </td>
-                            </tr>
-                            <tr
-                                v-for="record in displayedCcRows"
-                                :key="textValue(record.id)"
-                                class="border-b last:border-b-0"
-                            >
-                                <td class="px-4 py-3">
-                                    <div class="font-medium">
-                                        {{ recordName(record) }}
-                                    </div>
-                                    <div class="text-xs text-muted-foreground">
-                                        #{{ textValue(record.id) || '-' }}
-                                    </div>
-                                </td>
-                                <td class="px-4 py-3">
-                                    {{
-                                        activeCcKind === 'filter'
-                                            ? textValue(record.type) || '-'
-                                            : activeCcKind === 'rule'
-                                              ? dataCount(record.data)
-                                              : '匹配条件'
-                                    }}
-                                </td>
-                                <td class="px-4 py-3">
-                                    <span class="text-muted-foreground">{{
-                                        dataCount(record.data)
-                                    }}</span>
-                                </td>
-                                <td class="px-4 py-3 text-center">
-                                    <Badge variant="secondary">
-                                        {{ yesNo(record.enable) }}
-                                    </Badge>
-                                </td>
-                                <td class="px-4 py-3 text-muted-foreground">
-                                    {{
-                                        formatDate(
-                                            record.update_at2 ??
-                                                record.create_at2,
-                                        )
-                                    }}
-                                </td>
-                                <td class="px-4 py-3">
-                                    <div class="flex justify-end gap-1.5">
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            @click="openCcEditDialog(record)"
-                                        >
-                                            <Pencil data-icon="inline-start" />
-                                            编辑
-                                        </Button>
-                                        <Button
-                                            variant="destructive"
-                                            size="sm"
-                                            @click="openDeleteCc(record)"
-                                        >
-                                            <Trash2 data-icon="inline-start" />
-                                            删除
-                                        </Button>
-                                    </div>
-                                </td>
-                            </tr>
-                            <tr v-if="!loading && displayedCcRows.length === 0">
-                                <td
-                                    class="px-6 py-16 text-center text-muted-foreground"
-                                    colspan="6"
-                                >
-                                    暂无{{ ccKindLabel(activeCcKind) }}
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-                </CardContent>
-            </Card>
-        </template>
+        <UserCcWorkspace
+            v-else-if="props.view === 'cc'"
+            ref="ccWorkspace"
+            @create="createCc"
+            @manage="manageCc"
+        />
 
         <div v-else class="space-y-4">
             <!-- 三个 Tab -->
@@ -2102,60 +1506,11 @@ function omitEnable<TPayload extends { enable?: unknown }>(
             </template>
         </div>
 
-        <div
-            v-if="props.view === 'acls'"
-            class="flex items-center justify-end gap-2"
-        >
-            <Button
-                variant="outline"
-                size="sm"
-                :disabled="!hasAclPreviousPage || loading"
-                @click="prevAclPage"
-            >
-                上一页
-            </Button>
-            <span class="text-sm text-muted-foreground">
-                第 {{ aclPage }} 页
-            </span>
-            <Button
-                variant="outline"
-                size="sm"
-                :disabled="!hasAclNextPage || loading"
-                @click="nextAclPage"
-            >
-                下一页
-            </Button>
-        </div>
-        <div
-            v-else-if="props.view === 'cc'"
-            class="flex items-center justify-end gap-2"
-        >
-            <Button
-                variant="outline"
-                size="sm"
-                :disabled="!hasCcPreviousPage || loading"
-                @click="prevCcPage"
-            >
-                上一页
-            </Button>
-            <span class="text-sm text-muted-foreground">
-                第 {{ ccPage }} 页
-            </span>
-            <Button
-                variant="outline"
-                size="sm"
-                :disabled="!hasCcNextPage || loading"
-                @click="nextCcPage"
-            >
-                下一页
-            </Button>
-        </div>
-
         <Dialog v-model:open="aclDialogOpen">
             <DialogScrollContent class="sm:max-w-3xl">
                 <DialogHeader>
                     <DialogTitle>{{
-                        editingAcl ? '编辑 WAF 规则库' : '新增 WAF 规则库'
+                        editingAcl ? '编辑 ACL 规则库' : '新增 ACL 规则库'
                     }}</DialogTitle>
                     <DialogDescription
                         >规则数组支持 action、action_config 和
@@ -2622,14 +1977,5 @@ function omitEnable<TPayload extends { enable?: unknown }>(
                 </form>
             </DialogScrollContent>
         </Dialog>
-
-        <ConfirmDeleteDialog
-            :open="deleteOpen"
-            :description="`确认删除${deleteKind === 'acl' ? 'WAF' : ccKindLabel(deleteKind as CcKind)}「${deleteTarget ? recordName(deleteTarget) : ''}」？删除后不可恢复。`"
-            :loading="deleting"
-            :error="deleteError"
-            @confirm="confirmDelete"
-            @cancel="deleteOpen = false"
-        />
     </div>
 </template>

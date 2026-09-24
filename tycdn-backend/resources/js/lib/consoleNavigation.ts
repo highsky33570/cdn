@@ -63,7 +63,6 @@ export const mainNavItems: NavItem[] = [
         icon: Settings,
         children: [
             { title: '个人资料', href: '/console/account/profile' },
-            { title: '账户充值', href: '/console/account/balance' },
             { title: '消费记录', href: '/console/billing/orders' },
             { title: '日志查询', href: '/console/account/login-logs' },
             { title: '消息查询', href: '/console/messages' },

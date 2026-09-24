@@ -39,16 +39,29 @@ import {
 } from '@/lib/blockLogs';
 import type { BlockLogFilters, BlockLogTab } from '@/lib/blockLogs';
 import { extractCdnflyRows, extractCdnflyTotal } from '@/lib/cdnflyResponse';
+import {
+    listUserBlackIps,
+    getUserBlackIpCount,
+    listUserHistoryBlackIps,
+    unlockUserBlackIps,
+} from '@/lib/cdnUserApi';
 import { getErrorMessage } from '@/lib/formatters';
 import { masterGet } from '@/lib/masterApi';
 import type { CdnflyRecord } from '@/lib/sharedTypes';
+
+const props = withDefaults(defineProps<{ scope?: 'admin' | 'user' }>(), {
+    scope: 'admin',
+});
+const userScope = computed(() => props.scope === 'user');
 
 const tabs: { key: BlockLogTab; label: string }[] = [
     { key: 'current', label: '当前拉黑' },
     { key: 'stats', label: '拉黑统计' },
     { key: 'history', label: '历史拉黑' },
 ];
-const initialTab = new URLSearchParams(usePage().url.split('?')[1] ?? '').get('tab');
+const initialTab = new URLSearchParams(usePage().url.split('?')[1] ?? '').get(
+    'tab',
+);
 const active = ref<BlockLogTab>(
     initialTab === 'history' || initialTab === 'stats' ? initialTab : 'current',
 );
@@ -75,7 +88,7 @@ const resource = computed(
 const rows = ref<CdnflyRecord[]>([]);
 const total = ref(0);
 const page = ref(1);
-const pageSize = ref(10);
+const pageSize = ref(userScope.value && active.value === 'stats' ? 100 : 10);
 const loading = ref(false);
 const error = ref('');
 const exporting = ref(false);
@@ -121,12 +134,17 @@ async function load(target = page.value): Promise<void> {
 
     try {
         const query = blockLogQuery(tab, filters.value);
-        const result = await masterGet(
-            resource.value,
+        const params =
             tab === 'stats'
                 ? {}
-                : { ...query, page: target, limit: pageSize.value },
-        );
+                : { ...query, page: target, limit: pageSize.value };
+        const result = userScope.value
+            ? await {
+                  current: listUserBlackIps,
+                  stats: getUserBlackIpCount,
+                  history: listUserHistoryBlackIps,
+              }[tab](params)
+            : await masterGet(resource.value, params);
 
         if (id !== requestId) {
             return;
@@ -164,6 +182,11 @@ function switchTab(tab: BlockLogTab): void {
     }
 
     active.value = tab;
+
+    if (userScope.value) {
+        pageSize.value = tab === 'stats' ? 100 : 10;
+    }
+
     rows.value = [];
     total.value = 0;
     page.value = 1;
@@ -228,10 +251,20 @@ async function unlock(
     unlockError.value = '';
 
     try {
-        await apiRequest('/api/admin/workspace/blackip/unlock', {
-            method: 'POST',
-            body: JSON.stringify({ items }),
-        });
+        if (userScope.value) {
+            await unlockUserBlackIps(
+                items.map((item) => ({
+                    type: 'unlock_ip',
+                    data: { ...item, key1: 'site_id' },
+                })),
+            );
+        } else {
+            await apiRequest('/api/admin/workspace/blackip/unlock', {
+                method: 'POST',
+                body: JSON.stringify({ items }),
+            });
+        }
+
         toast.success('解锁IP任务提交成功，请稍等几分钟左右');
         siteDialog.value = false;
         selection.value.clear();
@@ -254,7 +287,7 @@ function unlockRows(records: CdnflyRecord[]): void {
                 row.site_id === undefined ||
                 String(row.site_id).trim() === '' ||
                 !Number.isSafeInteger(Number(row.site_id)) ||
-                Number(row.site_id) < 0 ||
+                Number(row.site_id) < (userScope.value ? 1 : 0) ||
                 !row.ip,
         )
     ) {
@@ -276,7 +309,8 @@ const unlockError = ref('');
 function unlockSite(): void {
     if (
         !/^\d+$/.test(siteId.value.trim()) ||
-        !Number.isSafeInteger(Number(siteId.value))
+        !Number.isSafeInteger(Number(siteId.value)) ||
+        Number(siteId.value) < (userScope.value ? 1 : 0)
     ) {
         unlockError.value = '请输入有效的网站ID';
 
@@ -298,7 +332,7 @@ async function exportIps(): Promise<void> {
             ),
         );
         const response = await fetch(
-            `/api/admin/workspace/${exportResource}/export?${query}`,
+            `${userScope.value ? '/api/cdn/block-logs' : '/api/admin/workspace'}/${exportResource}/export?${query}`,
             {
                 credentials: 'same-origin',
                 headers: {
@@ -369,7 +403,10 @@ function presetRange(days: number): void {
 </script>
 
 <template>
-    <div class="console-page min-w-0 p-4 md:p-6">
+    <div
+        class="console-page min-w-0 p-4 md:p-6"
+        :class="{ 'user-block-log': userScope }"
+    >
         <section
             class="block-log-card min-w-0 rounded-xl border bg-card p-4 text-card-foreground shadow-sm"
             aria-label="拉黑日志"
@@ -759,7 +796,7 @@ function presetRange(days: number): void {
                                                         "
                                                         >解锁</Button
                                                     ><Link
-                                                        :href="`/console/admin/analytics/logs?addr=${encodeURIComponent(String(row.ip ?? ''))}`"
+                                                        :href="`${userScope ? '/console' : '/console/admin'}/analytics/logs?addr=${encodeURIComponent(String(row.ip ?? ''))}`"
                                                         class="text-primary hover:underline"
                                                         >查看日志</Link
                                                     >
@@ -780,7 +817,9 @@ function presetRange(days: number): void {
                                         :colspan="colSpan"
                                         class="h-24 text-center text-muted-foreground"
                                     >
-                                        暂无记录
+                                        {{
+                                            userScope ? '暂无数据' : '暂无记录'
+                                        }}
                                     </td>
                                 </tr>
                             </template>
@@ -889,6 +928,37 @@ function presetRange(days: number): void {
 </template>
 
 <style scoped>
+.user-block-log [role='tablist'] {
+    border-bottom: 1px solid var(--border);
+    gap: 1rem;
+}
+.user-block-log [role='tab'] {
+    border-radius: 0;
+    border-bottom: 2px solid transparent;
+    background: transparent;
+    font-weight: 400;
+}
+.user-block-log [role='tab'][aria-selected='true'] {
+    border-bottom-color: var(--primary);
+    color: var(--primary);
+}
+.user-block-log [role='tabpanel'] > div:first-child {
+    display: block;
+}
+.user-block-log [role='tabpanel'] > div:first-child > form {
+    width: 100%;
+    margin-top: 0.75rem;
+}
+.user-block-log .block-log-filter {
+    width: min(28%, 24rem);
+    min-width: 14rem;
+}
+.user-block-log nav {
+    justify-content: flex-start;
+}
+.user-block-log td[colspan] {
+    height: 3.75rem;
+}
 .block-log-table th {
     padding: 0.75rem;
     font-weight: 600;
@@ -930,7 +1000,8 @@ function presetRange(days: number): void {
     outline-offset: 1px;
 }
 @media (max-width: 639px) {
-    .block-log-filter {
+    .block-log-filter,
+    .user-block-log .block-log-filter {
         width: 100%;
     }
 }
