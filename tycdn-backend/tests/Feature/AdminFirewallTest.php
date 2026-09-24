@@ -6,6 +6,8 @@ use App\Models\User;
 use App\Services\CdnflyApiService;
 use App\Support\ConfigSecrets;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Client\Request as UpstreamRequest;
+use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
 class AdminFirewallTest extends TestCase
@@ -17,6 +19,44 @@ class AdminFirewallTest extends TestCase
     private function admin(): void
     {
         $this->actingAs(User::factory()->create(['role' => 'admin']));
+    }
+
+    public function test_global_cc_switch_round_trips_native_booleans_through_the_real_api_service(): void
+    {
+        config([
+            'services.cdnfly.base_url' => 'https://cdnfly.example.test',
+            'services.cdnfly.admin_api_key' => 'master-key',
+            'services.cdnfly.admin_api_secret' => 'master-secret',
+            'services.cdnfly.outbound_enabled' => true,
+        ]);
+        Http::preventStrayRequests();
+        $master = ['cc_enable' => false, 'waf_enable' => 1, 'key' => 'preserved', 'slider_html' => '<html>keep</html>'];
+        Http::fake(function (UpstreamRequest $request) use (&$master) {
+            $this->assertSame('https://cdnfly.example.test'.self::PATH, $request->url());
+            $this->assertTrue($request->hasHeader('api-key', 'master-key'));
+            if ($request->method() === 'PUT') {
+                $master = json_decode($request['value'], true);
+                $this->assertIsBool($master['cc_enable']);
+
+                return Http::response(['code' => 0]);
+            }
+
+            return Http::response(['code' => 0, 'data' => ['value' => json_encode($master)]]);
+        });
+        $this->admin();
+        foreach ([true, false, 1, 0, '1', '0'] as $value) {
+            $expected = (bool) $value;
+            $this->putJson('/api/admin/firewall', ['patch' => ['cc_enable' => $value]])->assertOk()->assertJsonPath('data.cc_enable', $expected);
+            // Native panel switches compare to literal true/false, not truthiness.
+            $this->assertSame($expected, $master['cc_enable']);
+            $this->assertSame('preserved', $master['key']);
+            $this->assertSame('<html>keep</html>', $master['slider_html']);
+            $this->getJson('/api/admin/firewall')->assertOk()->assertJsonPath('data.cc_enable', $expected);
+        }
+        $master['cc_enable'] = true;
+        $this->getJson('/api/admin/firewall')->assertOk()->assertJsonPath('data.cc_enable', true);
+        $master['cc_enable'] = false;
+        $this->getJson('/api/admin/firewall')->assertOk()->assertJsonPath('data.cc_enable', false);
     }
 
     public function test_all_firewall_endpoints_require_admin(): void
@@ -49,7 +89,7 @@ class AdminFirewallTest extends TestCase
         $api->shouldReceive('proxyAdminRequest')->once()->with('GET', self::PATH)->andReturn(['data' => ['value' => json_encode($current)]]);
         $api->shouldReceive('proxyAdminRequest')->once()->withArgs(function ($method, $path, $body) use ($current) {
             $expected = $current;
-            $expected['cc_enable'] = 0;
+            $expected['cc_enable'] = false;
             $expected['custom_white'] = '';
             $expected['log']['log_level'] = 'info';
             $this->assertSame($expected, json_decode($body['value'], true));

@@ -25,6 +25,48 @@ class AdminConfigEditTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_default_override_delete_preserves_the_category_and_region(): void
+    {
+        $cdnfly = $this->mock(CdnflyApiService::class);
+        $cdnfly->shouldReceive('proxyAdminRequest')->once()
+            ->with('DELETE', '/v1/configs/region-7-cert_default_config-cert_default_type')
+            ->andReturn(['code' => 0]);
+        $this->actingAs($this->admin())
+            ->deleteJson('/api/admin/configs/default-overrides/7/cert_default_config/cert_default_type')
+            ->assertOk()->assertJsonPath('ok', true);
+    }
+
+    public function test_default_override_delete_rejects_global_and_unrelated_keys(): void
+    {
+        $this->mock(CdnflyApiService::class)->shouldNotReceive('proxyAdminRequest');
+        $this->actingAs($this->admin());
+        foreach (['0/site_default_config/waf', '7/site/black-ip-limit', '7/cert_default_config/api_key'] as $target) {
+            $this->deleteJson('/api/admin/configs/default-overrides/'.$target)->assertNotFound();
+        }
+    }
+
+    public function test_resource_override_delete_uses_the_native_region_identity(): void
+    {
+        $cdnfly = $this->mock(CdnflyApiService::class);
+        $cdnfly->shouldReceive('proxyAdminRequest')->once()
+            ->with('DELETE', '/v1/configs/region-7-site_stream-custom-port-allow')
+            ->andReturn(['code' => 0]);
+
+        $this->actingAs($this->admin())
+            ->deleteJson('/api/admin/configs/resource-overrides/7/site_stream/custom-port-allow')
+            ->assertOk()->assertJsonPath('ok', true);
+    }
+
+    public function test_resource_override_delete_rejects_global_or_unrelated_configuration(): void
+    {
+        $this->mock(CdnflyApiService::class)->shouldNotReceive('proxyAdminRequest');
+        $this->actingAs($this->admin());
+
+        foreach (['0/site/black-ip-limit', '7/site/related-config-min-limit', '7/nginx_config/nginx-config-file'] as $target) {
+            $this->deleteJson('/api/admin/configs/resource-overrides/'.$target)->assertNotFound();
+        }
+    }
+
     public function test_a_config_is_addressed_by_scope_type_and_name(): void
     {
         $cdnfly = $this->mock(CdnflyApiService::class);

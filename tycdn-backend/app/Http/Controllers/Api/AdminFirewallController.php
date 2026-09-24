@@ -100,6 +100,11 @@ class AdminFirewallController extends Controller
                 unset($next[$key]);
             }
             $this->validateConfig($next, array_keys($patch));
+            // The master panel's global CC switch uses booleans, unlike its
+            // numeric WAF and region/node override switches.
+            if ($scope === 'global' && array_key_exists('cc_enable', $patch)) {
+                $next['cc_enable'] = (bool) $next['cc_enable'];
+            }
             if (array_key_exists('auto_switch', $patch)) {
                 $next['auto_switch']['enable'] = (bool) $next['auto_switch']['enable'];
             }

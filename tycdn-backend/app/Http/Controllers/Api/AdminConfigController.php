@@ -142,6 +142,42 @@ class AdminConfigController extends Controller
         }
     }
 
+    public function destroyResourceOverride(int $region, string $type, string $name): JsonResponse
+    {
+        $regionalFields = [
+            'site' => ['listen-default-http-80', 'black-ip-limit', 'white-ip-limit'],
+            'stream' => ['custom-port-not-allow'],
+            'site_stream' => ['custom-port-not-allow', 'custom-port-allow'],
+        ];
+        abort_unless($region > 0 && in_array($name, $regionalFields[$type] ?? [], true), 404);
+
+        try {
+            $this->cdnfly->proxyAdminRequest('DELETE', "/v1/configs/region-{$region}-{$type}-{$name}");
+
+            return response()->json(['ok' => true]);
+        } catch (\Throwable $e) {
+            return $this->cdnflyFailure($e, __FUNCTION__);
+        }
+    }
+
+    public function destroyDefaultOverride(int $region, string $type, string $name): JsonResponse
+    {
+        $fields = [
+            'site_default_config' => ['http_listen-port', 'https_listen-port', 'https_listen-hsts', 'https_listen-http2', 'https_listen-http3', 'https_listen-force_ssl_enable', 'https_listen-ssl_protocols', 'https_listen-ssl_ciphers', 'https_listen-ssl_prefer_server_ciphers', 'https_listen-ocsp_stapling', 'backend_protocol', 'backend_http_port', 'backend_https_port', 'proxy_timeout', 'proxy_connect_timeout', 'proxy_http_version', 'ups_keepalive', 'proxy_ssl_protocols', 'proxy_cache', 'req_header', 'balance_way', 'cc_default_rule', 'waf_enable', 'waf', 'waf_ip_auto_block', 'spider_allow', 'gzip_enable', 'gzip_types', 'websocket_enable', 'post_size_limit', 'block_proxy', 'recv_real_time', 'send_real_time', 'log_req_header', 'log_resp_header', 'log_req_body', 'log_req_body_max_size'],
+            'stream_default_config' => ['listen_protocol', 'balance_way', 'proxy_protocol'],
+            'cert_default_config' => ['cert_default_type'],
+        ];
+        abort_unless($region > 0 && in_array($name, $fields[$type] ?? [], true), 404);
+
+        try {
+            $this->cdnfly->proxyAdminRequest('DELETE', "/v1/configs/region-{$region}-{$type}-{$name}");
+
+            return response()->json(['ok' => true]);
+        } catch (\Throwable $e) {
+            return $this->cdnflyFailure($e, __FUNCTION__);
+        }
+    }
+
     private function isBlockedConfigKey(string $key): bool
     {
         $normalized = strtolower(str_replace(['-', '_', '.'], '', $key));

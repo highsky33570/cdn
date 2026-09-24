@@ -4,6 +4,7 @@ import { computed, onMounted, reactive, ref } from 'vue';
 import { toast } from 'vue-sonner';
 import ConfirmDeleteDialog from '@/components/console/ConfirmDeleteDialog.vue';
 import FirewallField from '@/components/console/FirewallField.vue';
+import { Button } from '@/components/ui/button';
 import {
     Dialog,
     DialogScrollContent,
@@ -340,6 +341,11 @@ function addOverride() {
                       ? 0
                       : ''),
     );
+
+    if (overrideKind(key) === 'toggle') {
+        editConfig[key] = flag(editConfig[key]) ? 1 : 0;
+    }
+
     item.value = '';
 }
 function overrideKind(key: string) {
@@ -459,7 +465,9 @@ async function removeOverrides() {
     <div class="flex flex-1 flex-col p-3 md:p-5">
         <section class="firewall-page">
             <nav class="fw-tabs" role="tablist" aria-label="防火墙设置">
-                <button
+                <Button
+                    size="sm"
+                    variant="ghost"
                     v-for="entry in [
                         { key: 'cc', label: 'CC全局配置' },
                         { key: 'waf', label: 'WAF全局配置' },
@@ -473,7 +481,7 @@ async function removeOverrides() {
                     :class="{ active: tab === entry.key }"
                     @click="selectTab(entry.key)"
                 >
-                    {{ entry.label }}</button
+                    {{ entry.label }}</Button
                 ><span
                     v-if="tab !== 'overrides'"
                     class="fw-save-state"
@@ -483,7 +491,12 @@ async function removeOverrides() {
             </nav>
             <div v-if="error" role="alert" class="fw-error">
                 {{ error }}
-                <button @click="ready ? flush() : load()">重试</button>
+                <Button
+                    size="sm"
+                    variant="outline"
+                    @click="ready ? flush() : load()"
+                    >重试</Button
+                >
             </div>
             <p v-if="loading" class="fw-loading">加载中…</p>
             <div
@@ -509,7 +522,7 @@ async function removeOverrides() {
                                     help="控制全局 CC 防护是否启用。"
                                     kind="toggle"
                                     :value="value('cc_enable')"
-                                    @change="change('cc_enable', $event)"
+                                    @change="change('cc_enable', flag($event))"
                                 />
                             </article>
                             <article class="fw-card">
@@ -835,13 +848,15 @@ async function removeOverrides() {
                                         @change="
                                             change('cc_img_url_type', $event)
                                         "
-                                    /><button
+                                    /><Button
+                                        size="sm"
+                                        variant="default"
                                         class="fw-primary"
                                         :disabled="imageBusy || saving"
                                         @click="updateImages"
                                     >
                                         <RefreshCw />立即更新
-                                    </button>
+                                    </Button>
                                 </div>
                                 <template
                                     v-if="value('cc_img_url_type') === 'custom'"
@@ -989,13 +1004,15 @@ async function removeOverrides() {
                                             每行配置一个统计窗口和最大请求次数，留空则不启用。
                                         </p>
                                     </div>
-                                    <button
+                                    <Button
+                                        size="sm"
+                                        variant="default"
                                         class="fw-primary"
                                         :disabled="saving"
                                         @click="saveInternal"
                                     >
                                         <Save />保存
-                                    </button>
+                                    </Button>
                                 </div>
                                 <table class="fw-rule-table">
                                     <thead>
@@ -1052,7 +1069,9 @@ async function removeOverrides() {
                                         检查单个请求的范围，避免复杂或恶意请求占用过多节点资源；修改后自动保存。
                                     </p>
                                 </div>
-                                <button
+                                <Button
+                                    size="sm"
+                                    variant="outline"
                                     :disabled="saving"
                                     @click="
                                         change('waf_resource_limits', {
@@ -1064,7 +1083,7 @@ async function removeOverrides() {
                                     "
                                 >
                                     恢复推荐值
-                                </button>
+                                </Button>
                             </div>
                             <p class="fw-warning">
                                 数值越大，WAF 能处理的请求越复杂、内容越大，但
@@ -1121,13 +1140,20 @@ async function removeOverrides() {
                             >共 {{ overrideTotal }} 条覆盖配置</span
                         >
                     </div>
-                    <button class="fw-primary" @click="openEditor()">
+                    <Button
+                        size="sm"
+                        variant="default"
+                        class="fw-primary"
+                        @click="openEditor()"
+                    >
                         <Plus />新增设置
-                    </button>
+                    </Button>
                 </header>
                 <div v-if="overrideError" role="alert" class="fw-error">
                     {{ overrideError }}
-                    <button @click="loadOverrides()">重试</button>
+                    <Button size="sm" variant="outline" @click="loadOverrides()"
+                        >重试</Button
+                    >
                 </div>
                 <div class="fw-table-scroll">
                     <table>
@@ -1177,17 +1203,21 @@ async function removeOverrides() {
                                 </td>
                                 <td>{{ overrideSummary(row) }}</td>
                                 <td>
-                                    <button
+                                    <Button
+                                        size="sm"
+                                        variant="ghost"
                                         class="fw-link"
                                         @click="openEditor(row)"
                                     >
-                                        编辑</button
-                                    ><button
+                                        编辑</Button
+                                    ><Button
+                                        size="sm"
+                                        variant="ghost"
                                         class="fw-link"
                                         @click="askDelete([rowKey(row)])"
                                     >
                                         删除
-                                    </button>
+                                    </Button>
                                 </td>
                             </tr>
                             <tr v-if="!overrides.length">
@@ -1205,26 +1235,32 @@ async function removeOverrides() {
                     </table>
                 </div>
                 <div v-if="overrideTotal" class="fw-pager">
-                    <button
+                    <Button
+                        size="sm"
+                        variant="outline"
                         v-if="selected.length"
                         @click="askDelete([...selected])"
                     >
-                        <Trash2 />删除选中</button
+                        <Trash2 />删除选中</Button
                     ><span>共 {{ overrideTotal }} 条</span
-                    ><button
+                    ><Button
+                        size="sm"
+                        variant="outline"
                         :disabled="page === 1 || overrideLoading"
                         @click="loadOverrides(page - 1)"
                     >
-                        上一页</button
+                        上一页</Button
                     ><span>{{ page }}</span
-                    ><button
+                    ><Button
+                        size="sm"
+                        variant="outline"
                         :disabled="
                             page * 10 >= overrideTotal || overrideLoading
                         "
                         @click="loadOverrides(page + 1)"
                     >
                         下一页
-                    </button>
+                    </Button>
                 </div>
             </div>
         </section>
@@ -1298,13 +1334,15 @@ async function removeOverrides() {
                             >
                                 {{ label }}
                             </option></select
-                        ><button
+                        ><Button
+                            size="sm"
+                            variant="outline"
                             type="button"
                             :disabled="!item"
                             @click="addOverride"
                         >
                             <Plus />添加
-                        </button>
+                        </Button>
                     </div>
                     <article
                         v-for="key in activeFields"
@@ -1313,13 +1351,15 @@ async function removeOverrides() {
                     >
                         <div class="fw-rule-heading">
                             <h3>{{ overrideNames[key] }}</h3>
-                            <button
+                            <Button
+                                size="sm"
+                                variant="outline"
                                 type="button"
                                 :aria-label="`移除 ${overrideNames[key]}`"
                                 @click="delete editConfig[key]"
                             >
                                 <X />
-                            </button>
+                            </Button>
                         </div>
                         <template v-if="key === 'waf_resource_limits'"
                             ><div class="fw-grid">
@@ -1439,18 +1479,22 @@ async function removeOverrides() {
                         />
                     </article>
                     <div class="fw-modal-actions">
-                        <button
+                        <Button
+                            size="sm"
+                            variant="outline"
                             type="button"
                             :disabled="editorBusy"
                             @click="editorOpen = false"
                         >
-                            取消</button
-                        ><button
+                            取消</Button
+                        ><Button
+                            size="sm"
+                            variant="default"
                             class="fw-primary"
                             :disabled="editorBusy || targetLoading"
                         >
                             确定
-                        </button>
+                        </Button>
                     </div>
                 </form></DialogScrollContent
             ></Dialog
@@ -1468,14 +1512,14 @@ async function removeOverrides() {
 
 <style>
 .firewall-page {
-    --fw-line: #e8eef7;
-    --fw-ink: #344766;
-    --fw-muted: #8994a8;
-    background: white;
+    --fw-line: var(--border);
+    --fw-ink: var(--foreground);
+    --fw-muted: var(--muted-foreground);
+    background: var(--background);
     color: var(--fw-ink);
     border-radius: 8px;
     padding: 12px;
-    font-size: 12px;
+    font-size: 14px;
     min-width: 0;
 }
 .fw-tabs {
@@ -1492,12 +1536,12 @@ async function removeOverrides() {
     padding: 0 14px;
 }
 .firewall-page .fw-tabs button.active {
-    background: #e6f2ff;
-    border-bottom-color: #2d8cf0;
-    color: #2d8cf0;
+    background: var(--accent);
+    border-bottom-color: var(--primary);
+    color: var(--primary);
 }
 .fw-save-state {
-    color: #8796aa;
+    color: var(--muted-foreground);
     margin-left: auto;
     font-size: 11px;
 }
@@ -1511,7 +1555,7 @@ async function removeOverrides() {
     min-width: 0;
 }
 .fw-section-title {
-    border-left: 3px solid #2d8cf0;
+    border-left: 3px solid var(--primary);
     padding-left: 9px;
     margin: 22px 0 16px;
 }
@@ -1523,7 +1567,7 @@ async function removeOverrides() {
 .fw-modal h3 {
     font-size: 12px;
     font-weight: 600;
-    color: #173452;
+    color: var(--foreground);
 }
 .firewall-page h2 {
     font-size: 14px;
@@ -1531,7 +1575,7 @@ async function removeOverrides() {
 .firewall-page p,
 .fw-modal p {
     font-size: 11px;
-    color: var(--fw-muted, #8994a8);
+    color: var(--fw-muted, var(--muted-foreground));
     line-height: 1.7;
     margin: 4px 0 10px;
 }
@@ -1541,8 +1585,8 @@ async function removeOverrides() {
     gap: 12px;
 }
 .fw-card {
-    background: #fafcff;
-    border: 1px solid var(--fw-line, #e8eef7);
+    background: var(--card);
+    border: 1px solid var(--fw-line, var(--border));
     padding: 14px;
     border-radius: 6px;
     min-width: 0;
@@ -1573,7 +1617,7 @@ async function removeOverrides() {
     display: block;
     font-size: 11px;
     line-height: 1.4;
-    color: var(--fw-muted, #8994a8);
+    color: var(--fw-muted, var(--muted-foreground));
     margin-top: 3px;
 }
 .fw-field > select,
@@ -1593,8 +1637,8 @@ async function removeOverrides() {
     display: flex;
     align-items: center;
     padding: 0 5px;
-    background: #f5f7fa;
-    border: 1px solid #d7dce5;
+    background: var(--muted);
+    border: 1px solid var(--input);
     border-left: 0;
     border-radius: 0 3px 3px 0;
     white-space: nowrap;
@@ -1608,9 +1652,9 @@ async function removeOverrides() {
 .fw-modal input:not([type='checkbox']),
 .fw-modal select {
     height: 28px;
-    border: 1px solid #d7dce5;
+    border: 1px solid var(--input);
     border-radius: 3px;
-    background: white;
+    background: var(--background);
     padding: 0 7px;
     font: inherit;
     color: inherit;
@@ -1620,47 +1664,16 @@ async function removeOverrides() {
     width: 100%;
     min-height: 122px;
     padding: 7px;
-    border: 1px solid #d7dce5;
+    border: 1px solid var(--input);
     border-radius: 3px;
-    background: white;
+    background: var(--background);
     font: inherit;
     color: inherit;
     resize: vertical;
 }
 .firewall-page input::placeholder,
 .firewall-page textarea::placeholder {
-    color: #b9c3d1;
-}
-.firewall-page button,
-.fw-modal button {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 4px;
-    font: inherit;
-    white-space: nowrap;
-    height: 28px;
-    padding: 0 10px;
-    border: 1px solid #d7dce5;
-    border-radius: 3px;
-    background: white;
-    cursor: pointer;
-}
-.firewall-page button svg,
-.fw-modal button svg {
-    width: 12px;
-    height: 12px;
-}
-.firewall-page button:disabled,
-.fw-modal button:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-.firewall-page .fw-primary,
-.fw-modal .fw-primary {
-    background: #2d8cf0;
-    border-color: #2d8cf0;
-    color: white;
+    color: var(--muted-foreground);
 }
 .fw-toggle-field {
     justify-content: space-between;
@@ -1668,33 +1681,10 @@ async function removeOverrides() {
 .fw-toggle-field .fw-label {
     flex: 1;
     font-weight: 600;
-    color: #173452;
+    color: var(--foreground);
 }
 .fw-toggle-field small {
     font-weight: 400;
-}
-.firewall-page .fw-switch,
-.fw-modal .fw-switch {
-    width: 37px;
-    height: 19px;
-    background: #ccc;
-    border: 0;
-    border-radius: 12px;
-    padding: 2px;
-    justify-content: flex-start;
-    flex-shrink: 0;
-}
-.fw-switch span {
-    background: white;
-    width: 15px;
-    height: 15px;
-    border-radius: 50%;
-    box-shadow: 0 1px 2px #0001;
-}
-.firewall-page .fw-switch.on,
-.fw-modal .fw-switch.on {
-    background: #2d8cf0;
-    justify-content: flex-end;
 }
 .fw-choices {
     display: flex;
@@ -1702,20 +1692,20 @@ async function removeOverrides() {
     flex-wrap: wrap;
 }
 .fw-choices button.chosen {
-    border-color: #83baff;
-    background: #edf6ff;
-    color: #2d8cf0;
+    border-color: var(--ring);
+    background: var(--accent);
+    color: var(--primary);
 }
 .fw-choices i {
     width: 13px;
     height: 13px;
-    border: 1px solid #d7dce5;
+    border: 1px solid var(--input);
     border-radius: 50%;
 }
 .fw-choices .chosen i {
-    border-color: #2d8cf0;
-    background: #2d8cf0;
-    box-shadow: inset 0 0 0 2px white;
+    border-color: var(--primary);
+    background: var(--primary);
+    box-shadow: inset 0 0 0 2px var(--background);
 }
 .fw-wide-field:has(textarea) {
     display: block;
@@ -1739,7 +1729,7 @@ async function removeOverrides() {
     margin-top: 18px !important;
 }
 .firewall-page a {
-    color: #2d8cf0;
+    color: var(--primary);
 }
 .fw-templates {
     margin: 0 0 10px;
@@ -1760,7 +1750,7 @@ async function removeOverrides() {
 .fw-card .fw-rule-heading:not(:first-child) {
     margin-top: 12px;
     padding-top: 12px;
-    border-top: 1px solid var(--fw-line, #e8eef7);
+    border-top: 1px solid var(--fw-line, var(--border));
 }
 .fw-rule-table {
     width: 100%;
@@ -1770,7 +1760,7 @@ async function removeOverrides() {
 .fw-rule-table td {
     padding: 7px;
     text-align: left;
-    border-bottom: 1px solid var(--fw-line, #e8eef7);
+    border-bottom: 1px solid var(--fw-line, var(--border));
     font-weight: 400;
 }
 .fw-rule-table input {
@@ -1799,14 +1789,14 @@ async function removeOverrides() {
 }
 .firewall-page .fw-warning {
     padding: 8px 10px;
-    background: #fff8e7;
-    color: #a76500;
-    border-left: 2px solid #ff9900;
+    background: var(--muted);
+    color: var(--foreground);
+    border-left: 2px solid var(--primary);
     border-radius: 3px;
 }
 .fw-error {
-    background: #fff1f0;
-    color: #c72f38;
+    background: color-mix(in srgb, var(--destructive) 10%, transparent);
+    color: var(--destructive);
     padding: 10px;
     margin-bottom: 12px;
     border-radius: 4px;
@@ -1820,9 +1810,9 @@ async function removeOverrides() {
 }
 .fw-count {
     display: inline-flex;
-    background: #edf6ff;
+    background: var(--accent);
     border-radius: 12px;
-    color: #2d8cf0;
+    color: var(--primary);
     padding: 3px 9px;
     font-size: 11px;
 }
@@ -1845,7 +1835,7 @@ async function removeOverrides() {
     font-weight: 400;
 }
 .fw-table-scroll th {
-    background: #fafcff;
+    background: var(--card);
 }
 .fw-table-scroll th:first-child {
     width: 54px;
@@ -1859,7 +1849,7 @@ async function removeOverrides() {
     height: 40px;
 }
 .firewall-page .fw-link {
-    color: #2d8cf0;
+    color: var(--primary);
     border: 0;
     padding: 0 6px;
 }
@@ -1871,8 +1861,8 @@ async function removeOverrides() {
     margin-top: 14px;
 }
 .fw-modal {
-    --fw-line: #e8eef7;
-    --fw-muted: #8994a8;
+    --fw-line: var(--border);
+    --fw-muted: var(--muted-foreground);
     font-size: 12px;
 }
 .fw-modal form > .fw-grid label {
@@ -1897,52 +1887,7 @@ async function removeOverrides() {
     margin-top: 18px;
 }
 .firewall-page input[type='checkbox'] {
-    accent-color: #2d8cf0;
-}
-.dark .firewall-page,
-.dark .fw-modal {
-    --fw-line: #303a4a;
-    --fw-ink: #d8e1ef;
-    --fw-muted: #94a3b8;
-    background: #151e2b;
-    color: #d8e1ef;
-}
-.dark .firewall-page .fw-card,
-.dark .fw-modal .fw-card,
-.dark .fw-table-scroll th {
-    background: #1c2738;
-}
-.dark .firewall-page h2,
-.dark .firewall-page h3,
-.dark .fw-modal h3,
-.dark .fw-toggle-field .fw-label {
-    color: #e5edf9;
-}
-.dark .firewall-page input:not([type='checkbox']),
-.dark .firewall-page select,
-.dark .firewall-page textarea,
-.dark .fw-modal input:not([type='checkbox']),
-.dark .fw-modal select,
-.dark .fw-modal textarea,
-.dark .fw-input > span {
-    background: #151e2b;
-    color: #d8e1ef;
-    border-color: #435067;
-}
-.dark .firewall-page button:not(.fw-primary):not(.fw-switch),
-.dark .fw-modal button:not(.fw-primary):not(.fw-switch) {
-    background: #202d40;
-    color: #cbd9ee;
-    border-color: #435067;
-}
-.dark .fw-tabs button.active,
-.dark .fw-choices button.chosen {
-    background: #173756 !important;
-    color: #7db9ff !important;
-}
-.dark .fw-error {
-    background: #45262c;
-    color: #fda4af;
+    accent-color: var(--primary);
 }
 @media (max-width: 700px) {
     .fw-grid {

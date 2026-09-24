@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import Switch from '@/components/ui/switch/Switch.vue';
 import { flag } from '@/lib/firewallSettings';
 defineProps<{
     label: string;
@@ -30,26 +33,22 @@ function input(event: Event, number = false) {
             <span>{{ label }}</span
             ><small v-if="help">{{ help }}</small>
         </div>
-        <button
+        <Switch
             v-if="kind === 'toggle'"
-            type="button"
-            role="switch"
             :aria-label="label"
-            :aria-checked="flag(value)"
+            :checked="flag(value)"
             :disabled="disabled"
-            class="fw-switch"
-            :class="{ on: flag(value) }"
-            @click="emit('change', flag(value) ? 0 : 1)"
-        >
-            <span />
-        </button>
+            @update:checked="emit('change', $event ? 1 : 0)"
+        />
         <div
             v-else-if="kind === 'choices'"
             class="fw-choices"
             role="group"
             :aria-label="label"
         >
-            <button
+            <Button
+                size="sm"
+                variant="outline"
                 v-for="option in options"
                 :key="option.value"
                 type="button"
@@ -59,7 +58,7 @@ function input(event: Event, number = false) {
                 @click="emit('change', option.value)"
             >
                 <i />{{ option.label }}
-            </button>
+            </Button>
         </div>
         <textarea
             v-else-if="kind === 'textarea'"
@@ -87,7 +86,7 @@ function input(event: Event, number = false) {
             </option>
         </select>
         <div v-else class="fw-input">
-            <input
+            <Input
                 :aria-label="label"
                 :type="
                     kind === 'number'
@@ -96,7 +95,7 @@ function input(event: Event, number = false) {
                           ? 'password'
                           : 'text'
                 "
-                :value="value ?? ''"
+                :model-value="String(value ?? '')"
                 :min="min"
                 :max="max"
                 :disabled="disabled"

@@ -54,7 +54,7 @@ const props = withDefaults(
         title: string;
         icon?: object;
         columns: ColumnDef[];
-        fetchFn: (
+        fetchFn?: (
             params: Record<string, string | number>,
         ) => Promise<CdnflyListData | CdnflyRecord[]>;
         searchPlaceholder?: string;
@@ -66,6 +66,18 @@ const props = withDefaults(
         pageSizeOptions?: number[];
         emptyText?: string;
         errorTitle?: string;
+        /** Embedded tables use their page's existing fetch, filters and pagination. */
+        embedded?: boolean;
+        data?: {
+            rows: CdnflyRecord[];
+            total: number;
+            page: number;
+            pageSize: number;
+            loading: boolean;
+        };
+        selected?: (string | number)[];
+        selectionDisabled?: boolean;
+        getRowKey?: (row: CdnflyRecord) => string | number;
     }>(),
     {
         icon: undefined,
@@ -78,11 +90,14 @@ const props = withDefaults(
         pageSizeOptions: () => [20, 50],
         emptyText: '暂无记录',
         errorTitle: '加载失败',
+        embedded: false,
+        selectionDisabled: false,
     },
 );
 
 const emit = defineEmits<{
     'row-click': [row: CdnflyRecord];
+    'update:selected': [keys: (string | number)[]];
 }>();
 
 const loading = ref(false);
@@ -109,8 +124,35 @@ const allSelected = computed(
 );
 
 onMounted(() => {
-    void loadData();
+    if (!props.data) {
+        void loadData();
+    }
 });
+
+watch(
+    () => props.data,
+    (data) => {
+        if (!data) {
+            return;
+        }
+
+        rows.value = data.rows;
+        total.value = data.total;
+        currentPage.value = data.page;
+        perPage.value = String(data.pageSize);
+        loading.value = data.loading;
+    },
+    { immediate: true, deep: true },
+);
+watch(
+    () => props.selected,
+    (keys) => {
+        if (keys) {
+            selectedIds.value = new Set(keys);
+        }
+    },
+    { immediate: true, deep: true },
+);
 
 watch(
     () => [props.searchParams, props.fetchFn],
@@ -122,6 +164,10 @@ watch(
 );
 
 async function loadData(targetPage = currentPage.value): Promise<void> {
+    if (props.data || !props.fetchFn) {
+        return;
+    }
+
     loading.value = true;
     errorMessage.value = '';
 
@@ -202,6 +248,8 @@ function toggleSelectAll(checked: boolean): void {
     } else {
         selectedIds.value.clear();
     }
+
+    emit('update:selected', [...selectedIds.value]);
 }
 
 function toggleRow(row: CdnflyRecord): void {
@@ -212,6 +260,8 @@ function toggleRow(row: CdnflyRecord): void {
     } else {
         selectedIds.value.add(key);
     }
+
+    emit('update:selected', [...selectedIds.value]);
 }
 
 function isRowSelected(row: CdnflyRecord): boolean {
@@ -219,6 +269,10 @@ function isRowSelected(row: CdnflyRecord): boolean {
 }
 
 function rowKey(row: CdnflyRecord): string | number {
+    if (props.getRowKey) {
+        return props.getRowKey(row);
+    }
+
     if (typeof row.id === 'number' || typeof row.id === 'string') {
         return row.id;
     }
@@ -303,8 +357,11 @@ defineExpose({
         <AlertDescription>{{ errorMessage }}</AlertDescription>
     </Alert>
 
-    <Card class="gap-0 overflow-hidden">
-        <CardHeader>
+    <Card
+        class="gap-0 overflow-hidden"
+        :class="{ 'rounded-none border-0 py-0 shadow-none': embedded }"
+    >
+        <CardHeader v-if="!embedded">
             <!--
                 One row, not two. Search and the page's own actions used to sit on
                 a second line under the title while 刷新 sat alone on the first,
@@ -430,8 +487,16 @@ defineExpose({
                         <tr>
                             <th v-if="selectable" class="px-3 py-2 text-center">
                                 <Checkbox
-                                    :checked="allSelected"
-                                    @update:checked="toggleSelectAll"
+                                    aria-label="选择全部"
+                                    :model-value="allSelected"
+                                    :disabled="
+                                        loading ||
+                                        selectionDisabled ||
+                                        !rows.length
+                                    "
+                                    @update:model-value="
+                                        toggleSelectAll($event === true)
+                                    "
                                 />
                             </th>
                             <th
@@ -472,8 +537,10 @@ defineExpose({
                                 @click.stop
                             >
                                 <Checkbox
-                                    :checked="isRowSelected(row)"
-                                    @update:checked="toggleRow(row)"
+                                    :aria-label="`选择 ${rowKey(row)}`"
+                                    :model-value="isRowSelected(row)"
+                                    :disabled="loading || selectionDisabled"
+                                    @update:model-value="toggleRow(row)"
                                 />
                             </td>
                             <td
@@ -522,7 +589,7 @@ defineExpose({
     </Card>
 
     <div
-        v-if="total > effectivePerPage"
+        v-if="!embedded && total > effectivePerPage"
         class="flex items-center justify-end gap-2"
     >
         <Button

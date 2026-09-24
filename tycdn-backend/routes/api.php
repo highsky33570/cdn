@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\AdminCertificateController;
 use App\Http\Controllers\Api\AdminConfigController;
 use App\Http\Controllers\Api\AdminController;
 use App\Http\Controllers\Api\AdminDnsController;
+use App\Http\Controllers\Api\AdminErrorPagesController;
 use App\Http\Controllers\Api\AdminFinanceController;
 use App\Http\Controllers\Api\AdminFirewallController;
 use App\Http\Controllers\Api\AdminMonitorController;
@@ -254,6 +255,11 @@ Route::middleware(['auth:sanctum', 'verified', 'admin', 'throttle:admin-api'])->
     Route::get('/configs', [AdminConfigController::class, 'index']);
     Route::get('/firewall', [AdminFirewallController::class, 'show']);
     Route::get('/nginx', [AdminNginxController::class, 'show']);
+    Route::get('/error-pages', [AdminErrorPagesController::class, 'show']);
+    Route::put('/error-pages', [AdminErrorPagesController::class, 'update'])->middleware('throttle:admin-write-60');
+    Route::get('/error-pages/overrides', [AdminErrorPagesController::class, 'overrides']);
+    Route::put('/error-pages/overrides/{scope}/{id}', [AdminErrorPagesController::class, 'update'])->whereIn('scope', ['node', 'region'])->whereNumber('id')->middleware('throttle:admin-write-20');
+    Route::delete('/error-pages/overrides/{scope}/{id}', [AdminErrorPagesController::class, 'destroy'])->whereIn('scope', ['node', 'region'])->whereNumber('id')->middleware('throttle:admin-write-10');
     Route::put('/nginx', [AdminNginxController::class, 'update'])->middleware('throttle:admin-write-60');
     Route::get('/nginx/overrides', [AdminNginxController::class, 'overrides']);
     Route::put('/nginx/overrides/{scope}/{id}', [AdminNginxController::class, 'update'])->whereIn('scope', ['node', 'region'])->whereNumber('id')->middleware('throttle:admin-write-20');
@@ -265,6 +271,8 @@ Route::middleware(['auth:sanctum', 'verified', 'admin', 'throttle:admin-api'])->
     Route::post('/firewall/images', [AdminFirewallController::class, 'images'])->middleware('throttle:admin-write-10');
     // 单项 upsert：CDNfly 用 作用域+类型+名称 定位一条配置，行里没有 id。
     Route::put('/configs', [AdminConfigController::class, 'update'])->middleware('throttle:admin-write-20');
+    Route::delete('/configs/resource-overrides/{region}/{type}/{name}', [AdminConfigController::class, 'destroyResourceOverride'])->whereNumber('region')->middleware('throttle:admin-write-20');
+    Route::delete('/configs/default-overrides/{region}/{type}/{name}', [AdminConfigController::class, 'destroyDefaultOverride'])->whereNumber('region')->middleware('throttle:admin-write-20');
     Route::get('/register-info', [AdminConfigController::class, 'registerInfo']);
 
     // 通用管理端代理

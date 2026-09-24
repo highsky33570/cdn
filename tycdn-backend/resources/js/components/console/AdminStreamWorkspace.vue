@@ -13,7 +13,11 @@ import {
 import { computed, onMounted, onUnmounted, reactive, ref } from 'vue';
 import { toast } from 'vue-sonner';
 import ConfirmDeleteDialog from '@/components/console/ConfirmDeleteDialog.vue';
+import ConsoleDataTable from '@/components/console/ConsoleDataTable.vue';
+import type { ColumnDef } from '@/components/console/ConsoleDataTable.vue';
 import StreamBatchCreate from '@/components/console/StreamBatchCreate.vue';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
     Dialog,
     DialogScrollContent,
@@ -102,17 +106,36 @@ const enabled = (value: unknown) =>
     value === true || value === 1 || value === '1';
 const message = (e: unknown) =>
     e instanceof Error ? e.message : '操作失败，请重试';
+const columns = computed<ColumnDef[]>(() => [
+    { key: 'id', label: 'ID', width: '60px' },
+    ...(tab.value === 'streams'
+        ? [
+              { key: 'listen', label: '监听端口' },
+              { key: 'cname', label: 'CNAME' },
+              { key: 'backend', label: '源站' },
+              { key: 'package', label: '套餐/分组' },
+              { key: 'line', label: '线路' },
+              { key: 'status', label: '状态' },
+          ]
+        : tab.value === 'groups'
+          ? [
+                { key: 'user', label: '用户' },
+                { key: 'name', label: '名称' },
+                { key: 'des', label: '备注' },
+            ]
+          : [
+                { key: 'user', label: '用户' },
+                { key: 'name', label: '设置项' },
+                { key: 'value', label: '设置值' },
+                { key: 'scope', label: '生效范围' },
+            ]),
+]);
 const pages = computed(() => Math.max(1, Math.ceil(total.value / size.value)));
 const numbers = computed(() =>
     Array.from(
         { length: Math.min(5, pages.value) },
         (_, i) => Math.max(1, Math.min(page.value - 2, pages.value - 4)) + i,
     ),
-);
-const allSelected = computed(
-    () =>
-        rows.value.length > 0 &&
-        rows.value.every((row) => selected.value.includes(Number(row.id))),
 );
 function configValue(row: CdnflyRecord) {
     return (
@@ -223,11 +246,6 @@ function clear() {
         filters[key as keyof typeof filters] = '';
     });
     void load(1);
-}
-function toggle(id: number) {
-    selected.value = selected.value.includes(id)
-        ? selected.value.filter((value) => value !== id)
-        : [...selected.value, id];
 }
 async function manage(row: CdnflyRecord) {
     busy.value = true;
@@ -508,7 +526,9 @@ async function mutate(ids: number[], method: string, payload?: CdnflyRecord) {
 <template>
     <section class="stream-workspace">
         <nav role="tablist" aria-label="四层转发" class="stream-tabs">
-            <button
+            <Button
+                size="sm"
+                :variant="tab === item.key ? 'secondary' : 'ghost'"
                 v-for="item in tabs"
                 :id="`stream-tab-${item.key}`"
                 :key="item.key"
@@ -520,7 +540,7 @@ async function mutate(ids: number[], method: string, payload?: CdnflyRecord) {
                 @click="selectTab(item.key)"
             >
                 {{ item.label }}
-            </button>
+            </Button>
         </nav>
         <div
             :id="`stream-panel-${tab}`"
@@ -539,37 +559,49 @@ async function mutate(ids: number[], method: string, payload?: CdnflyRecord) {
                     </p>
                 </div>
                 <div class="actions">
-                    <button
+                    <Button
+                        size="sm"
+                        variant="default"
                         class="primary"
                         :disabled="busy"
                         @click="editResource()"
                     >
-                        <Plus />新增设置</button
-                    ><button
+                        <Plus />新增设置</Button
+                    ><Button
+                        size="sm"
+                        variant="outline"
                         :disabled="!selected.length || busy || loading"
                         @click="confirmDelete()"
                     >
                         <Trash2 />删除
-                    </button>
+                    </Button>
                 </div>
             </header>
             <div v-else class="toolbar">
                 <div v-if="tab === 'streams'" class="actions">
-                    <button
+                    <Button
+                        size="sm"
+                        variant="default"
                         class="primary"
                         :disabled="busy"
                         @click="emit('create')"
                     >
-                        <Plus />添加转发</button
-                    ><button
+                        <Plus />添加转发</Button
+                    ><Button
+                        size="sm"
+                        variant="outline"
                         :disabled="!selected.length || busy || loading"
                         @click="openBatch"
                     >
-                        <Pencil />批量修改</button
+                        <Pencil />批量修改</Button
                     ><DropdownMenu
                         ><DropdownMenuTrigger as-child
-                            ><button :disabled="busy">
-                                <MoreHorizontal />更多操作<ChevronDown /></button></DropdownMenuTrigger
+                            ><Button
+                                size="sm"
+                                variant="outline"
+                                :disabled="busy"
+                            >
+                                <MoreHorizontal />更多操作<ChevronDown /></Button></DropdownMenuTrigger
                         ><DropdownMenuContent align="start"
                             ><DropdownMenuItem
                                 :disabled="!selected.length || loading"
@@ -594,21 +626,30 @@ async function mutate(ids: number[], method: string, payload?: CdnflyRecord) {
                     >
                 </div>
                 <div v-else class="actions">
-                    <button
+                    <Button
+                        size="sm"
+                        variant="default"
                         class="primary"
                         :disabled="busy"
                         @click="editResource()"
                     >
-                        <Plus />新增分组</button
-                    ><button :disabled="busy || loading" @click="load()">
-                        <RefreshCw />刷新</button
-                    ><button
+                        <Plus />新增分组</Button
+                    ><Button
+                        size="sm"
+                        variant="outline"
+                        :disabled="busy || loading"
+                        @click="load()"
+                    >
+                        <RefreshCw />刷新</Button
+                    ><Button
+                        size="sm"
+                        variant="destructive"
                         class="danger-button"
                         :disabled="!selected.length || busy || loading"
                         @click="confirmDelete()"
                     >
                         <Trash2 />删除
-                    </button>
+                    </Button>
                 </div>
                 <form
                     v-if="tab === 'streams'"
@@ -629,22 +670,32 @@ async function mutate(ids: number[], method: string, payload?: CdnflyRecord) {
                             aria-label="搜索转发"
                             :placeholder="`输入${searchOptions[searchType as keyof typeof searchOptions]}`"
                             :disabled="busy"
-                        /><button class="primary" :disabled="busy">查询</button>
+                        /><Button
+                            size="sm"
+                            variant="default"
+                            class="primary"
+                            :disabled="busy"
+                            >查询</Button
+                        >
                     </div>
-                    <button
+                    <Button
+                        size="sm"
+                        variant="outline"
                         type="button"
                         :aria-expanded="advanced"
                         :disabled="busy"
                         @click="advanced = !advanced"
                     >
-                        <Filter />筛选</button
-                    ><button
+                        <Filter />筛选</Button
+                    ><Button
+                        size="sm"
+                        variant="outline"
                         type="button"
                         :disabled="busy || loading"
                         @click="load()"
                     >
                         <RefreshCw :class="{ spin: loading }" />刷新
-                    </button>
+                    </Button>
                 </form>
                 <span v-else class="group-count"
                     ><i />共 {{ total }} 个分组</span
@@ -697,279 +748,195 @@ async function mutate(ids: number[], method: string, payload?: CdnflyRecord) {
                     }}<input
                         v-model="filters[key]"
                         inputmode="numeric" /></label
-                ><button class="primary" :disabled="busy">查询</button
-                ><button type="button" :disabled="busy" @click="clear">
+                ><Button
+                    size="sm"
+                    variant="default"
+                    class="primary"
+                    :disabled="busy"
+                    >查询</Button
+                ><Button
+                    size="sm"
+                    variant="outline"
+                    type="button"
+                    :disabled="busy"
+                    @click="clear"
+                >
                     清除
-                </button>
+                </Button>
             </form>
             <div v-if="error" role="alert" class="error">
                 {{ error }}
-                <button :disabled="loading || busy" @click="load()">
+                <Button
+                    size="sm"
+                    variant="outline"
+                    :disabled="loading || busy"
+                    @click="load()"
+                >
                     重试
-                </button>
+                </Button>
             </div>
-            <div class="table-scroll">
-                <table :class="{ 'forwarding-table': tab === 'streams' }">
-                    <thead>
-                        <tr>
-                            <th class="check">
-                                <input
-                                    type="checkbox"
-                                    aria-label="选择全部"
-                                    :checked="allSelected"
-                                    :disabled="loading || busy || !rows.length"
-                                    @change="
-                                        selected = allSelected
-                                            ? []
-                                            : rows.map((row) => Number(row.id))
-                                    "
-                                />
-                            </th>
-                            <th>ID</th>
-                            <template v-if="tab === 'streams'"
-                                ><th>监听端口</th>
-                                <th>CNAME</th>
-                                <th>源站</th>
-                                <th>套餐/分组</th>
-                                <th>线路</th>
-                                <th>状态</th></template
-                            ><template v-else-if="tab === 'groups'"
-                                ><th>用户</th>
-                                <th>名称</th>
-                                <th>备注</th></template
-                            ><template v-else
-                                ><th>用户</th>
-                                <th>设置项</th>
-                                <th>设置值</th>
-                                <th>生效范围</th></template
-                            >
-                            <th class="operation">操作</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr v-for="row in rows" :key="String(row.id)">
-                            <td class="check">
-                                <input
-                                    type="checkbox"
-                                    :aria-label="`选择 ${row.id}`"
-                                    :checked="selected.includes(Number(row.id))"
-                                    :disabled="loading || busy"
-                                    @change="toggle(Number(row.id))"
-                                />
-                            </td>
-                            <td>{{ row.id }}</td>
-                            <template v-if="tab === 'streams'"
-                                ><td>
-                                    <button
-                                        class="link"
-                                        :disabled="busy || loading"
-                                        @click="manage(row)"
-                                    >
-                                        {{ streamListenText(row.listen) }}
-                                    </button>
-                                    <div class="muted">
-                                        用户
-                                        {{ row.name || row.username || '-' }}
-                                        ({{ row.uid || row.user_id || '-' }})
-                                    </div>
-                                </td>
-                                <td>
-                                    <span
-                                        :class="{
-                                            muted:
-                                                row.cname_state &&
-                                                row.cname_state !== 'done',
-                                        }"
-                                        >{{
-                                            row.cname_state === 'failed'
-                                                ? '生成失败'
-                                                : row.cname_state &&
-                                                    row.cname_state !== 'done'
-                                                  ? '生成中'
-                                                  : cname(row)
-                                        }}</span
-                                    >
-                                </td>
-                                <td>{{ streamBackendText(row) }}</td>
-                                <td>
-                                    <div>
-                                        套餐
-                                        {{
-                                            row.package_name ||
-                                            row.user_package ||
-                                            '-'
-                                        }}
-                                    </div>
-                                    <div class="muted">
-                                        分组 {{ row.group_name || '-' }}
-                                    </div>
-                                </td>
-                                <td>
-                                    {{
-                                        [
-                                            row.region_name,
-                                            row.node_group_name,
-                                            row.backup_node_group_name
-                                                ? `备: ${row.backup_node_group_name}`
-                                                : '',
-                                        ]
-                                            .filter(Boolean)
-                                            .join(' / ') || '-'
-                                    }}
-                                </td>
-                                <td>
-                                    <span
-                                        class="pill"
-                                        :class="{
-                                            success: status(row) === '正常',
-                                            danger: status(row) === '异常',
-                                        }"
-                                        >{{ status(row) }}</span
-                                    >
-                                </td></template
-                            >
-                            <template v-else-if="tab === 'groups'"
-                                ><td>
-                                    {{
-                                        row.username ||
-                                        row.user_name ||
-                                        row.uid ||
-                                        '-'
-                                    }}
-                                </td>
-                                <td>
-                                    <button
-                                        class="link"
-                                        :disabled="busy"
-                                        @click="editResource(row)"
-                                    >
-                                        {{ row.name }}
-                                    </button>
-                                </td>
-                                <td>{{ row.des || '-' }}</td></template
-                            >
-                            <template v-else
-                                ><td>
-                                    {{
-                                        row.username ||
-                                        row.user_name ||
-                                        row.uid ||
-                                        '-'
-                                    }}
-                                </td>
-                                <td>
-                                    {{ names[String(row.name)] || row.name }}
-                                </td>
-                                <td>{{ configValue(row) }}</td>
-                                <td>
-                                    {{
-                                        row.scope_name === 'group'
-                                            ? row.group_name ||
-                                              `分组 ${row.scope_id}`
-                                            : '全局'
-                                    }}
-                                </td></template
-                            >
-                            <td class="operation">
-                                <div class="actions">
-                                    <button
-                                        class="link"
-                                        :disabled="busy || loading"
-                                        @click="
-                                            tab === 'streams'
-                                                ? manage(row)
-                                                : editResource(row)
-                                        "
-                                    >
-                                        {{
-                                            tab === 'streams' ? '管理' : '编辑'
-                                        }}</button
-                                    ><DropdownMenu v-if="tab === 'streams'"
-                                        ><DropdownMenuTrigger as-child
-                                            ><button
-                                                class="link"
-                                                :aria-label="`更多操作 ${row.id}`"
-                                                :disabled="busy || loading"
-                                            >
-                                                <MoreHorizontal /></button></DropdownMenuTrigger
-                                        ><DropdownMenuContent align="end"
-                                            ><DropdownMenuItem
-                                                @select="
-                                                    mutate(
-                                                        [Number(row.id)],
-                                                        'PUT',
-                                                        {
-                                                            enable: enabled(
-                                                                row.enable,
-                                                            )
-                                                                ? 0
-                                                                : 1,
-                                                        },
-                                                    )
-                                                "
-                                                >{{
-                                                    enabled(row.enable)
-                                                        ? '停用'
-                                                        : '启用'
-                                                }}</DropdownMenuItem
-                                            ><DropdownMenuItem
-                                                @select="
-                                                    confirmDelete([
-                                                        Number(row.id),
-                                                    ])
-                                                "
-                                                >删除</DropdownMenuItem
-                                            ></DropdownMenuContent
-                                        ></DropdownMenu
-                                    ><button
-                                        v-else
-                                        class="link"
-                                        :disabled="busy || loading"
-                                        @click="confirmDelete([Number(row.id)])"
-                                    >
-                                        删除
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                        <tr v-if="!rows.length">
-                            <td
-                                :colspan="
-                                    tab === 'streams'
-                                        ? 9
-                                        : tab === 'groups'
-                                          ? 6
-                                          : 7
+            <ConsoleDataTable
+                embedded
+                selectable
+                title="四层转发"
+                :columns="columns"
+                :data="{ rows, total, page, pageSize: size, loading }"
+                :selected="selected"
+                :selection-disabled="busy"
+                :empty-text="
+                    error
+                        ? '加载失败，请重试'
+                        : tab === 'streams'
+                          ? '暂无转发数据'
+                          : '暂无数据'
+                "
+                @update:selected="selected = $event.map(Number)"
+            >
+                <template #cell-listen="{ row }">
+                    <Button
+                        variant="link"
+                        size="sm"
+                        class="h-auto p-0"
+                        :disabled="busy || loading"
+                        @click="manage(row)"
+                        >{{ streamListenText(row.listen) }}</Button
+                    >
+                    <div class="muted">
+                        用户 {{ row.name || row.username || '-' }} ({{
+                            row.uid || row.user_id || '-'
+                        }})
+                    </div>
+                </template>
+                <template #cell-cname="{ row }"
+                    ><span
+                        :class="{
+                            muted:
+                                row.cname_state && row.cname_state !== 'done',
+                        }"
+                        >{{
+                            row.cname_state === 'failed'
+                                ? '生成失败'
+                                : row.cname_state && row.cname_state !== 'done'
+                                  ? '生成中'
+                                  : cname(row)
+                        }}</span
+                    ></template
+                >
+                <template #cell-backend="{ row }">{{
+                    streamBackendText(row)
+                }}</template>
+                <template #cell-package="{ row }"
+                    ><div>
+                        套餐 {{ row.package_name || row.user_package || '-' }}
+                    </div>
+                    <div class="muted">
+                        分组 {{ row.group_name || '-' }}
+                    </div></template
+                >
+                <template #cell-line="{ row }">{{
+                    [
+                        row.region_name,
+                        row.node_group_name,
+                        row.backup_node_group_name
+                            ? `备: ${row.backup_node_group_name}`
+                            : '',
+                    ]
+                        .filter(Boolean)
+                        .join(' / ') || '-'
+                }}</template>
+                <template #cell-status="{ row }"
+                    ><Badge
+                        :variant="
+                            status(row) === '异常' ? 'destructive' : 'secondary'
+                        "
+                        >{{ status(row) }}</Badge
+                    ></template
+                >
+                <template #cell-user="{ row }">{{
+                    row.username || row.user_name || row.uid || '-'
+                }}</template>
+                <template #cell-name="{ row }"
+                    ><Button
+                        v-if="tab === 'groups'"
+                        variant="link"
+                        size="sm"
+                        class="h-auto p-0"
+                        :disabled="busy"
+                        @click="editResource(row)"
+                        >{{ row.name }}</Button
+                    ><template v-else>{{
+                        names[String(row.name)] || row.name
+                    }}</template></template
+                >
+                <template #cell-value="{ row }">{{
+                    configValue(row)
+                }}</template>
+                <template #cell-scope="{ row }">{{
+                    row.scope_name === 'group'
+                        ? row.group_name || `分组 ${row.scope_id}`
+                        : '全局'
+                }}</template>
+                <template #row-actions="{ row }">
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        :disabled="busy || loading"
+                        @click="
+                            tab === 'streams' ? manage(row) : editResource(row)
+                        "
+                        >{{ tab === 'streams' ? '管理' : '编辑' }}</Button
+                    >
+                    <DropdownMenu v-if="tab === 'streams'"
+                        ><DropdownMenuTrigger as-child
+                            ><Button
+                                variant="ghost"
+                                size="icon-sm"
+                                :aria-label="`更多操作 ${row.id}`"
+                                :disabled="busy || loading"
+                                ><MoreHorizontal /></Button></DropdownMenuTrigger
+                        ><DropdownMenuContent align="end"
+                            ><DropdownMenuItem
+                                @select="
+                                    mutate([Number(row.id)], 'PUT', {
+                                        enable: enabled(row.enable) ? 0 : 1,
+                                    })
                                 "
-                                class="empty"
-                            >
-                                {{
-                                    loading
-                                        ? '加载中…'
-                                        : error
-                                          ? '加载失败，请重试'
-                                          : tab === 'streams'
-                                            ? '暂无转发数据'
-                                            : '暂无数据'
-                                }}
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
+                                >{{
+                                    enabled(row.enable) ? '停用' : '启用'
+                                }}</DropdownMenuItem
+                            ><DropdownMenuItem
+                                @select="confirmDelete([Number(row.id)])"
+                                >删除</DropdownMenuItem
+                            ></DropdownMenuContent
+                        ></DropdownMenu
+                    >
+                    <Button
+                        v-else
+                        variant="ghost"
+                        size="sm"
+                        :disabled="busy || loading"
+                        @click="confirmDelete([Number(row.id)])"
+                        >删除</Button
+                    >
+                </template>
+            </ConsoleDataTable>
             <footer :class="{ right: tab !== 'streams' }">
                 <span v-if="tab === 'groups'" class="group-note muted">{{
                     total ? `已选 ${selected.length} 个分组` : '暂无分组'
                 }}</span>
                 <nav aria-label="分页" class="pager">
                     <span>共 {{ total }} 条</span
-                    ><button
+                    ><Button
+                        size="sm"
+                        variant="outline"
                         aria-label="上一页"
                         :disabled="page <= 1 || loading || busy"
                         @click="load(page - 1)"
                     >
-                        <ChevronLeft /></button
-                    ><button
+                        <ChevronLeft /></Button
+                    ><Button
+                        size="sm"
+                        variant="outline"
                         v-for="number in numbers"
                         :key="number"
                         :class="{ current: page === number }"
@@ -977,13 +944,15 @@ async function mutate(ids: number[], method: string, payload?: CdnflyRecord) {
                         :disabled="loading || busy"
                         @click="load(number)"
                     >
-                        {{ number }}</button
-                    ><button
+                        {{ number }}</Button
+                    ><Button
+                        size="sm"
+                        variant="outline"
                         aria-label="下一页"
                         :disabled="page >= pages || loading || busy"
                         @click="load(page + 1)"
                     >
-                        <ChevronRight /></button
+                        <ChevronRight /></Button
                     ><select
                         v-model.number="size"
                         aria-label="每页条数"
@@ -1105,18 +1074,22 @@ async function mutate(ids: number[], method: string, payload?: CdnflyRecord) {
                         ></template
                     >
                     <div class="modal-actions">
-                        <button
+                        <Button
+                            size="sm"
+                            variant="outline"
                             type="button"
                             :disabled="busy"
                             @click="editorOpen = false"
                         >
-                            取消</button
-                        ><button
+                            取消</Button
+                        ><Button
+                            size="sm"
+                            variant="default"
                             class="primary"
                             :disabled="busy || groupsLoading"
                         >
                             {{ busy ? '保存中…' : '保存' }}
-                        </button>
+                        </Button>
                     </div>
                 </form></DialogScrollContent
             ></Dialog
@@ -1170,18 +1143,22 @@ async function mutate(ids: number[], method: string, payload?: CdnflyRecord) {
                         </select>
                     </div>
                     <div class="modal-actions">
-                        <button
+                        <Button
+                            size="sm"
+                            variant="outline"
                             type="button"
                             :disabled="busy"
                             @click="batchOpen = false"
                         >
-                            取消</button
-                        ><button
+                            取消</Button
+                        ><Button
+                            size="sm"
+                            variant="default"
                             class="primary"
                             :disabled="busy || !selected.length"
                         >
                             保存
-                        </button>
+                        </Button>
                     </div>
                 </form></DialogScrollContent
             ></Dialog
@@ -1199,30 +1176,16 @@ async function mutate(ids: number[], method: string, payload?: CdnflyRecord) {
 
 <style scoped>
 .stream-workspace {
-    --line: #e8eef7;
-    --ink: #344766;
-    --muted: #8994a8;
     min-width: 0;
-    background: #fff;
-    color: var(--ink);
-    font-size: 12px;
-    border-radius: 8px;
-    box-shadow: 0 3px 8px #20385b10;
+    color: var(--card-foreground);
+    background: var(--card);
+    border-radius: var(--radius);
 }
 .stream-tabs {
     display: flex;
     gap: 4px;
     padding: 8px 15px;
-    border-bottom: 1px solid var(--line);
-}
-.stream-tabs button {
-    border: 0;
-    padding: 0 14px;
-}
-.stream-tabs .active {
-    color: #2d8cf0;
-    background: #e6f2ff;
-    font-weight: 600;
+    border-bottom: 1px solid var(--border);
 }
 .stream-panel {
     padding: 15px;
@@ -1245,96 +1208,51 @@ footer,
 .actions {
     flex-wrap: wrap;
 }
-button,
-input,
+input:not([type='checkbox']),
 select {
+    height: 32px;
+    border: 1px solid var(--input);
+    border-radius: var(--radius);
+    background: var(--background);
+    color: var(--foreground);
+    padding: 0 8px;
+    min-width: 0;
     font: inherit;
 }
-button,
-input:not([type='checkbox']),
-select {
-    height: 28px;
-    border: 1px solid #d7dce5;
-    border-radius: 3px;
-    background: transparent;
-}
-button {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 4px;
-    padding: 0 12px;
-    white-space: nowrap;
-    cursor: pointer;
-}
-button svg {
-    width: 12px;
-    height: 12px;
-}
-button:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-button:hover:not(:disabled) {
-    color: #2d8cf0;
-    border-color: #2d8cf0;
-}
-.primary {
-    background: #2d8cf0;
-    border-color: #2d8cf0;
-    color: white;
-}
-.primary:hover:not(:disabled) {
-    background: #57a3f3;
-    color: white;
-}
-.danger-button {
-    color: #ed4014;
-    border-color: #ffd4ca;
-    background: #fff7f5;
-}
-input:not([type='checkbox']),
-select {
-    padding: 0 7px;
-    min-width: 0;
-}
 input::placeholder {
-    color: #b7bfcc;
+    color: var(--muted-foreground);
 }
 input[type='checkbox'] {
-    width: 14px;
-    height: 14px;
-    accent-color: #2d8cf0;
-    vertical-align: middle;
+    accent-color: var(--primary);
 }
 .search-box {
     gap: 0;
 }
 .search-box select {
-    width: 78px;
-    border-radius: 3px 0 0 3px;
+    width: 100px;
+    border-radius: var(--radius) 0 0 var(--radius);
 }
 .search-box input {
-    width: 158px;
+    width: 175px;
     border-radius: 0;
     border-left: 0;
     border-right: 0;
 }
-.search-box button {
-    border-radius: 0 3px 3px 0;
+.search-box :deep([data-slot='button']) {
+    border-radius: 0 var(--radius) var(--radius) 0;
 }
 .group-count {
-    border: 1px solid var(--line);
-    border-radius: 3px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
     padding: 5px 8px;
-    color: var(--muted);
+    color: var(--muted-foreground);
 }
 .group-count i {
     display: inline-block;
     width: 6px;
     height: 6px;
     border-radius: 100%;
-    background: #19be6b;
+    background: var(--primary);
     margin-right: 5px;
 }
 .advanced {
@@ -1343,9 +1261,9 @@ input[type='checkbox'] {
     flex-wrap: wrap;
     gap: 12px;
     padding: 12px;
-    background: #fafcff;
-    border: 1px solid var(--line);
-    border-radius: 4px;
+    background: var(--muted);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
     margin-bottom: 12px;
 }
 .advanced label {
@@ -1356,123 +1274,42 @@ input[type='checkbox'] {
 .advanced select {
     width: 120px;
 }
-.table-scroll {
-    overflow-x: auto;
-}
-table {
-    width: 100%;
-    min-width: 720px;
-    border-collapse: collapse;
-    text-align: left;
-}
-th,
-td {
-    padding: 9px 8px;
-    border-bottom: 1px solid var(--line);
-    font-weight: 400;
-}
-th {
-    background: #fafcff;
-    white-space: nowrap;
-    height: 34px;
-}
-td {
-    overflow-wrap: anywhere;
-}
-.forwarding-table {
-    min-width: 1100px;
-}
-th:nth-child(2),
-td:nth-child(2) {
-    min-width: 60px;
-    white-space: nowrap;
-}
-.check {
-    width: 40px;
-    text-align: center;
-}
-.operation {
-    width: 96px;
-    text-align: right;
-}
-.operation .actions {
-    justify-content: flex-end;
-    flex-wrap: nowrap;
-}
-.link {
-    border: 0;
-    color: #2d8cf0;
-    padding: 0;
-    height: auto;
-}
 .muted {
-    color: var(--muted);
-    font-size: 11px;
+    color: var(--muted-foreground);
+    font-size: 12px;
     line-height: 1.8;
 }
-.pill {
-    padding: 3px 8px;
-    border-radius: 12px;
-    background: #f3f5f9;
-    font-size: 11px;
-    white-space: nowrap;
-}
-.pill.success {
-    color: #00b578;
-    background: #eaf8f0;
-}
-.pill.danger {
-    color: #ed4014;
-    background: #fff1ee;
-}
-.empty {
-    text-align: center;
-    color: var(--muted);
-    height: 48px;
-}
 footer {
-    margin-top: 15px;
+    margin-top: 16px;
 }
-.right {
+footer.right {
     justify-content: flex-end;
 }
 .group-note {
     margin-right: auto;
 }
 .pager {
-    gap: 4px;
-}
-.pager > span {
-    margin-right: 5px;
-}
-.pager button {
-    padding: 0;
-    min-width: 28px;
-}
-.pager select {
-    margin-left: 8px;
+    gap: 6px;
 }
 .pager .current {
-    border-color: #2d8cf0;
-    color: #2d8cf0;
+    color: var(--primary);
+    border-color: var(--primary);
 }
 .default-panel {
     max-width: 967px;
-    border: 1px solid var(--line);
-    border-radius: 6px;
     margin: 15px;
-    padding: 15px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
 }
 .default-heading {
     justify-content: space-between;
     align-items: flex-start;
-    border-bottom: 1px solid var(--line);
+    border-bottom: 1px solid var(--border);
     padding-bottom: 14px;
     margin-bottom: 14px;
 }
 .default-heading h2 {
     font-weight: 600;
-    color: #173452;
 }
 .default-heading h2:before {
     content: '';
@@ -1480,21 +1317,21 @@ footer {
     width: 3px;
     height: 14px;
     border-radius: 2px;
-    background: #2d8cf0;
+    background: var(--primary);
     vertical-align: middle;
     margin-right: 7px;
 }
 .default-heading p {
-    font-size: 11px;
-    color: var(--muted);
+    font-size: 12px;
+    color: var(--muted-foreground);
     margin-top: 6px;
 }
 .error {
     padding: 10px;
     margin-bottom: 10px;
-    color: #d9363e;
-    background: #fff1f0;
-    border-radius: 4px;
+    color: var(--destructive);
+    background: color-mix(in srgb, var(--destructive) 10%, transparent);
+    border-radius: var(--radius);
 }
 .spin {
     animation: stream-spin 1s linear infinite;
@@ -1507,7 +1344,6 @@ footer {
 :global(.stream-resource-dialog .resource-form) {
     display: grid;
     gap: 18px;
-    font-size: 13px;
 }
 :global(.stream-resource-dialog .resource-form label) {
     display: grid;
@@ -1515,25 +1351,13 @@ footer {
 }
 :global(.stream-resource-dialog input:not([type='checkbox'])),
 :global(.stream-resource-dialog select) {
-    height: 32px;
-    border: 1px solid #d7dce5;
-    border-radius: 4px;
+    height: 36px;
+    border: 1px solid var(--input);
+    border-radius: var(--radius);
     padding: 0 8px;
     width: 100%;
-    background: transparent;
-}
-:global(.stream-resource-dialog button) {
-    border: 1px solid #d7dce5;
-    border-radius: 4px;
-    padding: 6px 14px;
-}
-:global(.stream-resource-dialog button.primary) {
-    background: #2d8cf0;
-    border-color: #2d8cf0;
-    color: white;
-}
-:global(.stream-resource-dialog button:disabled) {
-    opacity: 0.5;
+    background: var(--background);
+    color: var(--foreground);
 }
 :global(.stream-resource-dialog .modal-actions) {
     display: flex;
@@ -1541,7 +1365,7 @@ footer {
     gap: 8px;
 }
 :global(.stream-resource-dialog .error) {
-    color: #d9363e;
+    color: var(--destructive);
 }
 :global(.stream-resource-dialog .batch-field) {
     display: grid;
@@ -1553,38 +1377,6 @@ footer {
     display: flex;
     align-items: center;
     gap: 6px;
-}
-:global(.dark .stream-workspace) {
-    --line: #303a4a;
-    --ink: #d8e1ef;
-    --muted: #94a3b8;
-    background: #151e2b;
-}
-:global(.dark .stream-workspace .stream-tabs .active) {
-    background: #173756;
-    color: #7db9ff;
-}
-:global(.dark .stream-workspace th),
-:global(.dark .stream-workspace .advanced) {
-    background: #1c2738;
-}
-:global(.dark .stream-workspace select) {
-    background: #151e2b;
-}
-:global(.dark .stream-workspace .default-heading h2) {
-    color: #e6eef9;
-}
-:global(.dark .stream-workspace .pill) {
-    background: #263449;
-}
-:global(.dark .stream-workspace .pill.success) {
-    background: #123d33;
-    color: #45d7a5;
-}
-:global(.dark .stream-workspace .error),
-:global(.dark .stream-workspace .pill.danger) {
-    background: #45262c;
-    color: #fda4af;
 }
 @media (max-width: 640px) {
     .toolbar,
@@ -1600,17 +1392,13 @@ footer {
         flex: 1;
         width: 100px;
     }
-    .default-heading {
+    .default-heading,
+    .pager,
+    footer {
         flex-wrap: wrap;
     }
     .default-panel {
         margin: 12px;
-    }
-    .pager {
-        flex-wrap: wrap;
-    }
-    footer {
-        flex-wrap: wrap;
     }
 }
 </style>

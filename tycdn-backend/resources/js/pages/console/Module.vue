@@ -11,7 +11,9 @@ import AdminBlockLogs from './AdminBlockLogs.vue';
 import AdminCache from './AdminCache.vue';
 import AdminCertificates from './AdminCertificates.vue';
 import AdminConfigWorkspace from './AdminConfigWorkspace.vue';
+import AdminDefaults from './AdminDefaults.vue';
 import AdminDns from './AdminDns.vue';
+import AdminErrorPages from './AdminErrorPages.vue';
 import AdminFinance from './AdminFinance.vue';
 import AdminFirewall from './AdminFirewall.vue';
 import AdminL2 from './AdminL2.vue';
@@ -26,6 +28,7 @@ import AdminNodes from './AdminNodes.vue';
 import AdminOverview from './AdminOverview.vue';
 import AdminPackages from './AdminPackages.vue';
 import AdminPanelRecords from './AdminPanelRecords.vue';
+import AdminResources from './AdminResources.vue';
 import AdminSecurity from './AdminSecurity.vue';
 import AdminSites from './AdminSites.vue';
 import AdminStreamAnalytics from './AdminStreamAnalytics.vue';
@@ -226,6 +229,9 @@ for (const view of ['realtime', 'top', 'usage']) {
 MODULES['admin-config-node-monitor'] = { component: AdminNodeMonitorSettings };
 MODULES['admin-config-firewall'] = { component: AdminFirewall };
 MODULES['admin-config-nginx'] = { component: AdminNginx };
+MODULES['admin-config-resources'] = { component: AdminResources };
+MODULES['admin-config-defaults'] = { component: AdminDefaults };
+MODULES['admin-config-errors'] = { component: AdminErrorPages };
 
 MODULES['admin-streams-analytics'] = {
     component: AdminStreamAnalytics,
