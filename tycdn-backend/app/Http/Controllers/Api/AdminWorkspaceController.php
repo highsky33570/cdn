@@ -29,6 +29,7 @@ class AdminWorkspaceController extends Controller
         'traffic-packages' => ['/v1/traffic-packages', ['GET', 'POST', 'PUT', 'DELETE']],
         'user-traffic-packages' => ['/v1/user-traffic-packages', ['GET', 'POST', 'PUT', 'DELETE']],
         'discounts' => ['/v1/discounts', ['GET', 'POST', 'PUT', 'DELETE']],
+        'user-groups' => ['/v1/user-groups', ['GET']],
         'coupons' => ['/v1/coupons', ['GET', 'POST', 'PUT', 'DELETE']],
         'coupon-historys' => ['/v1/coupon-historys', ['GET']],
         'messages' => ['/v1/messages', ['GET', 'POST', 'PUT', 'DELETE']],
@@ -101,6 +102,22 @@ class AdminWorkspaceController extends Controller
             $payload = ['enable' => 0];
         } else {
             $payload = $request->isMethod('GET') ? $request->query() : $request->all();
+        }
+        if (in_array($resource, ['traffic-packages', 'user-traffic-packages'], true) && in_array($request->method(), ['POST', 'PUT'], true)) {
+            // Laravel turns empty input strings into null; the master expects
+            // explicit empty strings when clearing notes or package restrictions.
+            $restoreEmptyStrings = static function (array $item): array {
+                foreach (['des', 'bind_package'] as $field) {
+                    if (array_key_exists($field, $item) && $item[$field] === null) {
+                        $item[$field] = '';
+                    }
+                }
+
+                return $item;
+            };
+            $payload = array_is_list($payload)
+                ? array_map(static fn ($item) => is_array($item) ? $restoreEmptyStrings($item) : $item, $payload)
+                : $restoreEmptyStrings($payload);
         }
         if ($resource === 'cache-jobs' && $request->isMethod('POST')) {
             $request->validate([

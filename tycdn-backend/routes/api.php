@@ -13,9 +13,11 @@ use App\Http\Controllers\Api\AdminFirewallController;
 use App\Http\Controllers\Api\AdminMonitorController;
 use App\Http\Controllers\Api\AdminNginxController;
 use App\Http\Controllers\Api\AdminNodeController;
+use App\Http\Controllers\Api\AdminPackageUpgradeController;
 use App\Http\Controllers\Api\AdminRecoveryController;
 use App\Http\Controllers\Api\AdminSiteController;
 use App\Http\Controllers\Api\AdminSiteResourceController;
+use App\Http\Controllers\Api\AdminSoldPackagesController;
 use App\Http\Controllers\Api\AdminStreamController;
 use App\Http\Controllers\Api\AdminWafLogController;
 use App\Http\Controllers\Api\AdminWorkspaceController;
@@ -213,6 +215,9 @@ Route::middleware(['auth:sanctum', 'verified', 'admin', 'throttle:admin-api'])->
     Route::get('/orders', [AdminFinanceController::class, 'index']);
     Route::put('/orders/{order}/status', [AdminFinanceController::class, 'updateOrderStatus']);
     Route::get('/services', [AdminFinanceController::class, 'services']);
+    Route::get('/sold-packages/{id}', [AdminSoldPackagesController::class, 'show'])->whereNumber('id');
+    Route::get('/sold-packages/{id}/usage', [AdminSoldPackagesController::class, 'usage'])->whereNumber('id');
+    Route::post('/sold-packages/{id}/upgrades', [AdminSoldPackagesController::class, 'addUpgrade'])->whereNumber('id')->middleware('throttle:admin-write-20');
     Route::get('/cdnfly-user-packages', [AdminFinanceController::class, 'userPackages']);
     Route::post('/cdnfly-user-packages', [AdminFinanceController::class, 'storeUserPackage'])->middleware('throttle:admin-write-20');
     Route::put('/cdnfly-user-packages/{id}', [AdminFinanceController::class, 'updateUserPackage'])->middleware('throttle:admin-write-20');
@@ -229,6 +234,14 @@ Route::middleware(['auth:sanctum', 'verified', 'admin', 'throttle:admin-api'])->
 
     // 升级包管理
     Route::get('/package-ups', [AdminFinanceController::class, 'listPackageUps']);
+    Route::get('/package-upgrades/sold', [AdminPackageUpgradeController::class, 'sold']);
+    Route::get('/package-upgrades/sold/{id}', [AdminPackageUpgradeController::class, 'soldShow'])->whereNumber('id');
+    Route::put('/package-upgrades/sold/{id}', [AdminPackageUpgradeController::class, 'soldUpdate'])->whereNumber('id')->middleware('throttle:admin-write-20');
+    Route::delete('/package-upgrades/sold/{id}', [AdminPackageUpgradeController::class, 'soldDelete'])->whereNumber('id')->middleware('throttle:admin-write-10');
+    Route::post('/package-upgrades/assign', [AdminPackageUpgradeController::class, 'assign'])->middleware('throttle:admin-write-20');
+    Route::put('/package-upgrades/status', [AdminPackageUpgradeController::class, 'batchStatus'])->middleware('throttle:admin-write-20');
+    Route::delete('/package-upgrades/batch', [AdminPackageUpgradeController::class, 'batchDelete'])->middleware('throttle:admin-write-10');
+    Route::get('/package-upgrades/{id}', [AdminPackageUpgradeController::class, 'show'])->whereNumber('id');
     Route::post('/package-ups', [AdminFinanceController::class, 'storePackageUp'])->middleware('throttle:admin-write-20');
     Route::put('/package-ups/{id}', [AdminFinanceController::class, 'updatePackageUp'])->middleware('throttle:admin-write-20');
     Route::delete('/package-ups/{id}', [AdminFinanceController::class, 'destroyPackageUp'])->middleware('throttle:admin-write-10');

@@ -19,6 +19,7 @@ export type AdminPackageBatchResult = {
 export type AdminPackageOption = {
     id: string | number;
     name: string;
+    region_id?: string | number;
 };
 
 export type AdminPackageOptions = {
@@ -88,9 +89,8 @@ export async function deleteAdminPackage(id: number): Promise<unknown> {
 /**
  * What a CDNfly package is actually sold as.
  *
- * CDNfly's own month/quarter/year prices bill against the customer's CDNfly
- * balance, which a portal order never credits — so those stay at 0 and these
- * are the prices customers pay.
+ * The package editor keeps native month/quarter/year prices and the linked
+ * storefront product prices in sync.
  */
 export interface AdminPackageProduct {
     id: number;

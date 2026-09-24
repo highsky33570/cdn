@@ -3,7 +3,10 @@ import { Plus, Trash2, X } from 'lucide-vue-next';
 import { computed, onMounted, reactive, ref } from 'vue';
 import { toast } from 'vue-sonner';
 import ConfirmDeleteDialog from '@/components/console/ConfirmDeleteDialog.vue';
+import ConsoleDataTable from '@/components/console/ConsoleDataTable.vue';
+import ConsoleTabs from '@/components/console/ConsoleTabs.vue';
 import NginxField from '@/components/console/NginxField.vue';
+import { Button } from '@/components/ui/button';
 import {
     Dialog,
     DialogScrollContent,
@@ -353,42 +356,40 @@ async function removeRows() {
 
 <template>
     <div class="flex flex-1 flex-col p-3 md:p-5">
-        <section class="nginx-page">
-            <nav class="ng-tabs" role="tablist" aria-label="Nginx 配置">
-                <button
-                    v-for="entry in [
-                        { key: 'global', label: '全局配置' },
-                        { key: 'overrides', label: '区域及节点配置' },
-                    ]"
-                    :id="`ng-tab-${entry.key}`"
-                    :key="entry.key"
-                    role="tab"
-                    :aria-selected="tab === entry.key"
-                    :aria-controls="`ng-panel-${entry.key}`"
-                    :class="{ active: tab === entry.key }"
-                    @click="selectTab(entry.key)"
+        <section
+            class="nginx-page console-panel rounded-xl border bg-card text-card-foreground"
+        >
+            <ConsoleTabs
+                class="mb-3"
+                :model-value="tab"
+                :tabs="[
+                    { key: 'global', label: '全局配置' },
+                    { key: 'overrides', label: '区域及节点配置' },
+                ]"
+                @update:model-value="selectTab"
+            >
+                <template #actions
+                    ><span
+                        v-if="tab === 'global'"
+                        class="ng-save-state"
+                        role="status"
+                        >{{
+                            saving
+                                ? '保存中…'
+                                : Object.values(errors).some(Boolean)
+                                  ? '请检查配置值'
+                                  : saved
+                                    ? '已保存'
+                                    : ''
+                        }}</span
+                    ></template
                 >
-                    {{ entry.label }}</button
-                ><span
-                    v-if="tab === 'global'"
-                    class="ng-save-state"
-                    role="status"
-                    >{{
-                        saving
-                            ? '保存中…'
-                            : Object.values(errors).some(Boolean)
-                              ? '请检查配置值'
-                              : saved
-                                ? '已保存'
-                                : ''
-                    }}</span
-                >
-            </nav>
+            </ConsoleTabs>
             <div
                 v-if="tab === 'global'"
                 id="ng-panel-global"
                 role="tabpanel"
-                aria-labelledby="ng-tab-global"
+                aria-label="全局配置"
                 :aria-busy="loading || saving"
             >
                 <nav
@@ -396,22 +397,33 @@ async function removeRows() {
                     role="tablist"
                     aria-label="全局配置分类"
                 >
-                    <button
+                    <Button
+                        size="sm"
+                        variant="outline"
                         v-for="(entry, key) in nginxSections"
                         :id="`ng-tab-${key}`"
                         :key="key"
                         role="tab"
                         :aria-selected="section === key"
                         :aria-controls="`ng-panel-${key}`"
-                        :class="{ active: section === key }"
+                        :class="
+                            section === key
+                                ? 'border-primary bg-background text-primary'
+                                : 'bg-muted text-muted-foreground'
+                        "
                         @click="section = key"
                     >
                         {{ entry.label }}
-                    </button>
+                    </Button>
                 </nav>
                 <div v-if="error" role="alert" class="ng-error">
                     {{ error
-                    }}<button @click="ready ? flush() : load()">重试</button>
+                    }}<Button
+                        size="sm"
+                        variant="outline"
+                        @click="ready ? flush() : load()"
+                        >重试</Button
+                    >
                 </div>
                 <p v-if="loading" class="ng-loading">加载中…</p>
                 <div
@@ -454,7 +466,7 @@ async function removeRows() {
                 id="ng-panel-overrides"
                 class="ng-overrides"
                 role="tabpanel"
-                aria-labelledby="ng-tab-overrides"
+                aria-label="区域及节点配置"
                 :aria-busy="listLoading || editorBusy || deleteBusy"
             >
                 <header class="ng-list-heading">
@@ -466,106 +478,88 @@ async function removeRows() {
                         </p>
                     </div>
                     <div class="ng-actions">
-                        <button
+                        <Button
+                            size="sm"
+                            variant="outline"
                             v-if="selected.length"
                             :disabled="listLoading"
                             @click="askDelete([...selected])"
                         >
-                            <Trash2 />删除选中</button
-                        ><button class="ng-primary" @click="openEditor()">
+                            <Trash2 />删除选中</Button
+                        ><Button size="sm" @click="openEditor()">
                             <Plus />新增设置
-                        </button>
+                        </Button>
                     </div>
                 </header>
                 <div v-if="listError" role="alert" class="ng-error">
-                    {{ listError }}<button @click="loadRows()">重试</button>
+                    {{ listError
+                    }}<Button size="sm" variant="outline" @click="loadRows()"
+                        >重试</Button
+                    >
                 </div>
-                <div class="ng-table-scroll">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>
-                                    <input
-                                        type="checkbox"
-                                        aria-label="选择全部配置"
-                                        :disabled="listLoading || !rows.length"
-                                        :checked="
-                                            rows.length > 0 &&
-                                            selected.length === rows.length
-                                        "
-                                        @change="
-                                            selected =
-                                                selected.length === rows.length
-                                                    ? []
-                                                    : rows.map(rowKey)
-                                        "
-                                    />
-                                </th>
-                                <th>配置范围</th>
-                                <th>配置项</th>
-                                <th>操作</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr v-for="row in rows" :key="rowKey(row)">
-                                <td>
-                                    <input
-                                        v-model="selected"
-                                        type="checkbox"
-                                        :value="rowKey(row)"
-                                        :aria-label="`选择配置 ${rowKey(row)}`"
-                                    />
-                                </td>
-                                <td>
-                                    {{
-                                        row.scope_name === 'node'
-                                            ? '节点'
-                                            : '区域'
-                                    }}
-                                    {{ row.scope_id }}
-                                </td>
-                                <td>{{ summary(row) }}</td>
-                                <td>
-                                    <button
-                                        class="ng-link"
-                                        @click="openEditor(row)"
-                                    >
-                                        编辑</button
-                                    ><button
-                                        class="ng-link"
-                                        @click="askDelete([rowKey(row)])"
-                                    >
-                                        删除
-                                    </button>
-                                </td>
-                            </tr>
-                            <tr v-if="!rows.length">
-                                <td class="ng-empty" colspan="4">
-                                    {{
-                                        listLoading
-                                            ? '加载中…'
-                                            : listError
-                                              ? '加载失败'
-                                              : '暂无数据'
-                                    }}
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
+                <ConsoleDataTable
+                    embedded
+                    selectable
+                    title="区域及节点配置"
+                    :columns="[
+                        { key: 'scope', label: '配置范围' },
+                        { key: 'settings', label: '配置项' },
+                    ]"
+                    :data="{
+                        rows,
+                        total,
+                        page,
+                        pageSize: 10,
+                        loading: listLoading,
+                    }"
+                    :get-row-key="rowKey"
+                    :selected="selected"
+                    :selection-disabled="deleteBusy"
+                    empty-text="暂无数据"
+                    @update:selected="selected = $event.map(String)"
+                >
+                    <template #cell-scope="{ row }"
+                        >{{ row.scope_name === 'node' ? '节点' : '区域' }}
+                        {{ row.scope_id }}</template
+                    >
+                    <template #cell-settings="{ row }">{{
+                        summary(row)
+                    }}</template>
+                    <template #row-actions="{ row }">
+                        <Button
+                            size="sm"
+                            variant="ghost"
+                            :disabled="listLoading || deleteBusy"
+                            @click="openEditor(row)"
+                            >编辑</Button
+                        >
+                        <Button
+                            size="sm"
+                            variant="ghost"
+                            class="text-destructive"
+                            :disabled="listLoading || deleteBusy"
+                            @click="askDelete([rowKey(row)])"
+                            >删除</Button
+                        >
+                    </template>
+                </ConsoleDataTable>
                 <footer v-if="total" class="ng-pager">
                     <span>共 {{ total }} 条</span
-                    ><button
+                    ><Button
+                        size="sm"
+                        variant="outline"
                         :disabled="page <= 1 || listLoading"
                         @click="loadRows(page - 1)"
                     >
-                        上一页</button
+                        上一页</Button
                     ><span class="ng-page-number">{{ page }}</span
-                    ><button
+                    ><Button
+                        size="sm"
+                        variant="outline"
                         :disabled="page * 10 >= total || listLoading"
                         @click="loadRows(page + 1)"
                     >
-                        下一页</button
+                        下一页</Button
                     ><span>10 条/页</span>
                 </footer>
             </div>
@@ -586,13 +580,16 @@ async function removeRows() {
                 </div>
                 <div v-if="targetError" role="alert" class="ng-error">
                     {{ targetError
-                    }}<button @click="loadTargets()">重试</button>
+                    }}<Button size="sm" variant="outline" @click="loadTargets()"
+                        >重试</Button
+                    >
                 </div>
                 <form @submit.prevent="saveOverride">
                     <fieldset :disabled="editorBusy">
                         <div class="ng-targets">
                             <label
                                 >配置范围<select
+                                    class="h-9 min-w-0 rounded-md border border-input bg-background px-3 text-sm text-foreground outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
                                     v-model="scope"
                                     aria-label="配置范围"
                                     :disabled="editing"
@@ -606,6 +603,7 @@ async function removeRows() {
                                 </select></label
                             ><label
                                 >选择目标<select
+                                    class="h-9 min-w-0 rounded-md border border-input bg-background px-3 text-sm text-foreground outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
                                     v-model="scopeId"
                                     aria-label="选择目标"
                                     :disabled="editing || targetLoading"
@@ -640,7 +638,11 @@ async function removeRows() {
                             >
                         </div>
                         <div class="ng-add-field">
-                            <select v-model="item" aria-label="配置项">
+                            <select
+                                class="h-9 min-w-0 rounded-md border border-input bg-background px-3 text-sm text-foreground outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                                v-model="item"
+                                aria-label="配置项"
+                            >
                                 <option value="">请选择配置项</option>
                                 <optgroup
                                     v-for="(group, key) in nginxSections"
@@ -658,13 +660,15 @@ async function removeRows() {
                                         {{ field.label }}
                                     </option>
                                 </optgroup></select
-                            ><button
+                            ><Button
+                                size="sm"
+                                variant="outline"
                                 type="button"
                                 :disabled="!item"
                                 @click="addField()"
                             >
                                 <Plus />添加
-                            </button>
+                            </Button>
                         </div>
                         <div
                             v-for="field in activeFields"
@@ -693,7 +697,9 @@ async function removeRows() {
                                     "
                                 />
                             </div>
-                            <button
+                            <Button
+                                size="sm"
+                                variant="outline"
                                 type="button"
                                 :aria-label="`移除 ${field.path}`"
                                 @click="
@@ -702,19 +708,26 @@ async function removeRows() {
                                 "
                             >
                                 <X />
-                            </button>
+                            </Button>
                         </div>
                         <div class="ng-modal-actions">
-                            <button type="button" @click="editorOpen = false">
-                                取消</button
-                            ><button
-                                class="ng-primary"
+                            <Button
+                                size="sm"
+                                variant="outline"
+                                type="button"
+                                @click="editorOpen = false"
+                            >
+                                取消</Button
+                            ><Button
+                                size="sm"
+                                variant="default"
+                                type="submit"
                                 :disabled="
                                     editorBusy || targetLoading || !!targetError
                                 "
                             >
                                 确定
-                            </button>
+                            </Button>
                         </div>
                     </fieldset>
                 </form>
@@ -726,95 +739,28 @@ async function removeRows() {
             :loading="deleteBusy"
             :error="deleteError"
             @confirm="removeRows"
-            @update:open="deleteOpen = $event"
+            @cancel="!deleteBusy && (deleteOpen = false)"
         />
     </div>
 </template>
 
 <style>
-.nginx-page,
-.ng-modal {
-    --ng-line: #e8eef7;
-    --ng-muted: #8392a9;
-    --ng-ink: #344e73;
-    color: var(--ng-ink);
-    font-size: 12px;
-}
 .nginx-page {
     min-width: 0;
-    border-radius: 8px;
-    background: white;
-    padding: 12px;
-}
-.nginx-page button,
-.ng-modal button {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 4px;
-    height: 28px;
-    padding: 0 12px;
-    border: 1px solid #d7dce5;
-    border-radius: 3px;
-    background: white;
-    color: inherit;
-    font: inherit;
-    white-space: nowrap;
-    cursor: pointer;
-}
-.nginx-page button:disabled,
-.ng-modal button:disabled {
-    cursor: not-allowed;
-    opacity: 0.5;
-}
-.nginx-page button svg,
-.ng-modal button svg {
-    width: 12px;
-    height: 12px;
-}
-.nginx-page button.ng-primary,
-.ng-modal button.ng-primary {
-    background: #2d8cf0;
-    color: white;
-    border-color: #2d8cf0;
-}
-.nginx-page .ng-tabs {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    flex-wrap: wrap;
-    margin-bottom: 12px;
-}
-.nginx-page .ng-tabs button {
-    border: 0;
-    border-radius: 6px;
-    background: transparent;
-}
-.nginx-page .ng-tabs button.active {
-    background: #e6f2ff;
-    color: #2d8cf0;
+    padding: 16px;
 }
 .ng-save-state {
-    margin-left: auto;
-    color: var(--ng-muted);
-    font-size: 11px;
+    color: var(--muted-foreground);
+    font-size: 12px;
 }
-.nginx-page .ng-subtabs {
+.ng-subtabs {
     display: flex;
     gap: 4px;
     margin: 0 0 29px;
 }
-.nginx-page .ng-subtabs button {
+.ng-subtabs > button {
     border-bottom: 0;
-    border-radius: 3px 3px 0 0;
-    background: #f7f7f9;
-    height: 27px;
-    padding: 0 14px;
-}
-.nginx-page .ng-subtabs button.active {
-    color: #2d8cf0;
-    background: white;
-    border-color: #2d8cf0;
+    border-radius: 6px 6px 0 0;
 }
 .ng-global,
 .ng-overrides {
@@ -822,21 +768,17 @@ async function removeRows() {
 }
 .nginx-page h2,
 .nginx-page h3 {
-    font-size: 12px;
-    font-weight: 600;
-    color: #173452;
-}
-.nginx-page h2 {
     font-size: 14px;
+    font-weight: 600;
 }
 .nginx-page p {
     margin: 4px 0 10px;
-    color: var(--ng-muted);
-    font-size: 11px;
+    color: var(--muted-foreground);
+    font-size: 12px;
     line-height: 1.6;
 }
 .ng-section-title {
-    border-left: 3px solid #2d8cf0;
+    border-left: 3px solid var(--primary);
     padding-left: 9px;
     margin-bottom: 14px;
 }
@@ -858,9 +800,9 @@ async function removeRows() {
     gap: 12px;
 }
 .ng-card {
-    background: #fafcff;
-    border: 1px solid var(--ng-line);
-    border-radius: 6px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
     padding: 14px;
     min-width: 0;
 }
@@ -876,6 +818,7 @@ async function removeRows() {
     align-items: center;
     gap: 8px;
     margin-top: 11px;
+    font-size: 12px;
 }
 .ng-field > label {
     overflow-wrap: anywhere;
@@ -888,101 +831,32 @@ async function removeRows() {
     display: flex;
     min-width: 0;
 }
-.nginx-page input:not([type='checkbox']),
-.ng-modal input:not([type='checkbox']),
-.ng-modal select {
-    border: 1px solid #d7dce5;
-    border-radius: 3px;
-    height: 28px;
-    background: white;
-    color: inherit;
-    padding: 0 7px;
-    font: inherit;
-    min-width: 0;
-    width: 100%;
-}
 .ng-input input {
     flex: 1;
-}
-.ng-input:has(span) input {
-    border-radius: 3px 0 0 3px;
-}
-.ng-input > span {
-    display: flex;
-    align-items: center;
-    padding: 0 6px;
-    border: 1px solid #d7dce5;
-    border-left: 0;
-    border-radius: 0 3px 3px 0;
-    background: #f7f7f9;
-}
-.nginx-page input:focus,
-.ng-modal input:focus,
-.ng-modal select:focus {
-    outline: 0;
-    border-color: #83baff;
-    box-shadow: 0 0 0 1px #e3f1ff;
-}
-.nginx-page button.ng-switch,
-.ng-modal button.ng-switch {
-    width: 37px;
-    height: 19px;
-    padding: 2px;
-    border: 0;
-    border-radius: 12px;
-    background: #ccc;
-    justify-content: flex-start;
-    vertical-align: middle;
-}
-.ng-switch span {
-    width: 15px;
-    height: 15px;
-    background: white;
-    border-radius: 50%;
-    box-shadow: 0 1px 2px #0001;
-}
-.nginx-page button.ng-switch.on,
-.ng-modal button.ng-switch.on {
-    background: #2d8cf0;
-    justify-content: flex-end;
 }
 .ng-versions {
     display: flex;
     gap: 7px;
 }
-.nginx-page .ng-versions button,
-.ng-modal .ng-versions button {
-    border-color: #d8e7fc;
-}
-.nginx-page .ng-versions button.chosen,
-.ng-modal .ng-versions button.chosen {
-    border-color: #83baff;
-    background: #edf6ff;
-    color: #2d8cf0;
-}
 .nginx-page .ng-field-help,
 .ng-modal .ng-field-help {
-    font-size: 11px;
+    font-size: 12px;
     margin: 5px 0 0;
-    color: var(--ng-muted);
+    color: var(--muted-foreground);
     line-height: 1.6;
 }
 .nginx-page .ng-field-error,
 .ng-modal .ng-field-error {
-    color: #d43b43;
+    color: var(--destructive);
     margin: 5px 0 0;
-    font-size: 11px;
-}
-.nginx-page .has-error input,
-.ng-modal .has-error input {
-    border-color: #d43b43;
+    font-size: 12px;
 }
 .ng-error {
     padding: 10px;
-    background: #fff1f0;
-    color: #bd3038;
+    background: color-mix(in oklab, var(--destructive) 10%, transparent);
+    color: var(--destructive);
     margin: 10px 0;
-    border-radius: 4px;
+    border-radius: 6px;
 }
 .ng-error button {
     margin-left: 10px;
@@ -1004,64 +878,13 @@ async function removeRows() {
     display: flex;
     gap: 8px;
 }
-.ng-table-scroll {
-    overflow-x: auto;
-}
-.ng-table-scroll table {
-    width: 100%;
-    min-width: 620px;
-    border-collapse: collapse;
-}
-.ng-table-scroll th,
-.ng-table-scroll td {
-    text-align: left;
-    font-weight: 400;
-    border-bottom: 1px solid var(--ng-line);
-    padding: 10px 14px;
-    overflow-wrap: anywhere;
-}
-.ng-table-scroll th {
-    background: #fafcff;
-}
-.ng-table-scroll th:first-child {
-    width: 54px;
-}
-.ng-table-scroll th:nth-child(2) {
-    width: 28%;
-}
-.ng-table-scroll th:last-child {
-    width: 140px;
-    text-align: center;
-}
-.ng-table-scroll td:last-child {
-    text-align: center;
-}
-.ng-table-scroll .ng-empty {
-    color: var(--ng-muted);
-    text-align: center;
-    height: 40px;
-}
-.nginx-page .ng-link {
-    color: #2d8cf0;
-    border: 0;
-    background: transparent;
-    padding: 0 6px;
-}
-.nginx-page input[type='checkbox'] {
-    accent-color: #2d8cf0;
-}
 .ng-pager {
     display: flex;
     justify-content: flex-end;
     align-items: center;
     gap: 8px;
     padding: 16px 0 0;
-}
-.ng-page-number {
-    color: #2d8cf0;
-    border: 1px solid #2d8cf0;
-    border-radius: 3px;
-    padding: 4px 9px;
+    font-size: 14px;
 }
 .ng-modal .ng-targets label {
     display: grid;
@@ -1080,67 +903,23 @@ async function removeRows() {
     gap: 10px;
     padding: 12px;
     margin-top: 10px;
-    background: #fafcff;
-    border: 1px solid var(--ng-line);
-    border-radius: 6px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
 }
 .ng-edit-value {
     min-width: 0;
     flex: 1;
 }
 .ng-context {
-    font-size: 11px;
-    color: var(--ng-muted);
+    font-size: 12px;
+    color: var(--muted-foreground);
 }
 .ng-modal-actions {
     display: flex;
     justify-content: flex-end;
     gap: 8px;
     margin-top: 18px;
-}
-.dark .nginx-page,
-.dark .ng-modal {
-    --ng-line: #303a4a;
-    --ng-muted: #94a3b8;
-    --ng-ink: #d8e1ef;
-    background: #151e2b;
-    color: var(--ng-ink);
-}
-.dark .nginx-page h2,
-.dark .nginx-page h3 {
-    color: #e5edf9;
-}
-.dark .nginx-page .ng-card,
-.dark .ng-modal .ng-edit-field,
-.dark .nginx-page th {
-    background: #1c2738;
-}
-.dark .nginx-page input:not([type='checkbox']),
-.dark .ng-modal input:not([type='checkbox']),
-.dark .ng-modal select,
-.dark .nginx-page .ng-input > span,
-.dark .ng-modal .ng-input > span {
-    background: #151e2b;
-    border-color: #435067;
-    color: #d8e1ef;
-}
-.dark .nginx-page button:not(.ng-primary):not(.ng-switch),
-.dark .ng-modal button:not(.ng-primary):not(.ng-switch) {
-    background: #202d40;
-    border-color: #435067;
-    color: #cbd9ee;
-}
-.dark .nginx-page .ng-tabs button.active,
-.dark .nginx-page .ng-subtabs button.active,
-.dark .nginx-page .ng-versions button.chosen,
-.dark .ng-modal .ng-versions button.chosen {
-    background: #173756;
-    border-color: #65aaff;
-    color: #7db9ff;
-}
-.dark .ng-error {
-    background: #45262c;
-    color: #fda4af;
 }
 @media (max-width: 760px) {
     .ng-cards,
@@ -1154,9 +933,7 @@ async function removeRows() {
     .ng-field {
         grid-template-columns: 135px minmax(0, 1fr);
     }
-    .ng-list-heading {
-        flex-wrap: wrap;
-    }
+    .ng-list-heading,
     .ng-pager {
         flex-wrap: wrap;
     }

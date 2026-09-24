@@ -62,6 +62,7 @@ const props = withDefaults(
         searchKey?: string;
         clientSide?: boolean;
         selectable?: boolean;
+        showActions?: boolean;
         pageSize?: number;
         pageSizeOptions?: number[];
         emptyText?: string;
@@ -86,6 +87,7 @@ const props = withDefaults(
         searchKey: 'search',
         clientSide: false,
         selectable: false,
+        showActions: true,
         pageSize: 20,
         pageSizeOptions: () => [20, 50],
         emptyText: '暂无记录',
@@ -479,7 +481,7 @@ defineExpose({
                             :key="col.key"
                             :style="colStyle(col)"
                         />
-                        <slot name="actions-col">
+                        <slot v-if="showActions" name="actions-col">
                             <col style="width: 12%" />
                         </slot>
                     </colgroup>
@@ -507,7 +509,7 @@ defineExpose({
                             >
                                 {{ col.label }}
                             </th>
-                            <slot name="actions-header">
+                            <slot v-if="showActions" name="actions-header">
                                 <th class="px-3 py-2 text-right font-medium">
                                     操作
                                 </th>
@@ -519,7 +521,9 @@ defineExpose({
                             <td
                                 class="px-6 py-16 text-center"
                                 :colspan="
-                                    columns.length + (selectable ? 1 : 0) + 1
+                                    columns.length +
+                                    (selectable ? 1 : 0) +
+                                    (showActions ? 1 : 0)
                                 "
                             >
                                 <Spinner />
@@ -566,7 +570,11 @@ defineExpose({
                                     }}</span>
                                 </slot>
                             </td>
-                            <td class="px-3 py-2.5" @click.stop>
+                            <td
+                                v-if="showActions"
+                                class="px-3 py-2.5"
+                                @click.stop
+                            >
                                 <div class="flex justify-end gap-1.5">
                                     <slot name="row-actions" :row="row" />
                                 </div>
@@ -576,7 +584,9 @@ defineExpose({
                             <td
                                 class="px-6 py-16 text-center text-muted-foreground"
                                 :colspan="
-                                    columns.length + (selectable ? 1 : 0) + 1
+                                    columns.length +
+                                    (selectable ? 1 : 0) +
+                                    (showActions ? 1 : 0)
                                 "
                             >
                                 {{ emptyText }}

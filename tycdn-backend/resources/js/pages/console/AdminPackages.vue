@@ -1,35 +1,28 @@
 <script setup lang="ts">
 import {
     AlertCircle,
+    CheckCircle2,
+    XCircle,
+    MoreHorizontal,
     ChevronDown,
-    Eye,
-    Layers3,
-    Pencil,
     PackagePlus,
     Plus,
     RefreshCw,
     Save,
     Trash2,
 } from 'lucide-vue-next';
-import { FolderTree, Package, Zap } from 'lucide-vue-next';
-import { computed, onMounted, reactive, ref } from 'vue';
+import { Zap } from 'lucide-vue-next';
+import { computed, onMounted, reactive, ref, watch } from 'vue';
 import { toast } from 'vue-sonner';
 import ConfirmDeleteDialog from '@/components/console/ConfirmDeleteDialog.vue';
 import ConsoleDataTable from '@/components/console/ConsoleDataTable.vue';
 import type { ColumnDef } from '@/components/console/ConsoleDataTable.vue';
-import ConsolePageHeader from '@/components/console/ConsolePageHeader.vue';
 import ConsoleTabs from '@/components/console/ConsoleTabs.vue';
 import type { ConsoleTab } from '@/components/console/ConsoleTabs.vue';
+import PackagePagination from '@/components/console/PackagePagination.vue';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
     Collapsible,
@@ -44,6 +37,14 @@ import {
     DialogScrollContent,
     DialogTitle,
 } from '@/components/ui/dialog';
+import {
+    DropdownMenu,
+    DropdownMenuTrigger,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuCheckboxItem,
+    DropdownMenuSeparator,
+} from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -55,6 +56,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
+import Switch from '@/components/ui/switch/Switch.vue';
 import { listAdminUsers } from '@/lib/adminConsoleApi';
 import type { AdminUserRecord } from '@/lib/adminConsoleApi';
 import {
@@ -63,10 +65,6 @@ import {
     createAdminPackageGroup,
     updateAdminPackageGroup,
     deleteAdminPackageGroup,
-    listAdminPackageUps,
-    createAdminPackageUp,
-    updateAdminPackageUp,
-    deleteAdminPackageUp,
 } from '@/lib/adminModulesApi';
 import {
     batchUpdateAdminPackages,
@@ -86,12 +84,14 @@ import type {
     AdminPackageOptions,
     AdminPackagePayload,
 } from '@/lib/adminPackagesApi';
+import { extractCdnflyRows } from '@/lib/cdnflyResponse';
 import {
     formatDate,
     formatMoney,
     getErrorMessage as fmtError,
 } from '@/lib/formatters';
 import type { CdnflyRecord } from '@/lib/sharedTypes';
+import AdminPackageUpgrades from './AdminPackageUpgrades.vue';
 
 type PackageRecord = Record<string, unknown>;
 
@@ -365,11 +365,13 @@ const props = withDefaults(defineProps<{ initialTab?: PackageTab }>(), {
 });
 const activeTab = ref<PackageTab>(props.initialTab);
 
-const packageTabs: ConsoleTab[] = [
-    { key: 'packages', label: '基础套餐', icon: Package },
-    { key: 'groups', label: '套餐组', icon: FolderTree },
-    { key: 'upgrades', label: '升级包', icon: Zap },
-];
+const packageTabs = computed<ConsoleTab[]>(() => [
+    { key: 'packages', label: '基础套餐' },
+    { key: 'groups', label: '套餐分组' },
+    ...(props.initialTab === 'upgrades' || activeTab.value === 'upgrades'
+        ? [{ key: 'upgrades', label: '升级包', icon: Zap }]
+        : []),
+]);
 
 const detailDialogOpen = ref(false);
 const detailJsonOpen = ref(false);
@@ -386,18 +388,16 @@ const dialogMode = ref<DialogMode>('create');
  */
 
 const portalProducts = ref<Record<string, AdminPackageProduct>>({});
+const portalLoading = ref(false);
+const portalError = ref('');
 
 const portalForm = reactive({
     sell: true,
     name: '',
     slug: '',
-    price_monthly: '',
-    price_quarterly: '',
-    price_yearly: '',
     description: '',
     features: '',
     sort_order: '',
-    is_active: true,
 });
 
 /**
@@ -428,21 +428,15 @@ function applyTierPreset(preset: TierPreset): void {
     // A plain VPS has no scrubbing in front of it.
     form.ddos_protect = '不支持';
 
-    // CDNfly bills these against the customer's CDNfly balance, which a portal
-    // order never credits.
-    form.month_price = '0';
-    form.quarter_price = '0';
-    form.year_price = '0';
+    form.month_price = preset.price;
+    form.quarter_price = '';
+    form.year_price = '';
 
     portalForm.sell = true;
     portalForm.name = preset.name;
     portalForm.slug = preset.slug;
-    portalForm.price_monthly = preset.price;
-    portalForm.price_quarterly = '';
-    portalForm.price_yearly = '';
     portalForm.description = preset.description;
     portalForm.features = preset.features.join('\n');
-    portalForm.is_active = true;
     portalForm.sort_order = String(
         (TIER_PRESETS.findIndex((tier) => tier.key === preset.key) + 1) * 10,
     );
@@ -452,49 +446,24 @@ function resetPortalForm(
     packageName = '',
     existing?: AdminPackageProduct,
 ): void {
-    portalForm.sell = true;
+    portalForm.sell = existing?.is_active ?? true;
     portalForm.name = existing?.name ?? packageName;
     // Pre-filled from the linked product so a price-only edit re-sends the slug
     // it already has and cannot move the tier.
     portalForm.slug = existing?.slug ?? '';
-    portalForm.price_monthly = existing ? String(existing.price_monthly) : '';
-    portalForm.price_quarterly = existing
-        ? String(existing.price_quarterly)
-        : '';
-    portalForm.price_yearly = existing ? String(existing.price_yearly) : '';
     portalForm.description = existing?.description ?? '';
     portalForm.features = (existing?.features ?? []).join('\n');
     portalForm.sort_order = existing ? String(existing.sort_order) : '';
-    portalForm.is_active = existing?.is_active ?? true;
 }
 
 /** Preview of what a blank quarterly/yearly price will become. */
-const portalDerived = computed(() => {
-    const monthly = Number(portalForm.price_monthly);
-
-    if (!Number.isFinite(monthly) || monthly <= 0) {
-        return null;
-    }
-
-    return {
-        quarterly: (monthly * 3).toFixed(2),
-        yearly: (monthly * 12).toFixed(2),
-    };
-});
-
 function portalPayload(): Record<string, unknown> {
     return {
-        name: portalForm.name.trim(),
+        name: portalForm.name.trim() || form.name.trim(),
         slug: portalForm.slug.trim(),
-        price_monthly: Number(portalForm.price_monthly) || 0,
-        price_quarterly:
-            portalForm.price_quarterly === ''
-                ? null
-                : Number(portalForm.price_quarterly),
-        price_yearly:
-            portalForm.price_yearly === ''
-                ? null
-                : Number(portalForm.price_yearly),
+        price_monthly: Number(form.month_price),
+        price_quarterly: Number(form.quarter_price),
+        price_yearly: Number(form.year_price),
         description: portalForm.description.trim() || null,
         features: portalForm.features
             .split('\n')
@@ -502,26 +471,27 @@ function portalPayload(): Record<string, unknown> {
             .filter((line) => line !== ''),
         sort_order:
             portalForm.sort_order === '' ? 0 : Number(portalForm.sort_order),
-        is_active: portalForm.is_active,
+        is_active: portalForm.sell,
         currency: PORTAL_CURRENCY,
     };
 }
 
 async function loadPortalProducts(): Promise<void> {
+    portalLoading.value = true;
+    portalError.value = '';
+
     try {
         portalProducts.value = await listAdminPackageProducts();
-    } catch {
-        // A pricing lookup must never block the package list; the column just
-        // shows 未上架 until it succeeds.
-        portalProducts.value = {};
+    } catch (error) {
+        portalError.value = getErrorMessage(error);
+    } finally {
+        portalLoading.value = false;
     }
 }
 
 const editingId = ref<number | null>(null);
 const detailRecord = ref<PackageRecord | null>(null);
-const packageCnameOpen = ref(false);
-const packagePurchaseLimitOpen = ref(false);
-const packageOtherOpen = ref(false);
+
 const batchAdvancedOpen = ref(false);
 const packageOptions = ref<AdminPackageOptions>({ ...emptyOptions });
 const resourceOptionLabel = (kind: 'regions' | 'node_groups', id: unknown) =>
@@ -530,27 +500,61 @@ const resourceOptionLabel = (kind: 'regions' | 'node_groups', id: unknown) =>
 const loadingOptions = ref(false);
 
 const form = reactive<PackageForm>(emptyPackageForm());
+const packageLineOptions = computed(() =>
+    packageOptions.value.node_groups.filter(
+        (option) =>
+            option.region_id === undefined ||
+            !form.region_id ||
+            String(option.region_id) === form.region_id,
+    ),
+);
+function changePackageRegion(): void {
+    if (
+        !packageLineOptions.value.some(
+            (option) => String(option.id) === form.node_group_id,
+        )
+    ) {
+        form.node_group_id =
+            packageLineOptions.value.length === 1
+                ? String(packageLineOptions.value[0].id)
+                : '';
+    }
+
+    if (
+        !packageLineOptions.value.some(
+            (option) => String(option.id) === form.backup_node_group,
+        )
+    ) {
+        form.backup_node_group = BACKUP_NONE_VALUE;
+    }
+}
 const batchForm = reactive<PackageForm>(emptyPackageForm(true));
+const packageExpiry = computed({
+    get: () => form.expire.replace(' ', 'T'),
+    set: (value: string) => {
+        form.expire = value
+            ? value.replace('T', ' ') + (value.length === 16 ? ':00' : '')
+            : '';
+    },
+});
+const bandwidthUnit = computed(
+    () => form.bandwidth.match(/(Mbps|Gbps)$/i)?.[1] ?? 'Mbps',
+);
+const bandwidthAmount = computed(() =>
+    form.bandwidth.replace(/(Mbps|Gbps)$/i, ''),
+);
+function updateBandwidth(value: string, unit = bandwidthUnit.value): void {
+    form.bandwidth = value === '' ? '' : `${value}${unit}`;
+}
+const rememberedLimits = new WeakMap<
+    PackageForm,
+    Partial<Record<LimitFieldKey, string>>
+>();
 
 const packageIds = computed(() =>
     packages.value
         .map((record) => getPackageId(record))
         .filter((id): id is number => id !== null),
-);
-
-const allVisibleSelected = computed(
-    () =>
-        packageIds.value.length > 0 &&
-        packageIds.value.every((id) => selectedIds.value.includes(id)),
-);
-
-const enabledCount = computed(
-    () =>
-        packages.value.filter((record) =>
-            ['1', 'true', 'active', 'enable', 'enabled', '上架'].includes(
-                normalizeStatus(record),
-            ),
-        ).length,
 );
 
 const selectedCount = computed(() => selectedIds.value.length);
@@ -749,45 +753,6 @@ const detailSections = computed(() => {
  * CDNfly's own month_price is 0 on every portal-sold tier, so showing it in the
  * list made every package look free.
  */
-function portalPriceOf(record: PackageRecord): string {
-    const id = getPackageId(record);
-
-    if (id === null) {
-        return '';
-    }
-
-    const product = portalProducts.value[String(id)];
-
-    if (!product) {
-        return '';
-    }
-
-    // Paid in USDT (a USD-pegged stablecoin), so label it USDT rather than the
-    // stored ISO code — that is what the customer actually transfers.
-    return formatMoney(product.price_monthly);
-}
-
-/**
- * Website count over total domain count, e.g. "1 / 5".
- *
- * `main_domain` is the number of sites a tier includes — the figure the tiers
- * and the landing page are sold on. `domain` is the larger total hostname cap.
- * Showing only `domain` (5/15/30/60) read as wrong against a tier described as
- * "1 个网站".
- */
-function siteDomainText(record: PackageRecord): string {
-    const sites = getDisplayValue(record, ['main_domain'], '-');
-    const domains = getDisplayValue(
-        record,
-        ['domain', 'domain_limit', 'domain_num'],
-        '-',
-    );
-
-    const fmt = (v: string) => (v === '-1' ? '不限' : v);
-
-    return `${fmt(sites)} / ${fmt(domains)}`;
-}
-
 /**
  * The six capability flags CDNfly shows on a package, as list badges.
  * WS/H3/WAF/L2 are stored 1/0; CC and DDoS are free text (支持 / 不支持 /
@@ -836,7 +801,7 @@ async function loadPackages(): Promise<void> {
     errorMessage.value = '';
 
     try {
-        const payload = await listAdminPackages();
+        const payload = await listAdminPackages({ limit: 0 });
         packages.value = extractPackageRecords(payload);
         selectedIds.value = selectedIds.value.filter((id) =>
             packageIds.value.includes(id),
@@ -877,8 +842,17 @@ function defaultCnameDomainId(): string {
 }
 
 function openCreateDialog(): void {
+    rememberedLimits.delete(form);
     Object.assign(form, emptyPackageForm());
     form.cname_domain = defaultCnameDomainId();
+
+    if (packageOptions.value.regions.length === 1) {
+        form.region_id = String(packageOptions.value.regions[0].id);
+    }
+
+    changePackageRegion();
+
+    form.groups = String(packageOptions.value.package_groups[0]?.id ?? '');
     resetPortalForm();
     formError.value = '';
     editingId.value = null;
@@ -888,6 +862,12 @@ function openCreateDialog(): void {
 }
 
 async function openEditDialog(record: PackageRecord): Promise<void> {
+    if (portalLoading.value || portalError.value) {
+        errorMessage.value = '请等待门户商品加载完成，或重试加载后再编辑套餐';
+
+        return;
+    }
+
     const id = getPackageId(record);
 
     if (id === null) {
@@ -903,10 +883,16 @@ async function openEditDialog(record: PackageRecord): Promise<void> {
         const payload = await getAdminPackage(id);
         const detail = extractPackageDetail(payload) ?? record;
         Object.assign(form, formFromRecord(detail));
+        rememberedLimits.delete(form);
         resetPortalForm(
             String(detail.name ?? ''),
             portalProducts.value[String(id)],
         );
+
+        if (!portalProducts.value[String(id)]) {
+            portalForm.sell = false;
+        }
+
         editingId.value = id;
         dialogMode.value = 'edit';
         closePackageAdvancedSections();
@@ -951,16 +937,32 @@ async function openDetailDialog(record: PackageRecord): Promise<void> {
  * A blank quarter/year mirrors the product's rule: ×3 and ×12, no assumed
  * discount.
  */
-function syncCdnflyPricesFromPortal(): void {
-    const monthly = Number(portalForm.price_monthly) || 0;
+function resolvePackagePrices(): void {
+    const monthly = Number(form.month_price);
+
+    if (
+        form.month_price.trim() === '' ||
+        !Number.isFinite(monthly) ||
+        monthly < 0
+    ) {
+        throw new Error('请填写有效的月付价格');
+    }
+
     const quarterly =
-        portalForm.price_quarterly === ''
+        form.quarter_price.trim() === ''
             ? monthly * 3
-            : Number(portalForm.price_quarterly) || 0;
+            : Number(form.quarter_price);
     const yearly =
-        portalForm.price_yearly === ''
-            ? monthly * 12
-            : Number(portalForm.price_yearly) || 0;
+        form.year_price.trim() === '' ? monthly * 12 : Number(form.year_price);
+
+    if (
+        !Number.isFinite(quarterly) ||
+        quarterly < 0 ||
+        !Number.isFinite(yearly) ||
+        yearly < 0
+    ) {
+        throw new Error('请填写有效的季度付和年付价格');
+    }
 
     form.month_price = String(monthly);
     form.quarter_price = String(quarterly);
@@ -970,18 +972,14 @@ function syncCdnflyPricesFromPortal(): void {
 async function submitPackage(): Promise<void> {
     saving.value = true;
     formError.value = '';
+    let masterSaved = false;
 
     try {
         // The price the admin entered must reach CDNfly, not just the portal
         // product — otherwise the master keeps charging its old (or zero) price.
-        if (portalForm.sell) {
-            syncCdnflyPricesFromPortal();
-        }
+        resolvePackagePrices();
 
-        const payload = buildPackagePayload(
-            form,
-            dialogMode.value === 'create',
-        );
+        const payload = buildPackagePayload(form, dialogMode.value);
 
         if (dialogMode.value === 'create') {
             const result = (await createAdminPackage(
@@ -997,8 +995,12 @@ async function submitPackage(): Promise<void> {
             }
         } else if (editingId.value !== null) {
             await updateAdminPackage(editingId.value, payload);
+            masterSaved = true;
 
-            if (portalForm.sell) {
+            if (
+                portalForm.sell ||
+                portalProducts.value[String(editingId.value)]
+            ) {
                 await saveAdminPackageProduct(editingId.value, portalPayload());
             }
         }
@@ -1006,7 +1008,9 @@ async function submitPackage(): Promise<void> {
         packageDialogOpen.value = false;
         await Promise.all([loadPackages(), loadPortalProducts()]);
     } catch (error) {
-        formError.value = getErrorMessage(error);
+        formError.value = masterSaved
+            ? `主控套餐已保存，门户商品同步失败：${getErrorMessage(error)}。可重试保存。`
+            : getErrorMessage(error);
     } finally {
         saving.value = false;
     }
@@ -1017,7 +1021,7 @@ async function submitBatchUpdate(): Promise<void> {
     batchError.value = '';
 
     try {
-        const payload = buildPackagePayload(batchForm, false);
+        const payload = buildPackagePayload(batchForm, 'batch');
         const items: AdminPackageBatchItem[] = selectedIds.value.map((id) => ({
             id,
             ...payload,
@@ -1079,37 +1083,6 @@ async function confirmDeletePackage(): Promise<void> {
     }
 }
 
-function toggleAll(checked: boolean | 'indeterminate'): void {
-    selectedIds.value = checked === true ? [...packageIds.value] : [];
-}
-
-function toggleOne(id: number, checked: boolean | 'indeterminate'): void {
-    if (checked === true) {
-        selectedIds.value = Array.from(new Set([...selectedIds.value, id]));
-
-        return;
-    }
-
-    selectedIds.value = selectedIds.value.filter((item) => item !== id);
-}
-
-function recordSelected(record: PackageRecord): boolean {
-    const id = getPackageId(record);
-
-    return id !== null && selectedIds.value.includes(id);
-}
-
-function toggleRecord(
-    record: PackageRecord,
-    checked: boolean | 'indeterminate',
-): void {
-    const id = getPackageId(record);
-
-    if (id !== null) {
-        toggleOne(id, checked);
-    }
-}
-
 function openBatchDialog(): void {
     Object.assign(batchForm, emptyPackageForm(true));
     batchError.value = '';
@@ -1118,9 +1091,8 @@ function openBatchDialog(): void {
 }
 
 function closePackageAdvancedSections(): void {
-    packageCnameOpen.value = false;
-    packagePurchaseLimitOpen.value = false;
-    packageOtherOpen.value = false;
+    advancedOpen.value = false;
+    salesOpen.value = false;
 }
 
 function isLimitEnabled(source: PackageForm, key: LimitFieldKey): boolean {
@@ -1129,12 +1101,16 @@ function isLimitEnabled(source: PackageForm, key: LimitFieldKey): boolean {
 
 function toggleLimit(source: PackageForm, key: LimitFieldKey): void {
     if (isLimitEnabled(source, key)) {
+        rememberedLimits.set(source, {
+            ...rememberedLimits.get(source),
+            [key]: source[key],
+        });
         source[key] = '-1';
 
         return;
     }
 
-    source[key] = '';
+    source[key] = rememberedLimits.get(source)?.[key] ?? '';
 }
 
 function emptyPackageForm(batch = false): PackageForm {
@@ -1145,9 +1121,9 @@ function emptyPackageForm(batch = false): PackageForm {
         node_group_id: '',
         backup_node_group: batch ? SELECT_KEEP_VALUE : BACKUP_NONE_VALUE,
         groups: '',
-        month_price: batch ? '' : '0',
-        quarter_price: batch ? '' : '0',
-        year_price: batch ? '' : '0',
+        month_price: '',
+        quarter_price: '',
+        year_price: '',
         traffic: batch ? '' : '-1',
         bandwidth: batch ? '' : '-1',
         connection: batch ? '' : '-1',
@@ -1191,7 +1167,9 @@ function formFromRecord(record: PackageRecord): PackageForm {
         backup_node_group: normalizeBackupNodeGroup(
             getDisplayValue(record, ['backup_node_group'], ''),
         ),
-        groups: getDisplayValue(record, ['groups', 'group'], ''),
+        groups: Array.isArray(record.groups)
+            ? record.groups.map(String).join(',')
+            : getDisplayValue(record, ['groups', 'group'], ''),
         month_price: getDisplayValue(record, ['month_price'], ''),
         quarter_price: getDisplayValue(record, ['quarter_price'], ''),
         year_price: getDisplayValue(record, ['year_price'], ''),
@@ -1220,11 +1198,7 @@ function formFromRecord(record: PackageRecord): PackageForm {
         stream_port: getDisplayValue(record, ['stream_port'], '-1'),
         custom_cc_rule: getDisplayValue(record, ['custom_cc_rule'], '0'),
         cc_protect: getDisplayValue(record, ['cc_protect'], '支持'),
-        // Now a 支持/不支持 select; any legacy free-text (e.g. "500G") means
-        // DDoS is offered, so it normalizes to 支持.
-        ddos_protect: normalizeDdosProtect(
-            getDisplayValue(record, ['ddos_protect'], ''),
-        ),
+        ddos_protect: getDisplayValue(record, ['ddos_protect'], ''),
         websocket: getDisplayValue(record, ['websocket'], '0'),
         http3: getDisplayValue(record, ['http3'], '0'),
         waf_protect: getDisplayValue(record, ['waf_protect'], '0'),
@@ -1236,7 +1210,7 @@ function formFromRecord(record: PackageRecord): PackageForm {
         cname_hostname2: getDisplayValue(record, ['cname_hostname2'], ''),
         cname_mode: getDisplayValue(record, ['cname_mode'], ''),
         buy_num_limit: getDisplayValue(record, ['buy_num_limit'], '-1'),
-        expire: getDisplayValue(record, ['expire', 'expire2'], ''),
+        expire: getDisplayValue(record, ['expire2', 'expire'], ''),
         before_exp_days_renew: getDisplayValue(
             record,
             ['before_exp_days_renew'],
@@ -1253,13 +1227,29 @@ function formFromRecord(record: PackageRecord): PackageForm {
 
 function buildPackagePayload(
     source: PackageForm,
-    requireName: boolean,
+    mode: DialogMode | 'batch',
 ): AdminPackagePayload {
+    const requireName = mode === 'create';
     const payload: AdminPackagePayload = {};
     const name = source.name.trim();
 
-    if (requireName && name === '') {
+    if (mode !== 'batch' && name === '') {
         throw new Error('请输入套餐名称');
+    }
+
+    if (mode !== 'batch') {
+        if (
+            source.backup_node_group === source.node_group_id &&
+            source.node_group_id !== ''
+        ) {
+            throw new Error('备用线路不能与主线路相同');
+        }
+
+        for (const field of limitFieldConfigs) {
+            if (source[field.key].trim() === '') {
+                throw new Error(`请填写${field.label}，或关闭对应限制`);
+            }
+        }
     }
 
     appendText(payload, 'name', name);
@@ -1343,6 +1333,24 @@ function buildPackagePayload(
         payload.backend_ip_limit = source.backend_ip_limit.trim();
     }
 
+    if (mode !== 'batch') {
+        for (const key of [
+            'des',
+            'cname_hostname2',
+            'expire',
+            'owner',
+            'backend_ip_limit',
+            'cc_protect',
+            'ddos_protect',
+        ] as const) {
+            payload[key] = source[key].trim();
+        }
+    }
+
+    if (source.backup_node_group === BACKUP_NONE_VALUE) {
+        payload.backup_node_group = '';
+    }
+
     const extra = parseExtraJson(source.extra_json);
     const merged = {
         ...payload,
@@ -1392,7 +1400,7 @@ function appendNumber(
 
     const numberValue = Number(trimmed);
 
-    if (Number.isNaN(numberValue)) {
+    if (!Number.isFinite(numberValue)) {
         throw new Error(`${label}必须是数字`);
     }
 
@@ -1451,13 +1459,6 @@ function normalizeBackupNodeGroup(value: string): string {
     const trimmed = value.trim();
 
     return trimmed === '' || trimmed === '0' ? BACKUP_NONE_VALUE : trimmed;
-}
-
-/** DDoS 防护 is a 支持/不支持 select; map legacy/empty values onto those two. */
-function normalizeDdosProtect(value: string): string {
-    const trimmed = value.trim();
-
-    return trimmed === '' || trimmed === '不支持' ? '不支持' : '支持';
 }
 
 function optionValue(option: AdminPackageOption): string {
@@ -1682,24 +1683,17 @@ function getErrorMessage(error: unknown): string {
 
 // ─── Package Groups CRUD ─────────────────────────────────
 const pgColumns: ColumnDef[] = [
-    { key: 'id', label: 'ID', width: '70px' },
+    { key: 'id', label: 'ID' },
     { key: 'name', label: '名称' },
-    { key: 'des', label: '备注', format: (v) => String(v ?? '-') },
-    {
-        key: 'created_at',
-        altKeys: ['create_at'],
-        label: '创建时间',
-        width: '160px',
-        format: (v) => formatDate(v as string | null | undefined),
-    },
+    { key: 'des', label: '备注' },
+    { key: 'sort', label: '排序', format: (v) => String(v ?? 100) },
+    { key: 'enable', label: '启用' },
 ];
-
-const pgTableRef = ref<InstanceType<typeof ConsoleDataTable> | null>(null);
 const pgDialogOpen = ref(false);
 const pgSaving = ref(false);
 const pgError = ref('');
 const pgEditing = ref<CdnflyRecord | null>(null);
-const pgForm = reactive({ name: '', des: '' });
+const pgForm = reactive({ name: '', des: '', sort: '100', enable: '1' });
 const pgDeleteOpen = ref(false);
 const pgDeleteTarget = ref<CdnflyRecord | null>(null);
 const pgDeleting = ref(false);
@@ -1709,6 +1703,8 @@ function openPgCreate(): void {
     pgEditing.value = null;
     pgForm.name = '';
     pgForm.des = '';
+    pgForm.sort = '100';
+    pgForm.enable = '1';
     pgError.value = '';
     pgDialogOpen.value = true;
 }
@@ -1717,18 +1713,28 @@ function openPgEdit(row: CdnflyRecord): void {
     pgEditing.value = row;
     pgForm.name = String(row.name ?? '');
     pgForm.des = String(row.des ?? '');
+    pgForm.sort = String(row.sort ?? 100);
+    pgForm.enable = String(row.enable ?? 1);
     pgError.value = '';
     pgDialogOpen.value = true;
 }
 
 async function submitPg(): Promise<void> {
+    if (!pgForm.name.trim() || !Number.isInteger(Number(pgForm.sort))) {
+        pgError.value = '请输入名称和有效排序';
+
+        return;
+    }
+
     pgSaving.value = true;
     pgError.value = '';
 
     try {
         const payload: Record<string, unknown> = {
             name: pgForm.name.trim(),
-            des: pgForm.des.trim() || undefined,
+            des: pgForm.des.trim(),
+            sort: Number(pgForm.sort),
+            enable: Number(pgForm.enable),
         };
 
         if (pgEditing.value) {
@@ -1740,7 +1746,7 @@ async function submitPg(): Promise<void> {
         }
 
         pgDialogOpen.value = false;
-        pgTableRef.value?.refresh();
+        void loadGroups();
         void loadPackageOptions();
     } catch (error) {
         pgError.value = fmtError(error);
@@ -1767,7 +1773,7 @@ async function confirmPgDelete(): Promise<void> {
         await deleteAdminPackageGroup(Number(pgDeleteTarget.value.id));
         pgDeleteOpen.value = false;
         toast.success('套餐组已删除');
-        pgTableRef.value?.refresh();
+        void loadGroups();
         void loadPackageOptions();
     } catch (error) {
         pgDeleteError.value = fmtError(error);
@@ -1776,526 +1782,681 @@ async function confirmPgDelete(): Promise<void> {
     }
 }
 
-// ─── Package Ups CRUD ────────────────────────────────────
-const puColumns: ColumnDef[] = [
-    { key: 'id', label: 'ID', width: '70px' },
-    { key: 'name', label: '名称' },
-    {
-        key: 'groups',
-        label: '套餐组',
-        width: '100px',
-        format: (v) => String(v ?? '-'),
-    },
-    {
-        key: 'month_price',
-        label: '月价格（USDT）',
-        width: '100px',
-        format: (v) => String(v ?? '-'),
-    },
-    {
-        key: 'created_at',
-        altKeys: ['create_at'],
-        label: '创建时间',
-        width: '160px',
-        format: (v) => formatDate(v as string | null | undefined),
-    },
-];
-
-const puTableRef = ref<InstanceType<typeof ConsoleDataTable> | null>(null);
-const puDialogOpen = ref(false);
-const puSaving = ref(false);
-const puError = ref('');
-const puEditing = ref<CdnflyRecord | null>(null);
-const puForm = reactive({
-    name: '',
-    des: '',
-    groups: '',
-    month_price: '',
-    quarter_price: '',
-    year_price: '',
-    traffic: '',
-    bandwidth: '',
-    connection: '',
-    domain: '',
-    extra_json: '{}',
+const listPage = ref(1),
+    listSize = ref(10),
+    groupFilter = ref('all');
+const splitGroups = (value: unknown): string[] =>
+    Array.isArray(value)
+        ? value.map(String)
+        : String(value ?? '')
+              .split(',')
+              .map((v) => v.trim())
+              .filter(Boolean);
+const filteredPackages = computed(() =>
+    packages.value.filter(
+        (row) =>
+            groupFilter.value === 'all' ||
+            splitGroups(row.groups ?? row.group).includes(groupFilter.value),
+    ),
+);
+const visiblePackages = computed(() =>
+    filteredPackages.value.slice(
+        (listPage.value - 1) * listSize.value,
+        listPage.value * listSize.value,
+    ),
+);
+watch([groupFilter, listSize], () => {
+    listPage.value = 1;
+    selectedIds.value = [];
 });
-const puDeleteOpen = ref(false);
-const puDeleteTarget = ref<CdnflyRecord | null>(null);
-const puDeleting = ref(false);
-const puDeleteError = ref('');
+watch(listPage, () => {
+    selectedIds.value = [];
+});
+watch(
+    () => filteredPackages.value.length,
+    (n) => {
+        listPage.value = Math.min(
+            listPage.value,
+            Math.max(1, Math.ceil(n / listSize.value)),
+        );
+    },
+);
+const packageColumns: ColumnDef[] = [
+    { key: 'package', label: '套餐' },
+    { key: 'line', label: '区域 / 线路' },
+    { key: 'limits', label: '资源限制' },
+    { key: 'capabilities', label: '能力' },
+    { key: 'prices', label: '月价 / 季价 / 年价' },
+    { key: 'enable', label: '启用' },
+];
+const rowLimitText = (value: unknown, unit = '') =>
+    value === undefined || value === null || value === ''
+        ? '—'
+        : String(value) === '-1'
+          ? '不限'
+          : `${value}${unit}`;
+function priceText(row: PackageRecord) {
+    const product = portalProducts.value[String(getPackageId(row))];
 
-function openPuCreate(): void {
-    puEditing.value = null;
-    Object.assign(puForm, {
-        name: '',
-        des: '',
-        groups: '',
-        month_price: '',
-        quarter_price: '',
-        year_price: '',
-        traffic: '',
-        bandwidth: '',
-        connection: '',
-        domain: '',
-        extra_json: '{}',
-    });
-    puError.value = '';
-    puDialogOpen.value = true;
+    return `${formatMoney(row.month_price ?? product?.price_monthly)} / ${formatMoney(row.quarter_price ?? product?.price_quarterly)} / ${formatMoney(row.year_price ?? product?.price_yearly)}`;
 }
+function setPackageGroup(id: string, checked: boolean | 'indeterminate') {
+    const values = splitGroups(form.groups).filter((value) => value !== id);
 
-function openPuEdit(row: CdnflyRecord): void {
-    puEditing.value = row;
-    puForm.name = String(row.name ?? '');
-    puForm.des = String(row.des ?? '');
-    puForm.groups = String(row.groups ?? '');
-    puForm.month_price = String(row.month_price ?? '');
-    puForm.quarter_price = String(row.quarter_price ?? '');
-    puForm.year_price = String(row.year_price ?? '');
-    puForm.traffic = String(row.traffic ?? '');
-    puForm.bandwidth = String(row.bandwidth ?? '');
-    puForm.connection = String(row.connection ?? '');
-    puForm.domain = String(row.domain ?? '');
-    puForm.extra_json = '{}';
-    puError.value = '';
-    puDialogOpen.value = true;
-}
-
-function buildPuPayload(): Record<string, unknown> {
-    const p: Record<string, unknown> = { name: puForm.name.trim() };
-
-    if (puForm.des.trim()) {
-        p.des = puForm.des.trim();
+    if (checked === true) {
+        values.push(id);
     }
 
-    if (puForm.groups.trim()) {
-        p.groups = puForm.groups.trim();
-    }
-
-    for (const k of [
-        'month_price',
-        'quarter_price',
-        'year_price',
+    form.groups = values.join(',');
+}
+const formGroupLabels = computed(() =>
+    splitGroups(form.groups)
+        .map(
+            (id) =>
+                packageOptions.value.package_groups.find(
+                    (row) => String(row.id) === id,
+                )?.name ?? id,
+        )
+        .join('、'),
+);
+const capabilityFields = [
+    { key: 'custom_cc_rule', label: '自定义CC规则' },
+    { key: 'websocket', label: 'WebSocket' },
+    { key: 'http3', label: 'HTTP3' },
+    { key: 'waf_protect', label: 'WAF防护' },
+    { key: 'l2_state', label: 'L2节点回源' },
+] as const;
+const advancedOpen = ref(false),
+    salesOpen = ref(false);
+const orderedLimits = computed(() =>
+    [
         'traffic',
+        'bandwidth',
         'connection',
+        'stream_port',
         'domain',
-    ] as const) {
-        const v = puForm[k].trim();
-
-        if (v !== '') {
-            p[k] = Number(v);
-        }
-    }
-
-    if (puForm.bandwidth.trim()) {
-        p.bandwidth = puForm.bandwidth.trim();
-    }
-
-    const extra = puForm.extra_json.trim();
-
-    if (extra && extra !== '{}') {
-        Object.assign(p, JSON.parse(extra));
-    }
-
-    return p;
-}
-
-async function submitPu(): Promise<void> {
-    puSaving.value = true;
-    puError.value = '';
-
-    try {
-        const payload = buildPuPayload();
-
-        if (puEditing.value) {
-            await updateAdminPackageUp(Number(puEditing.value.id), payload);
-            toast.success('升级包已更新');
-        } else {
-            await createAdminPackageUp(payload);
-            toast.success('升级包已创建');
-        }
-
-        puDialogOpen.value = false;
-        puTableRef.value?.refresh();
-    } catch (error) {
-        puError.value = fmtError(error);
-    } finally {
-        puSaving.value = false;
-    }
-}
-
-function openPuDelete(row: CdnflyRecord): void {
-    puDeleteTarget.value = row;
-    puDeleteError.value = '';
-    puDeleteOpen.value = true;
-}
-
-async function confirmPuDelete(): Promise<void> {
-    if (!puDeleteTarget.value) {
+        'main_domain',
+        'http_port',
+    ].map((key) => limitFieldConfigs.find((field) => field.key === key)!),
+);
+const actionBusy = ref(false),
+    syncOpen = ref(false),
+    syncError = ref(''),
+    syncFields = ref<string[]>([]);
+const syncOptions = [
+    { key: 'traffic', label: '月流量' },
+    { key: 'bandwidth', label: '带宽' },
+    { key: 'connection', label: '连接数' },
+    { key: 'domain', label: '域名数' },
+    { key: 'main_domain', label: '主域名数' },
+    { key: 'http_port', label: '网站非标端口数' },
+    { key: 'stream_port', label: '四层端口数' },
+    { key: 'node_group_id', label: '线路分组' },
+    { key: 'backup_node_group', label: '备用分组' },
+];
+async function runPackageAction(
+    patch: Record<string, unknown>,
+    syncing = false,
+) {
+    if (!selectedIds.value.length || actionBusy.value) {
         return;
     }
 
-    puDeleting.value = true;
-    puDeleteError.value = '';
+    actionBusy.value = true;
+    errorMessage.value = '';
+    syncError.value = '';
 
     try {
-        await deleteAdminPackageUp(Number(puDeleteTarget.value.id));
-        puDeleteOpen.value = false;
-        toast.success('升级包已删除');
-        puTableRef.value?.refresh();
+        const result = await batchUpdateAdminPackages(
+            selectedIds.value.map((id) => ({ id, ...patch })),
+        );
+
+        if (result.failed_count) {
+            selectedIds.value = result.failed.map((row) => row.id);
+
+            throw new Error(
+                result.failed
+                    .map((row) => `#${row.id}: ${row.message}`)
+                    .join('；'),
+            );
+        }
+
+        if (syncing) {
+            syncOpen.value = false;
+        }
+
+        toast.success(syncing ? '同步成功' : '更新成功');
+        await loadPackages();
     } catch (error) {
-        puDeleteError.value = fmtError(error);
+        if (syncing) {
+            syncError.value = getErrorMessage(error);
+        } else {
+            errorMessage.value = getErrorMessage(error);
+        }
     } finally {
-        puDeleting.value = false;
+        actionBusy.value = false;
     }
 }
+const bulkDeleteOpen = ref(false),
+    bulkDeleteBusy = ref(false),
+    bulkDeleteError = ref('');
+const bulkDeleteKind = ref<'packages' | 'groups'>('packages'),
+    bulkDeleteIds = ref<number[]>([]);
+function askBulkDelete(kind: 'packages' | 'groups') {
+    bulkDeleteKind.value = kind;
+    bulkDeleteIds.value = [
+        ...(kind === 'packages' ? selectedIds.value : pgSelected.value),
+    ];
+    bulkDeleteError.value = '';
+    bulkDeleteOpen.value = true;
+}
+async function deleteSelected() {
+    bulkDeleteBusy.value = true;
+    bulkDeleteError.value = '';
+    const failed: number[] = [];
+
+    for (const id of bulkDeleteIds.value) {
+        try {
+            if (bulkDeleteKind.value === 'packages') {
+                await deleteAdminPackage(id);
+            } else {
+                await deleteAdminPackageGroup(id);
+            }
+        } catch (error) {
+            failed.push(id);
+            bulkDeleteError.value = getErrorMessage(error);
+        }
+    }
+
+    if (bulkDeleteKind.value === 'packages') {
+        await loadPackages();
+        selectedIds.value = failed;
+    } else {
+        await loadGroups();
+        pgSelected.value = failed;
+        await loadPackageOptions();
+    }
+
+    bulkDeleteIds.value = failed;
+    bulkDeleteBusy.value = false;
+
+    if (!failed.length) {
+        bulkDeleteOpen.value = false;
+        toast.success('删除成功');
+    }
+}
+const pgRows = ref<CdnflyRecord[]>([]),
+    pgLoading = ref(false),
+    pgListError = ref(''),
+    pgPage = ref(1),
+    pgSize = ref(10),
+    pgSelected = ref<number[]>([]);
+const pgVisible = computed(() =>
+    pgRows.value.slice(
+        (pgPage.value - 1) * pgSize.value,
+        pgPage.value * pgSize.value,
+    ),
+);
+watch(pgSize, () => {
+    pgPage.value = 1;
+    pgSelected.value = [];
+});
+watch(pgPage, () => {
+    pgSelected.value = [];
+});
+async function loadGroups() {
+    pgLoading.value = true;
+    pgListError.value = '';
+    pgSelected.value = [];
+
+    try {
+        pgRows.value = extractCdnflyRows(
+            await listAdminPackageGroups({ limit: 0 }),
+        );
+        pgPage.value = Math.min(
+            pgPage.value,
+            Math.max(1, Math.ceil(pgRows.value.length / pgSize.value)),
+        );
+    } catch (error) {
+        pgListError.value = getErrorMessage(error);
+    } finally {
+        pgLoading.value = false;
+    }
+}
+watch(activeTab, (value) => {
+    if (value === 'groups') {
+        void loadGroups();
+    }
+});
+onMounted(() => {
+    if (activeTab.value === 'groups') {
+        void loadGroups();
+    }
+});
 </script>
 
 <template>
-    <div class="flex flex-1 flex-col gap-6 p-4 md:p-6">
-        <ConsolePageHeader
-            title="套餐管理"
-            description="基础套餐直接对接 CDNfly 套餐接口。"
-            :show-api-badge="false"
+    <div class="packages-workspace flex flex-1 flex-col gap-4 p-4 md:p-6">
+        <section
+            class="console-panel rounded-xl border bg-card p-4 text-card-foreground md:p-5"
         >
-            <template #default />
-        </ConsolePageHeader>
-
-        <div class="flex flex-wrap gap-2">
-            <Button
-                variant="outline"
-                size="sm"
-                :disabled="loading"
-                @click="loadPackages"
+            <ConsoleTabs v-model="activeTab" :tabs="packageTabs" />
+            <Alert v-if="portalError" variant="destructive" class="mt-4"
+                ><AlertTitle>门户商品加载失败</AlertTitle
+                ><AlertDescription
+                    >{{ portalError
+                    }}<Button variant="link" @click="loadPortalProducts"
+                        >重试</Button
+                    ></AlertDescription
+                ></Alert
             >
-                <RefreshCw data-icon="inline-start" />
-                刷新
-            </Button>
-            <Button
-                variant="outline"
-                size="sm"
-                :disabled="selectedCount === 0"
-                @click="openBatchDialog"
+            <Alert v-if="errorMessage" variant="destructive" class="mt-4"
+                ><AlertTitle>操作失败</AlertTitle
+                ><AlertDescription>{{ errorMessage }}</AlertDescription></Alert
             >
-                <Layers3 data-icon="inline-start" />
-                批量修改
-            </Button>
-            <Button size="sm" @click="openCreateDialog">
-                <Plus data-icon="inline-start" />
-                新增基础套餐
-            </Button>
-        </div>
-
-        <Alert v-if="errorMessage" variant="destructive">
-            <AlertCircle />
-            <AlertTitle>套餐接口请求失败</AlertTitle>
-            <AlertDescription>{{ errorMessage }}</AlertDescription>
-        </Alert>
-
-        <Alert v-if="optionsError" variant="destructive">
-            <AlertCircle />
-            <AlertTitle>套餐选项加载失败</AlertTitle>
-            <AlertDescription>{{ optionsError }}</AlertDescription>
-        </Alert>
-
-        <div class="grid gap-4 md:grid-cols-3">
-            <Card>
-                <CardHeader>
-                    <CardDescription>基础套餐</CardDescription>
-                    <CardTitle class="text-2xl">{{
-                        packages.length
-                    }}</CardTitle>
-                </CardHeader>
-            </Card>
-            <Card>
-                <CardHeader>
-                    <CardDescription>上架中</CardDescription>
-                    <CardTitle class="text-2xl">{{ enabledCount }}</CardTitle>
-                </CardHeader>
-            </Card>
-            <Card>
-                <CardHeader>
-                    <CardDescription>已选择</CardDescription>
-                    <CardTitle class="text-2xl">{{ selectedCount }}</CardTitle>
-                </CardHeader>
-            </Card>
-        </div>
-
-        <ConsoleTabs v-model="activeTab" :tabs="packageTabs" />
-
-        <Card v-if="activeTab === 'packages'" class="gap-0 overflow-hidden">
-            <CardHeader class="gap-2">
-                <div
-                    class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between"
+            <Alert v-if="optionsError" variant="destructive" class="mt-4"
+                ><AlertTitle>套餐选项加载失败</AlertTitle
+                ><AlertDescription
+                    >{{ optionsError
+                    }}<Button variant="link" @click="loadPackageOptions"
+                        >重试</Button
+                    ></AlertDescription
+                ></Alert
+            >
+            <div
+                v-if="activeTab === 'packages'"
+                class="mt-4"
+                role="tabpanel"
+                aria-label="基础套餐"
+            >
+                <div class="mb-4 flex flex-wrap items-center gap-2">
+                    <Button
+                        size="sm"
+                        :disabled="
+                            loadingOptions ||
+                            portalLoading ||
+                            !!optionsError ||
+                            !!portalError
+                        "
+                        @click="openCreateDialog"
+                        ><Plus />添加套餐</Button
+                    >
+                    <Button
+                        size="sm"
+                        variant="outline"
+                        :disabled="!selectedCount || actionBusy"
+                        @click="
+                            syncFields = [];
+                            syncError = '';
+                            syncOpen = true;
+                        "
+                        ><RefreshCw />同步数据</Button
+                    >
+                    <DropdownMenu
+                        ><DropdownMenuTrigger as-child
+                            ><Button size="sm" variant="outline"
+                                >更多操作<ChevronDown /></Button></DropdownMenuTrigger
+                        ><DropdownMenuContent>
+                            <DropdownMenuItem
+                                :disabled="!selectedCount || actionBusy"
+                                @select="runPackageAction({ enable: 1 })"
+                                >启用</DropdownMenuItem
+                            >
+                            <DropdownMenuItem
+                                :disabled="!selectedCount || actionBusy"
+                                @select="runPackageAction({ enable: 0 })"
+                                >禁用</DropdownMenuItem
+                            >
+                            <DropdownMenuItem
+                                :disabled="!selectedCount"
+                                @select="openBatchDialog"
+                                >批量修改</DropdownMenuItem
+                            >
+                            <DropdownMenuItem
+                                :disabled="!selectedCount || actionBusy"
+                                class="text-destructive"
+                                @select="askBulkDelete('packages')"
+                                >删除</DropdownMenuItem
+                            >
+                            <DropdownMenuSeparator /><DropdownMenuItem
+                                @select="activeTab = 'upgrades'"
+                                >升级包管理</DropdownMenuItem
+                            >
+                        </DropdownMenuContent></DropdownMenu
+                    >
+                    <Select v-model="groupFilter"
+                        ><SelectTrigger class="w-44" aria-label="套餐分组筛选"
+                            ><SelectValue
+                                placeholder="所有套餐分组" /></SelectTrigger
+                        ><SelectContent
+                            ><SelectItem value="all">所有套餐分组</SelectItem
+                            ><SelectItem
+                                v-for="group in packageOptions.package_groups"
+                                :key="String(group.id)"
+                                :value="String(group.id)"
+                                >{{ group.name }}</SelectItem
+                            ></SelectContent
+                        ></Select
+                    >
+                    <Button
+                        size="sm"
+                        variant="ghost"
+                        class="ml-auto"
+                        :disabled="loading"
+                        @click="
+                            loadPackages();
+                            loadPortalProducts();
+                        "
+                        ><RefreshCw />刷新</Button
+                    >
+                </div>
+                <ConsoleDataTable
+                    embedded
+                    selectable
+                    title="基础套餐"
+                    :columns="packageColumns"
+                    :data="{
+                        rows: visiblePackages,
+                        total: filteredPackages.length,
+                        page: listPage,
+                        pageSize: listSize,
+                        loading,
+                    }"
+                    :get-row-key="
+                        (row) => getPackageId(row) ?? String(row.name)
+                    "
+                    :selected="selectedIds"
+                    :selection-disabled="actionBusy || bulkDeleteBusy"
+                    empty-text="暂无套餐数据"
+                    @update:selected="selectedIds = $event.map(Number)"
                 >
-                    <div>
-                        <CardTitle>基础套餐列表</CardTitle>
-                        <CardDescription>
-                            获取、查看、创建、修改、批量修改和删除基础套餐。
-                        </CardDescription>
-                    </div>
-                    <Badge variant="outline">基础套餐</Badge>
-                </div>
-            </CardHeader>
-            <CardContent class="p-0">
-                <div class="overflow-x-auto">
-                    <table class="w-full min-w-[900px] text-sm">
-                        <thead
-                            class="border-y bg-muted/50 text-muted-foreground"
+                    <template #cell-package="{ row }"
+                        ><Button
+                            variant="link"
+                            class="h-auto p-0 font-medium"
+                            :disabled="loadingDetailId === getPackageId(row)"
+                            @click="openEditDialog(row)"
+                            >{{
+                                getDisplayValue(row, ['name', 'title'])
+                            }}</Button
                         >
-                            <tr>
-                                <th class="px-6 py-3 text-left font-medium">
-                                    <Checkbox
-                                        :model-value="allVisibleSelected"
-                                        aria-label="选择全部套餐"
-                                        @update:model-value="toggleAll"
-                                    />
-                                </th>
-                                <th class="px-4 py-3 text-left font-medium">
-                                    名称
-                                </th>
-                                <th class="px-4 py-3 text-left font-medium">
-                                    门户月付
-                                </th>
-                                <th class="px-4 py-3 text-left font-medium">
-                                    月流量
-                                </th>
-                                <th class="px-4 py-3 text-left font-medium">
-                                    带宽
-                                </th>
-                                <th class="px-4 py-3 text-left font-medium">
-                                    网站 / 域名
-                                </th>
-                                <th class="px-4 py-3 text-left font-medium">
-                                    能力
-                                </th>
-                                <th class="px-4 py-3 text-left font-medium">
-                                    状态
-                                </th>
-                                <th class="px-6 py-3 text-right font-medium">
-                                    操作
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr v-if="loading">
-                                <td colspan="9" class="px-6 py-10 text-center">
-                                    <div
-                                        class="inline-flex items-center gap-2 text-muted-foreground"
-                                    >
-                                        <Spinner />
-                                        正在获取套餐列表
-                                    </div>
-                                </td>
-                            </tr>
-                            <template v-else>
-                                <tr
-                                    v-for="record in packages"
-                                    :key="
-                                        getPackageId(record) ??
-                                        getDisplayValue(record, [
-                                            'name',
-                                            'title',
-                                        ])
+                        <p class="mt-1 text-xs text-muted-foreground">
+                            ID: {{ getPackageId(row) }} / 排序:
+                            {{ row.sort ?? 100 }}
+                        </p></template
+                    >
+                    <template #cell-line="{ row }"
+                        ><p>
+                            {{ resourceOptionLabel('regions', row.region_id) }}
+                        </p>
+                        <p class="mt-1 text-xs text-muted-foreground">
+                            {{
+                                resourceOptionLabel(
+                                    'node_groups',
+                                    row.node_group_id,
+                                )
+                            }}<template v-if="Number(row.backup_node_group)"
+                                >(主) /
+                                {{
+                                    resourceOptionLabel(
+                                        'node_groups',
+                                        row.backup_node_group,
+                                    )
+                                }}(备)</template
+                            >
+                        </p></template
+                    >
+                    <template #cell-limits="{ row }"
+                        ><div class="space-y-1 text-xs text-muted-foreground">
+                            <p>
+                                流量/带宽/连接:
+                                {{ rowLimitText(row.traffic, 'GB') }} /
+                                {{ rowLimitText(row.bandwidth) }} /
+                                {{ rowLimitText(row.connection) }}
+                            </p>
+                            <p>
+                                域名/主域名: {{ rowLimitText(row.domain) }} /
+                                {{ rowLimitText(row.main_domain) }}
+                            </p>
+                            <p>
+                                HTTP/转发端口:
+                                {{ rowLimitText(row.http_port) }} /
+                                {{ rowLimitText(row.stream_port) }}
+                            </p>
+                        </div></template
+                    >
+                    <template #cell-capabilities="{ row }"
+                        ><div class="flex flex-wrap gap-2">
+                            <span
+                                v-for="cap in capabilityBadges(row).slice(0, 4)"
+                                :key="cap.label"
+                                class="inline-flex items-center gap-1 text-xs"
+                                :title="`${cap.label}：${cap.on ? '支持' : '不支持'}`"
+                                ><component
+                                    :is="cap.on ? CheckCircle2 : XCircle"
+                                    class="size-3.5"
+                                    :class="
+                                        cap.on
+                                            ? 'text-primary'
+                                            : 'text-muted-foreground'
                                     "
-                                    class="border-b last:border-b-0"
-                                >
-                                    <td class="px-6 py-4">
-                                        <Checkbox
-                                            v-if="getPackageId(record) !== null"
-                                            :model-value="recordSelected(record)"
-                                            aria-label="选择套餐"
-                                            @update:model-value="
-                                                toggleRecord(record, $event)
-                                            "
-                                        />
-                                    </td>
-                                    <td class="px-4 py-4 font-medium">
-                                        {{
-                                            getDisplayValue(record, [
-                                                'name',
-                                                'title',
-                                            ])
-                                        }}
-                                        <p
-                                            class="mt-1 text-xs text-muted-foreground"
-                                        >
-                                            区域：{{
-                                                resourceOptionLabel(
-                                                    'regions',
-                                                    record.region_id,
-                                                )
-                                            }}
-                                        </p>
-                                        <p
-                                            class="mt-1 text-xs text-muted-foreground"
-                                        >
-                                            主线：{{
-                                                resourceOptionLabel(
-                                                    'node_groups',
-                                                    record.node_group_id,
-                                                )
-                                            }}
-                                            · 备用：{{
-                                                Number(record.backup_node_group)
-                                                    ? resourceOptionLabel(
-                                                          'node_groups',
-                                                          record.backup_node_group,
-                                                      )
-                                                    : '无'
-                                            }}
-                                        </p>
-                                    </td>
-                                    <td class="px-4 py-4">
-                                        <span
-                                            v-if="portalPriceOf(record)"
-                                            class="font-medium"
-                                        >
-                                            {{ portalPriceOf(record) }}
-                                        </span>
-                                        <Badge v-else variant="outline">
-                                            未上架
-                                        </Badge>
-                                        <p
-                                            class="mt-1 text-xs text-muted-foreground"
-                                        >
-                                            季付
-                                            {{
-                                                formatMoney(
-                                                    record.quarter_price,
-                                                )
-                                            }}
-                                            · 年付
-                                            {{ formatMoney(record.year_price) }}
-                                        </p>
-                                    </td>
-                                    <td class="px-4 py-4 text-muted-foreground">
-                                        {{
-                                            getDisplayValue(record, [
-                                                'traffic',
-                                                'traffic_limit',
-                                                'flow',
-                                            ])
-                                        }}
-                                    </td>
-                                    <td class="px-4 py-4 text-muted-foreground">
-                                        {{
-                                            getDisplayValue(record, [
-                                                'bandwidth',
-                                                'bandwidth_limit',
-                                            ])
-                                        }}
-                                    </td>
-                                    <td class="px-4 py-4 text-muted-foreground">
-                                        {{ siteDomainText(record) }}
-                                        <p class="mt-1 text-xs">
-                                            连接：{{ record.connection ?? '—' }}
-                                        </p>
-                                        <p class="mt-1 text-xs">
-                                            HTTP / 转发端口：{{
-                                                record.http_port ?? '—'
-                                            }}
-                                            / {{ record.stream_port ?? '—' }}
-                                        </p>
-                                    </td>
-                                    <td class="px-4 py-4">
-                                        <div class="flex flex-wrap gap-1">
-                                            <span
-                                                v-for="cap in capabilityBadges(
-                                                    record,
-                                                )"
-                                                :key="cap.label"
-                                                class="inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-xs font-medium"
-                                                :class="
-                                                    cap.on
-                                                        ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400'
-                                                        : 'bg-muted text-muted-foreground'
-                                                "
-                                                :title="
-                                                    cap.label +
-                                                    (cap.on
-                                                        ? '：支持'
-                                                        : '：不支持')
-                                                "
-                                            >
-                                                {{ cap.on ? '✓' : '✕' }}
-                                                {{ cap.label }}
-                                            </span>
-                                        </div>
-                                    </td>
-                                    <td class="px-4 py-4">
-                                        <Badge variant="secondary">
-                                            {{ statusText(record) }}
-                                        </Badge>
-                                    </td>
-                                    <td class="px-6 py-4">
-                                        <div class="flex justify-end gap-2">
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                @click="openGrantDialog(record)"
-                                            >
-                                                <PackagePlus
-                                                    data-icon="inline-start"
-                                                />
-                                                开通
-                                            </Button>
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                :disabled="
-                                                    loadingDetailId ===
-                                                    getPackageId(record)
-                                                "
-                                                @click="
-                                                    openDetailDialog(record)
-                                                "
-                                            >
-                                                <Eye data-icon="inline-start" />
-                                                查看
-                                            </Button>
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                :disabled="
-                                                    loadingDetailId ===
-                                                    getPackageId(record)
-                                                "
-                                                @click="openEditDialog(record)"
-                                            >
-                                                <Pencil
-                                                    data-icon="inline-start"
-                                                />
-                                                修改
-                                            </Button>
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                @click="
-                                                    openDeletePackage(record)
-                                                "
-                                            >
-                                                <Trash2
-                                                    data-icon="inline-start"
-                                                />
-                                                删除
-                                            </Button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            </template>
-                            <tr v-if="!loading && packages.length === 0">
-                                <td
-                                    colspan="9"
-                                    class="px-6 py-10 text-center text-muted-foreground"
-                                >
-                                    暂无套餐数据
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
+                                />{{ cap.label }}</span
+                            >
+                        </div>
+                        <p class="mt-2 text-xs text-muted-foreground">
+                            CC: {{ row.cc_protect || '不支持' }} / DDOS:
+                            {{ row.ddos_protect || '不支持' }}
+                        </p></template
+                    >
+                    <template #cell-prices="{ row }"
+                        ><span class="text-xs whitespace-nowrap">{{
+                            priceText(row)
+                        }}</span></template
+                    >
+                    <template #cell-enable="{ row }"
+                        ><Badge
+                            :variant="
+                                statusText(row) === '上架'
+                                    ? 'secondary'
+                                    : 'outline'
+                            "
+                            >{{
+                                statusText(row) === '上架'
+                                    ? '启用'
+                                    : statusText(row) === '下架'
+                                      ? '禁用'
+                                      : statusText(row)
+                            }}</Badge
+                        ></template
+                    >
+                    <template #row-actions="{ row }"
+                        ><Button
+                            size="sm"
+                            variant="ghost"
+                            :disabled="loadingDetailId === getPackageId(row)"
+                            @click="openEditDialog(row)"
+                            >管理</Button
+                        ><Button
+                            size="sm"
+                            variant="ghost"
+                            @click="openGrantDialog(row)"
+                            >分配</Button
+                        ><DropdownMenu
+                            ><DropdownMenuTrigger as-child
+                                ><Button
+                                    size="icon-sm"
+                                    variant="ghost"
+                                    :aria-label="`更多操作 ${getPackageId(row)}`"
+                                    ><MoreHorizontal /></Button></DropdownMenuTrigger
+                            ><DropdownMenuContent
+                                ><DropdownMenuItem
+                                    @select="openDetailDialog(row)"
+                                    >查看详情</DropdownMenuItem
+                                ><DropdownMenuItem
+                                    class="text-destructive"
+                                    @select="openDeletePackage(row)"
+                                    >删除</DropdownMenuItem
+                                ></DropdownMenuContent
+                            ></DropdownMenu
+                        ></template
+                    >
+                </ConsoleDataTable>
+                <PackagePagination
+                    v-model:page="listPage"
+                    v-model:page-size="listSize"
+                    :total="filteredPackages.length"
+                    :disabled="loading || actionBusy"
+                />
+            </div>
+            <div
+                v-if="activeTab === 'groups'"
+                class="mt-4"
+                role="tabpanel"
+                aria-label="套餐分组"
+            >
+                <div class="mb-4 flex gap-2">
+                    <Button size="sm" @click="openPgCreate"
+                        ><Plus />新增分组</Button
+                    ><Button
+                        size="sm"
+                        variant="destructive"
+                        :disabled="
+                            !pgSelected.length || pgLoading || bulkDeleteBusy
+                        "
+                        @click="askBulkDelete('groups')"
+                        ><Trash2 />删除</Button
+                    >
                 </div>
-            </CardContent>
-        </Card>
+                <Alert v-if="pgListError" variant="destructive" class="mb-3"
+                    ><AlertDescription
+                        >{{ pgListError
+                        }}<Button variant="link" @click="loadGroups"
+                            >重试</Button
+                        ></AlertDescription
+                    ></Alert
+                >
+                <ConsoleDataTable
+                    embedded
+                    selectable
+                    title="套餐分组"
+                    :columns="pgColumns"
+                    :data="{
+                        rows: pgVisible,
+                        total: pgRows.length,
+                        page: pgPage,
+                        pageSize: pgSize,
+                        loading: pgLoading,
+                    }"
+                    :selected="pgSelected"
+                    :get-row-key="(row) => Number(row.id)"
+                    :selection-disabled="bulkDeleteBusy"
+                    empty-text="暂无数据"
+                    @update:selected="pgSelected = $event.map(Number)"
+                >
+                    <template #cell-name="{ row }"
+                        ><Button
+                            variant="link"
+                            class="h-auto p-0"
+                            @click="openPgEdit(row)"
+                            >{{ row.name }}</Button
+                        ></template
+                    >
+                    <template #cell-enable="{ row }"
+                        ><Badge
+                            :variant="
+                                String(row.enable ?? 1) === '1'
+                                    ? 'secondary'
+                                    : 'outline'
+                            "
+                            >{{
+                                String(row.enable ?? 1) === '1'
+                                    ? '启用'
+                                    : '禁用'
+                            }}</Badge
+                        ></template
+                    >
+                    <template #row-actions="{ row }"
+                        ><Button
+                            size="sm"
+                            variant="ghost"
+                            @click="openPgEdit(row)"
+                            >编辑</Button
+                        ><Button
+                            size="sm"
+                            variant="ghost"
+                            class="text-destructive"
+                            @click="openPgDelete(row)"
+                            >删除</Button
+                        ></template
+                    >
+                </ConsoleDataTable>
+                <PackagePagination
+                    v-model:page="pgPage"
+                    v-model:page-size="pgSize"
+                    :total="pgRows.length"
+                    :disabled="pgLoading"
+                />
+            </div>
+        </section>
+        <Dialog v-model:open="syncOpen"
+            ><DialogScrollContent
+                ><DialogHeader
+                    ><DialogTitle>同步数据到已售套餐</DialogTitle
+                    ><DialogDescription
+                        >将选中的
+                        {{ selectedCount }}
+                        个基础套餐的指定配置同步到已售套餐。</DialogDescription
+                    ></DialogHeader
+                ><Alert v-if="syncError" variant="destructive"
+                    ><AlertDescription>{{ syncError }}</AlertDescription></Alert
+                >
+                <div class="grid grid-cols-2 gap-3">
+                    <label
+                        v-for="option in syncOptions"
+                        :key="option.key"
+                        class="flex items-center gap-2 text-sm"
+                        ><Checkbox
+                            :model-value="syncFields.includes(option.key)"
+                            @update:model-value="
+                                syncFields =
+                                    $event === true
+                                        ? [...syncFields, option.key]
+                                        : syncFields.filter(
+                                              (key) => key !== option.key,
+                                          )
+                            "
+                        />{{ option.label }}</label
+                    >
+                </div>
+                <DialogFooter
+                    ><Button
+                        variant="outline"
+                        :disabled="actionBusy"
+                        @click="syncOpen = false"
+                        >取消</Button
+                    ><Button
+                        :disabled="
+                            actionBusy || !syncFields.length || !selectedCount
+                        "
+                        @click="
+                            runPackageAction(
+                                { 'sync-item': syncFields.join(',') },
+                                true,
+                            )
+                        "
+                        >同步</Button
+                    ></DialogFooter
+                ></DialogScrollContent
+            ></Dialog
+        >
+        <ConfirmDeleteDialog
+            :open="bulkDeleteOpen"
+            :description="`确认删除选中的 ${bulkDeleteIds.length} 个${bulkDeleteKind === 'packages' ? '套餐' : '分组'}？`"
+            :loading="bulkDeleteBusy"
+            :error="bulkDeleteError"
+            @confirm="deleteSelected"
+            @cancel="!bulkDeleteBusy && (bulkDeleteOpen = false)"
+        />
 
         <Dialog v-model:open="grantDialogOpen">
             <DialogScrollContent class="max-w-lg">
@@ -2420,696 +2581,770 @@ async function confirmPuDelete(): Promise<void> {
             </DialogScrollContent>
         </Dialog>
 
-        <Dialog v-model:open="packageDialogOpen">
-            <DialogScrollContent class="max-w-3xl">
-                <DialogHeader>
-                    <DialogTitle>
-                        {{
-                            dialogMode === 'create'
-                                ? '新增基础套餐'
-                                : '修改基础套餐'
-                        }}
-                    </DialogTitle>
-                    <DialogDescription>
-                        保存后会调用 CDNfly 套餐接口。
-                    </DialogDescription>
-                </DialogHeader>
-
-                <Alert v-if="formError" variant="destructive">
-                    <AlertCircle />
-                    <AlertTitle>保存失败</AlertTitle>
-                    <AlertDescription>{{ formError }}</AlertDescription>
-                </Alert>
-
-                <!--
-                    Forty fields is the real barrier to creating four tiers.
-                    These fill the limits, capability flags and portal price in
-                    one click, leaving 区域 / 线路组 / 套餐组 — the choices that
-                    belong to this deployment rather than to the tier.
-                -->
-                <div
-                    v-if="dialogMode === 'create'"
-                    class="rounded-lg border bg-muted/30 p-3"
+        <Dialog
+            :open="packageDialogOpen"
+            @update:open="!saving && (packageDialogOpen = $event)"
+            ><DialogScrollContent
+                class="package-editor my-3 flex max-h-[calc(100dvh-24px)] w-[calc(100%-24px)] max-w-6xl flex-col gap-0 overflow-hidden p-0"
+                ><DialogHeader class="shrink-0 border-b px-5 py-4"
+                    ><DialogTitle>{{
+                        dialogMode === 'create' ? '添加套餐' : '管理套餐'
+                    }}</DialogTitle
+                    ><DialogDescription class="sr-only"
+                        >设置套餐资源、能力、价格和购买限制。</DialogDescription
+                    ></DialogHeader
                 >
-                    <div class="flex flex-wrap items-center gap-2">
-                        <span class="text-sm font-medium">套餐预设</span>
-                        <Button
-                            v-for="preset in TIER_PRESETS"
-                            :key="preset.key"
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            @click="applyTierPreset(preset)"
-                        >
-                            {{ preset.label }}
-                            <span class="ml-1 text-xs text-muted-foreground">
-                                {{ preset.limits.traffic }}G ·
-                                {{ preset.limits.bandwidth }} · ${{
-                                    preset.price
-                                }}
-                            </span>
-                        </Button>
-                    </div>
-                    <p class="mt-2 text-xs text-muted-foreground">
-                        点击后会覆盖下方的限制与售价，区域、线路组、套餐组保持不变。
-                    </p>
-                </div>
-
-                <div class="grid gap-4 md:grid-cols-3">
-                    <div class="flex flex-col gap-2">
-                        <Label for="package-name">套餐名称</Label>
-                        <Input id="package-name" v-model="form.name" />
-                    </div>
-                    <div class="flex flex-col gap-2">
-                        <Label>区域</Label>
-                        <Select
-                            v-model="form.region_id"
-                            :disabled="loadingOptions"
-                        >
-                            <SelectTrigger class="w-full">
-                                <SelectValue placeholder="选择区域" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectGroup>
-                                    <SelectItem
-                                        v-for="option in packageOptions.regions"
-                                        :key="optionValue(option)"
-                                        :value="optionValue(option)"
-                                    >
-                                        {{ optionLabel(option) }}
-                                    </SelectItem>
-                                </SelectGroup>
-                            </SelectContent>
-                        </Select>
-                    </div>
-                    <div class="flex flex-col gap-2">
-                        <Label>线路组</Label>
-                        <Select
-                            v-model="form.node_group_id"
-                            :disabled="loadingOptions"
-                        >
-                            <SelectTrigger class="w-full">
-                                <SelectValue placeholder="选择线路组" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectGroup>
-                                    <SelectItem
-                                        v-for="option in packageOptions.node_groups"
-                                        :key="optionValue(option)"
-                                        :value="optionValue(option)"
-                                    >
-                                        {{ optionLabel(option) }}
-                                    </SelectItem>
-                                </SelectGroup>
-                            </SelectContent>
-                        </Select>
-                    </div>
-                    <div class="flex flex-col gap-2">
-                        <Label>所属套餐组</Label>
-                        <Select
-                            v-model="form.groups"
-                            :disabled="loadingOptions"
-                        >
-                            <SelectTrigger class="w-full">
-                                <SelectValue placeholder="选择套餐组" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectGroup>
-                                    <SelectItem
-                                        v-for="option in packageOptions.package_groups"
-                                        :key="optionValue(option)"
-                                        :value="optionValue(option)"
-                                    >
-                                        {{ optionLabel(option) }}
-                                    </SelectItem>
-                                </SelectGroup>
-                            </SelectContent>
-                        </Select>
-                    </div>
-                    <!--
-                        The price that matters. CDNfly's own prices bill against
-                        the customer's CDNfly balance, which a portal order never
-                        credits — so they stay at 0, out of the way, and this is
-                        what customers actually pay.
-                    -->
-                    <div
-                        class="rounded-lg border border-primary/30 bg-primary/5 p-4 md:col-span-3"
+                <div class="min-h-0 flex-1 space-y-4 overflow-y-auto p-5">
+                    <Alert v-if="formError" variant="destructive"
+                        ><AlertTitle>保存失败</AlertTitle
+                        ><AlertDescription>{{
+                            formError
+                        }}</AlertDescription></Alert
                     >
-                        <div
-                            class="flex flex-wrap items-center justify-between gap-3"
+                    <fieldset :disabled="saving" class="min-w-0 space-y-4">
+                        <section
+                            class="package-section rounded-lg border bg-card p-4"
                         >
-                            <div>
-                                <div class="font-medium">门户售价</div>
-                                <div class="text-xs text-muted-foreground">
-                                    客户在本站看到并支付的价格（{{
-                                        PORTAL_CURRENCY_LABEL
-                                    }}）。保存后会自动创建对应商品，无需再改
-                                    .env。
-                                </div>
-                            </div>
-                            <label
-                                class="flex items-center gap-2 text-sm text-muted-foreground"
+                            <h3
+                                class="mb-5 border-l-3 border-primary pl-2 font-semibold"
                             >
-                                <Checkbox v-model="portalForm.sell" />
-                                在门户上架销售
-                            </label>
-                        </div>
-
-                        <div v-if="portalForm.sell" class="mt-4 grid gap-4">
-                            <div class="grid gap-4 md:grid-cols-2">
-                                <div class="flex flex-col gap-2">
-                                    <Label for="portal-name">商品名称</Label>
-                                    <Input
-                                        id="portal-name"
-                                        v-model="portalForm.name"
-                                        placeholder="客户看到的名称"
-                                    />
+                                基础信息
+                            </h3>
+                            <div class="package-grid">
+                                <div class="package-field">
+                                    <Label for="package-name">名称</Label>
+                                    <div class="min-w-0">
+                                        <Input
+                                            id="package-name"
+                                            v-model="form.name"
+                                            placeholder="请输入套餐名称"
+                                        />
+                                    </div>
                                 </div>
-                                <div class="flex flex-col gap-2">
-                                    <Label for="portal-slug">商品标识</Label>
-                                    <Input
-                                        id="portal-slug"
-                                        v-model="portalForm.slug"
-                                        placeholder="例如 jpn-mini"
-                                    />
-                                    <p class="text-xs text-muted-foreground">
-                                        落地页按此标识匹配套餐。填写已存在的标识会直接接管该商品，
-                                        而不是新建一个重复的。
-                                    </p>
+                                <div class="package-field">
+                                    <Label for="package-des">描述</Label>
+                                    <div class="min-w-0">
+                                        <Input
+                                            id="package-des"
+                                            v-model="form.des"
+                                            placeholder="套餐备注"
+                                        />
+                                    </div>
                                 </div>
-                                <div class="flex flex-col gap-2">
-                                    <Label for="portal-monthly">
-                                        月付价格（{{ PORTAL_CURRENCY_LABEL }}）
-                                    </Label>
-                                    <Input
-                                        id="portal-monthly"
-                                        v-model="portalForm.price_monthly"
-                                        inputmode="decimal"
-                                        placeholder="例如 5"
-                                    />
+                                <div class="package-field">
+                                    <Label>套餐分组</Label>
+                                    <div class="min-w-0">
+                                        <DropdownMenu
+                                            ><DropdownMenuTrigger as-child
+                                                ><Button
+                                                    variant="outline"
+                                                    class="w-full justify-between"
+                                                    aria-label="套餐分组"
+                                                    >{{
+                                                        formGroupLabels ||
+                                                        '请选择套餐分组'
+                                                    }}<ChevronDown /></Button></DropdownMenuTrigger
+                                            ><DropdownMenuContent
+                                                ><DropdownMenuCheckboxItem
+                                                    v-for="option in packageOptions.package_groups"
+                                                    :key="String(option.id)"
+                                                    :model-value="
+                                                        splitGroups(
+                                                            form.groups,
+                                                        ).includes(
+                                                            String(option.id),
+                                                        )
+                                                    "
+                                                    @update:model-value="
+                                                        setPackageGroup(
+                                                            String(option.id),
+                                                            $event,
+                                                        )
+                                                    "
+                                                    @select.prevent
+                                                    >{{
+                                                        option.name
+                                                    }}</DropdownMenuCheckboxItem
+                                                ></DropdownMenuContent
+                                            ></DropdownMenu
+                                        >
+                                    </div>
+                                </div>
+                                <div class="package-field">
+                                    <Label>区域</Label>
+                                    <div class="min-w-0">
+                                        <Select
+                                            v-model="form.region_id"
+                                            @update:model-value="
+                                                changePackageRegion
+                                            "
+                                            :disabled="loadingOptions"
+                                            ><SelectTrigger
+                                                class="w-full"
+                                                aria-label="区域"
+                                                ><SelectValue
+                                                    placeholder="请选择" /></SelectTrigger
+                                            ><SelectContent
+                                                ><SelectItem
+                                                    v-for="option in packageOptions.regions"
+                                                    :key="optionValue(option)"
+                                                    :value="optionValue(option)"
+                                                    >{{
+                                                        optionLabel(option)
+                                                    }}</SelectItem
+                                                ></SelectContent
+                                            ></Select
+                                        >
+                                    </div>
+                                </div>
+                                <div class="package-field">
+                                    <Label>线路分组</Label>
+                                    <div class="min-w-0">
+                                        <Select
+                                            v-model="form.node_group_id"
+                                            :disabled="loadingOptions"
+                                            ><SelectTrigger
+                                                class="w-full"
+                                                aria-label="线路分组"
+                                                ><SelectValue
+                                                    placeholder="请选择" /></SelectTrigger
+                                            ><SelectContent
+                                                ><SelectItem
+                                                    v-for="option in packageLineOptions"
+                                                    :key="optionValue(option)"
+                                                    :value="optionValue(option)"
+                                                    >{{
+                                                        optionLabel(option)
+                                                    }}</SelectItem
+                                                ></SelectContent
+                                            ></Select
+                                        >
+                                    </div>
+                                </div>
+                                <div class="package-field">
+                                    <Label>备用分组</Label>
+                                    <div class="min-w-0">
+                                        <Select
+                                            v-model="form.backup_node_group"
+                                            :disabled="loadingOptions"
+                                            ><SelectTrigger
+                                                class="w-full"
+                                                aria-label="备用分组"
+                                                ><SelectValue
+                                                    placeholder="请选择" /></SelectTrigger
+                                            ><SelectContent
+                                                ><SelectItem
+                                                    :value="BACKUP_NONE_VALUE"
+                                                    >无（不使用备用）</SelectItem
+                                                ><SelectItem
+                                                    v-for="option in packageLineOptions.filter(
+                                                        (item) =>
+                                                            String(item.id) !==
+                                                            form.node_group_id,
+                                                    )"
+                                                    :key="optionValue(option)"
+                                                    :value="optionValue(option)"
+                                                    >{{
+                                                        optionLabel(option)
+                                                    }}</SelectItem
+                                                ></SelectContent
+                                            ></Select
+                                        >
+                                    </div>
                                 </div>
                             </div>
-
-                            <div class="grid gap-4 md:grid-cols-2">
-                                <div class="flex flex-col gap-2">
-                                    <Label for="portal-quarterly">
-                                        季付价格（可留空）
-                                    </Label>
-                                    <Input
-                                        id="portal-quarterly"
-                                        v-model="portalForm.price_quarterly"
-                                        inputmode="decimal"
-                                        :placeholder="
-                                            portalDerived
-                                                ? `留空按 ${portalDerived.quarterly}`
-                                                : '留空 = 月付 × 3'
-                                        "
-                                    />
-                                </div>
-                                <div class="flex flex-col gap-2">
-                                    <Label for="portal-yearly">
-                                        年付价格（可留空）
-                                    </Label>
-                                    <Input
-                                        id="portal-yearly"
-                                        v-model="portalForm.price_yearly"
-                                        inputmode="decimal"
-                                        :placeholder="
-                                            portalDerived
-                                                ? `留空按 ${portalDerived.yearly}`
-                                                : '留空 = 月付 × 12'
-                                        "
-                                    />
+                        </section>
+                        <section
+                            class="package-section rounded-lg border bg-card p-4"
+                        >
+                            <h3
+                                class="mb-5 border-l-3 border-primary pl-2 font-semibold"
+                            >
+                                资源限制
+                            </h3>
+                            <div class="package-grid">
+                                <div
+                                    v-for="field in orderedLimits"
+                                    :key="field.key"
+                                    class="package-field"
+                                >
+                                    <Label :for="`package-${field.key}`">{{
+                                        field.label
+                                    }}</Label>
+                                    <div
+                                        class="flex min-w-0 items-center gap-2"
+                                    >
+                                        <Switch
+                                            :aria-label="`${field.label}限制`"
+                                            :checked="
+                                                isLimitEnabled(form, field.key)
+                                            "
+                                            @update:checked="
+                                                toggleLimit(form, field.key)
+                                            "
+                                        /><span
+                                            v-if="
+                                                !isLimitEnabled(form, field.key)
+                                            "
+                                            class="text-xs text-muted-foreground"
+                                            >不限</span
+                                        >
+                                        <div
+                                            v-else-if="
+                                                field.key === 'bandwidth'
+                                            "
+                                            class="flex min-w-0 flex-1"
+                                        >
+                                            <Input
+                                                id="package-bandwidth"
+                                                :model-value="bandwidthAmount"
+                                                @update:model-value="
+                                                    updateBandwidth(
+                                                        String($event),
+                                                    )
+                                                "
+                                                inputmode="decimal"
+                                                placeholder="带宽"
+                                                class="min-w-0 rounded-r-none"
+                                            />
+                                            <Select
+                                                :model-value="bandwidthUnit"
+                                                @update:model-value="
+                                                    updateBandwidth(
+                                                        bandwidthAmount,
+                                                        String($event),
+                                                    )
+                                                "
+                                                ><SelectTrigger
+                                                    aria-label="带宽单位"
+                                                    class="w-24 shrink-0 rounded-l-none"
+                                                    ><SelectValue /></SelectTrigger
+                                                ><SelectContent
+                                                    ><SelectItem value="Mbps"
+                                                        >Mbps</SelectItem
+                                                    ><SelectItem value="Gbps"
+                                                        >Gbps</SelectItem
+                                                    ></SelectContent
+                                                ></Select
+                                            >
+                                        </div>
+                                        <Input
+                                            v-else
+                                            :id="`package-${field.key}`"
+                                            v-model="form[field.key]"
+                                            :inputmode="field.inputmode"
+                                            :placeholder="field.placeholder"
+                                        />
+                                    </div>
                                 </div>
                             </div>
-
-                            <div class="flex flex-col gap-2">
-                                <Label for="portal-features">
-                                    营销卖点（每行一条，可留空）
-                                </Label>
-                                <textarea
+                        </section>
+                        <section
+                            class="package-section rounded-lg border bg-card p-4"
+                        >
+                            <h3
+                                class="mb-5 border-l-3 border-primary pl-2 font-semibold"
+                            >
+                                功能能力
+                            </h3>
+                            <div class="package-grid">
+                                <div
+                                    v-for="field in capabilityFields"
+                                    :key="field.key"
+                                    class="package-field"
+                                >
+                                    <Label :for="`package-${field.key}`">{{
+                                        field.label
+                                    }}</Label>
+                                    <div class="flex items-center gap-2">
+                                        <Switch
+                                            :id="`package-${field.key}`"
+                                            :checked="form[field.key] === '1'"
+                                            @update:checked="
+                                                form[field.key] = $event
+                                                    ? '1'
+                                                    : '0'
+                                            "
+                                        /><span
+                                            class="text-xs text-muted-foreground"
+                                            >{{
+                                                form[field.key] === '1'
+                                                    ? '允许'
+                                                    : '禁止'
+                                            }}</span
+                                        >
+                                    </div>
+                                </div>
+                                <div class="package-field">
+                                    <Label for="package-cc_protect"
+                                        >CC防护</Label
+                                    >
+                                    <div class="min-w-0">
+                                        <Input
+                                            id="package-cc_protect"
+                                            v-model="form.cc_protect"
+                                            placeholder="如填写支持"
+                                        />
+                                    </div>
+                                </div>
+                                <div class="package-field">
+                                    <Label for="package-ddos_protect"
+                                        >DDOS防护</Label
+                                    >
+                                    <div class="min-w-0">
+                                        <Input
+                                            id="package-ddos_protect"
+                                            v-model="form.ddos_protect"
+                                            placeholder="如填写100G"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+                        <section
+                            class="package-section rounded-lg border bg-card p-4"
+                        >
+                            <h3
+                                class="mb-5 border-l-3 border-primary pl-2 font-semibold"
+                            >
+                                定价
+                            </h3>
+                            <div class="package-grid">
+                                <div
+                                    v-for="field in [
+                                        {
+                                            key: 'month_price',
+                                            portal: 'price_monthly',
+                                            label: '月付',
+                                        },
+                                        {
+                                            key: 'quarter_price',
+                                            portal: 'price_quarterly',
+                                            label: '季度付',
+                                        },
+                                        {
+                                            key: 'year_price',
+                                            portal: 'price_yearly',
+                                            label: '年付',
+                                        },
+                                    ] as const"
+                                    :key="field.key"
+                                    class="package-field"
+                                >
+                                    <Label :for="`package-${field.key}`">{{
+                                        field.label
+                                    }}</Label>
+                                    <div class="flex">
+                                        <Input
+                                            :id="`package-${field.key}`"
+                                            v-model="form[field.key]"
+                                            class="rounded-r-none"
+                                            inputmode="decimal"
+                                            :placeholder="
+                                                field.key === 'month_price'
+                                                    ? ''
+                                                    : field.key ===
+                                                        'quarter_price'
+                                                      ? '留空 = 月付 × 3'
+                                                      : '留空 = 月付 × 12'
+                                            "
+                                        /><span
+                                            class="flex items-center rounded-r-md border border-l-0 border-input bg-muted px-2 text-xs text-muted-foreground"
+                                            >{{ PORTAL_CURRENCY_LABEL }}</span
+                                        >
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+                        <Collapsible
+                            v-model:open="advancedOpen"
+                            class="package-section rounded-lg border bg-card p-4"
+                            ><CollapsibleTrigger
+                                class="flex w-full items-center justify-between text-left font-semibold"
+                                ><span class="border-l-3 border-primary pl-2"
+                                    >高级配置</span
+                                ><ChevronDown
+                                    class="size-4"
+                                    :class="{
+                                        'rotate-180': advancedOpen,
+                                    }" /></CollapsibleTrigger
+                            ><CollapsibleContent class="mt-5 space-y-6"
+                                ><div>
+                                    <h4 class="mb-4 font-medium">CNAME设置</h4>
+                                    <div class="package-grid">
+                                        <div class="package-field">
+                                            <Label for="package-cname_hostname2"
+                                                >主机名</Label
+                                            >
+                                            <div class="min-w-0">
+                                                <Input
+                                                    id="package-cname_hostname2"
+                                                    v-model="
+                                                        form.cname_hostname2
+                                                    "
+                                                    placeholder="留空则使用一级域名"
+                                                />
+                                            </div>
+                                        </div>
+                                        <div class="package-field">
+                                            <Label>CNAME域名</Label>
+                                            <div class="min-w-0">
+                                                <Select
+                                                    v-model="form.cname_domain"
+                                                    :disabled="loadingOptions"
+                                                    ><SelectTrigger
+                                                        class="w-full"
+                                                        aria-label="CNAME域名"
+                                                        ><SelectValue
+                                                            placeholder="请选择" /></SelectTrigger
+                                                    ><SelectContent
+                                                        ><SelectItem
+                                                            v-for="option in cnameDomainOptions"
+                                                            :key="
+                                                                optionValue(
+                                                                    option,
+                                                                )
+                                                            "
+                                                            :value="
+                                                                optionValue(
+                                                                    option,
+                                                                )
+                                                            "
+                                                            >{{
+                                                                optionLabel(
+                                                                    option,
+                                                                )
+                                                            }}</SelectItem
+                                                        ></SelectContent
+                                                    ></Select
+                                                >
+                                            </div>
+                                        </div>
+                                        <div class="package-field">
+                                            <Label>CNAME模式</Label>
+                                            <div class="min-w-0">
+                                                <Select
+                                                    v-model="form.cname_mode"
+                                                    ><SelectTrigger
+                                                        class="w-full"
+                                                        aria-label="CNAME模式"
+                                                        ><SelectValue /></SelectTrigger
+                                                    ><SelectContent
+                                                        ><SelectItem
+                                                            v-for="option in cnameModeOptions"
+                                                            :key="option.value"
+                                                            :value="
+                                                                option.value
+                                                            "
+                                                            >{{
+                                                                option.label
+                                                            }}</SelectItem
+                                                        ></SelectContent
+                                                    ></Select
+                                                >
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <h4 class="mb-4 font-medium">购买限制</h4>
+                                    <div class="package-grid package-purchase">
+                                        <div class="package-field">
+                                            <Label for="package-buy_num_limit"
+                                                >单用户购买数量</Label
+                                            >
+                                            <div class="min-w-0">
+                                                <div
+                                                    class="flex items-center gap-2"
+                                                >
+                                                    <Switch
+                                                        aria-label="单用户购买数量限制"
+                                                        :checked="
+                                                            ![
+                                                                '',
+                                                                '-1',
+                                                            ].includes(
+                                                                form.buy_num_limit,
+                                                            )
+                                                        "
+                                                        @update:checked="
+                                                            form.buy_num_limit =
+                                                                $event
+                                                                    ? '1'
+                                                                    : '-1'
+                                                        "
+                                                    /><span
+                                                        v-if="
+                                                            ['', '-1'].includes(
+                                                                form.buy_num_limit,
+                                                            )
+                                                        "
+                                                        class="text-xs text-muted-foreground"
+                                                        >不限</span
+                                                    ><Input
+                                                        v-else
+                                                        id="package-buy_num_limit"
+                                                        v-model="
+                                                            form.buy_num_limit
+                                                        "
+                                                        inputmode="numeric"
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="package-field">
+                                            <Label
+                                                for="package-before_exp_days_renew"
+                                                >套餐剩余少于N天才能续费</Label
+                                            >
+                                            <div class="min-w-0">
+                                                <div
+                                                    class="flex items-center gap-2"
+                                                >
+                                                    <Switch
+                                                        aria-label="套餐剩余少于N天才能续费限制"
+                                                        :checked="
+                                                            ![
+                                                                '',
+                                                                '-1',
+                                                            ].includes(
+                                                                form.before_exp_days_renew,
+                                                            )
+                                                        "
+                                                        @update:checked="
+                                                            form.before_exp_days_renew =
+                                                                $event
+                                                                    ? '1'
+                                                                    : '-1'
+                                                        "
+                                                    /><span
+                                                        v-if="
+                                                            ['', '-1'].includes(
+                                                                form.before_exp_days_renew,
+                                                            )
+                                                        "
+                                                        class="text-xs text-muted-foreground"
+                                                        >不限</span
+                                                    ><Input
+                                                        v-else
+                                                        id="package-before_exp_days_renew"
+                                                        v-model="
+                                                            form.before_exp_days_renew
+                                                        "
+                                                        inputmode="numeric"
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="package-field">
+                                            <Label for="package-expire"
+                                                >有效期至</Label
+                                            >
+                                            <div class="min-w-0">
+                                                <Input
+                                                    id="package-expire"
+                                                    v-model="packageExpiry"
+                                                    type="datetime-local"
+                                                    step="1"
+                                                    placeholder="留空则不限制"
+                                                />
+                                            </div>
+                                        </div>
+                                        <div class="package-field">
+                                            <Label for="package-id_verify"
+                                                >实名认证</Label
+                                            >
+                                            <div class="min-w-0">
+                                                <Switch
+                                                    id="package-id_verify"
+                                                    :checked="
+                                                        form.id_verify === '1'
+                                                    "
+                                                    @update:checked="
+                                                        form.id_verify = $event
+                                                            ? '1'
+                                                            : '0'
+                                                    "
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <h4 class="mb-4 font-medium">其它设置</h4>
+                                    <div class="package-grid">
+                                        <div class="package-field">
+                                            <Label for="package-owner"
+                                                >分配给用户</Label
+                                            >
+                                            <div class="min-w-0">
+                                                <Input
+                                                    id="package-owner"
+                                                    v-model="form.owner"
+                                                    placeholder="输入用户ID，多个逗号分隔"
+                                                />
+                                            </div>
+                                        </div>
+                                        <div class="package-field">
+                                            <Label for="package-sort"
+                                                >排序</Label
+                                            >
+                                            <div class="min-w-0">
+                                                <Input
+                                                    id="package-sort"
+                                                    v-model="form.sort"
+                                                    placeholder="默认100，数字小的靠前"
+                                                    inputmode="numeric"
+                                                />
+                                            </div>
+                                        </div>
+                                        <div class="package-field">
+                                            <Label for="package-enable"
+                                                >状态</Label
+                                            >
+                                            <div class="min-w-0">
+                                                <Switch
+                                                    id="package-enable"
+                                                    :checked="
+                                                        form.enable === '1'
+                                                    "
+                                                    @update:checked="
+                                                        form.enable = $event
+                                                            ? '1'
+                                                            : '0'
+                                                    "
+                                                />
+                                            </div>
+                                        </div>
+                                        <div class="package-field">
+                                            <Label
+                                                for="package-backend_ip_limit"
+                                                >源IP限制</Label
+                                            >
+                                            <div class="min-w-0">
+                                                <textarea
+                                                    id="package-backend_ip_limit"
+                                                    v-model="
+                                                        form.backend_ip_limit
+                                                    "
+                                                    rows="3"
+                                                    class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                                                    placeholder="一行一个IP或IP段"
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <Collapsible class="rounded-md border p-3"
+                                    ><CollapsibleTrigger
+                                        class="text-sm text-muted-foreground"
+                                        >更多字段</CollapsibleTrigger
+                                    ><CollapsibleContent class="mt-3 grid gap-3"
+                                        ><Label for="package-sync-item"
+                                            >同步到已售套餐字段</Label
+                                        ><Input
+                                            id="package-sync-item"
+                                            v-model="form.sync_item"
+                                            placeholder="仅修改时使用，字段名用逗号分隔"
+                                        /><Label for="package-extra"
+                                            >扩展字段 JSON</Label
+                                        ><textarea
+                                            id="package-extra"
+                                            v-model="form.extra_json"
+                                            class="min-h-24 rounded-md border border-input bg-background p-3 font-mono text-xs"
+                                            spellcheck="false"
+                                        /></CollapsibleContent></Collapsible></CollapsibleContent></Collapsible
+                        ><Collapsible
+                            v-model:open="salesOpen"
+                            class="rounded-lg border bg-card p-4"
+                            ><CollapsibleTrigger
+                                class="flex w-full items-center justify-between text-left font-semibold"
+                                >门户销售设置<ChevronDown
+                                    class="size-4"
+                                    :class="{
+                                        'rotate-180': salesOpen,
+                                    }" /></CollapsibleTrigger
+                            ><CollapsibleContent class="mt-5 space-y-4"
+                                ><label class="flex items-center gap-2 text-sm"
+                                    ><Checkbox
+                                        v-model="portalForm.sell"
+                                    />在门户上架销售</label
+                                >
+                                <div
+                                    v-if="portalForm.sell"
+                                    class="package-grid"
+                                >
+                                    <div class="package-field">
+                                        <Label for="portal-name"
+                                            >商品名称</Label
+                                        >
+                                        <div class="min-w-0">
+                                            <Input
+                                                id="portal-name"
+                                                v-model="portalForm.name"
+                                                :placeholder="
+                                                    form.name ||
+                                                    '默认使用套餐名称'
+                                                "
+                                            />
+                                        </div>
+                                    </div>
+                                    <div class="package-field">
+                                        <Label for="portal-slug"
+                                            >商品标识</Label
+                                        >
+                                        <div class="min-w-0">
+                                            <Input
+                                                id="portal-slug"
+                                                v-model="portalForm.slug"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                                <p class="text-xs text-muted-foreground">
+                                    上架时使用上方定价，季度付和年付留空分别按月付的3倍和12倍计算。
+                                </p>
+                                <Label for="portal-features"
+                                    >营销卖点（每行一条）</Label
+                                ><textarea
                                     id="portal-features"
                                     v-model="portalForm.features"
                                     rows="3"
-                                    class="min-h-20 rounded-md border bg-transparent px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
-                                    placeholder="东京 BGP 线路&#10;被攻击不额外收费&#10;免费 SSL 证书"
+                                    class="w-full rounded-md border border-input bg-background p-3 text-sm"
                                 />
-                                <p class="text-xs text-muted-foreground">
-                                    只写限制之外的卖点。流量、带宽、网站数等数字会自动取自本套餐的限制设置，
-                                    无需也不要在这里重复填写。
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!--
-                        CDNfly is the real, prepaid price. The 门户售价 above is
-                        written straight to the package's month/quarter/year
-                        price in CDNfly on save (1:1, symbol only), so there is
-                        no separate CDNfly price to keep in step.
-                    -->
-                    <p class="text-xs text-muted-foreground md:col-span-3">
-                        套餐价格以「门户售价」为准，保存时会自动同步写入 CDNfly
-                        主控的套餐价格（数字 1:1，仅货币符号不同）。
-                    </p>
-                    <div class="grid gap-4 md:col-span-3 md:grid-cols-3">
-                        <div
-                            v-for="field in limitFieldConfigs"
-                            :key="field.key"
-                            class="rounded-lg border p-3"
-                        >
-                            <div
-                                class="flex items-center justify-between gap-3"
-                            >
-                                <Label :for="`package-${field.key}`">
-                                    {{ field.label }}
-                                </Label>
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    size="sm"
-                                    @click="toggleLimit(form, field.key)"
+                                <div
+                                    v-if="dialogMode === 'create'"
+                                    class="flex flex-wrap gap-2"
                                 >
-                                    {{
-                                        isLimitEnabled(form, field.key)
-                                            ? '改为不限制'
-                                            : '设置限制'
-                                    }}
-                                </Button>
-                            </div>
-                            <Input
-                                v-if="isLimitEnabled(form, field.key)"
-                                :id="`package-${field.key}`"
-                                v-model="form[field.key]"
-                                class="mt-3"
-                                :inputmode="field.inputmode"
-                                :placeholder="field.placeholder"
-                            />
-                            <button
-                                v-else
-                                type="button"
-                                class="mt-3 flex h-10 w-full items-center rounded-md border bg-muted/40 px-3 text-left text-sm text-muted-foreground transition-colors hover:bg-muted"
-                                @click="toggleLimit(form, field.key)"
-                            >
-                                当前不限制，点击设置
-                            </button>
-                        </div>
-                    </div>
-                    <div class="flex flex-col gap-2">
-                        <Label>自定义CC规则</Label>
-                        <Select v-model="form.custom_cc_rule">
-                            <SelectTrigger class="w-full">
-                                <SelectValue placeholder="选择支持状态" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectGroup>
-                                    <SelectItem value="1">支持</SelectItem>
-                                    <SelectItem value="0">不支持</SelectItem>
-                                </SelectGroup>
-                            </SelectContent>
-                        </Select>
-                    </div>
-                    <div class="flex flex-col gap-2">
-                        <Label>CC 防护</Label>
-                        <Select v-model="form.cc_protect">
-                            <SelectTrigger class="w-full">
-                                <SelectValue placeholder="选择支持状态" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectGroup>
-                                    <SelectItem value="支持">支持</SelectItem>
-                                    <SelectItem value="不支持"
-                                        >不支持</SelectItem
+                                    <span class="text-sm">套餐预设</span
+                                    ><Button
+                                        v-for="preset in TIER_PRESETS"
+                                        :key="preset.key"
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        @click="applyTierPreset(preset)"
+                                        >{{ preset.label }}</Button
                                     >
-                                </SelectGroup>
-                            </SelectContent>
-                        </Select>
-                    </div>
-                    <div class="flex flex-col gap-2">
-                        <Label>DDoS 防护</Label>
-                        <Select v-model="form.ddos_protect">
-                            <SelectTrigger class="w-full">
-                                <SelectValue placeholder="选择支持状态" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectGroup>
-                                    <SelectItem value="支持">支持</SelectItem>
-                                    <SelectItem value="不支持"
-                                        >不支持</SelectItem
-                                    >
-                                </SelectGroup>
-                            </SelectContent>
-                        </Select>
-                    </div>
-                    <div class="flex flex-col gap-2">
-                        <Label>WebSocket</Label>
-                        <Select v-model="form.websocket">
-                            <SelectTrigger class="w-full">
-                                <SelectValue placeholder="选择支持状态" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectGroup>
-                                    <SelectItem value="1">支持</SelectItem>
-                                    <SelectItem value="0">不支持</SelectItem>
-                                </SelectGroup>
-                            </SelectContent>
-                        </Select>
-                    </div>
-                    <div class="flex flex-col gap-2">
-                        <Label>HTTP3</Label>
-                        <Select v-model="form.http3">
-                            <SelectTrigger class="w-full">
-                                <SelectValue placeholder="选择支持状态" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectGroup>
-                                    <SelectItem value="1">支持</SelectItem>
-                                    <SelectItem value="0">不支持</SelectItem>
-                                </SelectGroup>
-                            </SelectContent>
-                        </Select>
-                    </div>
-                    <div class="flex flex-col gap-2">
-                        <Label>WAF 防护</Label>
-                        <Select v-model="form.waf_protect">
-                            <SelectTrigger class="w-full">
-                                <SelectValue placeholder="选择支持状态" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectGroup>
-                                    <SelectItem value="1">支持</SelectItem>
-                                    <SelectItem value="0">不支持</SelectItem>
-                                </SelectGroup>
-                            </SelectContent>
-                        </Select>
-                    </div>
-                    <div class="flex flex-col gap-2">
-                        <Label>L2 节点回源</Label>
-                        <Select v-model="form.l2_state">
-                            <SelectTrigger class="w-full">
-                                <SelectValue placeholder="选择状态" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectGroup>
-                                    <SelectItem value="1">启用</SelectItem>
-                                    <SelectItem value="0">禁用</SelectItem>
-                                </SelectGroup>
-                            </SelectContent>
-                        </Select>
-                    </div>
-                    <div class="flex flex-col gap-2">
-                        <Label>实名认证</Label>
-                        <Select v-model="form.id_verify">
-                            <SelectTrigger class="w-full">
-                                <SelectValue placeholder="选择要求" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectGroup>
-                                    <SelectItem value="1">需要</SelectItem>
-                                    <SelectItem value="0">不需要</SelectItem>
-                                </SelectGroup>
-                            </SelectContent>
-                        </Select>
-                    </div>
-
-                    <Collapsible
-                        v-model:open="packageCnameOpen"
-                        class="rounded-lg border md:col-span-3"
-                    >
-                        <CollapsibleTrigger
-                            class="flex w-full items-center justify-between gap-3 px-4 py-3 text-left"
+                                </div></CollapsibleContent
+                            ></Collapsible
                         >
-                            <div class="min-w-0">
-                                <div class="font-medium">CNAME 设置</div>
-                                <div class="text-sm text-muted-foreground">
-                                    CNAME 域名、主机名和分配模式。
-                                </div>
-                            </div>
-                            <ChevronDown
-                                class="size-4 shrink-0 transition-transform"
-                                :class="{ 'rotate-180': packageCnameOpen }"
-                            />
-                        </CollapsibleTrigger>
-                        <CollapsibleContent class="border-t p-4">
-                            <div class="grid gap-4 md:grid-cols-3">
-                                <div class="flex flex-col gap-2">
-                                    <Label>CNAME 域名</Label>
-                                    <Select
-                                        v-model="form.cname_domain"
-                                        :disabled="loadingOptions"
-                                    >
-                                        <SelectTrigger class="w-full">
-                                            <SelectValue
-                                                placeholder="选择 CNAME 域名"
-                                            />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectGroup>
-                                                <SelectItem
-                                                    v-for="option in cnameDomainOptions"
-                                                    :key="optionValue(option)"
-                                                    :value="optionValue(option)"
-                                                >
-                                                    {{ optionLabel(option) }}
-                                                </SelectItem>
-                                            </SelectGroup>
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                                <div class="flex flex-col gap-2">
-                                    <Label for="package-cname-hostname">
-                                        CNAME 主机名
-                                    </Label>
-                                    <Input
-                                        id="package-cname-hostname"
-                                        v-model="form.cname_hostname2"
-                                    />
-                                </div>
-                                <div class="flex flex-col gap-2">
-                                    <Label>CNAME 模式</Label>
-                                    <Select v-model="form.cname_mode">
-                                        <SelectTrigger class="w-full">
-                                            <SelectValue
-                                                placeholder="选择 CNAME 模式"
-                                            />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectGroup>
-                                                <SelectItem
-                                                    v-for="option in cnameModeOptions"
-                                                    :key="option.value"
-                                                    :value="option.value"
-                                                >
-                                                    {{ option.label }}
-                                                </SelectItem>
-                                            </SelectGroup>
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                            </div>
-                        </CollapsibleContent>
-                    </Collapsible>
-
-                    <Collapsible
-                        v-model:open="packagePurchaseLimitOpen"
-                        class="rounded-lg border md:col-span-3"
-                    >
-                        <CollapsibleTrigger
-                            class="flex w-full items-center justify-between gap-3 px-4 py-3 text-left"
-                        >
-                            <div class="min-w-0">
-                                <div class="font-medium">购买限制</div>
-                                <div class="text-sm text-muted-foreground">
-                                    单用户购买数量和套餐可购买截止时间。
-                                </div>
-                            </div>
-                            <ChevronDown
-                                class="size-4 shrink-0 transition-transform"
-                                :class="{
-                                    'rotate-180': packagePurchaseLimitOpen,
-                                }"
-                            />
-                        </CollapsibleTrigger>
-                        <CollapsibleContent class="border-t p-4">
-                            <div class="grid gap-4 md:grid-cols-2">
-                                <div class="flex flex-col gap-2">
-                                    <Label for="package-buy-num-limit">
-                                        单用户购买数量
-                                    </Label>
-                                    <Input
-                                        id="package-buy-num-limit"
-                                        v-model="form.buy_num_limit"
-                                        inputmode="numeric"
-                                        placeholder="-1 表示不限制"
-                                    />
-                                </div>
-                                <div class="flex flex-col gap-2">
-                                    <Label for="package-expire">
-                                        有效期至
-                                    </Label>
-                                    <Input
-                                        id="package-expire"
-                                        v-model="form.expire"
-                                        placeholder="2026-12-31 23:59:59，留空不限"
-                                    />
-                                </div>
-                            </div>
-                        </CollapsibleContent>
-                    </Collapsible>
-
-                    <Collapsible
-                        v-model:open="packageOtherOpen"
-                        class="rounded-lg border md:col-span-3"
-                    >
-                        <CollapsibleTrigger
-                            class="flex w-full items-center justify-between gap-3 px-4 py-3 text-left"
-                        >
-                            <div class="min-w-0">
-                                <div class="font-medium">其他</div>
-                                <div class="text-sm text-muted-foreground">
-                                    指定用户、启用状态和备注。
-                                </div>
-                            </div>
-                            <ChevronDown
-                                class="size-4 shrink-0 transition-transform"
-                                :class="{ 'rotate-180': packageOtherOpen }"
-                            />
-                        </CollapsibleTrigger>
-                        <CollapsibleContent class="border-t p-4">
-                            <div class="grid gap-4 md:grid-cols-2">
-                                <div class="flex flex-col gap-2">
-                                    <Label for="package-owner">
-                                        分配给用户
-                                    </Label>
-                                    <Input
-                                        id="package-owner"
-                                        v-model="form.owner"
-                                        placeholder="用户 ID，多个用逗号分隔"
-                                    />
-                                </div>
-                                <div class="flex flex-col gap-2">
-                                    <Label>套餐启用状态</Label>
-                                    <Select v-model="form.enable">
-                                        <SelectTrigger class="w-full">
-                                            <SelectValue
-                                                placeholder="选择启用状态"
-                                            />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectGroup>
-                                                <SelectItem value="1">
-                                                    启用
-                                                </SelectItem>
-                                                <SelectItem value="0">
-                                                    禁用
-                                                </SelectItem>
-                                            </SelectGroup>
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                                <div class="flex flex-col gap-2">
-                                    <Label>备用线路组</Label>
-                                    <Select
-                                        v-model="form.backup_node_group"
-                                        :disabled="loadingOptions"
-                                    >
-                                        <SelectTrigger class="w-full">
-                                            <SelectValue
-                                                placeholder="无（不使用备用）"
-                                            />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectGroup>
-                                                <SelectItem
-                                                    :value="BACKUP_NONE_VALUE"
-                                                >
-                                                    无（不使用备用）
-                                                </SelectItem>
-                                                <SelectItem
-                                                    v-for="option in packageOptions.node_groups"
-                                                    :key="optionValue(option)"
-                                                    :value="optionValue(option)"
-                                                >
-                                                    {{ optionLabel(option) }}
-                                                </SelectItem>
-                                            </SelectGroup>
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                                <div class="flex flex-col gap-2">
-                                    <Label for="package-before-renew">
-                                        提前续费天数
-                                    </Label>
-                                    <Input
-                                        id="package-before-renew"
-                                        v-model="form.before_exp_days_renew"
-                                        inputmode="numeric"
-                                    />
-                                </div>
-                                <div class="flex flex-col gap-2">
-                                    <Label for="package-sort">排序</Label>
-                                    <Input
-                                        id="package-sort"
-                                        v-model="form.sort"
-                                        inputmode="numeric"
-                                    />
-                                </div>
-                                <div class="flex flex-col gap-2">
-                                    <Label for="package-des">备注</Label>
-                                    <Input
-                                        id="package-des"
-                                        v-model="form.des"
-                                    />
-                                </div>
-                                <div class="flex flex-col gap-2 md:col-span-2">
-                                    <Label for="package-sync-item">
-                                        同步到已售套餐字段
-                                    </Label>
-                                    <Input
-                                        id="package-sync-item"
-                                        v-model="form.sync_item"
-                                        placeholder="仅修改时使用，字段名用逗号分隔"
-                                    />
-                                </div>
-                                <div class="flex flex-col gap-2 md:col-span-2">
-                                    <Label for="package-source-ips"
-                                        >源站 IP 限制</Label
-                                    ><Input
-                                        id="package-source-ips"
-                                        v-model="form.backend_ip_limit"
-                                        placeholder="留空不限制，多个 IP 用空格分隔"
-                                    />
-                                    <Label for="package-extra">
-                                        扩展字段 JSON
-                                    </Label>
-                                    <textarea
-                                        id="package-extra"
-                                        v-model="form.extra_json"
-                                        class="min-h-28 rounded-md border bg-transparent px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
-                                        spellcheck="false"
-                                    />
-                                </div>
-                            </div>
-                        </CollapsibleContent>
-                    </Collapsible>
+                    </fieldset>
                 </div>
-
-                <DialogFooter>
-                    <Button
+                <DialogFooter class="shrink-0 border-t bg-background px-5 py-4"
+                    ><Button
+                        :disabled="saving || portalLoading || !!portalError"
+                        @click="submitPackage"
+                        ><Spinner v-if="saving" />确定</Button
+                    ><Button
                         variant="outline"
+                        :disabled="saving"
                         @click="packageDialogOpen = false"
-                    >
-                        取消
-                    </Button>
-                    <Button :disabled="saving" @click="submitPackage">
-                        <Spinner v-if="saving" data-icon="inline-start" />
-                        <Save v-else data-icon="inline-start" />
-                        保存
-                    </Button>
-                </DialogFooter>
-            </DialogScrollContent>
-        </Dialog>
-
+                        >取消</Button
+                    ></DialogFooter
+                ></DialogScrollContent
+            ></Dialog
+        >
         <Dialog v-model:open="batchDialogOpen">
             <DialogScrollContent class="max-w-4xl">
                 <DialogHeader>
@@ -3690,40 +3925,16 @@ async function confirmPuDelete(): Promise<void> {
             @cancel="deleteOpen = false"
         />
 
-        <!-- ─── Package Groups ────────────────────────────────── -->
-        <ConsoleDataTable
-            v-if="activeTab === 'groups'"
-            ref="pgTableRef"
-            title="套餐组"
-            :icon="FolderTree"
-            :columns="pgColumns"
-            :fetch-fn="listAdminPackageGroups"
-            search-placeholder="搜索套餐组"
-        >
-            <template #toolbar>
-                <Button variant="default" size="sm" @click="openPgCreate">
-                    <Plus data-icon="inline-start" class="size-4" />
-                    新增
-                </Button>
-            </template>
-            <template #row-actions="{ row }">
-                <Button variant="ghost" size="sm" @click="openPgEdit(row)">
-                    <Pencil class="size-4" />
-                </Button>
-                <Button variant="ghost" size="sm" @click="openPgDelete(row)">
-                    <Trash2 class="size-4 text-destructive" />
-                </Button>
-            </template>
-        </ConsoleDataTable>
-
         <!-- Package Group create/edit dialog -->
         <Dialog v-model:open="pgDialogOpen">
             <DialogScrollContent class="max-w-md">
                 <DialogHeader>
                     <DialogTitle>{{
-                        pgEditing ? '编辑套餐组' : '新增套餐组'
+                        pgEditing ? '编辑分组' : '新增分组'
                     }}</DialogTitle>
-                    <DialogDescription>管理 CDNfly 套餐组。</DialogDescription>
+                    <DialogDescription
+                        >设置分组名称、备注、排序和启用状态。</DialogDescription
+                    >
                 </DialogHeader>
                 <Alert v-if="pgError" variant="destructive">
                     <AlertCircle data-icon="alert" />
@@ -3745,6 +3956,22 @@ async function confirmPuDelete(): Promise<void> {
                             id="pg-des"
                             v-model="pgForm.des"
                             placeholder="可选备注"
+                        />
+                    </div>
+                    <div class="grid gap-2">
+                        <Label for="pg-sort">排序</Label
+                        ><Input
+                            id="pg-sort"
+                            v-model="pgForm.sort"
+                            type="number"
+                        />
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <Label for="pg-enable">启用</Label
+                        ><Switch
+                            id="pg-enable"
+                            :checked="pgForm.enable === '1'"
+                            @update:checked="pgForm.enable = $event ? '1' : '0'"
                         />
                     </div>
                 </div>
@@ -3792,186 +4019,55 @@ async function confirmPuDelete(): Promise<void> {
             </DialogScrollContent>
         </Dialog>
 
-        <!-- ─── Package Ups (升级包) ──────────────────────────── -->
-        <ConsoleDataTable
-            v-if="activeTab === 'upgrades'"
-            ref="puTableRef"
-            title="升级包"
-            :icon="Zap"
-            :columns="puColumns"
-            :fetch-fn="listAdminPackageUps"
-            search-placeholder="搜索升级包"
-        >
-            <template #toolbar>
-                <Button variant="default" size="sm" @click="openPuCreate">
-                    <Plus data-icon="inline-start" class="size-4" />
-                    新增
-                </Button>
-            </template>
-            <template #row-actions="{ row }">
-                <Button variant="ghost" size="sm" @click="openPuEdit(row)">
-                    <Pencil class="size-4" />
-                </Button>
-                <Button variant="ghost" size="sm" @click="openPuDelete(row)">
-                    <Trash2 class="size-4 text-destructive" />
-                </Button>
-            </template>
-        </ConsoleDataTable>
-
-        <!-- Package Up create/edit dialog -->
-        <Dialog v-model:open="puDialogOpen">
-            <DialogScrollContent class="max-w-lg">
-                <DialogHeader>
-                    <DialogTitle>{{
-                        puEditing ? '编辑升级包' : '新增升级包'
-                    }}</DialogTitle>
-                    <DialogDescription>管理 CDNfly 升级包。</DialogDescription>
-                </DialogHeader>
-                <Alert v-if="puError" variant="destructive">
-                    <AlertCircle data-icon="alert" />
-                    <AlertTitle>提交失败</AlertTitle>
-                    <AlertDescription>{{ puError }}</AlertDescription>
-                </Alert>
-                <div class="grid gap-4">
-                    <div class="grid gap-2">
-                        <Label for="pu-name">名称</Label>
-                        <Input
-                            id="pu-name"
-                            v-model="puForm.name"
-                            placeholder="升级包名称"
-                        />
-                    </div>
-                    <div class="grid gap-2">
-                        <Label for="pu-groups">所属套餐组 ID</Label>
-                        <Input
-                            id="pu-groups"
-                            v-model="puForm.groups"
-                            placeholder="套餐组 ID"
-                        />
-                    </div>
-                    <div class="grid grid-cols-3 gap-4">
-                        <div class="grid gap-2">
-                            <Label for="pu-month">月价格（USDT）</Label>
-                            <Input
-                                id="pu-month"
-                                v-model="puForm.month_price"
-                                inputmode="decimal"
-                            />
-                        </div>
-                        <div class="grid gap-2">
-                            <Label for="pu-quarter">季价格（USDT）</Label>
-                            <Input
-                                id="pu-quarter"
-                                v-model="puForm.quarter_price"
-                                inputmode="decimal"
-                            />
-                        </div>
-                        <div class="grid gap-2">
-                            <Label for="pu-year">年价格（USDT）</Label>
-                            <Input
-                                id="pu-year"
-                                v-model="puForm.year_price"
-                                inputmode="decimal"
-                            />
-                        </div>
-                    </div>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div class="grid gap-2">
-                            <Label for="pu-traffic">月流量（G）</Label>
-                            <Input
-                                id="pu-traffic"
-                                v-model="puForm.traffic"
-                                inputmode="decimal"
-                                placeholder="-1 不限"
-                            />
-                        </div>
-                        <div class="grid gap-2">
-                            <Label for="pu-bandwidth">带宽</Label>
-                            <Input
-                                id="pu-bandwidth"
-                                v-model="puForm.bandwidth"
-                                placeholder="如 100Mbps"
-                            />
-                        </div>
-                        <div class="grid gap-2">
-                            <Label for="pu-connection">连接数</Label>
-                            <Input
-                                id="pu-connection"
-                                v-model="puForm.connection"
-                                inputmode="numeric"
-                                placeholder="-1 不限"
-                            />
-                        </div>
-                        <div class="grid gap-2">
-                            <Label for="pu-domain">域名数</Label>
-                            <Input
-                                id="pu-domain"
-                                v-model="puForm.domain"
-                                inputmode="numeric"
-                                placeholder="-1 不限"
-                            />
-                        </div>
-                    </div>
-                    <div class="grid gap-2">
-                        <Label for="pu-des">备注</Label>
-                        <Input
-                            id="pu-des"
-                            v-model="puForm.des"
-                            placeholder="可选备注"
-                        />
-                    </div>
-                    <div class="grid gap-2">
-                        <Label for="pu-extra">扩展字段 JSON</Label>
-                        <textarea
-                            id="pu-extra"
-                            v-model="puForm.extra_json"
-                            class="min-h-20 w-full rounded-md border border-input bg-background px-3 py-2 font-mono text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
-                            spellcheck="false"
-                        />
-                    </div>
-                </div>
-                <DialogFooter>
-                    <Button variant="outline" @click="puDialogOpen = false"
-                        >取消</Button
-                    >
-                    <Button :disabled="puSaving" @click="submitPu">
-                        <Spinner v-if="puSaving" data-icon="inline-start" />
-                        <Save v-else data-icon="inline-start" />
-                        保存
-                    </Button>
-                </DialogFooter>
-            </DialogScrollContent>
-        </Dialog>
-
-        <!-- Package Up delete confirm -->
-        <Dialog v-model:open="puDeleteOpen">
-            <DialogScrollContent class="max-w-md">
-                <DialogHeader>
-                    <DialogTitle>确认删除</DialogTitle>
-                    <DialogDescription>
-                        确定要删除升级包「{{ puDeleteTarget?.name }}」吗？
-                    </DialogDescription>
-                </DialogHeader>
-                <Alert v-if="puDeleteError" variant="destructive">
-                    <AlertCircle data-icon="alert" />
-                    <AlertTitle>删除失败</AlertTitle>
-                    <AlertDescription>{{ puDeleteError }}</AlertDescription>
-                </Alert>
-                <DialogFooter>
-                    <Button variant="outline" @click="puDeleteOpen = false"
-                        >取消</Button
-                    >
-                    <Button
-                        variant="destructive"
-                        :disabled="puDeleting"
-                        @click="confirmPuDelete"
-                    >
-                        <Spinner v-if="puDeleting" data-icon="inline-start" />
-                        <Trash2 v-else data-icon="inline-start" />
-                        确认删除
-                    </Button>
-                </DialogFooter>
-            </DialogScrollContent>
-        </Dialog>
+        <AdminPackageUpgrades v-if="activeTab === 'upgrades'" embedded />
     </div>
 </template>
+
+<style scoped>
+.package-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px 28px;
+}
+.package-purchase > :nth-child(1) {
+    order: 1;
+}
+.package-purchase > :nth-child(2) {
+    order: 4;
+}
+.package-purchase > :nth-child(3) {
+    order: 2;
+}
+.package-purchase > :nth-child(4) {
+    order: 3;
+}
+.package-field {
+    display: grid;
+    grid-template-columns: 130px minmax(0, 1fr);
+    align-items: center;
+    gap: 12px;
+}
+.package-field > label {
+    justify-content: flex-end;
+    text-align: right;
+    line-height: 1.5;
+}
+@media (max-width: 760px) {
+    .package-grid {
+        grid-template-columns: 1fr;
+    }
+    .package-field {
+        grid-template-columns: 110px minmax(0, 1fr);
+    }
+}
+@media (max-width: 430px) {
+    .package-field {
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+    .package-field > label {
+        justify-content: flex-start;
+        text-align: left;
+    }
+}
+</style>

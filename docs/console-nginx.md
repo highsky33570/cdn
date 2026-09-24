@@ -7,7 +7,7 @@
 - **全局配置 / Stream**: connection and forwarding timeouts in one card.
 - **区域及节点配置**: compact scope/settings table, empty state, create/edit dialogs centered in the viewport, individual override selection, pagination, and confirmed single/batch deletion.
 
-The page supports light/dark appearances and narrow screens. Values load from the existing native configuration; screenshot values are not substituted for real settings. Controls save on change or blur. Saves are serialized, and failed writes retain edits with retry. Only changed leaf fields are sent, so HTTP and Stream settings with identical directive names remain independent. Updates read the current native configuration before merging and preserve unrelated settings and unknown options.
+The page uses the project's shared buttons, inputs, switches, tabs, and override table. Hard-coded light/dark palettes have been removed; cards, text, borders, validation states, and dialog fields inherit project theme tokens. The screenshot layout is retained and supports narrow screens. Values load from the existing native configuration; screenshot values are not substituted for real settings. Controls save on change or blur. Saves are serialized, and failed writes retain edits with retry. Only changed leaf fields are sent, so HTTP and Stream settings with identical directive names remain independent. Updates read the current native configuration before merging and preserve unrelated settings and unknown options.
 
 Native switches preserve `on`/`off` and `1`/`0` strings. The client-body buffer value remains in the panel's native KB representation. `server_tokens` is treated as an ordinary directive, while unknown credential fields remain masked. Basic validation covers required values, numeric limits, version choices, and switch values. Validation of a complete generated Nginx configuration remains the upstream system's responsibility.
 
@@ -31,7 +31,7 @@ Live inspection was read-only. No production Nginx configuration was changed.
 
 ## Deployment
 
-Extract `tycdn-nginx-console.zip` into the deployed `tycdn-backend` directory, preserving paths, then run:
+Extract `tycdn-nginx-theme-fix.zip` into the deployed `tycdn-backend` directory, preserving paths, then run:
 
 ```sh
 php artisan optimize:clear

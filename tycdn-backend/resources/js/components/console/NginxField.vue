@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import Switch from '@/components/ui/switch/Switch.vue';
 import type { NginxField } from '@/lib/nginxSettings';
 const props = defineProps<{
     field: NginxField;
@@ -19,20 +22,16 @@ const on = computed(() => String(props.value) === props.field.on);
     <div class="ng-field" :class="{ 'has-error': error }">
         <label :id="`${id}-label`" :for="id">{{ field.label }}</label>
         <div class="ng-control">
-            <button
+            <Switch
                 v-if="field.kind === 'toggle'"
                 :id="id"
-                type="button"
-                role="switch"
-                class="ng-switch"
-                :class="{ on }"
-                :aria-checked="on"
+                :checked="on"
                 :aria-labelledby="`${id}-label`"
                 :disabled="disabled"
-                @click="emit('change', on ? field.off! : field.on!)"
-            >
-                <span />
-            </button>
+                @update:checked="
+                    emit('change', $event ? field.on! : field.off!)
+                "
+            />
             <div
                 v-else-if="field.kind === 'version'"
                 :id="id"
@@ -40,23 +39,27 @@ const on = computed(() => String(props.value) === props.field.on);
                 role="group"
                 :aria-labelledby="`${id}-label`"
             >
-                <button
+                <Button
+                    size="sm"
                     v-for="version in ['1.0', '1.1']"
                     :key="version"
                     type="button"
                     :disabled="disabled"
-                    :class="{ chosen: String(value) === version }"
+                    :variant="
+                        String(value) === version ? 'secondary' : 'outline'
+                    "
                     :aria-pressed="String(value) === version"
                     @click="emit('change', version)"
                 >
                     {{ version }}
-                </button>
+                </Button>
             </div>
             <div v-else class="ng-input">
-                <input
+                <Input
                     :id="id"
                     :type="field.kind === 'number' ? 'number' : 'text'"
-                    :value="String(value ?? '')"
+                    :model-value="String(value ?? '')"
+                    :class="field.unit ? 'rounded-r-none' : ''"
                     :min="field.min"
                     :max="field.max"
                     :disabled="disabled"
@@ -75,7 +78,11 @@ const on = computed(() => String(props.value) === props.field.on);
                             ($event.target as HTMLInputElement).value,
                         )
                     "
-                /><span v-if="field.unit">{{ field.unit }}</span>
+                /><span
+                    v-if="field.unit"
+                    class="flex h-9 shrink-0 items-center rounded-r-md border border-l-0 border-input bg-muted px-2 text-xs text-muted-foreground"
+                    >{{ field.unit }}</span
+                >
             </div>
             <p v-if="field.help" :id="`${id}-help`" class="ng-field-help">
                 {{ field.help }}

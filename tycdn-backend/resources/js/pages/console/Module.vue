@@ -19,6 +19,7 @@ import AdminFirewall from './AdminFirewall.vue';
 import AdminL2 from './AdminL2.vue';
 import AdminLineGroups from './AdminLineGroups.vue';
 import AdminMaintenance from './AdminMaintenance.vue';
+import AdminMarketing from './AdminMarketing.vue';
 import AdminMasterResources from './AdminMasterResources.vue';
 import AdminMonitoring from './AdminMonitoring.vue';
 import AdminNginx from './AdminNginx.vue';
@@ -26,13 +27,17 @@ import AdminNodeMonitoring from './AdminNodeMonitoring.vue';
 import AdminNodeMonitorSettings from './AdminNodeMonitorSettings.vue';
 import AdminNodes from './AdminNodes.vue';
 import AdminOverview from './AdminOverview.vue';
+import AdminPackageMonitor from './AdminPackageMonitor.vue';
 import AdminPackages from './AdminPackages.vue';
+import AdminPackageUpgrades from './AdminPackageUpgrades.vue';
 import AdminPanelRecords from './AdminPanelRecords.vue';
 import AdminResources from './AdminResources.vue';
 import AdminSecurity from './AdminSecurity.vue';
 import AdminSites from './AdminSites.vue';
+import AdminSoldPackages from './AdminSoldPackages.vue';
 import AdminStreamAnalytics from './AdminStreamAnalytics.vue';
 import AdminStreams from './AdminStreams.vue';
+import AdminTrafficPackages from './AdminTrafficPackages.vue';
 import AdminUsers from './AdminUsers.vue';
 import AdminWafLogs from './AdminWafLogs.vue';
 import UserAccount from './UserAccount.vue';
@@ -94,10 +99,7 @@ const MODULES: Record<
     'admin-cache-jobs': { component: AdminCache },
     'admin-security-cc': { component: AdminSecurity, props: { view: 'cc' } },
     'admin-security-waf': { component: AdminSecurity, props: { view: 'waf' } },
-    'admin-sold-packages': {
-        component: AdminFinance,
-        props: { initialTab: 'packages' },
-    },
+    'admin-sold-packages': { component: AdminSoldPackages },
     'admin-finance-recharge': {
         component: AdminUsers,
         props: { title: '用户充值' },
@@ -125,10 +127,7 @@ const MODULES: Record<
         component: AdminPackages,
         props: { initialTab: 'groups' },
     },
-    'admin-package-upgrades': {
-        component: AdminPackages,
-        props: { initialTab: 'upgrades' },
-    },
+    'admin-package-upgrades': { component: AdminPackageUpgrades },
     'admin-certificates': {
         component: AdminCertificates,
     },
@@ -204,6 +203,22 @@ for (const resource of Object.keys(masterResources)) {
 }
 
 MODULES['admin-workspace-attack-log'] = { component: AdminWafLogs };
+MODULES['admin-workspace-package-monitor'] = { component: AdminPackageMonitor };
+
+for (const resource of ['discounts', 'coupons', 'coupon-historys']) {
+    MODULES[`admin-workspace-${resource}`] = {
+        component: AdminMarketing,
+        props: { initialTab: resource },
+    };
+}
+
+MODULES['admin-workspace-traffic-packages'] = {
+    component: AdminTrafficPackages,
+};
+MODULES['admin-workspace-user-traffic-packages'] = {
+    component: AdminTrafficPackages,
+    props: { initialTab: 'sold' },
+};
 
 for (const resource of ['l2-configs', 'l2-conds']) {
     MODULES[`admin-workspace-${resource}`] = {

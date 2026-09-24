@@ -11,6 +11,33 @@ class AdminPackageManagementTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_package_edits_preserve_explicit_clearing_of_optional_fields(): void
+    {
+        config([
+            'services.cdnfly.base_url' => 'https://cdnfly.example.test',
+            'services.cdnfly.admin_api_key' => 'admin-key',
+            'services.cdnfly.admin_api_secret' => 'admin-secret',
+            'services.cdnfly.outbound_enabled' => true,
+        ]);
+        Http::fake(fn () => Http::response(['code' => 0, 'data' => null]));
+        $fields = ['des', 'backup_node_group', 'cname_hostname2', 'expire', 'owner', 'backend_ip_limit'];
+        $this->actingAs(User::factory()->create(['role' => 'admin']))
+            ->putJson('/api/admin/packages/101', array_fill_keys($fields, ''))
+            ->assertOk();
+        Http::assertSent(function ($request) use ($fields) {
+            if ($request->method() !== 'PUT' || $request->url() !== 'https://cdnfly.example.test/v1/packages/101') {
+                return false;
+            }
+            foreach ($fields as $field) {
+                if (! array_key_exists($field, $request->data()) || ! in_array($request->data()[$field], ['', null], true)) {
+                    return false;
+                }
+            }
+
+            return true;
+        });
+    }
+
     public function test_admin_package_management_calls_cdnfly_package_endpoints(): void
     {
         config([
@@ -148,7 +175,7 @@ class AdminPackageManagementTest extends TestCase
             'https://cdnfly.example.test/v1/node-groups*' => Http::response([
                 'code' => 0,
                 'data' => [
-                    ['id' => 2, 'name' => '默认线路组'],
+                    ['id' => 2, 'name' => '默认线路组', 'region_id' => 1, 'token' => 'secret'],
                 ],
             ]),
             'https://cdnfly.example.test/v1/package-groups*' => Http::response([
@@ -172,6 +199,7 @@ class AdminPackageManagementTest extends TestCase
             ->assertOk()
             ->assertJsonPath('data.regions.0.name', '华东')
             ->assertJsonPath('data.node_groups.0.name', '默认线路组')
+            ->assertJsonPath('data.node_groups.0.region_id', 1)
             ->assertJsonPath('data.package_groups.0.name', '默认套餐组')
             ->assertJsonPath('data.cname_domains.0.id', 4)
             ->assertJsonPath('data.cname_domains.0.name', 'cdn.example.com')

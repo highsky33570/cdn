@@ -978,10 +978,14 @@ class AdminController extends Controller
                 $name = $id;
             }
 
-            $options[] = [
+            $option = [
                 'id' => $id,
                 'name' => (string) $name,
             ];
+            if (isset($record['region_id']) && (is_int($record['region_id']) || is_string($record['region_id']))) {
+                $option['region_id'] = $record['region_id'];
+            }
+            $options[] = $option;
         }
 
         return $options;
