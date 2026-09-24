@@ -40,6 +40,27 @@ class AdminMaintenanceLogTest extends TestCase
         Http::assertSentCount(1);
     }
 
+    public function test_upgrade_requires_explicit_start_and_version_and_strips_other_fields(): void
+    {
+        Http::fake(['*' => Http::response(['code' => 0, 'data' => null])]);
+        $this->postJson('/api/admin/workspace/master-upgrades', [])->assertUnprocessable();
+        $this->postJson('/api/admin/workspace/master-upgrades', ['action' => 'stop', 'version_num' => 60001])->assertUnprocessable();
+        $this->postJson('/api/admin/workspace/master-upgrades/1', ['action' => 'start', 'version_num' => 60001])->assertMethodNotAllowed();
+        Http::assertNothingSent();
+        $this->postJson('/api/admin/workspace/master-upgrades', ['action' => 'start', 'version_num' => 60001, 'command' => 'ignored'])->assertOk();
+        Http::assertSent(fn (Request $request) => $request->method() === 'POST' && $request->url() === 'https://cdnfly.example.test/v1/master/upgrades?action=start&version_num=60001' && $request->data() === []);
+    }
+
+    public function test_upgrade_rejects_non_admin_and_reports_master_rejection(): void
+    {
+        $this->actingAs(User::factory()->create(['role' => 'user']));
+        $this->postJson('/api/admin/workspace/master-upgrades', ['action' => 'start', 'version_num' => 60001])->assertForbidden();
+        Http::assertNothingSent();
+        $this->actingAs(User::factory()->create(['role' => 'admin']));
+        Http::fake(['*' => Http::response(['code' => 'upgrade-1', 'msg' => '目标版本不可用', 'data' => null])]);
+        $this->postJson('/api/admin/workspace/master-upgrades', ['action' => 'start', 'version_num' => 60001])->assertStatus(500)->assertJsonPath('ok', false);
+    }
+
     public function test_upgrade_log_read_failure_is_unavailable_only_when_master_is_idle(): void
     {
         $states = [false, 0, '0'];

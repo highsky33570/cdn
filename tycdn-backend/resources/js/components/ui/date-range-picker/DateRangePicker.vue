@@ -246,7 +246,7 @@ function cellClass(cell: Cell): string {
                 </div>
 
                 <!-- 双月日历 -->
-                <div class="flex px-3 py-3 gap-0">
+                <div class="flex max-w-[calc(100vw-2rem)] flex-wrap px-3 py-3 gap-0">
                     <!-- 左月 -->
                     <div class="w-52">
                         <div class="mb-2 flex items-center justify-between">

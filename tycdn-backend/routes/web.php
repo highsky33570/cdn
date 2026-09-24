@@ -74,6 +74,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ['uri' => 'console/messages', 'name' => 'console.messages', 'module' => 'messages'],
         ['uri' => 'console/messages/subscriptions', 'name' => 'console.messages.subscriptions', 'module' => 'message-subscriptions'],
         ['uri' => 'console/account/profile', 'name' => 'console.account.profile', 'module' => 'account-profile'],
+        ['uri' => 'console/account/balance', 'name' => 'console.account.balance', 'module' => 'account-balance'],
         ['uri' => 'console/account/certification', 'name' => 'console.account.certification', 'module' => 'account-certification'],
         ['uri' => 'console/account/api-key', 'name' => 'console.account.api-key', 'module' => 'account-api-key'],
         ['uri' => 'console/account/login-logs', 'name' => 'console.account.login-logs', 'module' => 'account-login-logs'],

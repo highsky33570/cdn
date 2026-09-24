@@ -4,7 +4,12 @@ import { apiRequest } from '@/lib/apiRequest';
 import { extractCdnflyRows } from '@/lib/cdnflyResponse';
 import type { CdnflyRecord } from '@/lib/sharedTypes';
 const props = withDefaults(
-    defineProps<{ modelValue: string; display?: string; disabled?: boolean }>(),
+    defineProps<{
+        modelValue: string;
+        display?: string;
+        disabled?: boolean;
+        inputId?: string;
+    }>(),
     { display: '', disabled: false },
 );
 const emit = defineEmits<{
@@ -119,6 +124,7 @@ function key(event: KeyboardEvent) {
 <template>
     <div class="user-picker">
         <input
+            :id="inputId"
             v-model="text"
             role="combobox"
             aria-label="搜索用户"

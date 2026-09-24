@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\AdminAccessLogController;
+use App\Http\Controllers\Api\AdminBalanceController;
 use App\Http\Controllers\Api\AdminBlockLogController;
 use App\Http\Controllers\Api\AdminCcController;
 use App\Http\Controllers\Api\AdminCertificateController;
@@ -10,9 +11,11 @@ use App\Http\Controllers\Api\AdminDnsController;
 use App\Http\Controllers\Api\AdminErrorPagesController;
 use App\Http\Controllers\Api\AdminFinanceController;
 use App\Http\Controllers\Api\AdminFirewallController;
+use App\Http\Controllers\Api\AdminMasterUserController;
 use App\Http\Controllers\Api\AdminMonitorController;
 use App\Http\Controllers\Api\AdminNginxController;
 use App\Http\Controllers\Api\AdminNodeController;
+use App\Http\Controllers\Api\AdminOrderRecordController;
 use App\Http\Controllers\Api\AdminPackageUpgradeController;
 use App\Http\Controllers\Api\AdminRecoveryController;
 use App\Http\Controllers\Api\AdminSiteController;
@@ -90,8 +93,21 @@ Route::middleware(['auth:sanctum', 'verified', 'cdnfly.apikey'])->prefix('cdn')-
 Route::middleware(['auth:sanctum', 'verified', 'admin', 'throttle:admin-api'])->prefix('admin')->group(function () {
     // 管理概览
     Route::get('/overview', [AdminController::class, 'overview']);
+    Route::post('/finance/recharge', [AdminBalanceController::class, 'store'])->middleware('throttle:admin-write-10');
+    Route::post('/finance/orders', [AdminOrderRecordController::class, 'save'])->middleware('throttle:admin-write-10');
+    Route::put('/finance/orders/{id}', [AdminOrderRecordController::class, 'save'])->whereNumber('id')->middleware('throttle:admin-write-10');
+    Route::delete('/finance/orders/{id}', [AdminOrderRecordController::class, 'destroy'])->whereNumber('id')->middleware('throttle:admin-write-10');
 
     // 用户管理
+    Route::get('/master-users', [AdminMasterUserController::class, 'index']);
+    Route::get('/master-users/{id}', [AdminMasterUserController::class, 'index'])->whereNumber('id');
+    Route::post('/master-users', [AdminMasterUserController::class, 'save'])->middleware('throttle:admin-write-20');
+    Route::put('/master-users/{id}', [AdminMasterUserController::class, 'save'])->whereNumber('id')->middleware('throttle:admin-write-20');
+    Route::delete('/master-users/{id}', [AdminMasterUserController::class, 'destroy'])->whereNumber('id')->middleware('throttle:admin-write-10');
+    Route::post('/master-users/{id}/switch', [AdminMasterUserController::class, 'switchUser'])->whereNumber('id')->middleware('throttle:admin-write-10');
+    Route::get('/master-user-groups', [AdminMasterUserController::class, 'groups']);
+    Route::post('/master-user-groups', [AdminMasterUserController::class, 'storeGroup'])->middleware('throttle:admin-write-20');
+    Route::match(['PUT', 'DELETE'], '/master-user-groups/{id}', [AdminMasterUserController::class, 'groups'])->whereNumber('id')->middleware('throttle:admin-write-10');
     Route::get('/users', [AdminController::class, 'listUsers']);
     Route::post('/users', [AdminController::class, 'storeUser'])->middleware('throttle:admin-write-20');
     Route::put('/users/{id}', [AdminController::class, 'updateUser'])->middleware('throttle:admin-write-20');
@@ -255,6 +271,8 @@ Route::middleware(['auth:sanctum', 'verified', 'admin', 'throttle:admin-api'])->
     Route::get('/access-logs/{id}', [AdminAccessLogController::class, 'detail'])->where('id', '[A-Za-z0-9_-]+');
     Route::get('/logs/login', [AdminMonitorController::class, 'loginLogs']);
     Route::get('/logs/op', [AdminMonitorController::class, 'opLogs']);
+    Route::get('/logs/backup', [AdminMonitorController::class, 'backupLogs']);
+    Route::get('/logs/msg-send', [AdminMonitorController::class, 'messageLogs']);
     Route::get('/monitor/site-realtime', [AdminMonitorController::class, 'siteRealtime']);
     Route::get('/monitor/stream-realtime', [AdminMonitorController::class, 'streamRealtime']);
     Route::get('/monitor/site-top', [AdminMonitorController::class, 'siteTop']);

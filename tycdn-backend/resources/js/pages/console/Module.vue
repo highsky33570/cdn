@@ -7,6 +7,7 @@ import { consoleModules, fallbackModule } from '@/lib/consoleData';
 import { consoleNavigationTitle } from '@/lib/consoleNavigation';
 import { masterResources } from '@/lib/masterResources';
 import AdminAccessLogs from './AdminAccessLogs.vue';
+import AdminAnnouncements from './AdminAnnouncements.vue';
 import AdminBlockLogs from './AdminBlockLogs.vue';
 import AdminCache from './AdminCache.vue';
 import AdminCertificates from './AdminCertificates.vue';
@@ -21,24 +22,29 @@ import AdminLineGroups from './AdminLineGroups.vue';
 import AdminMaintenance from './AdminMaintenance.vue';
 import AdminMarketing from './AdminMarketing.vue';
 import AdminMasterResources from './AdminMasterResources.vue';
+import AdminMasterUsers from './AdminMasterUsers.vue';
+import AdminMessageQuery from './AdminMessageQuery.vue';
 import AdminMonitoring from './AdminMonitoring.vue';
 import AdminNginx from './AdminNginx.vue';
 import AdminNodeMonitoring from './AdminNodeMonitoring.vue';
 import AdminNodeMonitorSettings from './AdminNodeMonitorSettings.vue';
 import AdminNodes from './AdminNodes.vue';
+import AdminOrders from './AdminOrders.vue';
 import AdminOverview from './AdminOverview.vue';
 import AdminPackageMonitor from './AdminPackageMonitor.vue';
 import AdminPackages from './AdminPackages.vue';
 import AdminPackageUpgrades from './AdminPackageUpgrades.vue';
-import AdminPanelRecords from './AdminPanelRecords.vue';
+import AdminRecharge from './AdminRecharge.vue';
+import AdminRechargeStats from './AdminRechargeStats.vue';
 import AdminResources from './AdminResources.vue';
 import AdminSecurity from './AdminSecurity.vue';
 import AdminSites from './AdminSites.vue';
 import AdminSoldPackages from './AdminSoldPackages.vue';
 import AdminStreamAnalytics from './AdminStreamAnalytics.vue';
 import AdminStreams from './AdminStreams.vue';
+import AdminTasks from './AdminTasks.vue';
 import AdminTrafficPackages from './AdminTrafficPackages.vue';
-import AdminUsers from './AdminUsers.vue';
+import AdminUsage from './AdminUsage.vue';
 import AdminWafLogs from './AdminWafLogs.vue';
 import UserAccount from './UserAccount.vue';
 import UserAnalytics from './UserAnalytics.vue';
@@ -89,7 +95,7 @@ const MODULES: Record<
 > = {
     'admin-overview': { component: AdminOverview },
     'admin-analytics-logs': { component: AdminAccessLogs },
-    'admin-users': { component: AdminUsers },
+    'admin-users': { component: AdminMasterUsers },
     'admin-packages': { component: AdminPackages },
     'admin-sites': { component: AdminSites },
     'admin-nodes': { component: AdminNodes },
@@ -101,20 +107,16 @@ const MODULES: Record<
     'admin-security-waf': { component: AdminSecurity, props: { view: 'waf' } },
     'admin-sold-packages': { component: AdminSoldPackages },
     'admin-finance-recharge': {
-        component: AdminUsers,
-        props: { title: '用户充值' },
+        component: AdminRecharge,
     },
     'admin-finance-orders': {
-        component: AdminPanelRecords,
-        props: { view: 'orders' },
+        component: AdminOrders,
     },
     'admin-finance-recharge-count': {
-        component: AdminPanelRecords,
-        props: { view: 'recharge-count' },
+        component: AdminRechargeStats,
     },
     'admin-message-query': {
-        component: AdminPanelRecords,
-        props: { view: 'messages' },
+        component: AdminMessageQuery,
     },
     'admin-dns': { component: AdminDns },
     'admin-streams': { component: AdminStreams },
@@ -184,6 +186,10 @@ const MODULES: Record<
     },
 
     'account-profile': { component: UserAccount, props: { view: 'profile' } },
+    'account-balance': {
+        component: UserAccount,
+        props: { view: 'profile', initialAction: 'recharge' },
+    },
     'account-certification': {
         component: UserAccount,
         props: { view: 'certification' },
@@ -203,6 +209,8 @@ for (const resource of Object.keys(masterResources)) {
 }
 
 MODULES['admin-workspace-attack-log'] = { component: AdminWafLogs };
+MODULES['admin-workspace-tasks'] = { component: AdminTasks };
+MODULES['admin-workspace-messages'] = { component: AdminAnnouncements };
 MODULES['admin-workspace-package-monitor'] = { component: AdminPackageMonitor };
 
 for (const resource of ['discounts', 'coupons', 'coupon-historys']) {
@@ -242,6 +250,7 @@ for (const view of ['realtime', 'top', 'usage']) {
 }
 
 MODULES['admin-config-node-monitor'] = { component: AdminNodeMonitorSettings };
+MODULES['admin-analytics-usage'] = { component: AdminUsage };
 MODULES['admin-config-firewall'] = { component: AdminFirewall };
 MODULES['admin-config-nginx'] = { component: AdminNginx };
 MODULES['admin-config-resources'] = { component: AdminResources };

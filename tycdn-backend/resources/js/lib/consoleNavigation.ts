@@ -36,19 +36,15 @@ export const mainNavItems: NavItem[] = [
             { title: '网站列表', href: '/console/sites' },
             { title: '证书管理', href: '/console/certificates' },
             { title: '刷新预热', href: '/console/cache/jobs' },
-            { title: 'CC 规则', href: '/console/security/cc' },
-            { title: 'ACL 规则', href: '/console/security/acls' },
+            { title: 'CC规则', href: '/console/security/cc' },
+            { title: 'ACL规则', href: '/console/security/acls' },
         ],
     },
     {
         title: '四层转发',
         href: '/console/streams',
         icon: Network,
-        children: [
-            { title: '转发列表', href: '/console/streams' },
-            { title: '转发分组', href: '/console/streams/groups' },
-            { title: '默认设置', href: '/console/streams/defaults' },
-        ],
+        children: [{ title: '转发列表', href: '/console/streams' }],
     },
     {
         title: '套餐管理',
@@ -67,11 +63,12 @@ export const mainNavItems: NavItem[] = [
         icon: Settings,
         children: [
             { title: '个人资料', href: '/console/account/profile' },
+            { title: '账户充值', href: '/console/account/balance' },
             { title: '消费记录', href: '/console/billing/orders' },
             { title: '日志查询', href: '/console/account/login-logs' },
             { title: '消息查询', href: '/console/messages' },
             { title: '消息订阅', href: '/console/messages/subscriptions' },
-            { title: 'API 密钥', href: '/console/account/api-key' },
+            { title: 'API密钥', href: '/console/account/api-key' },
         ],
     },
 ];

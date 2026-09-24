@@ -7,6 +7,7 @@ const props = defineProps<{
     total: number;
     disabled?: boolean;
     numbered?: boolean;
+    edgeLinks?: boolean;
 }>();
 const visiblePages = computed(() => {
     const count = Math.max(1, Math.ceil(props.total / pageSize.value));
@@ -30,6 +31,17 @@ const visiblePages = computed(() => {
             >‹</Button
         >
         <template v-if="numbered"
+            ><template v-if="edgeLinks && visiblePages[0] > 1"
+                ><Button
+                    size="sm"
+                    variant="outline"
+                    aria-label="第 1 页"
+                    :disabled="disabled"
+                    @click="page = 1"
+                    >1</Button
+                ><span v-if="visiblePages[0] > 2" aria-hidden="true"
+                    >…</span
+                ></template
             ><Button
                 v-for="number in visiblePages"
                 :key="number"
@@ -40,6 +52,27 @@ const visiblePages = computed(() => {
                 :disabled="disabled"
                 @click="page = number"
                 >{{ number }}</Button
+            ><template
+                v-if="
+                    edgeLinks &&
+                    visiblePages[visiblePages.length - 1] <
+                        Math.ceil(total / pageSize)
+                "
+                ><span
+                    v-if="
+                        visiblePages[visiblePages.length - 1] <
+                        Math.ceil(total / pageSize) - 1
+                    "
+                    aria-hidden="true"
+                    >…</span
+                ><Button
+                    size="sm"
+                    variant="outline"
+                    :aria-label="`第 ${Math.ceil(total / pageSize)} 页`"
+                    :disabled="disabled"
+                    @click="page = Math.ceil(total / pageSize)"
+                    >{{ Math.ceil(total / pageSize) }}</Button
+                ></template
             ></template
         >
         <span v-else class="min-w-7 text-center text-primary">{{ page }}</span>

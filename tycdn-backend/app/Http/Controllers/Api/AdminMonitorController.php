@@ -38,6 +38,34 @@ class AdminMonitorController extends Controller
         }
     }
 
+    public function backupLogs(Request $request): JsonResponse
+    {
+        $query = $request->validate(['page' => ['sometimes', 'integer', 'min:1'], 'limit' => ['sometimes', 'integer', 'min:1', 'max:100']]);
+        try {
+            $data = $this->cdnfly->proxyAdminRequest('GET', '/v1/jobs', [...$query, 'type' => 'backup']);
+
+            return response()->json(['ok' => true, 'data' => $data]);
+        } catch (\Throwable $e) {
+            return $this->cdnflyFailure($e, __FUNCTION__);
+        }
+    }
+
+    public function messageLogs(Request $request): JsonResponse
+    {
+        $query = $request->validate([
+            'page' => ['sometimes', 'integer', 'min:1'], 'limit' => ['sometimes', 'integer', 'min:1', 'max:100'],
+            'uid' => ['sometimes', 'integer', 'min:1'], 'msg_id' => ['sometimes', 'integer', 'min:1'],
+            'msg_type' => ['sometimes', 'string', 'max:100'], 'media' => ['sometimes', 'string', 'max:30'], 'state' => ['sometimes', 'string', 'max:30'],
+        ]);
+        try {
+            $data = $this->cdnfly->proxyAdminRequest('GET', '/v1/log/msg-send', $query);
+
+            return response()->json(['ok' => true, 'data' => $data]);
+        } catch (\Throwable $e) {
+            return $this->cdnflyFailure($e, __FUNCTION__);
+        }
+    }
+
     public function siteRealtime(Request $request): JsonResponse
     {
         try {

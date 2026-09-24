@@ -58,7 +58,7 @@ class AdminWorkspaceController extends Controller
         'node-traffic' => ['/v1/node-traffic', ['GET']],
         'package-monitor' => ['/v1/monitor/user-package', ['GET']],
         'package-nodes' => ['/v1/monitor/user-package/nodes', ['GET']],
-        'master-upgrades' => ['/v1/master/upgrades', ['GET']],
+        'master-upgrades' => ['/v1/master/upgrades', ['GET', 'POST']],
         'master-upgrade-log' => ['/v1/master/upgrades/log', ['GET']],
         'agent-upgrades' => ['/v1/agent/upgrades', ['GET']],
         'agent-upgrade-log' => ['/v1/agent/upgrades/log', ['GET']],
@@ -100,6 +100,15 @@ class AdminWorkspaceController extends Controller
             $request->validate(['enable' => ['required', 'integer', 'in:0']]);
             abort_if($id === null, 405);
             $payload = ['enable' => 0];
+        } elseif ($resource === 'master-upgrades' && $request->isMethod('POST')) {
+            abort_if($id !== null, 405);
+            $input = $request->validate([
+                'action' => ['required', 'in:start'],
+                'version_num' => ['required', 'integer', 'min:1'],
+            ]);
+            // The native upgrade endpoint reads query parameters, not JSON.
+            $path .= '?'.http_build_query(['action' => 'start', 'version_num' => (int) $input['version_num']]);
+            $payload = [];
         } else {
             $payload = $request->isMethod('GET') ? $request->query() : $request->all();
         }

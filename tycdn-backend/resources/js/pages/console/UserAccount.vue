@@ -69,6 +69,7 @@ type AccountView = 'profile' | 'certification' | 'api-key' | 'login-logs';
 
 const props = defineProps<{
     view: AccountView;
+    initialAction?: 'recharge';
 }>();
 
 const loading = ref(false);
@@ -541,7 +542,7 @@ const securityBadges = computed(() => {
 // balance tile because that is where a customer notices they are low.
 const RECHARGE_PRESETS = [10, 25, 50, 100, 200] as const;
 
-const rechargeOpen = ref(false);
+const rechargeOpen = ref(props.initialAction === 'recharge');
 const rechargeAmount = ref<string>('25');
 const rechargeSubmitting = ref(false);
 

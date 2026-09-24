@@ -16,6 +16,8 @@ const props = defineProps<{
     range: StreamRange;
     loading: boolean;
     error: string;
+    heading?: string;
+    area?: boolean;
 }>();
 const emit = defineEmits<{ retry: [] }>();
 const title = computed(() =>
@@ -86,6 +88,23 @@ const x = (time: number) =>
 const y = (value: number) => 250 - (value / maximum.value) * 210;
 const linePath = (points: [number, number][]) =>
     points.map(([time, value]) => `${x(time)},${y(value)}`).join(' ');
+const curvePath = (points: [number, number][]) =>
+    points
+        .map(([time, value], index) => {
+            if (!index) {
+return `M ${x(time)},${y(value)}`;
+}
+
+            const previous = points[index - 1];
+            const middle = (x(previous[0]) + x(time)) / 2;
+
+            return `C ${middle},${y(previous[1])} ${middle},${y(value)} ${x(time)},${y(value)}`;
+        })
+        .join(' ');
+const areaPath = (points: [number, number][]) =>
+    points.length
+        ? `${curvePath(points)} L ${x(points.at(-1)![0])},250 L ${x(points[0][0])},250 Z`
+        : '';
 const ticks = computed(() => {
     const all = times.value.length
         ? times.value
@@ -145,8 +164,16 @@ function inspect(event: PointerEvent): void {
         class="stream-chart relative min-w-0 rounded-md border bg-card p-4"
         :aria-label="`${title}图表`"
         :aria-busy="loading"
+        :style="
+            area
+                ? {
+                      '--stream-line': 'var(--primary)',
+                      '--stream-inbound': 'var(--chart-2)',
+                  }
+                : undefined
+        "
     >
-        <h3 class="text-sm font-semibold">{{ title }}</h3>
+        <h3 class="text-sm font-semibold">{{ heading ?? title }}</h3>
         <div
             v-if="series.inbound.length && !loading && !error"
             class="absolute top-4 right-4 flex gap-3 text-xs text-muted-foreground"
@@ -164,7 +191,8 @@ function inspect(event: PointerEvent): void {
         <div ref="plot" class="mt-2">
             <svg
                 :viewBox="`0 0 ${width} 290`"
-                class="h-72 w-full"
+                class="w-full"
+                :class="area ? 'h-80 sm:h-96' : 'h-72'"
                 preserveAspectRatio="none"
                 role="img"
                 :aria-label="`${title}时间曲线`"
@@ -191,7 +219,22 @@ function inspect(event: PointerEvent): void {
                 </g>
                 <template v-if="!loading && !error">
                     <g v-for="line in lines" :key="line.key">
+                        <template v-if="area">
+                            <path
+                                :d="areaPath(line.points)"
+                                :fill="line.color"
+                                fill-opacity="0.08"
+                            />
+                            <path
+                                :d="curvePath(line.points)"
+                                fill="none"
+                                :stroke="line.color"
+                                stroke-width="2"
+                                vector-effect="non-scaling-stroke"
+                            />
+                        </template>
                         <polyline
+                            v-else
                             :points="linePath(line.points)"
                             fill="none"
                             :stroke="line.color"
