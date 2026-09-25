@@ -344,7 +344,7 @@ onMounted(load);
 </script>
 
 <template>
-    <div class="min-w-0 flex-1 p-4 md:p-6">
+    <div class="console-admin-node-monitor-settings min-w-0 flex-1 p-4 md:p-6">
         <section
             class="monitor-panel rounded-xl border bg-card p-5 text-card-foreground shadow-sm"
         >
@@ -964,7 +964,8 @@ onMounted(load);
             </template>
         </section>
         <Dialog v-model:open="detailOpen"
-            ><DialogScrollContent class="bg-card sm:max-w-[760px]"
+            ><DialogScrollContent
+                class="console-admin-node-monitor-settings bg-card sm:max-w-[760px]"
                 ><DialogHeader
                     ><DialogTitle>通知详情</DialogTitle
                     ><DialogDescription
@@ -1017,111 +1018,3 @@ onMounted(load);
         >
     </div>
 </template>
-
-<style scoped>
-.settings-section {
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    background: color-mix(in srgb, var(--muted) 15%, var(--card));
-    padding: 16px;
-}
-.settings-section h3 {
-    font-size: var(--console-text-section-title);
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    gap: 7px;
-}
-.settings-section h3::before {
-    content: '';
-    width: 3px;
-    height: 14px;
-    background: var(--primary);
-    border-radius: 2px;
-}
-.section-hint {
-    font-size: var(--console-text-helper);
-    color: var(--muted-foreground);
-    margin: 6px 0 16px;
-}
-.form-row {
-    display: grid;
-    grid-template-columns: 110px minmax(0, 1fr);
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 24px;
-}
-.form-row:last-child {
-    margin-bottom: 8px;
-}
-.form-row.items-start {
-    align-items: start;
-}
-.form-row > label {
-    justify-content: flex-end;
-    text-align: right;
-    font-weight: 400;
-    line-height: 1.3;
-}
-.form-row input,
-.monitor-panel input {
-    height: 32px;
-}
-.number-field {
-    display: flex;
-    max-width: 328px;
-}
-.number-field input {
-    min-width: 0;
-}
-.number-field:has(span) input {
-    border-radius: 4px 0 0 4px;
-}
-.number-field span {
-    display: flex;
-    align-items: center;
-    border: 1px solid var(--border);
-    border-left: 0;
-    padding: 0 8px;
-    font-size: var(--console-text-body);
-    border-radius: 0 4px 4px 0;
-    background: var(--card);
-}
-.template-label {
-    display: flex;
-    align-items: center;
-    white-space: nowrap;
-    border: 1px solid var(--border);
-    border-right: 0;
-    padding: 0 8px;
-    font-size: var(--console-text-body);
-    font-weight: 400;
-    background: var(--card);
-}
-.monitor-panel th {
-    height: 36px;
-    padding: 0 10px;
-    font-weight: 500;
-}
-.monitor-panel td {
-    height: 46px;
-    padding: 8px 10px;
-}
-@media (max-width: 600px) {
-    .form-row {
-        grid-template-columns: 1fr;
-        gap: 8px;
-    }
-    .form-row > label {
-        justify-content: flex-start;
-        text-align: left;
-    }
-    .settings-section {
-        padding: 12px;
-    }
-    .template-label {
-        font-size: var(--console-text-body);
-        padding: 0 4px;
-    }
-}
-</style>

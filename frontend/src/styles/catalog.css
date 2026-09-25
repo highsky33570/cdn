@@ -1,0 +1,495 @@
+/* Global catalog styles. Loaded by global.css.
+ * Stable public-* namespaces isolate layouts. data-public-style marks nested
+ * component roots; their internals keep their own styles and remain unaffected
+ * by an enclosing page's type selectors. :where() adds no specificity.
+ */
+
+/* components/PlanCard.vue */
+.plan-card:is(.public-plan-card, .public-plan-card *):not(:where(.public-plan-card [data-public-style] *)) {
+  position: relative;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 24px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--panel);
+  box-shadow: var(--shadow);
+  transition:
+    border-color 0.2s,
+    transform 0.2s;
+}
+.plan-card:is(.public-plan-card, .public-plan-card *):not(:where(.public-plan-card [data-public-style] *))::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 24px;
+  right: 24px;
+  height: 2px;
+  background: linear-gradient(90deg, var(--accent), var(--accent-border));
+  border-radius: 0 0 2px 2px;
+}
+.plan-card:is(.public-plan-card, .public-plan-card *):not(:where(.public-plan-card [data-public-style] *)):hover {
+  transform: translateY(-4px);
+  border-color: var(--accent-border);
+}
+.plan-card.is-selected:is(.public-plan-card, .public-plan-card *):not(:where(.public-plan-card [data-public-style] *)) {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+.plan-card__heading:is(.public-plan-card, .public-plan-card *):not(:where(.public-plan-card [data-public-style] *)) {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.plan-number:is(.public-plan-card, .public-plan-card *):not(:where(.public-plan-card [data-public-style] *)) {
+  color: var(--accent);
+  font:
+    600 15px/1.5 'Cascadia Code',
+    Consolas,
+    monospace;
+  letter-spacing: 0.04em;
+}
+.plan-heading-line:is(.public-plan-card, .public-plan-card *):not(:where(.public-plan-card [data-public-style] *)) {
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+.plan-cycle:is(.public-plan-card, .public-plan-card *):not(:where(.public-plan-card [data-public-style] *)),
+.plan-selected:is(.public-plan-card, .public-plan-card *):not(:where(.public-plan-card [data-public-style] *)) {
+  font-size: 11px;
+  color: var(--text-2);
+  background: var(--surface);
+  border-radius: 6px;
+  padding: 4px 9px;
+  white-space: nowrap;
+}
+.plan-selected:is(.public-plan-card, .public-plan-card *):not(:where(.public-plan-card [data-public-style] *)) {
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+h3:is(.public-plan-card, .public-plan-card *):not(:where(.public-plan-card [data-public-style] *)) {
+  margin: 18px 0 0;
+  font-size: 23px;
+  line-height: 1.4;
+  color: var(--text-strong);
+  overflow-wrap: anywhere;
+}
+.plan-price:is(.public-plan-card, .public-plan-card *):not(:where(.public-plan-card [data-public-style] *)) {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 7px;
+  margin: 16px 0 22px;
+}
+.plan-price strong:is(.public-plan-card, .public-plan-card *):not(:where(.public-plan-card [data-public-style] *)) {
+  color: var(--text-strong);
+  font-size: 44px;
+  letter-spacing: -0.045em;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+.plan-price span:is(.public-plan-card, .public-plan-card *):not(:where(.public-plan-card [data-public-style] *)) {
+  color: var(--text-3);
+  font-size: 12px;
+  white-space: nowrap;
+}
+.plan-inclusions:is(.public-plan-card, .public-plan-card *):not(:where(.public-plan-card [data-public-style] *)) {
+  display: grid;
+  gap: 9px;
+  list-style: none;
+  margin: 0;
+  padding: 20px 0 0;
+  border-top: 1px solid var(--border);
+}
+.plan-inclusions li:is(.public-plan-card, .public-plan-card *):not(:where(.public-plan-card [data-public-style] *)) {
+  display: grid;
+  grid-template-columns: 14px minmax(0, 1fr);
+  align-content: start;
+  gap: 8px;
+  min-width: 0;
+  font-size: 13px;
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+}
+.inclusion-mark:is(.public-plan-card, .public-plan-card *):not(:where(.public-plan-card [data-public-style] *)) {
+  color: var(--ok);
+  font-size: 12px;
+  font-weight: 600;
+}
+.inclusion-label:is(.public-plan-card, .public-plan-card *):not(:where(.public-plan-card [data-public-style] *)) {
+  color: var(--text-2);
+}
+.plan-inclusions strong:is(.public-plan-card, .public-plan-card *):not(:where(.public-plan-card [data-public-style] *)) {
+  color: var(--text);
+  font-weight: 600;
+}
+.plan-inclusions strong.is-unlimited:is(.public-plan-card, .public-plan-card *):not(:where(.public-plan-card [data-public-style] *)) {
+  color: var(--accent);
+}
+.inclusion-feature:is(.public-plan-card, .public-plan-card *):not(:where(.public-plan-card [data-public-style] *)) {
+  color: var(--text);
+}
+.is-unavailable .inclusion-mark:is(.public-plan-card, .public-plan-card *):not(:where(.public-plan-card [data-public-style] *)),
+.is-unavailable strong:is(.public-plan-card, .public-plan-card *):not(:where(.public-plan-card [data-public-style] *)) {
+  color: var(--text-3);
+  font-weight: 400;
+}
+.plan-actions:is(.public-plan-card, .public-plan-card *):not(:where(.public-plan-card [data-public-style] *)) {
+  display: grid;
+  gap: 10px;
+  padding-top: 26px;
+  margin-top: auto;
+  text-align: center;
+}
+.plan-actions .button:is(.public-plan-card, .public-plan-card *):not(:where(.public-plan-card [data-public-style] *)) {
+  min-height: 44px;
+  padding: 11px 14px;
+  font-size: 14px;
+  border-radius: 9px;
+}
+.plan-details:is(.public-plan-card, .public-plan-card *):not(:where(.public-plan-card [data-public-style] *)) {
+  color: var(--text-2);
+  font-size: 12px;
+}
+.plan-details:is(.public-plan-card, .public-plan-card *):not(:where(.public-plan-card [data-public-style] *)):hover {
+  color: var(--accent);
+}
+@media (min-width: 1200px) {
+.plan-card:is(.public-plan-card, .public-plan-card *):not(:where(.public-plan-card [data-public-style] *)) {
+    padding-inline: 20px;
+}
+.plan-card:is(.public-plan-card, .public-plan-card *):not(:where(.public-plan-card [data-public-style] *))::before {
+    left: 20px;
+    right: 20px;
+}
+}
+
+/* components/PlansSection.vue */
+.plans-section:is(.public-plans-section, .public-plans-section *):not(:where(.public-plans-section [data-public-style] *)) {
+  padding: 96px 0;
+  background: var(--panel-2);
+  border-block: 1px solid var(--border);
+}
+.plans-head:is(.public-plans-section, .public-plans-section *):not(:where(.public-plans-section [data-public-style] *)) {
+  text-align: center;
+  margin-bottom: 40px;
+}
+.eyebrow:is(.public-plans-section, .public-plans-section *):not(:where(.public-plans-section [data-public-style] *)) {
+  display: inline-block;
+  margin-bottom: 16px;
+}
+.plans-note:is(.public-plans-section, .public-plans-section *):not(:where(.public-plans-section [data-public-style] *)) {
+  margin-top: 28px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--text-2);
+  line-height: 1.8;
+}
+.plans-note p:is(.public-plans-section, .public-plans-section *):not(:where(.public-plans-section [data-public-style] *)) {
+  margin: 0;
+}
+.plans-note a:is(.public-plans-section, .public-plans-section *):not(:where(.public-plans-section [data-public-style] *)) {
+  color: var(--accent);
+}
+.plans-note a:is(.public-plans-section, .public-plans-section *):not(:where(.public-plans-section [data-public-style] *)):hover {
+  text-decoration: underline;
+}
+@media (max-width: 640px) {
+.plans-section:is(.public-plans-section, .public-plans-section *):not(:where(.public-plans-section [data-public-style] *)) {
+    padding: 64px 0;
+}
+}
+
+/* components/ProductCatalog.vue */
+.catalog-toolbar:is(.public-product-catalog, .public-product-catalog *):not(:where(.public-product-catalog [data-public-style] *)) {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 28px;
+}
+.catalog-count:is(.public-product-catalog, .public-product-catalog *):not(:where(.public-product-catalog [data-public-style] *)) {
+  color: var(--text-2);
+  font-size: 14px;
+}
+.billing-switch:is(.public-product-catalog, .public-product-catalog *):not(:where(.public-product-catalog [data-public-style] *)) {
+  display: flex;
+  gap: 4px;
+  padding: 5px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+}
+.billing-switch button:is(.public-product-catalog, .public-product-catalog *):not(:where(.public-product-catalog [data-public-style] *)) {
+  border: 0;
+  border-radius: 8px;
+  padding: 9px 22px;
+  background: transparent;
+  color: var(--text-2);
+  cursor: pointer;
+  font-weight: 600;
+}
+.billing-switch button[aria-pressed='true']:is(.public-product-catalog, .public-product-catalog *):not(:where(.public-product-catalog [data-public-style] *)) {
+  background: var(--panel);
+  color: var(--accent);
+  box-shadow: var(--shadow);
+}
+.catalog-grid:is(.public-product-catalog, .public-product-catalog *):not(:where(.public-product-catalog [data-public-style] *)) {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+  gap: 18px;
+}
+.catalog-state:is(.public-product-catalog, .public-product-catalog *):not(:where(.public-product-catalog [data-public-style] *)) {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  min-height: 320px;
+  padding: 56px 24px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+}
+.catalog-state h3:is(.public-product-catalog, .public-product-catalog *):not(:where(.public-product-catalog [data-public-style] *)) {
+  margin: 20px 0 0;
+  color: var(--text-strong);
+  font-size: 21px;
+}
+.catalog-state p:is(.public-product-catalog, .public-product-catalog *):not(:where(.public-product-catalog [data-public-style] *)) {
+  margin: 12px 0 24px;
+  color: var(--text-2);
+}
+.state-icon:is(.public-product-catalog, .public-product-catalog *):not(:where(.public-product-catalog [data-public-style] *)) {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 28px;
+}
+.catalog-spinner:is(.public-product-catalog, .public-product-catalog *):not(:where(.public-product-catalog [data-public-style] *)) {
+  width: 28px;
+  height: 28px;
+  border: 3px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin-public-product-catalog 0.8s linear infinite;
+}
+@keyframes spin-public-product-catalog {
+to {
+    transform: rotate(360deg);
+}
+}
+@media (min-width: 1200px) {
+.catalog-grid:is(.public-product-catalog, .public-product-catalog *):not(:where(.public-product-catalog [data-public-style] *)) {
+    grid-template-columns: repeat(var(--catalog-columns), minmax(0, 1fr));
+}
+}
+@media (max-width: 480px) {
+.catalog-toolbar:is(.public-product-catalog, .public-product-catalog *):not(:where(.public-product-catalog [data-public-style] *)) {
+    align-items: flex-start;
+    flex-direction: column;
+}
+.billing-switch:is(.public-product-catalog, .public-product-catalog *):not(:where(.public-product-catalog [data-public-style] *)) {
+    width: 100%;
+}
+.billing-switch button:is(.public-product-catalog, .public-product-catalog *):not(:where(.public-product-catalog [data-public-style] *)) {
+    flex: 1;
+}
+}
+
+/* views/PlanDetailView.vue */
+.detail-page:is(.public-plan-detail-view, .public-plan-detail-view *):not(:where(.public-plan-detail-view [data-public-style] *)) {
+  min-height: 100vh;
+  background: radial-gradient(ellipse at 20% 0%, var(--accent-glow), transparent 50%), var(--bg);
+}
+.detail-main:is(.public-plan-detail-view, .public-plan-detail-view *):not(:where(.public-plan-detail-view [data-public-style] *)) {
+  padding-top: calc(var(--header-h) + 44px);
+  padding-bottom: 88px;
+  min-height: 65vh;
+}
+.back-link:is(.public-plan-detail-view, .public-plan-detail-view *):not(:where(.public-plan-detail-view [data-public-style] *)) {
+  display: inline-block;
+  margin-bottom: 28px;
+  color: var(--text-2);
+}
+.back-link:is(.public-plan-detail-view, .public-plan-detail-view *):not(:where(.public-plan-detail-view [data-public-style] *)):hover {
+  color: var(--accent);
+}
+.detail-grid:is(.public-plan-detail-view, .public-plan-detail-view *):not(:where(.public-plan-detail-view [data-public-style] *)) {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(300px, 1fr);
+  gap: 28px;
+  align-items: start;
+}
+.detail-panel:is(.public-plan-detail-view, .public-plan-detail-view *):not(:where(.public-plan-detail-view [data-public-style] *)) {
+  min-width: 0;
+  padding: 36px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  box-shadow: var(--shadow);
+}
+h1:is(.public-plan-detail-view, .public-plan-detail-view *):not(:where(.public-plan-detail-view [data-public-style] *)) {
+  margin: 18px 0;
+  color: var(--text-strong);
+  font-size: clamp(28px, 3vw, 40px);
+  overflow-wrap: anywhere;
+}
+h2:is(.public-plan-detail-view, .public-plan-detail-view *):not(:where(.public-plan-detail-view [data-public-style] *)) {
+  margin: 30px 0 16px;
+  font-size: 17px;
+  color: var(--text-strong);
+}
+li:is(.public-plan-detail-view, .public-plan-detail-view *):not(:where(.public-plan-detail-view [data-public-style] *)) {
+  color: var(--text-2);
+  line-height: 1.9;
+  overflow-wrap: anywhere;
+}
+.detail-specs:is(.public-plan-detail-view, .public-plan-detail-view *):not(:where(.public-plan-detail-view [data-public-style] *)) {
+  margin: 0;
+}
+.detail-specs div:is(.public-plan-detail-view, .public-plan-detail-view *):not(:where(.public-plan-detail-view [data-public-style] *)),
+.detail-prices > div:is(.public-plan-detail-view, .public-plan-detail-view *):not(:where(.public-plan-detail-view [data-public-style] *)) {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border);
+}
+dt:is(.public-plan-detail-view, .public-plan-detail-view *):not(:where(.public-plan-detail-view [data-public-style] *)),
+.detail-prices span:is(.public-plan-detail-view, .public-plan-detail-view *):not(:where(.public-plan-detail-view [data-public-style] *)) {
+  color: var(--text-2);
+}
+dd:is(.public-plan-detail-view, .public-plan-detail-view *):not(:where(.public-plan-detail-view [data-public-style] *)) {
+  margin: 0;
+  font-weight: 600;
+  text-align: right;
+}
+ul:is(.public-plan-detail-view, .public-plan-detail-view *):not(:where(.public-plan-detail-view [data-public-style] *)) {
+  padding-left: 20px;
+}
+li + li:is(.public-plan-detail-view, .public-plan-detail-view *):not(:where(.public-plan-detail-view [data-public-style] *)) {
+  margin-top: 8px;
+}
+.detail-state:is(.public-plan-detail-view, .public-plan-detail-view *):not(:where(.public-plan-detail-view [data-public-style] *)) {
+  text-align: center;
+  padding: 64px 24px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: var(--panel);
+}
+.detail-state p:is(.public-plan-detail-view, .public-plan-detail-view *):not(:where(.public-plan-detail-view [data-public-style] *)) {
+  margin-bottom: 24px;
+  color: var(--text-2);
+}
+@media (max-width: 850px) {
+.detail-grid:is(.public-plan-detail-view, .public-plan-detail-view *):not(:where(.public-plan-detail-view [data-public-style] *)) {
+    grid-template-columns: 1fr;
+}
+.detail-panel:is(.public-plan-detail-view, .public-plan-detail-view *):not(:where(.public-plan-detail-view [data-public-style] *)) {
+    padding: 24px;
+}
+}
+
+/* views/PlansView.vue */
+.plans-page:is(.public-plans-view, .public-plans-view *):not(:where(.public-plans-view [data-public-style] *)) {
+  min-height: 100vh;
+  background: radial-gradient(ellipse at 50% 0%, var(--accent-glow), transparent 44%), var(--bg);
+}
+.plans-main:is(.public-plans-view, .public-plans-view *):not(:where(.public-plans-view [data-public-style] *)) {
+  padding-top: var(--header-h);
+}
+.plans-hero:is(.public-plans-view, .public-plans-view *):not(:where(.public-plans-view [data-public-style] *)) {
+  padding-top: 76px;
+  padding-bottom: 56px;
+  text-align: center;
+}
+.plans-eyebrow:is(.public-plans-view, .public-plans-view *):not(:where(.public-plans-view [data-public-style] *)) {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 12px;
+  border: 1px solid var(--accent-border);
+  border-radius: 8px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+}
+h1:is(.public-plans-view, .public-plans-view *):not(:where(.public-plans-view [data-public-style] *)) {
+  margin: 24px 0 0;
+  font-size: clamp(30px, 3.7vw, 48px);
+  line-height: 1.4;
+  letter-spacing: -0.04em;
+  color: var(--text-strong);
+}
+h1 span:is(.public-plans-view, .public-plans-view *):not(:where(.public-plans-view [data-public-style] *)) {
+  color: var(--accent);
+}
+.plans-hero p:is(.public-plans-view, .public-plans-view *):not(:where(.public-plans-view [data-public-style] *)) {
+  color: var(--text-2);
+  font-size: 16px;
+  line-height: 1.9;
+  margin: 20px auto 0;
+}
+.plans-highlights:is(.public-plans-view, .public-plans-view *):not(:where(.public-plans-view [data-public-style] *)) {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 12px 24px;
+  margin-top: 28px;
+  color: var(--text-2);
+  font-size: 13px;
+}
+.plans-highlights span:is(.public-plans-view, .public-plans-view *):not(:where(.public-plans-view [data-public-style] *))::before {
+  content: '✓';
+  margin-right: 7px;
+  color: var(--ok);
+}
+.plans-content:is(.public-plans-view, .public-plans-view *):not(:where(.public-plans-view [data-public-style] *)) {
+  padding-bottom: 88px;
+}
+.plans-help:is(.public-plans-view, .public-plans-view *):not(:where(.public-plans-view [data-public-style] *)) {
+  margin-top: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 28px 32px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: var(--panel);
+}
+.plans-help h2:is(.public-plans-view, .public-plans-view *):not(:where(.public-plans-view [data-public-style] *)) {
+  font-size: 18px;
+  margin: 0;
+  color: var(--text-strong);
+}
+.plans-help p:is(.public-plans-view, .public-plans-view *):not(:where(.public-plans-view [data-public-style] *)) {
+  color: var(--text-2);
+  margin: 8px 0 0;
+}
+.mobile-break:is(.public-plans-view, .public-plans-view *):not(:where(.public-plans-view [data-public-style] *)) {
+  display: none;
+}
+@media (max-width: 640px) {
+.plans-hero:is(.public-plans-view, .public-plans-view *):not(:where(.public-plans-view [data-public-style] *)) {
+    padding-top: 48px;
+    padding-bottom: 36px;
+}
+.plans-help:is(.public-plans-view, .public-plans-view *):not(:where(.public-plans-view [data-public-style] *)) {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 24px;
+}
+.mobile-break:is(.public-plans-view, .public-plans-view *):not(:where(.public-plans-view [data-public-style] *)) {
+    display: inline;
+}
+}

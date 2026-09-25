@@ -402,7 +402,9 @@ onUnmounted(() => {
 </script>
 
 <template>
-    <div class="monitoring-workspace min-w-0 p-4 md:p-6">
+    <div
+        class="console-admin-monitoring monitoring-workspace min-w-0 p-4 md:p-6"
+    >
         <section
             class="console-panel min-w-0 rounded-xl border bg-card p-4 text-card-foreground md:p-5"
         >
@@ -452,7 +454,7 @@ onUnmounted(() => {
                         class="w-full sm:w-44"
                         :aria-label="select.label"
                         ><SelectValue /></SelectTrigger
-                    ><SelectContent
+                    ><SelectContent class="console-admin-monitoring"
                         ><SelectItem value="all">{{ select.label }}</SelectItem
                         ><SelectItem
                             v-for="[value, label] in select.options"
@@ -810,7 +812,7 @@ onUnmounted(() => {
         </section>
         <Dialog v-model:open="detailOpen"
             ><DialogScrollContent
-                class="max-h-[90dvh] max-w-4xl grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden"
+                class="console-admin-monitoring max-h-[90dvh] max-w-4xl grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden"
                 ><DialogHeader
                     ><DialogTitle>{{ detailTitle }}</DialogTitle
                     ><DialogDescription
@@ -867,17 +869,3 @@ onUnmounted(() => {
         >
     </div>
 </template>
-<style scoped>
-.logs-login :deep(table) {
-    min-width: 1040px;
-}
-.logs-op :deep(table) {
-    min-width: 1180px;
-}
-.logs-backup :deep(table) {
-    min-width: 820px;
-}
-.logs-msg-send :deep(table) {
-    min-width: 1310px;
-}
-</style>

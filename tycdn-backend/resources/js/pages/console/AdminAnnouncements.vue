@@ -320,7 +320,9 @@ async function mutate(ids: (string | number)[], visible?: boolean) {
 </script>
 
 <template>
-    <div class="announcements-workspace min-w-0 p-4 md:p-6">
+    <div
+        class="console-admin-announcements announcements-workspace min-w-0 p-4 md:p-6"
+    >
         <section class="min-w-0 rounded-xl border bg-card p-4 md:p-5">
             <div
                 class="mb-4 flex flex-wrap items-center justify-between gap-3 border-b pb-4"
@@ -448,7 +450,7 @@ async function mutate(ids: (string | number)[], visible?: boolean) {
             "
         >
             <DialogScrollContent
-                class="max-h-[94dvh] max-w-4xl grid-rows-[auto_minmax(0,1fr)_auto] gap-0 overflow-hidden p-0"
+                class="console-admin-announcements max-h-[94dvh] max-w-4xl grid-rows-[auto_minmax(0,1fr)_auto] gap-0 overflow-hidden p-0"
             >
                 <DialogHeader class="border-b px-5 py-4"
                     ><DialogTitle>{{
@@ -639,7 +641,7 @@ async function mutate(ids: (string | number)[], visible?: boolean) {
                     if (!busy) deleteOpen = value;
                 }
             "
-            ><DialogScrollContent
+            ><DialogScrollContent class="console-admin-announcements"
                 ><DialogHeader
                     ><DialogTitle>删除公告</DialogTitle
                     ><DialogDescription
@@ -667,43 +669,3 @@ async function mutate(ids: (string | number)[], visible?: boolean) {
         >
     </div>
 </template>
-
-<style scoped>
-.announcement-table :deep(table) {
-    min-width: 1430px;
-}
-.form-row {
-    display: grid;
-    grid-template-columns: 100px minmax(0, 1fr);
-    align-items: center;
-    gap: 16px;
-}
-.form-row > label {
-    justify-content: flex-end;
-}
-.form-row.items-start {
-    align-items: start;
-}
-.section-heading {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-weight: 600;
-}
-.section-heading::before {
-    content: '';
-    width: 4px;
-    height: 18px;
-    border-radius: 2px;
-    background: var(--primary);
-}
-@media (max-width: 640px) {
-    .form-row {
-        grid-template-columns: minmax(0, 1fr);
-        gap: 8px;
-    }
-    .form-row > label {
-        justify-content: flex-start;
-    }
-}
-</style>

@@ -319,7 +319,7 @@ async function confirmDelete() {
 
 <template>
     <section
-        class="node-panel rounded-xl border bg-card p-5 text-card-foreground shadow-sm"
+        class="console-node-management-panel node-panel rounded-xl border bg-card p-5 text-card-foreground shadow-sm"
         :aria-busy="loading || busy"
     >
         <h1 data-typography="page-title" class="mb-3 font-semibold">
@@ -386,7 +386,9 @@ async function confirmDelete() {
                                 variant="outline"
                                 :disabled="busy"
                                 >更多操作<ChevronDown /></Button></DropdownMenuTrigger
-                        ><DropdownMenuContent align="start"
+                        ><DropdownMenuContent
+                            class="console-node-management-panel"
+                            align="start"
                             ><DropdownMenuItem @select="refresh()"
                                 >刷新</DropdownMenuItem
                             ><DropdownMenuItem
@@ -786,7 +788,9 @@ async function confirmDelete() {
                                                 >
                                                     更多<ChevronDown
                                                         class="size-3" /></Button></DropdownMenuTrigger
-                                            ><DropdownMenuContent align="end"
+                                            ><DropdownMenuContent
+                                                class="console-node-management-panel"
+                                                align="end"
                                                 ><DropdownMenuItem
                                                     @select="
                                                         enableNodes(false, row)
@@ -940,22 +944,3 @@ async function confirmDelete() {
         />
     </section>
 </template>
-
-<style scoped>
-@reference '../../../css/app.css';
-.node-panel th {
-    @apply border-b px-3 py-2.5 font-medium whitespace-nowrap;
-}
-.node-panel td {
-    @apply h-11 border-b px-3 py-2 whitespace-nowrap text-muted-foreground;
-}
-.node-panel tbody tr:hover {
-    @apply bg-muted/25;
-}
-.node-panel :deep([data-slot='select-trigger']) {
-    @apply h-8 min-w-28 rounded border border-input bg-background px-2 text-xs text-foreground focus:border-primary focus:outline-none disabled:opacity-50;
-}
-.node-panel :deep([data-slot='checkbox']) {
-    @apply size-3.5 accent-primary;
-}
-</style>

@@ -1,6 +1,7 @@
 @import 'tailwindcss';
 
 @import 'tw-animate-css';
+@import './console-pages.css';
 @import './console-controls.css';
 @import './console-typography.css';
 

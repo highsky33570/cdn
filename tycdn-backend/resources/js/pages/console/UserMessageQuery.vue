@@ -307,7 +307,10 @@ const body = computed(() =>
 </script>
 
 <template>
-    <section class="user-message-query" aria-label="消息查询">
+    <section
+        class="console-user-message-query user-message-query"
+        aria-label="消息查询"
+    >
         <form class="message-filters" @submit.prevent="applyFilters">
             <SelectField v-model="filters.type" aria-label="消息类型">
                 <SelectOption value="all">所有类型</SelectOption>
@@ -456,7 +459,8 @@ const body = computed(() =>
             @update:page-size="changeSize"
         />
         <Dialog v-model:open="detailOpen"
-            ><DialogScrollContent class="max-h-[90dvh] sm:max-w-2xl"
+            ><DialogScrollContent
+                class="console-user-message-query max-h-[90dvh] sm:max-w-2xl"
                 ><DialogHeader
                     ><DialogTitle>消息详情</DialogTitle
                     ><DialogDescription
@@ -535,130 +539,3 @@ const body = computed(() =>
         >
     </section>
 </template>
-
-<style scoped>
-.user-message-query {
-    min-width: 0;
-    margin: 16px;
-    padding: 12px 14px 20px;
-    background: var(--card);
-    color: var(--foreground);
-    font-size: var(--console-text-body);
-}
-.message-filters {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    align-items: center;
-    margin-bottom: 12px;
-}
-.message-filters :deep([data-slot='select-trigger']) {
-    width: 250px;
-    height: 40px;
-    padding: 0 10px;
-    border: 1px solid var(--input);
-    border-radius: 4px;
-    background: transparent;
-}
-.message-input {
-    display: flex;
-    width: 250px;
-    height: 40px;
-    border: 1px solid var(--input);
-    border-radius: 4px;
-    overflow: hidden;
-}
-.message-input:nth-of-type(2) {
-    width: 275px;
-}
-.message-input span {
-    display: flex;
-    align-items: center;
-    padding: 0 10px;
-    border-right: 1px solid var(--input);
-    background: var(--muted);
-    white-space: nowrap;
-}
-.message-input input {
-    min-width: 0;
-    width: 0;
-    flex: 1;
-    padding: 0 10px;
-    background: transparent;
-    outline: none;
-}
-.message-input:focus-within {
-    border-color: var(--primary);
-}
-.message-input input::placeholder {
-    color: var(--muted-foreground);
-}
-.text-link {
-    color: var(--primary);
-    cursor: pointer;
-}
-.text-link:hover {
-    color: color-mix(in srgb, var(--primary) 75%, var(--foreground));
-}
-.message-scroll {
-    overflow-x: auto;
-    border-bottom: 1px solid var(--input);
-}
-table {
-    width: 100%;
-    min-width: 1150px;
-    table-layout: fixed;
-    border-collapse: collapse;
-}
-th,
-td {
-    padding: 0 22px;
-    border-bottom: 1px solid var(--border);
-    font-size: var(--console-text-body);
-    text-align: left;
-}
-th {
-    height: 48px;
-    background: var(--muted);
-    font-weight: 600;
-}
-td {
-    height: 60px;
-    white-space: nowrap;
-}
-tbody tr:hover {
-    background: var(--accent);
-}
-.truncate-cell {
-    display: block;
-    width: 100%;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-.empty {
-    padding: 0;
-    text-align: center;
-}
-.empty span {
-    display: block;
-    position: sticky;
-    left: 0;
-    width: min(100%, calc(100vw - 340px));
-}
-@media (max-width: 640px) {
-    .user-message-query {
-        margin: 8px;
-        padding: 12px 8px 16px;
-    }
-    .message-input,
-    .message-input:nth-of-type(2),
-    .message-filters :deep([data-slot='select-trigger']) {
-        flex: 1 1 250px;
-        width: 100%;
-    }
-    .empty span {
-        width: calc(100vw - 50px);
-    }
-}
-</style>

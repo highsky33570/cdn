@@ -157,7 +157,9 @@ onUnmounted(() => {
 </script>
 
 <template>
-    <div class="recharge-stats-workspace min-w-0 p-4 md:p-6">
+    <div
+        class="console-admin-recharge-stats recharge-stats-workspace min-w-0 p-4 md:p-6"
+    >
         <section
             class="console-panel rounded-xl border bg-card p-4 text-card-foreground md:p-5"
             aria-labelledby="recharge-stats-title"
@@ -196,7 +198,7 @@ onUnmounted(() => {
                             aria-label="汇总方式"
                             class="w-full sm:w-52"
                             ><SelectValue /></SelectTrigger
-                        ><SelectContent
+                        ><SelectContent class="console-admin-recharge-stats"
                             ><SelectItem value="day">按天汇总</SelectItem
                             ><SelectItem value="month">按月汇总</SelectItem
                             ><SelectItem value="year"
@@ -245,8 +247,3 @@ onUnmounted(() => {
         </section>
     </div>
 </template>
-<style scoped>
-.stats-table :deep(table) {
-    min-width: 0;
-}
-</style>

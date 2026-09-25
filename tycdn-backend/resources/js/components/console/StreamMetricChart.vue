@@ -161,7 +161,7 @@ function inspect(event: PointerEvent): void {
 </script>
 <template>
     <section
-        class="stream-chart relative min-w-0 rounded-md border bg-card p-4"
+        class="console-stream-metric-chart stream-chart relative min-w-0 rounded-md border bg-card p-4"
         :aria-label="`${title}图表`"
         :aria-busy="loading"
         :style="
@@ -347,13 +347,3 @@ function inspect(event: PointerEvent): void {
         </div>
     </section>
 </template>
-<style scoped>
-.stream-chart {
-    --stream-line: #2d8cf0;
-    --stream-inbound: #19be6b;
-}
-:global(.dark .stream-chart) {
-    --stream-line: #60a5fa;
-    --stream-inbound: #34d399;
-}
-</style>

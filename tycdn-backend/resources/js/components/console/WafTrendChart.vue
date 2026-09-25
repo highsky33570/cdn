@@ -72,7 +72,10 @@ function toggle(key: string): void {
 }
 </script>
 <template>
-    <div class="waf-trend relative rounded-md border p-3" aria-label="攻击趋势">
+    <div
+        class="console-waf-trend-chart waf-trend relative rounded-md border p-3"
+        aria-label="攻击趋势"
+    >
         <div class="flex justify-center gap-4 text-xs text-muted-foreground">
             <Button
                 variant="link"
@@ -209,15 +212,3 @@ function toggle(key: string): void {
         </div>
     </div>
 </template>
-<style scoped>
-.waf-trend {
-    --waf-total: #2d8cf0;
-    --waf-protect: #ed4014;
-    --waf-observe: #ff9900;
-}
-:global(.dark .waf-trend) {
-    --waf-total: #60a5fa;
-    --waf-protect: #f87171;
-    --waf-observe: #fbbf24;
-}
-</style>

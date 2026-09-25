@@ -307,7 +307,7 @@ onMounted(async () => {
 });
 </script>
 <template>
-    <div class="p-3 md:p-5">
+    <div class="console-admin-node-monitoring p-3 md:p-5">
         <section
             class="node-monitoring min-w-0 rounded-xl border bg-card p-4 shadow-sm md:p-5"
         >
@@ -592,43 +592,3 @@ onMounted(async () => {
         </section>
     </div>
 </template>
-<style scoped>
-.toolbar {
-    font-size: var(--console-text-body);
-}
-.segments {
-    display: inline-flex;
-}
-.segments button {
-    border: 1px solid var(--border);
-    background: var(--card);
-    padding: 5px 13px;
-    white-space: nowrap;
-}
-.segments button + button {
-    margin-left: -1px;
-}
-.segments button:first-child {
-    border-radius: 4px 0 0 4px;
-}
-.segments button:last-child {
-    border-radius: 0 4px 4px 0;
-}
-.segments button[aria-pressed='true'] {
-    position: relative;
-    border-color: #2d8cf0;
-    color: #2d8cf0;
-    background: color-mix(in srgb, #2d8cf0 4%, var(--card));
-}
-th {
-    padding: 10px;
-    font-weight: 500;
-}
-td {
-    padding: 15px 10px;
-}
-th,
-td {
-    border-bottom: 1px solid var(--border);
-}
-</style>

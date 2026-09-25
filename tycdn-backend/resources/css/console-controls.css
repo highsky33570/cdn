@@ -1,6 +1,6 @@
 /* Console-only geometry, including portaled dialogs. Keep page widths and layout
  * local; single-line controls and pagination share this contract. These targeted
- * important declarations supersede legacy scoped page sizing and utility sizes.
+ * important declarations supersede page sizing and utility sizes.
  * Public/auth forms, tabs, calendar days and menu items retain their own layout. */
 .console-theme {
     --console-control-height: 40px;

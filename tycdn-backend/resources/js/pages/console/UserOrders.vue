@@ -192,7 +192,7 @@ function pay() {
 </script>
 
 <template>
-    <section class="user-orders" aria-label="消费记录">
+    <section class="console-user-orders user-orders" aria-label="消费记录">
         <div class="order-filters">
             <SelectField v-model="type" aria-label="订单类型">
                 <SelectOption value="all">所有类型</SelectOption>
@@ -359,7 +359,10 @@ function pay() {
             class="order-pagination"
         />
         <Dialog v-model:open="detailOpen">
-            <DialogScrollContent v-if="selected" class="sm:max-w-xl">
+            <DialogScrollContent
+                v-if="selected"
+                class="console-user-orders sm:max-w-xl"
+            >
                 <DialogHeader
                     ><DialogTitle>订单详情</DialogTitle
                     ><DialogDescription class="break-all">{{
@@ -431,144 +434,3 @@ function pay() {
         </Dialog>
     </section>
 </template>
-
-<style scoped>
-.user-orders {
-    min-width: 0;
-    margin: 16px;
-    padding: 16px 14px 20px;
-    color: var(--foreground);
-    background: var(--card);
-    font-size: var(--console-text-body);
-}
-.order-filters {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 10px;
-    margin: 0 10px 18px;
-}
-.order-filters :deep([data-slot='select-trigger']) {
-    width: 188px;
-    height: 40px;
-    border: 1px solid var(--input);
-    border-radius: 4px;
-    padding: 0 10px;
-    background: transparent;
-}
-.order-filters :deep(.order-date) {
-    flex-direction: row-reverse;
-    justify-content: space-between;
-    min-width: 188px;
-    height: 40px;
-    border-color: var(--input);
-    border-radius: 4px;
-    font-size: var(--console-text-body);
-    background: transparent;
-    box-shadow: none;
-}
-.text-link {
-    color: var(--primary);
-    cursor: pointer;
-}
-.text-link:hover {
-    color: color-mix(in srgb, var(--primary) 75%, var(--foreground));
-}
-.order-scroll {
-    overflow-x: auto;
-    border-bottom: 1px solid var(--input);
-}
-table {
-    font-size: var(--console-text-body);
-    width: 100%;
-    min-width: 1385px;
-    table-layout: fixed;
-    border-collapse: collapse;
-}
-th {
-    height: 48px;
-    background: var(--muted);
-    font-weight: 600;
-    text-align: left;
-}
-th,
-td {
-    font-size: var(--console-text-body);
-    padding: 0 22px;
-    border-bottom: 1px solid var(--border);
-}
-td {
-    height: 60px;
-    white-space: nowrap;
-}
-tbody tr:hover {
-    background: var(--accent);
-}
-.truncate-cell {
-    display: block;
-    width: 100%;
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-    text-align: left;
-}
-.paid-icon {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 15px;
-    height: 15px;
-    border-radius: 50%;
-    background: #12bf74;
-    color: var(--primary-foreground);
-}
-.unpaid-icon {
-    color: var(--muted-foreground);
-}
-.empty {
-    padding: 0;
-    text-align: center;
-}
-.empty span {
-    display: block;
-    position: sticky;
-    left: 0;
-    width: min(100%, calc(100vw - 340px));
-}
-.order-error {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 12px;
-    margin-bottom: 12px;
-    color: var(--destructive);
-}
-.order-detail {
-    display: grid;
-    grid-template-columns: 90px 1fr;
-    gap: 12px;
-    font-size: var(--console-text-body);
-}
-.order-detail dt {
-    color: var(--muted-foreground);
-}
-.order-detail dd {
-    overflow-wrap: anywhere;
-    min-width: 0;
-}
-@media (max-width: 640px) {
-    .user-orders {
-        margin: 8px;
-        padding: 12px 8px;
-    }
-    .order-filters {
-        margin-inline: 0;
-    }
-    .order-filters :deep([data-slot='select-trigger']) {
-        flex: 1 1 140px;
-    }
-    .empty span {
-        width: calc(100vw - 50px);
-    }
-}
-</style>

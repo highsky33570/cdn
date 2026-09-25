@@ -105,7 +105,7 @@ const axis = (n: number) =>
 </script>
 <template>
     <section
-        class="dashboard-chart min-w-0"
+        class="console-dashboard-chart dashboard-chart min-w-0"
         :aria-label="`${title}图表`"
         :aria-busy="loading"
     >
@@ -263,26 +263,3 @@ const axis = (n: number) =>
         </div>
     </section>
 </template>
-
-<style scoped>
-.dashboard-bar {
-    transform-box: fill-box;
-    transform-origin: center bottom;
-    animation: bar-grow 700ms cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-
-@keyframes bar-grow {
-    from {
-        transform: scaleY(0);
-    }
-    to {
-        transform: scaleY(1);
-    }
-}
-
-@media (prefers-reduced-motion: reduce) {
-    .dashboard-bar {
-        animation: none;
-    }
-}
-</style>

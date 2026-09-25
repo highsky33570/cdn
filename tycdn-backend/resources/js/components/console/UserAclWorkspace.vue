@@ -176,7 +176,7 @@ async function batch(
 
 <template>
     <section
-        class="user-acl-workspace"
+        class="console-user-acl-workspace user-acl-workspace"
         :aria-busy="loading || busy"
         aria-label="ACL 规则"
     >
@@ -202,7 +202,9 @@ async function batch(
                     >
                         更多操作
                         <ChevronDown :size="16" /></Button></DropdownMenuTrigger
-                ><DropdownMenuContent align="start"
+                ><DropdownMenuContent
+                    class="console-user-acl-workspace"
+                    align="start"
                     ><DropdownMenuItem @select="batch('enable')"
                         >启用</DropdownMenuItem
                     ><DropdownMenuItem @select="batch('disable')"
@@ -389,7 +391,9 @@ async function batch(
                                                     :size="
                                                         14
                                                     " /></Button></DropdownMenuTrigger
-                                        ><DropdownMenuContent align="end"
+                                        ><DropdownMenuContent
+                                            class="console-user-acl-workspace"
+                                            align="end"
                                             ><DropdownMenuItem
                                                 @select="
                                                     batch('enable', [
@@ -446,198 +450,3 @@ async function batch(
         />
     </section>
 </template>
-
-<style scoped>
-.user-acl-workspace {
-    min-width: 0;
-    background: var(--card);
-    padding: 12px 11px 20px;
-    font-size: var(--console-text-body);
-    color: var(--muted-foreground);
-}
-.acl-actions {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 12px;
-}
-.acl-button {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    height: 40px;
-    padding: 0 19px;
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    background: var(--card);
-    font-size: var(--console-text-body);
-    white-space: nowrap;
-}
-.acl-button.primary {
-    background: var(--primary);
-    border-color: var(--primary);
-    color: var(--primary-foreground);
-}
-.acl-filters {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 18px;
-}
-.acl-filters :deep([data-slot='select-trigger']) {
-    width: 188px;
-    height: 40px;
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    padding: 0 10px;
-    background: var(--card);
-}
-.acl-input {
-    display: flex;
-    width: 363px;
-    max-width: 100%;
-    height: 40px;
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    overflow: hidden;
-}
-.acl-input span {
-    display: flex;
-    align-items: center;
-    white-space: nowrap;
-    padding: 0 10px;
-    background: var(--muted);
-    border-right: 1px solid var(--border);
-}
-.acl-input input {
-    width: 0;
-    flex: 1;
-    min-width: 0;
-    background: var(--card);
-    padding: 0 10px;
-    outline: none;
-}
-.acl-input:focus-within {
-    border-color: var(--primary);
-}
-.acl-input input::placeholder {
-    color: var(--muted-foreground);
-    opacity: 0.55;
-}
-.text-action {
-    color: var(--primary);
-}
-button:not(:disabled) {
-    cursor: pointer;
-}
-button:disabled,
-input:disabled,
-:deep([data-slot='select-trigger']):disabled {
-    cursor: not-allowed;
-    opacity: 0.5;
-}
-button:focus-visible,
-input:focus-visible,
-:deep([data-slot='select-trigger']):focus-visible {
-    outline: 2px solid var(--primary);
-    outline-offset: 2px;
-}
-.acl-table-scroll {
-    overflow-x: auto;
-}
-.acl-table {
-    width: 100%;
-    min-width: 900px;
-    table-layout: fixed;
-    font-size: var(--console-text-body);
-}
-.acl-table th {
-    height: 48px;
-    padding: 10px 20px;
-    text-align: left;
-    font-weight: 600;
-    background: var(--muted);
-    border-bottom: 1px solid var(--border);
-}
-.acl-table td {
-    height: 60px;
-    padding: 10px 20px;
-    border-bottom: 1px solid var(--border);
-    overflow-wrap: anywhere;
-}
-.acl-table th:first-child,
-.acl-table td:first-child {
-    text-align: center;
-}
-.acl-table input {
-    width: 19px;
-    height: 19px;
-    vertical-align: middle;
-    accent-color: var(--primary);
-}
-.acl-table tbody tr:hover {
-    background: color-mix(in srgb, var(--primary) 4%, var(--card));
-}
-.name-cell,
-.remark-cell {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-.empty {
-    text-align: center;
-}
-.acl-status {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-}
-.acl-status i {
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    flex-shrink: 0;
-    background: #19be6b;
-}
-.acl-status.disabled-status i {
-    background: #f59e0b;
-}
-.row-actions,
-.row-more {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    white-space: nowrap;
-}
-.row-more {
-    gap: 4px;
-}
-.acl-error {
-    color: var(--destructive);
-    margin: 12px 0;
-    font-size: var(--console-text-body);
-}
-@media (max-width: 640px) {
-    .user-acl-workspace {
-        padding: 10px;
-    }
-    .acl-filters :deep([data-slot='select-trigger']) {
-        width: 100%;
-    }
-    .acl-input {
-        width: 100%;
-    }
-    .acl-table .empty {
-        padding: 0;
-        text-align: left;
-    }
-    .empty span {
-        display: block;
-        position: sticky;
-        left: 0;
-        width: calc(100vw - 52px);
-        text-align: center;
-    }
-}
-</style>

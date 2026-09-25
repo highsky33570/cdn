@@ -1,7 +1,7 @@
 <template>
-  <button
+  <button data-public-style
     type="button"
-    class="theme-toggle"
+    class="public-theme-toggle theme-toggle"
     :aria-label="isDark ? '切换到浅色模式' : '切换到深色模式'"
     :title="isDark ? '浅色模式' : '深色模式'"
     @click="toggleTheme"
@@ -29,30 +29,3 @@
 import { useTheme } from '../composables/useTheme'
 const { isDark, toggleTheme } = useTheme()
 </script>
-<style scoped>
-.theme-toggle {
-  display: inline-grid;
-  place-items: center;
-  flex-shrink: 0;
-  width: 40px;
-  height: 40px;
-  padding: 0;
-  border: 1px solid var(--border);
-  border-radius: 11px;
-  background: var(--panel);
-  color: var(--text-2);
-  cursor: pointer;
-  transition:
-    background 0.2s,
-    color 0.2s;
-}
-.theme-toggle:hover {
-  background: var(--surface);
-  color: var(--accent);
-  border-color: var(--accent-border);
-}
-svg {
-  width: 19px;
-  height: 19px;
-}
-</style>

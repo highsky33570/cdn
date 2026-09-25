@@ -522,7 +522,7 @@ async function mutate(ids: number[], method: string, payload?: CdnflyRecord) {
 </script>
 
 <template>
-    <section class="stream-workspace">
+    <section class="console-admin-stream-workspace stream-workspace">
         <nav role="tablist" aria-label="四层转发" class="stream-tabs">
             <Button
                 size="sm"
@@ -600,7 +600,9 @@ async function mutate(ids: number[], method: string, payload?: CdnflyRecord) {
                                 :disabled="busy"
                             >
                                 <MoreHorizontal />更多操作<ChevronDown /></Button></DropdownMenuTrigger
-                        ><DropdownMenuContent align="start"
+                        ><DropdownMenuContent
+                            class="console-admin-stream-workspace"
+                            align="start"
                             ><DropdownMenuItem
                                 :disabled="!selected.length || loading"
                                 @select="
@@ -892,7 +894,9 @@ async function mutate(ids: number[], method: string, payload?: CdnflyRecord) {
                                 :aria-label="`更多操作 ${row.id}`"
                                 :disabled="busy || loading"
                                 ><MoreHorizontal /></Button></DropdownMenuTrigger
-                        ><DropdownMenuContent align="end"
+                        ><DropdownMenuContent
+                            class="console-admin-stream-workspace"
+                            align="end"
                             ><DropdownMenuItem
                                 @select="
                                     mutate([Number(row.id)], 'PUT', {
@@ -940,7 +944,8 @@ async function mutate(ids: number[], method: string, payload?: CdnflyRecord) {
             @updated="load()"
         />
         <Dialog v-model:open="editorOpen"
-            ><DialogScrollContent class="stream-resource-dialog sm:max-w-lg"
+            ><DialogScrollContent
+                class="console-admin-stream-workspace stream-resource-dialog sm:max-w-lg"
                 ><DialogHeader
                     ><DialogTitle
                         >{{ editing ? '编辑' : '新增'
@@ -1069,7 +1074,8 @@ async function mutate(ids: number[], method: string, payload?: CdnflyRecord) {
             ></Dialog
         >
         <Dialog v-model:open="batchOpen"
-            ><DialogScrollContent class="stream-resource-dialog sm:max-w-lg"
+            ><DialogScrollContent
+                class="console-admin-stream-workspace stream-resource-dialog sm:max-w-lg"
                 ><DialogHeader
                     ><DialogTitle>批量修改</DialogTitle
                     ><DialogDescription
@@ -1151,226 +1157,3 @@ async function mutate(ids: number[], method: string, payload?: CdnflyRecord) {
         />
     </section>
 </template>
-
-<style scoped>
-.stream-workspace {
-    min-width: 0;
-    color: var(--card-foreground);
-    background: var(--card);
-    border-radius: var(--radius);
-}
-.stream-tabs {
-    display: flex;
-    gap: 4px;
-    padding: 8px 15px;
-    border-bottom: 1px solid var(--border);
-}
-.stream-panel {
-    padding: 15px;
-}
-.toolbar {
-    justify-content: space-between;
-    flex-wrap: wrap;
-    margin-bottom: 10px;
-}
-.actions {
-    flex-wrap: wrap;
-}
-input:not([type='checkbox']),
-:deep([data-slot='select-trigger']) {
-    height: 32px;
-    border: 1px solid var(--input);
-    border-radius: var(--radius);
-    background: var(--background);
-    color: var(--foreground);
-    padding: 0 8px;
-    min-width: 0;
-    font: inherit;
-}
-input::placeholder {
-    color: var(--muted-foreground);
-}
-:deep([data-slot='checkbox']) {
-    accent-color: var(--primary);
-}
-.search-box {
-    gap: 0;
-}
-.search-box :deep([data-slot='select-trigger']) {
-    width: 100px;
-    border-radius: var(--radius) 0 0 var(--radius);
-}
-.search-box input {
-    width: 175px;
-    border-radius: 0;
-    border-left: 0;
-    border-right: 0;
-}
-.search-box :deep([data-slot='button']) {
-    border-radius: 0 var(--radius) var(--radius) 0;
-}
-.group-count {
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 5px 8px;
-    color: var(--muted-foreground);
-}
-.group-count i {
-    display: inline-block;
-    width: 6px;
-    height: 6px;
-    border-radius: 100%;
-    background: var(--primary);
-    margin-right: 5px;
-}
-.advanced {
-    display: flex;
-    align-items: flex-end;
-    flex-wrap: wrap;
-    gap: 12px;
-    padding: 12px;
-    background: var(--muted);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    margin-bottom: 12px;
-}
-.advanced label {
-    display: grid;
-    gap: 5px;
-}
-.advanced input,
-.advanced :deep([data-slot='select-trigger']) {
-    width: 120px;
-}
-.muted {
-    color: var(--muted-foreground);
-    font-size: var(--console-text-body);
-    line-height: 1.8;
-}
-footer {
-    margin-top: 16px;
-}
-footer.right {
-    justify-content: flex-end;
-}
-.group-note {
-    margin-right: auto;
-}
-.default-panel {
-    max-width: 967px;
-    margin: 15px;
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-}
-.default-heading {
-    justify-content: space-between;
-    align-items: flex-start;
-    border-bottom: 1px solid var(--border);
-    padding-bottom: 14px;
-    margin-bottom: 14px;
-}
-.default-heading h2 {
-    font-weight: 600;
-}
-.default-heading h2:before {
-    content: '';
-    display: inline-block;
-    width: 3px;
-    height: 14px;
-    border-radius: 2px;
-    background: var(--primary);
-    vertical-align: middle;
-    margin-right: 7px;
-}
-.default-heading p {
-    font-size: var(--console-text-body);
-    color: var(--muted-foreground);
-    margin-top: 6px;
-}
-.error {
-    padding: 10px;
-    margin-bottom: 10px;
-    color: var(--destructive);
-    background: color-mix(in srgb, var(--destructive) 10%, transparent);
-    border-radius: var(--radius);
-}
-.spin {
-    animation: stream-spin 1s linear infinite;
-}
-@keyframes stream-spin {
-    to {
-        transform: rotate(360deg);
-    }
-}
-:global(.stream-resource-dialog .resource-form) {
-    display: grid;
-    gap: 18px;
-}
-:global(.stream-resource-dialog .resource-form label) {
-    display: grid;
-    gap: 7px;
-}
-:global(.stream-resource-dialog input:not([type='checkbox'])),
-:global(.stream-resource-dialog :deep([data-slot='select-trigger'])) {
-    height: 36px;
-    border: 1px solid var(--input);
-    border-radius: var(--radius);
-    padding: 0 8px;
-    width: 100%;
-    background: var(--background);
-    color: var(--foreground);
-}
-:global(.stream-resource-dialog .modal-actions) {
-    display: flex;
-    justify-content: flex-end;
-    gap: 8px;
-}
-:global(.stream-resource-dialog .error) {
-    color: var(--destructive);
-}
-:global(.stream-resource-dialog .batch-field) {
-    display: grid;
-    grid-template-columns: 140px 1fr;
-    align-items: center;
-    gap: 12px;
-}
-:global(.stream-resource-dialog .batch-field label) {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
-@media (max-width: 640px) {
-    .toolbar,
-    .search {
-        width: 100%;
-        gap: 10px;
-    }
-    .search-box {
-        flex: 1;
-        min-width: 250px;
-    }
-    .search-box input {
-        flex: 1;
-        width: 100px;
-    }
-    .default-panel {
-        margin: 12px;
-    }
-}
-
-.toolbar,
-.actions,
-.search-box,
-.default-heading,
-footer {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-@media (max-width: 640px) {
-    .default-heading,
-    footer {
-        flex-wrap: wrap;
-    }
-}
-</style>

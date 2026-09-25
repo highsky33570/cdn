@@ -249,7 +249,7 @@ function createdAt(row: CdnflyRecord) {
 </script>
 
 <template>
-    <section class="user-cc-workspace">
+    <section class="console-user-cc-workspace user-cc-workspace">
         <nav
             class="cc-tabs"
             role="tablist"
@@ -302,7 +302,9 @@ function createdAt(row: CdnflyRecord) {
                             更多操作
                             <ChevronDown
                                 :size="16" /></Button></DropdownMenuTrigger
-                    ><DropdownMenuContent align="start"
+                    ><DropdownMenuContent
+                        class="console-user-cc-workspace"
+                        align="start"
                         ><DropdownMenuItem @select="batch('enable')"
                             >启用</DropdownMenuItem
                         ><DropdownMenuItem @select="batch('disable')"
@@ -533,7 +535,9 @@ function createdAt(row: CdnflyRecord) {
                                                         :size="
                                                             14
                                                         " /></Button></DropdownMenuTrigger
-                                            ><DropdownMenuContent align="end"
+                                            ><DropdownMenuContent
+                                                class="console-user-cc-workspace"
+                                                align="end"
                                                 ><DropdownMenuItem
                                                     @select="
                                                         batch('enable', [
@@ -596,212 +600,3 @@ function createdAt(row: CdnflyRecord) {
         />
     </section>
 </template>
-
-<style scoped>
-.user-cc-workspace {
-    min-width: 0;
-    background: var(--card);
-    padding: 12px 14px 24px;
-    font-size: var(--console-text-body);
-    color: var(--muted-foreground);
-}
-.cc-tabs {
-    display: flex;
-    gap: 5px;
-    border-bottom: 1px solid var(--border);
-    margin-bottom: 20px;
-}
-.cc-tabs button {
-    padding: 8px 20px;
-    height: 40px;
-    border: 1px solid var(--border);
-    border-bottom: 0;
-    border-radius: 4px 4px 0 0;
-    background: var(--muted);
-    margin-bottom: -1px;
-}
-.cc-tabs button[aria-selected='true'] {
-    background: var(--card);
-    border-color: var(--primary);
-    color: var(--primary);
-}
-.cc-actions {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 12px;
-}
-.cc-button {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    height: 40px;
-    padding: 0 19px;
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    background: var(--card);
-    white-space: nowrap;
-}
-.cc-button.primary {
-    background: var(--primary);
-    border-color: var(--primary);
-    color: var(--primary-foreground);
-}
-.cc-filters {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 18px;
-}
-.cc-filters :deep([data-slot='select-trigger']) {
-    width: 188px;
-    height: 40px;
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    padding: 0 10px;
-    background: var(--card);
-}
-.cc-input {
-    display: flex;
-    width: 363px;
-    max-width: 100%;
-    height: 40px;
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    overflow: hidden;
-}
-.cc-input span {
-    display: flex;
-    align-items: center;
-    white-space: nowrap;
-    padding: 0 10px;
-    background: var(--muted);
-    border-right: 1px solid var(--border);
-}
-.cc-input input {
-    width: 0;
-    flex: 1;
-    min-width: 0;
-    background: var(--card);
-    padding: 0 10px;
-    outline: none;
-}
-.cc-input:focus-within {
-    border-color: var(--primary);
-}
-.cc-input input::placeholder {
-    color: var(--muted-foreground);
-    opacity: 0.55;
-}
-.text-action {
-    color: var(--primary);
-}
-button:not(:disabled) {
-    cursor: pointer;
-}
-button:disabled,
-input:disabled,
-:deep([data-slot='select-trigger']):disabled {
-    cursor: not-allowed;
-    opacity: 0.5;
-}
-button:focus-visible,
-input:focus-visible,
-:deep([data-slot='select-trigger']):focus-visible {
-    outline: 2px solid var(--primary);
-    outline-offset: 2px;
-}
-.cc-table-scroll {
-    overflow-x: auto;
-}
-.cc-table {
-    width: 100%;
-    min-width: 1000px;
-    table-layout: fixed;
-    font-size: var(--console-text-body);
-}
-.cc-table th {
-    height: 48px;
-    padding: 10px 20px;
-    text-align: left;
-    font-weight: 600;
-    background: var(--muted);
-    border-bottom: 1px solid var(--border);
-}
-.cc-table td {
-    height: 60px;
-    padding: 10px 20px;
-    border-bottom: 1px solid var(--border);
-    overflow-wrap: anywhere;
-}
-.cc-table th:first-child,
-.cc-table td:first-child {
-    text-align: center;
-}
-.cc-table input {
-    width: 19px;
-    height: 19px;
-    vertical-align: middle;
-    accent-color: var(--primary);
-}
-.cc-table tbody tr:hover {
-    background: color-mix(in srgb, var(--primary) 4%, var(--card));
-}
-.name-cell {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-.empty {
-    text-align: center;
-}
-.cc-status {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-}
-.cc-status i {
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    flex-shrink: 0;
-    background: #19be6b;
-}
-.cc-status[data-tone='warning'] i {
-    background: #f59e0b;
-}
-.cc-status[data-tone='danger'] i {
-    background: var(--destructive);
-}
-.row-actions,
-.row-more {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    white-space: nowrap;
-}
-.row-more {
-    gap: 4px;
-}
-.cc-error {
-    color: var(--destructive);
-    margin: 12px 0;
-    font-size: var(--console-text-body);
-}
-@media (max-width: 640px) {
-    .user-cc-workspace {
-        padding: 10px;
-    }
-    .cc-tabs button {
-        padding: 8px 16px;
-    }
-    .cc-filters :deep([data-slot='select-trigger']) {
-        flex: 1;
-        min-width: 125px;
-    }
-    .cc-input {
-        width: 100%;
-    }
-}
-</style>

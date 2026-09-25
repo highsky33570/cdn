@@ -393,7 +393,7 @@ async function remove(): Promise<void> {
 </script>
 
 <template>
-    <div class="min-w-0 flex-1 p-4 md:p-6">
+    <div class="console-admin-l2 min-w-0 flex-1 p-4 md:p-6">
         <section
             class="l2-panel rounded-xl border bg-card p-4 text-card-foreground shadow-sm"
             aria-label="L2 配置"
@@ -678,7 +678,7 @@ async function remove(): Promise<void> {
             "
         >
             <DialogScrollContent
-                class="my-5 w-[calc(100%_-_2rem)] bg-card"
+                class="console-admin-l2 my-5 w-[calc(100%_-_2rem)] bg-card"
                 :class="
                     editTab === 'l2-configs'
                         ? 'sm:max-w-[490px]'
@@ -1072,57 +1072,3 @@ async function remove(): Promise<void> {
         />
     </div>
 </template>
-
-<style scoped>
-.l2-panel th,
-.rule-table th {
-    height: 36px;
-    padding: 0 12px;
-    font-weight: 600;
-    white-space: nowrap;
-}
-.l2-panel td,
-.rule-table td {
-    height: 46px;
-    padding: 8px 12px;
-}
-.form-row {
-    display: grid;
-    grid-template-columns: 76px minmax(0, 1fr);
-    align-items: center;
-    gap: 16px;
-}
-.form-row.items-start {
-    align-items: start;
-}
-.form-row label {
-    justify-content: flex-end;
-    font-weight: 400;
-}
-.form-row input {
-    height: 32px;
-}
-.choice {
-    height: 30px;
-    padding: 0 14px;
-    border: 1px solid var(--border);
-    font-size: var(--console-text-body);
-}
-.choice + .choice {
-    margin-left: -1px;
-}
-.choice[aria-pressed='true'] {
-    position: relative;
-    border-color: var(--primary);
-    color: var(--primary);
-}
-@media (max-width: 540px) {
-    .form-row {
-        grid-template-columns: 1fr;
-        gap: 8px;
-    }
-    .form-row label {
-        justify-content: flex-start;
-    }
-}
-</style>

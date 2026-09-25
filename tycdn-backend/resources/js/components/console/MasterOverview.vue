@@ -281,7 +281,7 @@ onUnmounted(() => {
 
 <template>
     <div
-        class="admin-home grid min-w-0 gap-4 xl:grid-cols-[minmax(0,2fr)_minmax(300px,1fr)]"
+        class="console-master-overview admin-home grid min-w-0 gap-4 xl:grid-cols-[minmax(0,2fr)_minmax(300px,1fr)]"
     >
         <div class="grid min-w-0 content-start gap-4">
             <section class="dashboard-card" aria-label="运营数据">
@@ -816,52 +816,3 @@ onUnmounted(() => {
         </aside>
     </div>
 </template>
-
-<style scoped>
-@reference '../../../css/app.css';
-.dashboard-card {
-    @apply min-w-0 overflow-hidden rounded-lg border bg-card text-card-foreground shadow-sm;
-}
-.dashboard-card > header {
-    @apply flex flex-wrap items-center justify-between gap-2 border-b px-4 py-3;
-}
-h2 {
-    @apply flex items-center gap-2 text-sm font-medium;
-}
-h2 svg {
-    @apply size-3.5 text-primary;
-}
-.periods {
-    @apply inline-flex overflow-hidden rounded border text-xs;
-}
-.periods button {
-    @apply border-r px-2 py-1 text-muted-foreground last:border-r-0 hover:bg-muted;
-}
-.periods button[aria-pressed='true'] {
-    @apply bg-primary/5 text-primary outline -outline-offset-1 outline-primary;
-}
-.tabs {
-    @apply flex flex-wrap gap-1 text-xs;
-}
-.tabs button {
-    @apply rounded-md px-4 py-2 text-muted-foreground hover:bg-muted;
-}
-.tabs button[aria-selected='true'] {
-    @apply bg-primary/10 font-medium text-primary;
-}
-td {
-    @apply border-b px-2 py-3 text-muted-foreground;
-}
-aside td:first-child {
-    @apply w-1/2;
-}
-.status-ok {
-    @apply size-3.5 text-emerald-500;
-}
-.error {
-    @apply p-3 text-xs text-destructive;
-}
-.error button {
-    @apply underline;
-}
-</style>

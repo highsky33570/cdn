@@ -510,7 +510,7 @@ async function assign() {
 
 <template>
     <div
-        class="upgrade-workspace min-w-0 space-y-4"
+        class="console-admin-package-upgrades upgrade-workspace min-w-0 space-y-4"
         :class="{ 'p-4 md:p-6': !embedded }"
     >
         <div
@@ -557,7 +557,7 @@ async function assign() {
                 <Select v-model="filterUpgrade"
                     ><SelectTrigger aria-label="升级包筛选" class="w-56"
                         ><SelectValue /></SelectTrigger
-                    ><SelectContent
+                    ><SelectContent class="console-admin-package-upgrades"
                         ><SelectItem value="all">所有升级包</SelectItem
                         ><SelectItem
                             v-for="up in choices"
@@ -752,7 +752,7 @@ async function assign() {
             :open="editorOpen"
             @update:open="!saving && (editorOpen = $event)"
             ><DialogScrollContent
-                class="my-3 flex max-h-[calc(100dvh-24px)] w-[calc(100%-24px)] max-w-xl flex-col gap-0 overflow-hidden p-0"
+                class="console-admin-package-upgrades my-3 flex max-h-[calc(100dvh-24px)] w-[calc(100%-24px)] max-w-xl flex-col gap-0 overflow-hidden p-0"
             >
                 <DialogHeader class="shrink-0 border-b p-5"
                     ><DialogTitle>{{
@@ -803,6 +803,7 @@ async function assign() {
                                     ><SelectValue
                                         placeholder="请选择类型" /></SelectTrigger
                                 ><SelectContent
+                                    class="console-admin-package-upgrades"
                                     ><SelectItem
                                         v-for="(label, key) in types"
                                         :key="key"
@@ -871,7 +872,7 @@ async function assign() {
                                         }}<span class="ml-2">⌄</span></Button
                                     ></DropdownMenuTrigger
                                 ><DropdownMenuContent
-                                    class="max-h-64 overflow-y-auto"
+                                    class="console-admin-package-upgrades max-h-64 overflow-y-auto"
                                     ><DropdownMenuCheckboxItem
                                         v-for="item in bases"
                                         :key="String(item.id)"
@@ -929,7 +930,8 @@ async function assign() {
         <Dialog
             :open="quantityOpen"
             @update:open="!saving && (quantityOpen = $event)"
-            ><DialogScrollContent class="max-w-md"
+            ><DialogScrollContent
+                class="console-admin-package-upgrades max-w-md"
                 ><DialogHeader
                     ><DialogTitle>编辑用户升级包</DialogTitle
                     ><DialogDescription
@@ -975,7 +977,8 @@ async function assign() {
         <Dialog
             :open="assignOpen"
             @update:open="!saving && (assignOpen = $event)"
-            ><DialogScrollContent class="max-w-xl"
+            ><DialogScrollContent
+                class="console-admin-package-upgrades max-w-xl"
                 ><DialogHeader
                     ><DialogTitle>分配升级包</DialogTitle
                     ><DialogDescription>{{
@@ -1010,6 +1013,7 @@ async function assign() {
                                             : '请选择用户套餐'
                                     " /></SelectTrigger
                             ><SelectContent
+                                class="console-admin-package-upgrades"
                                 ><SelectItem
                                     v-for="item in userPackages"
                                     :key="String(item.id)"
@@ -1059,26 +1063,3 @@ async function assign() {
         />
     </div>
 </template>
-
-<style scoped>
-.upgrade-field {
-    display: grid;
-    grid-template-columns: 90px minmax(0, 1fr);
-    align-items: center;
-    gap: 14px;
-}
-.upgrade-field > label {
-    justify-content: flex-end;
-    text-align: right;
-}
-@media (max-width: 480px) {
-    .upgrade-field {
-        grid-template-columns: 1fr;
-        gap: 8px;
-    }
-    .upgrade-field > label {
-        justify-content: flex-start;
-        text-align: left;
-    }
-}
-</style>

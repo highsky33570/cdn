@@ -185,7 +185,7 @@ const time = (value: unknown) => String(value ?? '—').replace(/^\d{4}-/, '');
 <template>
     <Dialog :open="ip !== null" @update:open="!$event && $emit('close')">
         <DialogScrollContent
-            class="node-log-dialog w-[calc(100%-24px)] max-w-[414px] gap-0 bg-card p-0"
+            class="console-node-ip-logs-dialog node-log-dialog w-[calc(100%-24px)] max-w-[414px] gap-0 bg-card p-0"
         >
             <DialogHeader class="border-b px-3 py-3 text-left"
                 ><DialogTitle class="text-sm font-normal">监控日志</DialogTitle
@@ -199,7 +199,7 @@ const time = (value: unknown) => String(value ?? '—').replace(/^\d{4}-/, '');
                     <Select v-model="logType" @update:model-value="changeType"
                         ><SelectTrigger id="node-log-type" class="log-select"
                             ><SelectValue /></SelectTrigger
-                        ><SelectContent
+                        ><SelectContent class="console-node-ip-logs-dialog"
                             ><SelectItem
                                 v-for="item in types"
                                 :key="item.value"
@@ -225,7 +225,7 @@ const time = (value: unknown) => String(value ?? '—').replace(/^\d{4}-/, '');
                                     align="end"
                                     :side-offset="5"
                                     :collision-padding="12"
-                                    class="z-[60] w-[330px] max-w-[calc(100vw-24px)] rounded border bg-popover p-3 text-xs text-popover-foreground shadow-lg"
+                                    class="console-node-ip-logs-dialog z-[60] w-[330px] max-w-[calc(100vw-24px)] rounded border bg-popover p-3 text-xs text-popover-foreground shadow-lg"
                                     ><form
                                         class="grid gap-3"
                                         @submit.prevent="applyRange"
@@ -283,7 +283,7 @@ const time = (value: unknown) => String(value ?? '—').replace(/^\d{4}-/, '');
                                 id="node-log-group"
                                 class="log-select"
                                 ><SelectValue /></SelectTrigger
-                            ><SelectContent
+                            ><SelectContent class="console-node-ip-logs-dialog"
                                 ><SelectItem value="all" class="text-xs"
                                     >所有监控组</SelectItem
                                 ><SelectItem
@@ -368,69 +368,3 @@ const time = (value: unknown) => String(value ?? '—').replace(/^\d{4}-/, '');
         </DialogScrollContent>
     </Dialog>
 </template>
-<style scoped>
-.log-filters {
-    display: grid;
-    grid-template-columns: 58px minmax(0, 1fr);
-    gap: 21px 9px;
-    align-items: center;
-    font-size: var(--console-text-body);
-}
-.log-filters label {
-    text-align: right;
-}
-:deep(.log-select) {
-    height: 28px;
-    min-height: 28px;
-    width: 100%;
-    border-radius: 3px;
-    padding: 3px 7px;
-    font-size: var(--console-text-body);
-    box-shadow: none;
-}
-.range-trigger {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    height: 28px;
-    padding: 3px 6px;
-    border: 1px solid var(--border);
-    border-radius: 3px;
-    font-size: var(--console-text-body);
-    text-align: left;
-}
-.range-trigger span {
-    flex: 1;
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-}
-th {
-    padding: 8px;
-    font-weight: 600;
-}
-td {
-    padding: 9px 8px;
-    font-size: var(--console-text-body);
-}
-th,
-td {
-    border-bottom: 1px solid var(--border);
-}
-.page-button {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 27px;
-    height: 28px;
-    border: 1px solid var(--border);
-    border-radius: 3px;
-}
-.page-button[aria-current='page'] {
-    color: #2d8cf0;
-    border-color: #2d8cf0;
-}
-.page-button:disabled {
-    opacity: 0.45;
-}
-</style>

@@ -495,7 +495,9 @@ async function assign() {
 </script>
 
 <template>
-    <div class="traffic-workspace min-w-0 p-4 md:p-6">
+    <div
+        class="console-admin-traffic-packages traffic-workspace min-w-0 p-4 md:p-6"
+    >
         <div
             class="console-panel rounded-xl border bg-card p-4 text-card-foreground md:p-5"
         >
@@ -540,7 +542,7 @@ async function assign() {
                             aria-label="流量包筛选"
                             class="w-full sm:w-52"
                             ><SelectValue /></SelectTrigger
-                        ><SelectContent
+                        ><SelectContent class="console-admin-traffic-packages"
                             ><SelectItem value="all">所有流量包</SelectItem
                             ><SelectItem
                                 v-for="item in choices"
@@ -555,7 +557,7 @@ async function assign() {
                             aria-label="状态筛选"
                             class="w-full sm:w-40"
                             ><SelectValue /></SelectTrigger
-                        ><SelectContent
+                        ><SelectContent class="console-admin-traffic-packages"
                             ><SelectItem value="all">所有状态</SelectItem
                             ><SelectItem value="1">启用</SelectItem
                             ><SelectItem value="0"
@@ -757,7 +759,9 @@ async function assign() {
                 }
             "
         >
-            <DialogScrollContent class="traffic-editor sm:max-w-xl">
+            <DialogScrollContent
+                class="console-admin-traffic-packages traffic-editor sm:max-w-xl"
+            >
                 <DialogHeader
                     ><DialogTitle>{{
                         editingId ? '编辑流量包' : '添加流量包'
@@ -829,6 +833,7 @@ async function assign() {
                                         class="w-24 shrink-0 rounded-l-none border-l-0"
                                         ><SelectValue /></SelectTrigger
                                     ><SelectContent
+                                        class="console-admin-traffic-packages"
                                         ><SelectItem
                                             v-for="unit in ['GB', 'TB', 'PB']"
                                             :key="unit"
@@ -865,7 +870,7 @@ async function assign() {
                                         ></Button
                                     ></DropdownMenuTrigger
                                 ><DropdownMenuContent
-                                    class="max-h-64 w-72 overflow-auto"
+                                    class="console-admin-traffic-packages max-h-64 w-72 overflow-auto"
                                     ><DropdownMenuCheckboxItem
                                         v-for="item in bindingOptions"
                                         :key="String(item.id)"
@@ -993,7 +998,8 @@ async function assign() {
             @cancel="!busy && (deleteOpen = false)"
         />
         <Dialog v-model:open="detailsOpen"
-            ><DialogScrollContent class="sm:max-w-2xl"
+            ><DialogScrollContent
+                class="console-admin-traffic-packages sm:max-w-2xl"
                 ><DialogHeader
                     ><DialogTitle>流量包详情</DialogTitle
                     ><DialogDescription>{{
@@ -1007,7 +1013,8 @@ async function assign() {
             ></Dialog
         >
         <Dialog v-model:open="assignOpen"
-            ><DialogScrollContent class="sm:max-w-md"
+            ><DialogScrollContent
+                class="console-admin-traffic-packages sm:max-w-md"
                 ><DialogHeader
                     ><DialogTitle>分配流量包</DialogTitle
                     ><DialogDescription
@@ -1034,35 +1041,3 @@ async function assign() {
         >
     </div>
 </template>
-
-<style scoped>
-.traffic-field {
-    display: grid;
-    grid-template-columns: 5.5rem minmax(0, 1fr);
-    align-items: center;
-    gap: 1rem;
-}
-.traffic-field > label {
-    justify-content: flex-end;
-}
-.traffic-unit {
-    display: flex;
-    align-items: center;
-    padding: 0 0.75rem;
-    border: 1px solid var(--border);
-    border-left: 0;
-    border-radius: 0 var(--radius) var(--radius) 0;
-    background: var(--muted);
-    color: var(--muted-foreground);
-    font-size: var(--console-text-body);
-}
-@media (max-width: 480px) {
-    .traffic-field {
-        grid-template-columns: 1fr;
-        gap: 0.5rem;
-    }
-    .traffic-field > label {
-        justify-content: flex-start;
-    }
-}
-</style>

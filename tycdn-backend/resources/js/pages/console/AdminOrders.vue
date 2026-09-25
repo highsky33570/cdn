@@ -444,7 +444,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-    <div class="orders-workspace min-w-0 p-4 md:p-6">
+    <div class="console-admin-orders orders-workspace min-w-0 p-4 md:p-6">
         <section
             class="console-panel rounded-xl border bg-card p-4 text-card-foreground md:p-5"
         >
@@ -464,7 +464,7 @@ onUnmounted(() => {
                     <Select v-model="type" :disabled="busy"
                         ><SelectTrigger class="w-36" aria-label="订单类型筛选"
                             ><SelectValue /></SelectTrigger
-                        ><SelectContent
+                        ><SelectContent class="console-admin-orders"
                             ><SelectItem value="all">所有类型</SelectItem
                             ><SelectItem
                                 v-for="item in [...types, '流量包']"
@@ -477,7 +477,7 @@ onUnmounted(() => {
                     <Select v-model="state" :disabled="busy"
                         ><SelectTrigger class="w-36" aria-label="付款状态筛选"
                             ><SelectValue /></SelectTrigger
-                        ><SelectContent
+                        ><SelectContent class="console-admin-orders"
                             ><SelectItem value="all">所有状态</SelectItem
                             ><SelectItem value="已付款">已付款</SelectItem
                             ><SelectItem value="未付款"
@@ -595,7 +595,7 @@ onUnmounted(() => {
 
         <Dialog :open="editOpen" @update:open="closeEdit">
             <DialogScrollContent
-                class="max-h-[95dvh] max-w-[790px] grid-rows-[auto_minmax(0,1fr)_auto] gap-0 overflow-hidden p-0"
+                class="console-admin-orders max-h-[95dvh] max-w-[790px] grid-rows-[auto_minmax(0,1fr)_auto] gap-0 overflow-hidden p-0"
                 @interact-outside.prevent
                 @escape-key-down="saving && $event.preventDefault()"
             >
@@ -776,7 +776,9 @@ onUnmounted(() => {
                     if (!deleting) deleteOpen = value;
                 }
             "
-            ><DialogScrollContent @interact-outside.prevent
+            ><DialogScrollContent
+                class="console-admin-orders"
+                @interact-outside.prevent
                 ><DialogHeader
                     ><DialogTitle>删除确认</DialogTitle
                     ><DialogDescription
@@ -806,7 +808,7 @@ onUnmounted(() => {
             ></Dialog
         >
         <Dialog v-model:open="moreOpen"
-            ><DialogScrollContent
+            ><DialogScrollContent class="console-admin-orders"
                 ><DialogHeader
                     ><DialogTitle>订单更多信息</DialogTitle
                     ><DialogDescription class="sr-only"
@@ -828,26 +830,3 @@ onUnmounted(() => {
         >
     </div>
 </template>
-<style scoped>
-.order-table :deep(table) {
-    min-width: 1560px;
-}
-.order-field {
-    display: grid;
-    grid-template-columns: 110px minmax(0, 1fr);
-    align-items: center;
-    gap: 16px;
-}
-.order-field > label {
-    justify-content: flex-end;
-}
-@media (max-width: 639px) {
-    .order-field {
-        grid-template-columns: minmax(0, 1fr);
-        gap: 8px;
-    }
-    .order-field > label {
-        justify-content: flex-start;
-    }
-}
-</style>

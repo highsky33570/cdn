@@ -1,0 +1,1257 @@
+/* Global auth styles. Loaded by global.css.
+ * Stable public-* namespaces isolate layouts. data-public-style marks nested
+ * component roots; their internals keep their own styles and remain unaffected
+ * by an enclosing page's type selectors. :where() adds no specificity.
+ */
+
+/* views/ForgotPasswordView.vue */
+.forgot-page:is(.public-forgot-password-view, .public-forgot-password-view *):not(:where(.public-forgot-password-view [data-public-style] *)) {
+  position: relative;
+  min-height: 100vh;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 50% 10%, var(--accent-glow), transparent 26%),
+    linear-gradient(180deg, var(--bg-grad-1), var(--bg-grad-2));
+  color: var(--text-strong);
+}
+.forgot-page__bg:is(.public-forgot-password-view, .public-forgot-password-view *):not(:where(.public-forgot-password-view [data-public-style] *)) {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    var(--accent-glow) 0%,
+    transparent 35%,
+    transparent 65%,
+    var(--accent-glow) 100%
+  );
+}
+.forgot-topbar:is(.public-forgot-password-view, .public-forgot-password-view *):not(:where(.public-forgot-password-view [data-public-style] *)) {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 26px 28px 0;
+}
+.brand:is(.public-forgot-password-view, .public-forgot-password-view *):not(:where(.public-forgot-password-view [data-public-style] *)) {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text-strong);
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 18px;
+}
+.brand__logo:is(.public-forgot-password-view, .public-forgot-password-view *):not(:where(.public-forgot-password-view [data-public-style] *)) {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+}
+.brand__name:is(.public-forgot-password-view, .public-forgot-password-view *):not(:where(.public-forgot-password-view [data-public-style] *)) {
+  letter-spacing: -0.01em;
+}
+.forgot-main:is(.public-forgot-password-view, .public-forgot-password-view *):not(:where(.public-forgot-password-view [data-public-style] *)) {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - 140px);
+  padding: 40px 20px 80px;
+}
+.forgot-panel:is(.public-forgot-password-view, .public-forgot-password-view *):not(:where(.public-forgot-password-view [data-public-style] *)) {
+  width: 100%;
+  max-width: 380px;
+}
+.forgot-panel__title:is(.public-forgot-password-view, .public-forgot-password-view *):not(:where(.public-forgot-password-view [data-public-style] *)) {
+  margin: 0 0 10px;
+  font-size: 32px;
+  line-height: 1.2;
+  font-weight: 800;
+  color: var(--text-strong);
+}
+.forgot-panel__subtitle:is(.public-forgot-password-view, .public-forgot-password-view *):not(:where(.public-forgot-password-view [data-public-style] *)) {
+  margin: 0 0 24px;
+  font-size: 15px;
+  line-height: 1.7;
+  color: var(--text-3);
+}
+.forgot-notice:is(.public-forgot-password-view, .public-forgot-password-view *):not(:where(.public-forgot-password-view [data-public-style] *)) {
+  margin-bottom: 18px;
+  padding: 14px 16px;
+  border: 1px solid var(--accent-border);
+  border-radius: 12px;
+  background: var(--accent-glow);
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.6;
+}
+.forgot-form:is(.public-forgot-password-view, .public-forgot-password-view *):not(:where(.public-forgot-password-view [data-public-style] *)) {
+  width: 100%;
+}
+.forgot-field:is(.public-forgot-password-view, .public-forgot-password-view *):not(:where(.public-forgot-password-view [data-public-style] *)) {
+  opacity: 0;
+  transform: translateY(14px);
+  animation: auth-field-fade-in-public-forgot-password-view 0.48s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+.forgot-field--captcha:is(.public-forgot-password-view, .public-forgot-password-view *):not(:where(.public-forgot-password-view [data-public-style] *)) {
+  margin-top: 18px;
+  animation-delay: 0.08s;
+}
+.forgot-input:is(.public-forgot-password-view, .public-forgot-password-view *):not(:where(.public-forgot-password-view [data-public-style] *)) {
+  width: 100%;
+}
+:is(.public-forgot-password-view, .public-forgot-password-view *):not(:where(.public-forgot-password-view [data-public-style] *)) .forgot-input.arco-input-wrapper,:is(.public-forgot-password-view, .public-forgot-password-view *):not(:where(.public-forgot-password-view [data-public-style] *)) .forgot-input > .arco-input-wrapper,:is(.public-forgot-password-view, .public-forgot-password-view *):not(:where(.public-forgot-password-view [data-public-style] *)) .forgot-input .arco-input-wrapper {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: 56px;
+  padding: 0 16px;
+  border: 1px solid var(--border) !important;
+  border-radius: 8px !important;
+  background: var(--surface) !important;
+  box-shadow: none !important;
+}
+:is(.public-forgot-password-view, .public-forgot-password-view *):not(:where(.public-forgot-password-view [data-public-style] *)) .forgot-input.arco-input-wrapper:hover,:is(.public-forgot-password-view, .public-forgot-password-view *):not(:where(.public-forgot-password-view [data-public-style] *)) .forgot-input > .arco-input-wrapper:hover,:is(.public-forgot-password-view, .public-forgot-password-view *):not(:where(.public-forgot-password-view [data-public-style] *)) .forgot-input .arco-input-wrapper:hover {
+  border-color: var(--accent-border) !important;
+  background: var(--surface) !important;
+}
+:is(.public-forgot-password-view, .public-forgot-password-view *):not(:where(.public-forgot-password-view [data-public-style] *)) .forgot-input.arco-input-wrapper.arco-input-focus,:is(.public-forgot-password-view, .public-forgot-password-view *):not(:where(.public-forgot-password-view [data-public-style] *)) .forgot-input > .arco-input-wrapper.arco-input-focus,:is(.public-forgot-password-view, .public-forgot-password-view *):not(:where(.public-forgot-password-view [data-public-style] *)) .forgot-input .arco-input-wrapper.arco-input-focus {
+  border-color: var(--accent-border) !important;
+  background: var(--surface) !important;
+  box-shadow: 0 0 0 2px var(--accent-glow) !important;
+}
+:is(.public-forgot-password-view, .public-forgot-password-view *):not(:where(.public-forgot-password-view [data-public-style] *)) .forgot-input .arco-input-prefix {
+  margin-right: 12px;
+  color: var(--text-3) !important;
+}
+:is(.public-forgot-password-view, .public-forgot-password-view *):not(:where(.public-forgot-password-view [data-public-style] *)) .forgot-input .arco-input,:is(.public-forgot-password-view, .public-forgot-password-view *):not(:where(.public-forgot-password-view [data-public-style] *)) .forgot-input input.arco-input {
+  flex: 1;
+  min-width: 0;
+  height: auto !important;
+  line-height: 1.4 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  font-size: 16px;
+  color: var(--text-strong) !important;
+  background: transparent !important;
+}
+:is(.public-forgot-password-view, .public-forgot-password-view *):not(:where(.public-forgot-password-view [data-public-style] *)) .forgot-input .arco-input::placeholder,:is(.public-forgot-password-view, .public-forgot-password-view *):not(:where(.public-forgot-password-view [data-public-style] *)) .forgot-input input.arco-input::placeholder {
+  color: var(--text-3) !important;
+}
+.forgot-error:is(.public-forgot-password-view, .public-forgot-password-view *):not(:where(.public-forgot-password-view [data-public-style] *)) {
+  margin-top: 8px;
+  padding-left: 2px;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--danger);
+}
+.forgot-submit:is(.public-forgot-password-view, .public-forgot-password-view *):not(:where(.public-forgot-password-view [data-public-style] *)) {
+  margin-top: 22px;
+  height: 44px;
+  border-radius: 6px;
+  font-size: 16px;
+  font-weight: 700;
+}
+.text-link:is(.public-forgot-password-view, .public-forgot-password-view *):not(:where(.public-forgot-password-view [data-public-style] *)) {
+  display: block;
+  margin: 18px auto 0;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  color: var(--accent-2);
+  font-size: 14px;
+  cursor: pointer;
+}
+.forgot-footer:is(.public-forgot-password-view, .public-forgot-password-view *):not(:where(.public-forgot-password-view [data-public-style] *)) {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 18px;
+  z-index: 2;
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-3);
+}
+@keyframes auth-field-fade-in-public-forgot-password-view {
+from {
+    opacity: 0;
+    transform: translateY(14px);
+}
+to {
+    opacity: 1;
+    transform: translateY(0);
+}
+}
+@media (prefers-reduced-motion: reduce) {
+.forgot-field:is(.public-forgot-password-view, .public-forgot-password-view *):not(:where(.public-forgot-password-view [data-public-style] *)) {
+    opacity: 1;
+    transform: none;
+    animation: none;
+}
+}
+
+/* views/LoginView.vue */
+.login-page:is(.public-login-view, .public-login-view *):not(:where(.public-login-view [data-public-style] *)) {
+  position: relative;
+  min-height: 100vh;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 50% 10%, var(--accent-glow), transparent 26%),
+    linear-gradient(180deg, var(--bg-grad-1), var(--bg-grad-2));
+  color: var(--text-strong);
+}
+.login-page__bg:is(.public-login-view, .public-login-view *):not(:where(.public-login-view [data-public-style] *)) {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    var(--accent-glow) 0%,
+    transparent 35%,
+    transparent 65%,
+    var(--accent-glow) 100%
+  );
+}
+.login-topbar:is(.public-login-view, .public-login-view *):not(:where(.public-login-view [data-public-style] *)) {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 26px 28px 0;
+}
+.brand:is(.public-login-view, .public-login-view *):not(:where(.public-login-view [data-public-style] *)) {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text-strong);
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 18px;
+}
+.brand__logo:is(.public-login-view, .public-login-view *):not(:where(.public-login-view [data-public-style] *)) {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+}
+.brand__name:is(.public-login-view, .public-login-view *):not(:where(.public-login-view [data-public-style] *)) {
+  letter-spacing: -0.01em;
+}
+.login-main:is(.public-login-view, .public-login-view *):not(:where(.public-login-view [data-public-style] *)) {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - 140px);
+  padding: 40px 20px 80px;
+}
+.login-panel:is(.public-login-view, .public-login-view *):not(:where(.public-login-view [data-public-style] *)) {
+  width: 100%;
+  max-width: 360px;
+}
+.login-panel__title:is(.public-login-view, .public-login-view *):not(:where(.public-login-view [data-public-style] *)) {
+  margin: 0 0 10px;
+  font-size: 32px;
+  line-height: 1.2;
+  font-weight: 800;
+  color: var(--text-strong);
+}
+.login-panel__subtitle:is(.public-login-view, .public-login-view *):not(:where(.public-login-view [data-public-style] *)) {
+  margin: 0 0 28px;
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--text-3);
+}
+.login-form:is(.public-login-view, .public-login-view *):not(:where(.public-login-view [data-public-style] *)) {
+  width: 100%;
+}
+.login-field + .login-field:is(.public-login-view, .public-login-view *):not(:where(.public-login-view [data-public-style] *)) {
+  margin-top: 20px;
+}
+.login-field:is(.public-login-view, .public-login-view *):not(:where(.public-login-view [data-public-style] *)) {
+  opacity: 0;
+  transform: translateY(14px);
+  animation: auth-field-fade-in-public-login-view 0.48s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+.login-field:is(.public-login-view, .public-login-view *):not(:where(.public-login-view [data-public-style] *)):nth-of-type(2) {
+  animation-delay: 0.08s;
+}
+.login-actions:is(.public-login-view, .public-login-view *):not(:where(.public-login-view [data-public-style] *)) {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 12px;
+}
+.login-field--captcha:is(.public-login-view, .public-login-view *):not(:where(.public-login-view [data-public-style] *)) {
+  margin-top: 18px;
+}
+.login-input:is(.public-login-view, .public-login-view *):not(:where(.public-login-view [data-public-style] *)) {
+  width: 100%;
+}
+:is(.public-login-view, .public-login-view *):not(:where(.public-login-view [data-public-style] *)) .login-input.arco-input-wrapper,:is(.public-login-view, .public-login-view *):not(:where(.public-login-view [data-public-style] *)) .login-input > .arco-input-wrapper,:is(.public-login-view, .public-login-view *):not(:where(.public-login-view [data-public-style] *)) .login-input .arco-input-wrapper {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: 56px;
+  padding: 0 16px;
+  border: 1px solid var(--border) !important;
+  border-radius: 8px !important;
+  background: var(--surface) !important;
+  box-shadow: none !important;
+}
+:is(.public-login-view, .public-login-view *):not(:where(.public-login-view [data-public-style] *)) .login-input.arco-input-wrapper:hover,:is(.public-login-view, .public-login-view *):not(:where(.public-login-view [data-public-style] *)) .login-input > .arco-input-wrapper:hover,:is(.public-login-view, .public-login-view *):not(:where(.public-login-view [data-public-style] *)) .login-input .arco-input-wrapper:hover {
+  border-color: var(--accent-border) !important;
+  background: var(--surface) !important;
+}
+:is(.public-login-view, .public-login-view *):not(:where(.public-login-view [data-public-style] *)) .login-input.arco-input-wrapper.arco-input-focus,:is(.public-login-view, .public-login-view *):not(:where(.public-login-view [data-public-style] *)) .login-input > .arco-input-wrapper.arco-input-focus,:is(.public-login-view, .public-login-view *):not(:where(.public-login-view [data-public-style] *)) .login-input .arco-input-wrapper.arco-input-focus {
+  border-color: var(--accent-border) !important;
+  background: var(--surface) !important;
+  box-shadow: 0 0 0 2px var(--accent-glow) !important;
+}
+:is(.public-login-view, .public-login-view *):not(:where(.public-login-view [data-public-style] *)) .login-input .arco-input-prefix,:is(.public-login-view, .public-login-view *):not(:where(.public-login-view [data-public-style] *)) .login-input .arco-input-suffix {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  height: 100%;
+  color: var(--text-3) !important;
+}
+:is(.public-login-view, .public-login-view *):not(:where(.public-login-view [data-public-style] *)) .login-input .arco-input-prefix {
+  margin-right: 12px;
+}
+:is(.public-login-view, .public-login-view *):not(:where(.public-login-view [data-public-style] *)) .login-input .arco-input-suffix {
+  margin-left: 12px;
+}
+:is(.public-login-view, .public-login-view *):not(:where(.public-login-view [data-public-style] *)) .login-input .arco-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  color: var(--text-3) !important;
+}
+:is(.public-login-view, .public-login-view *):not(:where(.public-login-view [data-public-style] *)) .login-input .arco-input,:is(.public-login-view, .public-login-view *):not(:where(.public-login-view [data-public-style] *)) .login-input input.arco-input {
+  flex: 1;
+  min-width: 0;
+  height: auto !important;
+  line-height: 1.4 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  font-size: 16px;
+  white-space: nowrap !important;
+  color: var(--text-strong) !important;
+  background: transparent !important;
+}
+:is(.public-login-view, .public-login-view *):not(:where(.public-login-view [data-public-style] *)) .login-input .arco-input::placeholder,:is(.public-login-view, .public-login-view *):not(:where(.public-login-view [data-public-style] *)) .login-input input.arco-input::placeholder {
+  white-space: nowrap !important;
+  color: var(--text-3) !important;
+}
+:is(.public-login-view, .public-login-view *):not(:where(.public-login-view [data-public-style] *)) .login-input input.arco-input::-ms-reveal,:is(.public-login-view, .public-login-view *):not(:where(.public-login-view [data-public-style] *)) .login-input input.arco-input::-ms-clear {
+  display: none;
+}
+:is(.public-login-view, .public-login-view *):not(:where(.public-login-view [data-public-style] *)) .login-input .arco-input-password-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  color: var(--text-3) !important;
+}
+.login-error:is(.public-login-view, .public-login-view *):not(:where(.public-login-view [data-public-style] *)) {
+  margin-top: 8px;
+  padding-left: 2px;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--danger);
+}
+.login-submit:is(.public-login-view, .public-login-view *):not(:where(.public-login-view [data-public-style] *)) {
+  margin-top: 22px;
+  height: 44px;
+  border-radius: 6px;
+  font-size: 16px;
+  font-weight: 700;
+}
+.register-row:is(.public-login-view, .public-login-view *):not(:where(.public-login-view [data-public-style] *)) {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 24px;
+  color: var(--text-3);
+  font-size: 14px;
+}
+.text-link:is(.public-login-view, .public-login-view *):not(:where(.public-login-view [data-public-style] *)) {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  color: var(--accent);
+  font-size: 14px;
+  cursor: pointer;
+}
+.text-link--inline:is(.public-login-view, .public-login-view *):not(:where(.public-login-view [data-public-style] *)) {
+  color: var(--accent-2);
+}
+.login-footer:is(.public-login-view, .public-login-view *):not(:where(.public-login-view [data-public-style] *)) {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 18px;
+  z-index: 2;
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-3);
+}
+@keyframes auth-field-fade-in-public-login-view {
+from {
+    opacity: 0;
+    transform: translateY(14px);
+}
+to {
+    opacity: 1;
+    transform: translateY(0);
+}
+}
+@media (prefers-reduced-motion: reduce) {
+.login-field:is(.public-login-view, .public-login-view *):not(:where(.public-login-view [data-public-style] *)) {
+    opacity: 1;
+    transform: none;
+    animation: none;
+}
+}
+
+/* views/RegisterView.vue */
+.register-page:is(.public-register-view, .public-register-view *):not(:where(.public-register-view [data-public-style] *)) {
+  position: relative;
+  min-height: 100vh;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 50% 10%, var(--accent-glow), transparent 26%),
+    linear-gradient(180deg, var(--bg-grad-1), var(--bg-grad-2));
+  color: var(--text-strong);
+}
+.register-page__bg:is(.public-register-view, .public-register-view *):not(:where(.public-register-view [data-public-style] *)) {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    var(--accent-glow) 0%,
+    transparent 35%,
+    transparent 65%,
+    var(--accent-glow) 100%
+  );
+}
+.register-topbar:is(.public-register-view, .public-register-view *):not(:where(.public-register-view [data-public-style] *)) {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 26px 28px 0;
+}
+.brand:is(.public-register-view, .public-register-view *):not(:where(.public-register-view [data-public-style] *)) {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text-strong);
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 18px;
+}
+.brand__logo:is(.public-register-view, .public-register-view *):not(:where(.public-register-view [data-public-style] *)) {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+}
+.brand__name:is(.public-register-view, .public-register-view *):not(:where(.public-register-view [data-public-style] *)) {
+  letter-spacing: -0.01em;
+}
+.register-main:is(.public-register-view, .public-register-view *):not(:where(.public-register-view [data-public-style] *)) {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - 140px);
+  padding: 40px 20px 80px;
+}
+.register-panel:is(.public-register-view, .public-register-view *):not(:where(.public-register-view [data-public-style] *)) {
+  width: 100%;
+  max-width: 360px;
+}
+.register-panel__title:is(.public-register-view, .public-register-view *):not(:where(.public-register-view [data-public-style] *)) {
+  margin: 0 0 10px;
+  font-size: 32px;
+  line-height: 1.2;
+  font-weight: 800;
+  color: var(--text-strong);
+}
+.register-panel__subtitle:is(.public-register-view, .public-register-view *):not(:where(.public-register-view [data-public-style] *)) {
+  margin: 0 0 28px;
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--text-3);
+}
+.register-form:is(.public-register-view, .public-register-view *):not(:where(.public-register-view [data-public-style] *)) {
+  width: 100%;
+}
+.register-field + .register-field:is(.public-register-view, .public-register-view *):not(:where(.public-register-view [data-public-style] *)) {
+  margin-top: 20px;
+}
+.register-field:is(.public-register-view, .public-register-view *):not(:where(.public-register-view [data-public-style] *)) {
+  opacity: 0;
+  transform: translateY(14px);
+  animation: auth-field-fade-in-public-register-view 0.48s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+.register-field:is(.public-register-view, .public-register-view *):not(:where(.public-register-view [data-public-style] *)):nth-of-type(2) {
+  animation-delay: 0.08s;
+}
+.register-field:is(.public-register-view, .public-register-view *):not(:where(.public-register-view [data-public-style] *)):nth-of-type(3) {
+  animation-delay: 0.16s;
+}
+.register-field:is(.public-register-view, .public-register-view *):not(:where(.public-register-view [data-public-style] *)):nth-of-type(4) {
+  animation-delay: 0.24s;
+}
+.register-field--captcha:is(.public-register-view, .public-register-view *):not(:where(.public-register-view [data-public-style] *)) {
+  margin-top: 18px;
+}
+.register-input:is(.public-register-view, .public-register-view *):not(:where(.public-register-view [data-public-style] *)) {
+  width: 100%;
+}
+:is(.public-register-view, .public-register-view *):not(:where(.public-register-view [data-public-style] *)) .register-input.arco-input-wrapper,:is(.public-register-view, .public-register-view *):not(:where(.public-register-view [data-public-style] *)) .register-input > .arco-input-wrapper,:is(.public-register-view, .public-register-view *):not(:where(.public-register-view [data-public-style] *)) .register-input .arco-input-wrapper {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: 56px;
+  padding: 0 16px;
+  border: 1px solid var(--border) !important;
+  border-radius: 8px !important;
+  background: var(--surface) !important;
+  box-shadow: none !important;
+}
+:is(.public-register-view, .public-register-view *):not(:where(.public-register-view [data-public-style] *)) .register-input.arco-input-wrapper:hover,:is(.public-register-view, .public-register-view *):not(:where(.public-register-view [data-public-style] *)) .register-input > .arco-input-wrapper:hover,:is(.public-register-view, .public-register-view *):not(:where(.public-register-view [data-public-style] *)) .register-input .arco-input-wrapper:hover {
+  border-color: var(--accent-border) !important;
+  background: var(--surface) !important;
+}
+:is(.public-register-view, .public-register-view *):not(:where(.public-register-view [data-public-style] *)) .register-input.arco-input-wrapper.arco-input-focus,:is(.public-register-view, .public-register-view *):not(:where(.public-register-view [data-public-style] *)) .register-input > .arco-input-wrapper.arco-input-focus,:is(.public-register-view, .public-register-view *):not(:where(.public-register-view [data-public-style] *)) .register-input .arco-input-wrapper.arco-input-focus {
+  border-color: var(--accent-border) !important;
+  background: var(--surface) !important;
+  box-shadow: 0 0 0 2px var(--accent-glow) !important;
+}
+:is(.public-register-view, .public-register-view *):not(:where(.public-register-view [data-public-style] *)) .register-input .arco-input-prefix,:is(.public-register-view, .public-register-view *):not(:where(.public-register-view [data-public-style] *)) .register-input .arco-input-suffix {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  height: 100%;
+  color: var(--text-3) !important;
+}
+:is(.public-register-view, .public-register-view *):not(:where(.public-register-view [data-public-style] *)) .register-input .arco-input-prefix {
+  margin-right: 12px;
+}
+:is(.public-register-view, .public-register-view *):not(:where(.public-register-view [data-public-style] *)) .register-input .arco-input-suffix {
+  margin-left: 12px;
+}
+:is(.public-register-view, .public-register-view *):not(:where(.public-register-view [data-public-style] *)) .register-input .arco-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  color: var(--text-3) !important;
+}
+:is(.public-register-view, .public-register-view *):not(:where(.public-register-view [data-public-style] *)) .register-input .arco-input,:is(.public-register-view, .public-register-view *):not(:where(.public-register-view [data-public-style] *)) .register-input input.arco-input {
+  flex: 1;
+  min-width: 0;
+  height: auto !important;
+  line-height: 1.4 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  font-size: 16px;
+  white-space: nowrap !important;
+  color: var(--text-strong) !important;
+  background: transparent !important;
+}
+:is(.public-register-view, .public-register-view *):not(:where(.public-register-view [data-public-style] *)) .register-input .arco-input::placeholder,:is(.public-register-view, .public-register-view *):not(:where(.public-register-view [data-public-style] *)) .register-input input.arco-input::placeholder {
+  white-space: nowrap !important;
+  color: var(--text-3) !important;
+}
+:is(.public-register-view, .public-register-view *):not(:where(.public-register-view [data-public-style] *)) .register-input input.arco-input::-ms-reveal,:is(.public-register-view, .public-register-view *):not(:where(.public-register-view [data-public-style] *)) .register-input input.arco-input::-ms-clear {
+  display: none;
+}
+:is(.public-register-view, .public-register-view *):not(:where(.public-register-view [data-public-style] *)) .register-input .arco-input-password-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  color: var(--text-3) !important;
+}
+.register-error:is(.public-register-view, .public-register-view *):not(:where(.public-register-view [data-public-style] *)) {
+  margin-top: 8px;
+  padding-left: 2px;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--danger);
+}
+.register-row:is(.public-register-view, .public-register-view *):not(:where(.public-register-view [data-public-style] *)) {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  margin: 18px 0 22px;
+}
+.agree-wrap:is(.public-register-view, .public-register-view *):not(:where(.public-register-view [data-public-style] *)) {
+  color: var(--text-2);
+}
+:is(.public-register-view, .public-register-view *):not(:where(.public-register-view [data-public-style] *)) .agree-wrap .arco-checkbox-label {
+  color: var(--text-2);
+}
+.text-link:is(.public-register-view, .public-register-view *):not(:where(.public-register-view [data-public-style] *)) {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  color: var(--accent);
+  font-size: 14px;
+  cursor: pointer;
+}
+.register-submit:is(.public-register-view, .public-register-view *):not(:where(.public-register-view [data-public-style] *)) {
+  height: 44px;
+  border-radius: 6px;
+  font-size: 16px;
+  font-weight: 700;
+}
+.login-row:is(.public-register-view, .public-register-view *):not(:where(.public-register-view [data-public-style] *)) {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 24px;
+  color: var(--text-3);
+  font-size: 14px;
+}
+.register-footer:is(.public-register-view, .public-register-view *):not(:where(.public-register-view [data-public-style] *)) {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 18px;
+  z-index: 2;
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-3);
+}
+@keyframes auth-field-fade-in-public-register-view {
+from {
+    opacity: 0;
+    transform: translateY(14px);
+}
+to {
+    opacity: 1;
+    transform: translateY(0);
+}
+}
+@media (prefers-reduced-motion: reduce) {
+.register-field:is(.public-register-view, .public-register-view *):not(:where(.public-register-view [data-public-style] *)) {
+    opacity: 1;
+    transform: none;
+    animation: none;
+}
+}
+
+/* views/ResetPasswordView.vue */
+.reset-page:is(.public-reset-password-view, .public-reset-password-view *):not(:where(.public-reset-password-view [data-public-style] *)) {
+  position: relative;
+  min-height: 100vh;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 50% 10%, var(--accent-glow), transparent 26%),
+    linear-gradient(180deg, var(--bg-grad-1), var(--bg-grad-2));
+  color: var(--text-strong);
+}
+.reset-page__bg:is(.public-reset-password-view, .public-reset-password-view *):not(:where(.public-reset-password-view [data-public-style] *)) {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    var(--accent-glow) 0%,
+    transparent 35%,
+    transparent 65%,
+    var(--accent-glow) 100%
+  );
+}
+.reset-topbar:is(.public-reset-password-view, .public-reset-password-view *):not(:where(.public-reset-password-view [data-public-style] *)) {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 26px 28px 0;
+}
+.brand:is(.public-reset-password-view, .public-reset-password-view *):not(:where(.public-reset-password-view [data-public-style] *)) {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text-strong);
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 18px;
+}
+.brand__logo:is(.public-reset-password-view, .public-reset-password-view *):not(:where(.public-reset-password-view [data-public-style] *)) {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+}
+.brand__name:is(.public-reset-password-view, .public-reset-password-view *):not(:where(.public-reset-password-view [data-public-style] *)) {
+  letter-spacing: -0.01em;
+}
+.reset-main:is(.public-reset-password-view, .public-reset-password-view *):not(:where(.public-reset-password-view [data-public-style] *)) {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - 140px);
+  padding: 40px 20px 80px;
+}
+.reset-panel:is(.public-reset-password-view, .public-reset-password-view *):not(:where(.public-reset-password-view [data-public-style] *)) {
+  width: 100%;
+  max-width: 400px;
+}
+.reset-panel__title:is(.public-reset-password-view, .public-reset-password-view *):not(:where(.public-reset-password-view [data-public-style] *)) {
+  margin: 0 0 10px;
+  font-size: 32px;
+  line-height: 1.2;
+  font-weight: 800;
+  color: var(--text-strong);
+}
+.reset-panel__subtitle:is(.public-reset-password-view, .public-reset-password-view *):not(:where(.public-reset-password-view [data-public-style] *)) {
+  margin: 0 0 24px;
+  font-size: 15px;
+  line-height: 1.7;
+  color: var(--text-3);
+}
+.reset-card:is(.public-reset-password-view, .public-reset-password-view *):not(:where(.public-reset-password-view [data-public-style] *)) {
+  margin-bottom: 18px;
+  padding: 18px 18px 16px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+.reset-card__label:is(.public-reset-password-view, .public-reset-password-view *):not(:where(.public-reset-password-view [data-public-style] *)) {
+  margin-bottom: 10px;
+  color: var(--text-3);
+  font-size: 13px;
+}
+.reset-card__value:is(.public-reset-password-view, .public-reset-password-view *):not(:where(.public-reset-password-view [data-public-style] *)) {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-strong);
+  word-break: break-word;
+}
+.reset-form:is(.public-reset-password-view, .public-reset-password-view *):not(:where(.public-reset-password-view [data-public-style] *)) {
+  width: 100%;
+}
+.reset-field + .reset-field:is(.public-reset-password-view, .public-reset-password-view *):not(:where(.public-reset-password-view [data-public-style] *)) {
+  margin-top: 20px;
+}
+.reset-field:is(.public-reset-password-view, .public-reset-password-view *):not(:where(.public-reset-password-view [data-public-style] *)) {
+  opacity: 0;
+  transform: translateY(14px);
+  animation: auth-field-fade-in-public-reset-password-view 0.48s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+.reset-field:is(.public-reset-password-view, .public-reset-password-view *):not(:where(.public-reset-password-view [data-public-style] *)):nth-of-type(2) {
+  animation-delay: 0.08s;
+}
+.reset-input:is(.public-reset-password-view, .public-reset-password-view *):not(:where(.public-reset-password-view [data-public-style] *)) {
+  width: 100%;
+}
+:is(.public-reset-password-view, .public-reset-password-view *):not(:where(.public-reset-password-view [data-public-style] *)) .reset-input.arco-input-wrapper,:is(.public-reset-password-view, .public-reset-password-view *):not(:where(.public-reset-password-view [data-public-style] *)) .reset-input > .arco-input-wrapper,:is(.public-reset-password-view, .public-reset-password-view *):not(:where(.public-reset-password-view [data-public-style] *)) .reset-input .arco-input-wrapper {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: 56px;
+  padding: 0 16px;
+  border: 1px solid var(--border) !important;
+  border-radius: 8px !important;
+  background: var(--surface) !important;
+  box-shadow: none !important;
+}
+:is(.public-reset-password-view, .public-reset-password-view *):not(:where(.public-reset-password-view [data-public-style] *)) .reset-input.arco-input-wrapper:hover,:is(.public-reset-password-view, .public-reset-password-view *):not(:where(.public-reset-password-view [data-public-style] *)) .reset-input > .arco-input-wrapper:hover,:is(.public-reset-password-view, .public-reset-password-view *):not(:where(.public-reset-password-view [data-public-style] *)) .reset-input .arco-input-wrapper:hover {
+  border-color: var(--accent-border) !important;
+  background: var(--surface) !important;
+}
+:is(.public-reset-password-view, .public-reset-password-view *):not(:where(.public-reset-password-view [data-public-style] *)) .reset-input.arco-input-wrapper.arco-input-focus,:is(.public-reset-password-view, .public-reset-password-view *):not(:where(.public-reset-password-view [data-public-style] *)) .reset-input > .arco-input-wrapper.arco-input-focus,:is(.public-reset-password-view, .public-reset-password-view *):not(:where(.public-reset-password-view [data-public-style] *)) .reset-input .arco-input-wrapper.arco-input-focus {
+  border-color: var(--accent-border) !important;
+  background: var(--surface) !important;
+  box-shadow: 0 0 0 2px var(--accent-glow) !important;
+}
+:is(.public-reset-password-view, .public-reset-password-view *):not(:where(.public-reset-password-view [data-public-style] *)) .reset-input .arco-input-prefix,:is(.public-reset-password-view, .public-reset-password-view *):not(:where(.public-reset-password-view [data-public-style] *)) .reset-input .arco-input-suffix {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-3) !important;
+}
+:is(.public-reset-password-view, .public-reset-password-view *):not(:where(.public-reset-password-view [data-public-style] *)) .reset-input .arco-input-prefix {
+  margin-right: 12px;
+}
+:is(.public-reset-password-view, .public-reset-password-view *):not(:where(.public-reset-password-view [data-public-style] *)) .reset-input .arco-input-suffix {
+  margin-left: 12px;
+}
+:is(.public-reset-password-view, .public-reset-password-view *):not(:where(.public-reset-password-view [data-public-style] *)) .reset-input .arco-input,:is(.public-reset-password-view, .public-reset-password-view *):not(:where(.public-reset-password-view [data-public-style] *)) .reset-input input.arco-input {
+  flex: 1;
+  min-width: 0;
+  height: auto !important;
+  line-height: 1.4 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  font-size: 16px;
+  color: var(--text-strong) !important;
+  background: transparent !important;
+}
+:is(.public-reset-password-view, .public-reset-password-view *):not(:where(.public-reset-password-view [data-public-style] *)) .reset-input .arco-input::placeholder,:is(.public-reset-password-view, .public-reset-password-view *):not(:where(.public-reset-password-view [data-public-style] *)) .reset-input input.arco-input::placeholder {
+  color: var(--text-3) !important;
+}
+:is(.public-reset-password-view, .public-reset-password-view *):not(:where(.public-reset-password-view [data-public-style] *)) .reset-input input.arco-input::-ms-reveal,:is(.public-reset-password-view, .public-reset-password-view *):not(:where(.public-reset-password-view [data-public-style] *)) .reset-input input.arco-input::-ms-clear {
+  display: none;
+}
+:is(.public-reset-password-view, .public-reset-password-view *):not(:where(.public-reset-password-view [data-public-style] *)) .reset-input .arco-input-password-icon {
+  color: var(--text-3) !important;
+}
+.reset-error:is(.public-reset-password-view, .public-reset-password-view *):not(:where(.public-reset-password-view [data-public-style] *)) {
+  margin-top: 8px;
+  padding-left: 2px;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--danger);
+}
+.reset-submit:is(.public-reset-password-view, .public-reset-password-view *):not(:where(.public-reset-password-view [data-public-style] *)) {
+  margin-top: 22px;
+  height: 44px;
+  border-radius: 6px;
+  font-size: 16px;
+  font-weight: 700;
+}
+.text-link:is(.public-reset-password-view, .public-reset-password-view *):not(:where(.public-reset-password-view [data-public-style] *)) {
+  display: block;
+  margin: 18px auto 0;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  color: var(--accent-2);
+  font-size: 14px;
+  cursor: pointer;
+}
+.reset-footer:is(.public-reset-password-view, .public-reset-password-view *):not(:where(.public-reset-password-view [data-public-style] *)) {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 18px;
+  z-index: 2;
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-3);
+}
+@keyframes auth-field-fade-in-public-reset-password-view {
+from {
+    opacity: 0;
+    transform: translateY(14px);
+}
+to {
+    opacity: 1;
+    transform: translateY(0);
+}
+}
+@media (prefers-reduced-motion: reduce) {
+.reset-field:is(.public-reset-password-view, .public-reset-password-view *):not(:where(.public-reset-password-view [data-public-style] *)) {
+    opacity: 1;
+    transform: none;
+    animation: none;
+}
+}
+
+/* views/TwoFactorChallengeView.vue */
+.challenge-page:is(.public-two-factor-challenge-view, .public-two-factor-challenge-view *):not(:where(.public-two-factor-challenge-view [data-public-style] *)) {
+  position: relative;
+  min-height: 100vh;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 50% 10%, var(--accent-glow), transparent 26%),
+    linear-gradient(180deg, var(--bg-grad-1), var(--bg-grad-2));
+  color: var(--text-strong);
+}
+.challenge-page__bg:is(.public-two-factor-challenge-view, .public-two-factor-challenge-view *):not(:where(.public-two-factor-challenge-view [data-public-style] *)) {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    var(--accent-glow) 0%,
+    transparent 35%,
+    transparent 65%,
+    var(--accent-glow) 100%
+  );
+}
+.challenge-topbar:is(.public-two-factor-challenge-view, .public-two-factor-challenge-view *):not(:where(.public-two-factor-challenge-view [data-public-style] *)) {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 26px 28px 0;
+}
+.brand:is(.public-two-factor-challenge-view, .public-two-factor-challenge-view *):not(:where(.public-two-factor-challenge-view [data-public-style] *)) {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text-strong);
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 18px;
+}
+.brand__logo:is(.public-two-factor-challenge-view, .public-two-factor-challenge-view *):not(:where(.public-two-factor-challenge-view [data-public-style] *)) {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+}
+.brand__name:is(.public-two-factor-challenge-view, .public-two-factor-challenge-view *):not(:where(.public-two-factor-challenge-view [data-public-style] *)) {
+  letter-spacing: -0.01em;
+}
+.challenge-main:is(.public-two-factor-challenge-view, .public-two-factor-challenge-view *):not(:where(.public-two-factor-challenge-view [data-public-style] *)) {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - 140px);
+  padding: 40px 20px 80px;
+}
+.challenge-panel:is(.public-two-factor-challenge-view, .public-two-factor-challenge-view *):not(:where(.public-two-factor-challenge-view [data-public-style] *)) {
+  width: 100%;
+  max-width: 420px;
+}
+.challenge-badge:is(.public-two-factor-challenge-view, .public-two-factor-challenge-view *):not(:where(.public-two-factor-challenge-view [data-public-style] *)) {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 30px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.challenge-panel__title:is(.public-two-factor-challenge-view, .public-two-factor-challenge-view *):not(:where(.public-two-factor-challenge-view [data-public-style] *)) {
+  margin: 18px 0 10px;
+  font-size: 32px;
+  line-height: 1.2;
+  font-weight: 800;
+  color: var(--text-strong);
+}
+.challenge-panel__subtitle:is(.public-two-factor-challenge-view, .public-two-factor-challenge-view *):not(:where(.public-two-factor-challenge-view [data-public-style] *)) {
+  margin: 0 0 24px;
+  font-size: 15px;
+  line-height: 1.7;
+  color: var(--text-3);
+}
+.challenge-card:is(.public-two-factor-challenge-view, .public-two-factor-challenge-view *):not(:where(.public-two-factor-challenge-view [data-public-style] *)) {
+  padding: 18px 18px 16px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+.challenge-card__label:is(.public-two-factor-challenge-view, .public-two-factor-challenge-view *):not(:where(.public-two-factor-challenge-view [data-public-style] *)) {
+  margin-bottom: 10px;
+  color: var(--text-3);
+  font-size: 13px;
+}
+.challenge-card__value:is(.public-two-factor-challenge-view, .public-two-factor-challenge-view *):not(:where(.public-two-factor-challenge-view [data-public-style] *)) {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-strong);
+  word-break: break-word;
+}
+.challenge-card__hint:is(.public-two-factor-challenge-view, .public-two-factor-challenge-view *):not(:where(.public-two-factor-challenge-view [data-public-style] *)) {
+  margin: 10px 0 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text-3);
+}
+.challenge-switcher:is(.public-two-factor-challenge-view, .public-two-factor-challenge-view *):not(:where(.public-two-factor-challenge-view [data-public-style] *)) {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-top: 18px;
+}
+.challenge-switcher__item:is(.public-two-factor-challenge-view, .public-two-factor-challenge-view *):not(:where(.public-two-factor-challenge-view [data-public-style] *)) {
+  height: 42px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--text-2);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.challenge-switcher__item--active:is(.public-two-factor-challenge-view, .public-two-factor-challenge-view *):not(:where(.public-two-factor-challenge-view [data-public-style] *)) {
+  border-color: var(--accent-border);
+  background: var(--accent-soft);
+  color: var(--text-strong);
+}
+.challenge-form:is(.public-two-factor-challenge-view, .public-two-factor-challenge-view *):not(:where(.public-two-factor-challenge-view [data-public-style] *)) {
+  display: grid;
+  gap: 14px;
+  margin-top: 18px;
+}
+.challenge-input:is(.public-two-factor-challenge-view, .public-two-factor-challenge-view *):not(:where(.public-two-factor-challenge-view [data-public-style] *)),
+.challenge-textarea:is(.public-two-factor-challenge-view, .public-two-factor-challenge-view *):not(:where(.public-two-factor-challenge-view [data-public-style] *)) {
+  width: 100%;
+}
+.challenge-form > .challenge-input:is(.public-two-factor-challenge-view, .public-two-factor-challenge-view *):not(:where(.public-two-factor-challenge-view [data-public-style] *)),
+.challenge-form > .challenge-textarea:is(.public-two-factor-challenge-view, .public-two-factor-challenge-view *):not(:where(.public-two-factor-challenge-view [data-public-style] *)) {
+  opacity: 0;
+  transform: translateY(14px);
+  animation: auth-field-fade-in-public-two-factor-challenge-view 0.48s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+:is(.public-two-factor-challenge-view, .public-two-factor-challenge-view *):not(:where(.public-two-factor-challenge-view [data-public-style] *)) .challenge-input.arco-input-wrapper,:is(.public-two-factor-challenge-view, .public-two-factor-challenge-view *):not(:where(.public-two-factor-challenge-view [data-public-style] *)) .challenge-textarea.arco-textarea-wrapper {
+  border: 1px solid var(--border) !important;
+  border-radius: 10px !important;
+  background: var(--surface) !important;
+  box-shadow: none !important;
+}
+:is(.public-two-factor-challenge-view, .public-two-factor-challenge-view *):not(:where(.public-two-factor-challenge-view [data-public-style] *)) .challenge-input .arco-input,:is(.public-two-factor-challenge-view, .public-two-factor-challenge-view *):not(:where(.public-two-factor-challenge-view [data-public-style] *)) .challenge-textarea .arco-textarea {
+  color: var(--text-strong) !important;
+  background: transparent !important;
+}
+:is(.public-two-factor-challenge-view, .public-two-factor-challenge-view *):not(:where(.public-two-factor-challenge-view [data-public-style] *)) .challenge-input .arco-input::placeholder,:is(.public-two-factor-challenge-view, .public-two-factor-challenge-view *):not(:where(.public-two-factor-challenge-view [data-public-style] *)) .challenge-textarea .arco-textarea::placeholder {
+  color: var(--text-3) !important;
+}
+:is(.public-two-factor-challenge-view, .public-two-factor-challenge-view *):not(:where(.public-two-factor-challenge-view [data-public-style] *)) .challenge-input .arco-input-prefix {
+  color: var(--text-3) !important;
+}
+.challenge-submit:is(.public-two-factor-challenge-view, .public-two-factor-challenge-view *):not(:where(.public-two-factor-challenge-view [data-public-style] *)) {
+  height: 46px;
+  border-radius: 10px;
+  font-size: 16px;
+  font-weight: 700;
+}
+.text-link:is(.public-two-factor-challenge-view, .public-two-factor-challenge-view *):not(:where(.public-two-factor-challenge-view [data-public-style] *)) {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  color: var(--accent-2);
+  font-size: 14px;
+  cursor: pointer;
+}
+.challenge-footer:is(.public-two-factor-challenge-view, .public-two-factor-challenge-view *):not(:where(.public-two-factor-challenge-view [data-public-style] *)) {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 18px;
+  z-index: 2;
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-3);
+}
+@keyframes auth-field-fade-in-public-two-factor-challenge-view {
+from {
+    opacity: 0;
+    transform: translateY(14px);
+}
+to {
+    opacity: 1;
+    transform: translateY(0);
+}
+}
+@media (prefers-reduced-motion: reduce) {
+.challenge-form > .challenge-input:is(.public-two-factor-challenge-view, .public-two-factor-challenge-view *):not(:where(.public-two-factor-challenge-view [data-public-style] *)),
+  .challenge-form > .challenge-textarea:is(.public-two-factor-challenge-view, .public-two-factor-challenge-view *):not(:where(.public-two-factor-challenge-view [data-public-style] *)) {
+    opacity: 1;
+    transform: none;
+    animation: none;
+}
+}
+
+/* views/VerifyEmailView.vue */
+.verify-page:is(.public-verify-email-view, .public-verify-email-view *):not(:where(.public-verify-email-view [data-public-style] *)) {
+  position: relative;
+  min-height: 100vh;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 50% 10%, var(--accent-glow), transparent 26%),
+    linear-gradient(180deg, var(--bg-grad-1), var(--bg-grad-2));
+  color: var(--text-strong);
+}
+.verify-page__bg:is(.public-verify-email-view, .public-verify-email-view *):not(:where(.public-verify-email-view [data-public-style] *)) {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    var(--accent-glow) 0%,
+    transparent 35%,
+    transparent 65%,
+    var(--accent-glow) 100%
+  );
+}
+.verify-topbar:is(.public-verify-email-view, .public-verify-email-view *):not(:where(.public-verify-email-view [data-public-style] *)) {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 26px 28px 0;
+}
+.brand:is(.public-verify-email-view, .public-verify-email-view *):not(:where(.public-verify-email-view [data-public-style] *)) {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text-strong);
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 18px;
+}
+.brand__logo:is(.public-verify-email-view, .public-verify-email-view *):not(:where(.public-verify-email-view [data-public-style] *)) {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+}
+.brand__name:is(.public-verify-email-view, .public-verify-email-view *):not(:where(.public-verify-email-view [data-public-style] *)) {
+  letter-spacing: -0.01em;
+}
+.verify-main:is(.public-verify-email-view, .public-verify-email-view *):not(:where(.public-verify-email-view [data-public-style] *)) {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - 140px);
+  padding: 40px 20px 80px;
+}
+.verify-panel:is(.public-verify-email-view, .public-verify-email-view *):not(:where(.public-verify-email-view [data-public-style] *)) {
+  width: 100%;
+  max-width: 420px;
+}
+.verify-badge:is(.public-verify-email-view, .public-verify-email-view *):not(:where(.public-verify-email-view [data-public-style] *)) {
+  display: inline-flex;
+  align-items: center;
+  height: 30px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-2);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0;
+  transform: translateY(14px);
+  animation: verify-fade-in-public-verify-email-view 0.48s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+.verify-badge--success:is(.public-verify-email-view, .public-verify-email-view *):not(:where(.public-verify-email-view [data-public-style] *)) {
+  border-color: var(--ok-border);
+  background: var(--ok-soft);
+  color: var(--ok);
+}
+.verify-panel__title:is(.public-verify-email-view, .public-verify-email-view *):not(:where(.public-verify-email-view [data-public-style] *)) {
+  margin: 18px 0 10px;
+  font-size: 32px;
+  line-height: 1.2;
+  font-weight: 800;
+  color: var(--text-strong);
+  opacity: 0;
+  transform: translateY(14px);
+  animation: verify-fade-in-public-verify-email-view 0.48s cubic-bezier(0.22, 1, 0.36, 1) 0.05s forwards;
+}
+.verify-panel__subtitle:is(.public-verify-email-view, .public-verify-email-view *):not(:where(.public-verify-email-view [data-public-style] *)) {
+  margin: 0 0 24px;
+  font-size: 15px;
+  line-height: 1.7;
+  color: var(--text-3);
+  opacity: 0;
+  transform: translateY(14px);
+  animation: verify-fade-in-public-verify-email-view 0.48s cubic-bezier(0.22, 1, 0.36, 1) 0.1s forwards;
+}
+.verify-card:is(.public-verify-email-view, .public-verify-email-view *):not(:where(.public-verify-email-view [data-public-style] *)) {
+  padding: 18px 18px 16px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  opacity: 0;
+  transform: translateY(14px);
+  animation: verify-fade-in-public-verify-email-view 0.48s cubic-bezier(0.22, 1, 0.36, 1) 0.15s forwards;
+}
+.verify-card__label:is(.public-verify-email-view, .public-verify-email-view *):not(:where(.public-verify-email-view [data-public-style] *)) {
+  margin-bottom: 10px;
+  color: var(--text-3);
+  font-size: 13px;
+}
+.verify-card__value:is(.public-verify-email-view, .public-verify-email-view *):not(:where(.public-verify-email-view [data-public-style] *)) {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-strong);
+  word-break: break-word;
+}
+.verify-note:is(.public-verify-email-view, .public-verify-email-view *):not(:where(.public-verify-email-view [data-public-style] *)) {
+  margin-top: 14px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--accent-glow);
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.6;
+  opacity: 0;
+  transform: translateY(14px);
+  animation: verify-fade-in-public-verify-email-view 0.48s cubic-bezier(0.22, 1, 0.36, 1) 0.2s forwards;
+}
+.verify-actions:is(.public-verify-email-view, .public-verify-email-view *):not(:where(.public-verify-email-view [data-public-style] *)) {
+  display: grid;
+  gap: 12px;
+  margin-top: 22px;
+  opacity: 0;
+  transform: translateY(14px);
+  animation: verify-fade-in-public-verify-email-view 0.48s cubic-bezier(0.22, 1, 0.36, 1) 0.24s forwards;
+}
+.verify-secondary:is(.public-verify-email-view, .public-verify-email-view *):not(:where(.public-verify-email-view [data-public-style] *)) {
+  background: var(--surface);
+  color: var(--text-strong);
+}
+.verify-footer:is(.public-verify-email-view, .public-verify-email-view *):not(:where(.public-verify-email-view [data-public-style] *)) {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 18px;
+  z-index: 2;
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-3);
+}
+@keyframes verify-fade-in-public-verify-email-view {
+from {
+    opacity: 0;
+    transform: translateY(14px);
+}
+to {
+    opacity: 1;
+    transform: translateY(0);
+}
+}
+@media (prefers-reduced-motion: reduce) {
+.verify-badge:is(.public-verify-email-view, .public-verify-email-view *):not(:where(.public-verify-email-view [data-public-style] *)),
+  .verify-panel__title:is(.public-verify-email-view, .public-verify-email-view *):not(:where(.public-verify-email-view [data-public-style] *)),
+  .verify-panel__subtitle:is(.public-verify-email-view, .public-verify-email-view *):not(:where(.public-verify-email-view [data-public-style] *)),
+  .verify-card:is(.public-verify-email-view, .public-verify-email-view *):not(:where(.public-verify-email-view [data-public-style] *)),
+  .verify-note:is(.public-verify-email-view, .public-verify-email-view *):not(:where(.public-verify-email-view [data-public-style] *)),
+  .verify-actions:is(.public-verify-email-view, .public-verify-email-view *):not(:where(.public-verify-email-view [data-public-style] *)) {
+    opacity: 1;
+    transform: none;
+    animation: none;
+}
+}

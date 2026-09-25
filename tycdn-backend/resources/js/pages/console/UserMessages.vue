@@ -133,7 +133,10 @@ onUnmounted(() => {
 </script>
 
 <template>
-    <section class="message-subscriptions" aria-label="消息订阅">
+    <section
+        class="console-user-messages message-subscriptions"
+        aria-label="消息订阅"
+    >
         <Alert v-if="error" variant="destructive" class="mb-4"
             ><AlertDescription
                 >{{ error
@@ -225,81 +228,3 @@ onUnmounted(() => {
         </p>
     </section>
 </template>
-
-<style scoped>
-.message-subscriptions {
-    min-width: 0;
-    margin: 16px;
-    padding: 10px 8px 0;
-    background: var(--card);
-    color: var(--foreground);
-    font-size: var(--console-text-body);
-}
-.subscription-scroll {
-    border-bottom: 1px solid var(--input);
-}
-table {
-    width: 100%;
-    border-collapse: collapse;
-    table-layout: fixed;
-}
-th,
-td {
-    padding: 0 22px;
-    border-bottom: 1px solid var(--border);
-    font-size: var(--console-text-body);
-    text-align: left;
-}
-th {
-    height: 48px;
-    background: var(--muted);
-    font-weight: 600;
-}
-td {
-    height: 60px;
-    overflow-wrap: anywhere;
-}
-tbody tr:hover {
-    background: var(--accent);
-}
-:deep([data-slot='checkbox']) {
-    display: block;
-    width: 20px;
-    height: 20px;
-    accent-color: var(--primary);
-    cursor: pointer;
-}
-:deep([data-slot='checkbox']):disabled {
-    cursor: wait;
-    opacity: 0.6;
-}
-:deep([data-slot='checkbox']):focus-visible {
-    outline: 2px solid var(--primary);
-    outline-offset: 3px;
-}
-.empty {
-    text-align: center;
-}
-.save-error {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    padding-block: 6px;
-    color: var(--destructive);
-    font-size: var(--console-text-helper);
-}
-.save-error button {
-    color: var(--primary);
-    cursor: pointer;
-}
-@media (max-width: 640px) {
-    .message-subscriptions {
-        margin: 8px;
-        padding: 10px 8px 0;
-    }
-    th,
-    td {
-        padding-inline: 10px;
-    }
-}
-</style>

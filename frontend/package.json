@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "check:styles": "node ../scripts/check-global-styles.mjs",
+    "prebuild": "npm run check:styles",
     "build": "vite build",
     "preview": "vite preview"
   },

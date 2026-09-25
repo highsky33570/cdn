@@ -416,7 +416,7 @@ onUnmounted(() => {
 
 <template>
     <div
-        class="console-page min-w-0 p-4 md:p-6"
+        class="console-admin-access-logs console-page min-w-0 p-4 md:p-6"
         :class="{ 'user-access-log': userScope }"
     >
         <section
@@ -925,7 +925,7 @@ onUnmounted(() => {
         </section>
         <Dialog v-model:open="detailOpen"
             ><DialogContent
-                class="max-h-[85vh] overflow-y-auto sm:max-w-2xl"
+                class="console-admin-access-logs max-h-[85vh] overflow-y-auto sm:max-w-2xl"
                 :class="{ 'user-access-detail': userScope }"
                 ><DialogHeader
                     ><DialogTitle>更多日志</DialogTitle
@@ -994,175 +994,3 @@ onUnmounted(() => {
         >
     </div>
 </template>
-
-<style scoped>
-.access-table th {
-    padding: 0.75rem;
-    font-weight: 600;
-    white-space: nowrap;
-}
-.access-table td {
-    padding: 0.875rem 0.75rem;
-}
-.access-table tr {
-    border-bottom: 1px solid var(--border);
-}
-.access-query-table th,
-.access-query-table td {
-    border: 1px solid var(--border);
-}
-.user-access-log .access-log-card {
-    border-radius: 0;
-    border: 0;
-    box-shadow: none;
-}
-.user-access-log [role='tablist'],
-.user-access-detail [role='tablist'] {
-    gap: 1.25rem;
-    border-bottom: 1px solid var(--border);
-    margin-bottom: 1.25rem;
-}
-.user-access-log [role='tab'],
-.user-access-detail [role='tab'] {
-    border-radius: 0;
-    border-bottom: 2px solid transparent;
-    background: transparent;
-    padding: 0.75rem 1.25rem;
-    margin-bottom: -1px;
-    font-weight: 400;
-    font-size: var(--console-text-body);
-}
-.user-access-log [role='tab'][aria-selected='true'],
-.user-access-detail [role='tab'][aria-selected='true'] {
-    border-bottom-color: var(--primary);
-    color: var(--primary);
-}
-.user-access-log .access-toolbar,
-.user-access-log .access-refresh,
-.user-access-log nav {
-    justify-content: flex-start;
-}
-.user-access-log
-    .access-toolbar
-    form
-    :deep([data-slot='select-trigger']):first-child {
-    width: 5rem;
-}
-.user-access-log .access-toolbar form input {
-    width: 13rem;
-    flex: 1 1 auto;
-}
-.user-access-log .access-toolbar input,
-.user-access-log .access-toolbar button,
-.user-access-log .access-toolbar :deep([data-slot='select-trigger']),
-.user-access-log .access-refresh button,
-.user-access-log nav button,
-.user-access-log nav :deep([data-slot='select-trigger']) {
-    height: 2.5rem;
-    font-size: var(--console-text-body);
-}
-.user-access-log nav button {
-    min-width: 2.5rem;
-}
-.user-access-log nav {
-    margin-top: 1.5rem;
-}
-.user-access-log .access-table {
-    font-size: var(--console-text-body);
-}
-.user-access-log .access-table th {
-    height: 3rem;
-    padding: 0.75rem 1.375rem;
-}
-.user-access-log .access-table td {
-    height: 3.75rem;
-    padding: 0.5rem 1.375rem;
-    line-height: 1.625;
-}
-.user-access-log .access-table td[colspan] {
-    height: 3.75rem;
-}
-.user-access-log [aria-busy] {
-    scrollbar-color: #909090 var(--muted);
-    scrollbar-width: auto;
-    overflow-x: scroll;
-}
-.user-access-log .access-table:not(.access-query-table) {
-    min-width: 1450px;
-}
-.user-access-log .access-table,
-.user-access-log nav,
-.user-access-log [role='tab'],
-.user-access-detail [role='tab'] {
-    font-size: var(--console-text-body);
-}
-.user-access-log .access-table th {
-    height: 48px;
-}
-.user-access-log .access-table td,
-.user-access-log .access-table td[colspan] {
-    height: 60px;
-}
-.user-access-log [aria-label='已应用筛选'] {
-    font-size: var(--console-text-body);
-}
-.user-access-log .access-toolbar input,
-.user-access-log .access-toolbar button,
-.user-access-log .access-toolbar :deep([data-slot='select-trigger']),
-.user-access-log .access-refresh button,
-.user-access-log nav button,
-.user-access-log nav :deep([data-slot='select-trigger']) {
-    height: 40px;
-    font-size: var(--console-text-body);
-}
-.user-access-log .access-toolbar form input,
-.user-access-log
-    .access-toolbar
-    form
-    :deep([data-slot='select-trigger']):not(:first-child) {
-    border-radius: 0;
-}
-.user-access-log .access-toolbar form button {
-    border-top-left-radius: 0;
-    border-bottom-left-radius: 0;
-}
-.user-access-detail {
-    gap: 0;
-    padding: 0;
-    border-radius: 0.375rem;
-}
-.user-access-detail > :deep([data-slot='dialog-header']) {
-    padding: 1.25rem;
-    border-bottom: 1px solid var(--border);
-}
-.user-access-detail [role='tablist'] {
-    margin: 1rem 1rem 0;
-}
-.user-access-detail pre {
-    margin: 0;
-    padding: 1.25rem 1rem;
-    border: 0;
-    background: transparent;
-    font-family: inherit;
-    font-size: var(--console-text-body);
-    line-height: 1.65;
-}
-.user-access-detail > label {
-    padding: 0 1rem 1rem;
-}
-.user-access-detail > :deep([data-slot='dialog-footer']) {
-    padding: 1rem;
-    border-top: 1px solid var(--border);
-}
-@media (max-width: 640px) {
-    .user-access-log .access-log-card {
-        padding: 0.75rem;
-    }
-    .user-access-log .access-toolbar form {
-        width: 100%;
-    }
-    .user-access-log .access-toolbar form input {
-        width: 0;
-    }
-}
-</style>

@@ -377,7 +377,7 @@ const resolving = ref<CdnflyRecord | null>(null);
 </script>
 
 <template>
-    <div class="min-w-0 flex-1 p-4 md:p-6">
+    <div class="console-admin-line-groups min-w-0 flex-1 p-4 md:p-6">
         <section
             class="line-group-panel rounded-xl border bg-card p-4 text-card-foreground shadow-sm"
             aria-label="线路分组"
@@ -640,7 +640,7 @@ const resolving = ref<CdnflyRecord | null>(null);
             "
         >
             <DialogScrollContent
-                class="my-5 w-[calc(100%_-_2rem)] bg-card sm:max-w-[490px]"
+                class="console-admin-line-groups my-5 w-[calc(100%_-_2rem)] bg-card sm:max-w-[490px]"
                 :class="editing ? 'line-group-editor' : ''"
             >
                 <DialogHeader
@@ -746,7 +746,9 @@ const resolving = ref<CdnflyRecord | null>(null);
                                                 l2Loading ? '加载中…' : '请选择'
                                             "
                                     /></SelectTrigger>
-                                    <SelectContent>
+                                    <SelectContent
+                                        class="console-admin-line-groups"
+                                    >
                                         <SelectItem
                                             v-if="
                                                 form.l2_config_id &&
@@ -924,7 +926,8 @@ const resolving = ref<CdnflyRecord | null>(null);
                     }
                 }
             "
-            ><DialogScrollContent class="sm:max-w-[1200px]"
+            ><DialogScrollContent
+                class="console-admin-line-groups sm:max-w-[1200px]"
                 ><DialogHeader
                     ><DialogTitle>配置解析 · {{ resolving?.name }}</DialogTitle
                     ><DialogDescription class="sr-only"
@@ -939,105 +942,3 @@ const resolving = ref<CdnflyRecord | null>(null);
         ></Dialog>
     </div>
 </template>
-
-<style scoped>
-.line-group-panel th {
-    height: 36px;
-    padding: 0 12px;
-    font-weight: 600;
-    white-space: nowrap;
-}
-.line-group-panel td {
-    height: 46px;
-    padding: 8px 12px;
-}
-.form-row {
-    display: grid;
-    grid-template-columns: 84px minmax(0, 1fr);
-    align-items: center;
-    gap: 16px;
-}
-.form-row label {
-    justify-content: flex-end;
-    font-weight: 400;
-}
-.form-row input {
-    height: 32px;
-}
-:global(.line-group-editor) {
-    max-width: 420px;
-    padding: 0;
-    gap: 0;
-}
-:global(.line-group-editor [data-slot='dialog-header']) {
-    padding: 10px 14px;
-    border-bottom: 1px solid var(--border);
-    text-align: left;
-}
-:global(.line-group-editor [data-slot='dialog-title']) {
-    font-size: var(--console-text-dialog-title);
-    font-weight: 400;
-}
-.line-group-editor .group-form {
-    padding: 20px 15px 27px;
-    gap: 21px;
-}
-.line-group-editor .form-row {
-    grid-template-columns: 70px minmax(0, 1fr);
-    gap: 10px;
-}
-.line-group-editor .form-row :deep(label) {
-    font-size: var(--console-text-body);
-    white-space: nowrap;
-}
-.line-group-editor .form-row :deep(input),
-.line-group-editor .form-row :deep([data-slot='select-trigger']),
-.line-group-editor .form-row :deep([data-slot='select-trigger']) {
-    height: 28px;
-    min-height: 28px;
-    border-radius: 3px;
-    padding: 3px 7px;
-    font-size: var(--console-text-body);
-    box-shadow: none;
-}
-.line-group-editor .switch-row {
-    align-items: start;
-}
-.line-group-editor .switch-row :deep(label) {
-    padding-top: 5px;
-}
-.switch-options {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: start;
-}
-.switch-options button {
-    border: 1px solid var(--border);
-    background: var(--card);
-    border-radius: 2px;
-    padding: 5px 12px;
-    font-size: var(--console-text-body);
-    line-height: 16px;
-    white-space: nowrap;
-}
-.switch-options button[aria-pressed='true'] {
-    border-color: #2d8cf0;
-    color: #2d8cf0;
-    position: relative;
-}
-:global(.line-group-editor [data-slot='dialog-footer']) {
-    padding: 10px 15px;
-    flex-direction: row;
-    justify-content: flex-end;
-}
-:global(.line-group-editor [data-slot='dialog-footer'] button) {
-    height: 28px;
-    border-radius: 3px;
-    padding: 4px 12px;
-    font-size: var(--console-text-body);
-}
-:global(.line-group-editor [data-slot='dialog-footer'] button[type='submit']) {
-    background: #2d8cf0;
-    color: white;
-}
-</style>

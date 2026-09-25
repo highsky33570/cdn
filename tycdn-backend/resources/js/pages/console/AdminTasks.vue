@@ -400,7 +400,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-    <div class="tasks-workspace min-w-0 p-4 md:p-6">
+    <div class="console-admin-tasks tasks-workspace min-w-0 p-4 md:p-6">
         <section
             class="console-panel rounded-xl border bg-card p-4 text-card-foreground md:p-5"
         >
@@ -421,7 +421,7 @@ onUnmounted(() => {
                             class="w-full sm:w-48"
                             aria-label="任务类型"
                             ><SelectValue /></SelectTrigger
-                        ><SelectContent
+                        ><SelectContent class="console-admin-tasks"
                             ><SelectItem value="all">所有类型</SelectItem
                             ><SelectItem
                                 v-for="[key, label] in typeOptions"
@@ -436,7 +436,7 @@ onUnmounted(() => {
                             class="w-full sm:w-48"
                             aria-label="任务状态"
                             ><SelectValue /></SelectTrigger
-                        ><SelectContent
+                        ><SelectContent class="console-admin-tasks"
                             ><SelectItem value="all">所有状态</SelectItem
                             ><SelectItem
                                 v-for="(label, key) in states"
@@ -612,7 +612,7 @@ onUnmounted(() => {
         </section>
         <Dialog :open="subOpen" @update:open="closeSub"
             ><DialogScrollContent
-                class="max-h-[95dvh] max-w-[1230px] grid-rows-[auto_minmax(0,1fr)_auto] gap-0 overflow-hidden p-0"
+                class="console-admin-tasks max-h-[95dvh] max-w-[1230px] grid-rows-[auto_minmax(0,1fr)_auto] gap-0 overflow-hidden p-0"
             >
                 <DialogHeader class="border-b px-5 py-4"
                     ><DialogTitle>子任务详情</DialogTitle
@@ -732,7 +732,7 @@ onUnmounted(() => {
         >
         <Dialog v-model:open="outputOpen"
             ><DialogScrollContent
-                class="max-h-[90dvh] max-w-2xl grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden"
+                class="console-admin-tasks max-h-[90dvh] max-w-2xl grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden"
                 ><DialogHeader
                     ><DialogTitle>{{ outputTitle }}</DialogTitle
                     ><DialogDescription class="sr-only"
@@ -757,7 +757,9 @@ onUnmounted(() => {
                     if (!busy) cancelOpen = value;
                 }
             "
-            ><DialogScrollContent @interact-outside.prevent
+            ><DialogScrollContent
+                class="console-admin-tasks"
+                @interact-outside.prevent
                 ><DialogHeader
                     ><DialogTitle>取消确认</DialogTitle
                     ><DialogDescription
@@ -782,11 +784,3 @@ onUnmounted(() => {
         >
     </div>
 </template>
-<style scoped>
-.task-table :deep(table) {
-    min-width: 1520px;
-}
-.subtask-table :deep(table) {
-    min-width: 1020px;
-}
-</style>

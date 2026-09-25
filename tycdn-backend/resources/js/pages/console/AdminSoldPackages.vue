@@ -635,7 +635,9 @@ async function changePackage() {
 </script>
 
 <template>
-    <div class="sold-packages-workspace flex flex-1 flex-col p-4 md:p-6">
+    <div
+        class="console-admin-sold-packages sold-packages-workspace flex flex-1 flex-col p-4 md:p-6"
+    >
         <section
             class="console-panel rounded-xl border bg-card p-4 text-card-foreground md:p-5"
         >
@@ -678,7 +680,7 @@ async function changePackage() {
                 <Select v-model="filters.expire" @update:model-value="search"
                     ><SelectTrigger class="w-44" aria-label="到期时间"
                         ><SelectValue /></SelectTrigger
-                    ><SelectContent
+                    ><SelectContent class="console-admin-sold-packages"
                         ><SelectItem value="all">所有到期时间</SelectItem
                         ><SelectItem value="30">一个月内到期</SelectItem
                         ><SelectItem value="7">一周内到期</SelectItem
@@ -693,7 +695,7 @@ async function changePackage() {
                     ><SelectTrigger class="w-44" aria-label="基础套餐"
                         ><SelectValue
                             placeholder="所有基础套餐" /></SelectTrigger
-                    ><SelectContent
+                    ><SelectContent class="console-admin-sold-packages"
                         ><SelectItem value="all">所有基础套餐</SelectItem
                         ><SelectItem
                             v-for="row in basePackages"
@@ -706,7 +708,7 @@ async function changePackage() {
                 <Select v-model="filters.order_by" @update:model-value="search"
                     ><SelectTrigger class="w-44" aria-label="排序"
                         ><SelectValue /></SelectTrigger
-                    ><SelectContent
+                    ><SelectContent class="console-admin-sold-packages"
                         ><SelectItem value="id">按购买时间排序</SelectItem
                         ><SelectItem value="end_at"
                             >按到期时间排序</SelectItem
@@ -716,7 +718,7 @@ async function changePackage() {
                 <Select v-model="filters.enable" @update:model-value="search"
                     ><SelectTrigger class="w-44" aria-label="状态"
                         ><SelectValue /></SelectTrigger
-                    ><SelectContent
+                    ><SelectContent class="console-admin-sold-packages"
                         ><SelectItem value="all">所有状态</SelectItem
                         ><SelectItem value="1">启用</SelectItem
                         ><SelectItem value="0">禁用</SelectItem></SelectContent
@@ -727,7 +729,7 @@ async function changePackage() {
                     @update:model-value="search"
                     ><SelectTrigger class="w-44" aria-label="流量使用情况"
                         ><SelectValue /></SelectTrigger
-                    ><SelectContent
+                    ><SelectContent class="console-admin-sold-packages"
                         ><SelectItem value="all">套餐流量使用情况</SelectItem
                         ><SelectItem value="1">套餐流量用完</SelectItem
                         ><SelectItem value="0"
@@ -856,7 +858,7 @@ async function changePackage() {
             />
         </section>
         <Dialog :open="actionOpen" @update:open="!busy && (actionOpen = $event)"
-            ><DialogScrollContent
+            ><DialogScrollContent class="console-admin-sold-packages"
                 ><DialogHeader
                     ><DialogTitle>{{
                         actionKind === 'sync' ? '同步数据' : '禁用套餐'
@@ -926,7 +928,7 @@ async function changePackage() {
             :open="editorOpen"
             @update:open="!editorBusy && (editorOpen = $event)"
             ><DialogScrollContent
-                class="sold-editor my-3 flex max-h-[calc(100dvh-24px)] w-[calc(100%-24px)] max-w-6xl flex-col gap-0 overflow-hidden p-0"
+                class="console-admin-sold-packages sold-editor my-3 flex max-h-[calc(100dvh-24px)] w-[calc(100%-24px)] max-w-6xl flex-col gap-0 overflow-hidden p-0"
                 ><DialogHeader class="shrink-0 border-b p-5"
                     ><DialogTitle>套餐编辑</DialogTitle
                     ><DialogDescription class="sr-only"
@@ -991,6 +993,7 @@ async function changePackage() {
                                             ><SelectValue
                                                 placeholder="请选择" /></SelectTrigger
                                         ><SelectContent
+                                            class="console-admin-sold-packages"
                                             ><SelectItem
                                                 v-if="
                                                     field.key ===
@@ -1155,6 +1158,7 @@ async function changePackage() {
                                             ><SelectValue
                                                 placeholder="请选择" /></SelectTrigger
                                         ><SelectContent
+                                            class="console-admin-sold-packages"
                                             ><SelectItem
                                                 v-for="option in options.cname_domains"
                                                 :key="String(option.id)"
@@ -1172,6 +1176,7 @@ async function changePackage() {
                                             aria-label="CNAME模式"
                                             ><SelectValue /></SelectTrigger
                                         ><SelectContent
+                                            class="console-admin-sold-packages"
                                             ><SelectItem value="site"
                                                 >按网站生成（推荐）</SelectItem
                                             ><SelectItem value="package"
@@ -1204,7 +1209,7 @@ async function changePackage() {
         >
         <Dialog v-model:open="detailOpen"
             ><DialogScrollContent
-                class="my-3 flex max-h-[calc(100dvh-24px)] w-[calc(100%-24px)] max-w-3xl flex-col gap-0 overflow-hidden p-0"
+                class="console-admin-sold-packages my-3 flex max-h-[calc(100dvh-24px)] w-[calc(100%-24px)] max-w-3xl flex-col gap-0 overflow-hidden p-0"
                 ><DialogHeader class="shrink-0 border-b p-5"
                     ><DialogTitle>套餐详情</DialogTitle
                     ><DialogDescription class="sr-only"
@@ -1443,7 +1448,7 @@ async function changePackage() {
             :open="upgradeOpen"
             @update:open="!upgradeBusy && (upgradeOpen = $event)"
             ><DialogScrollContent
-                class="my-3 max-h-[calc(100dvh-24px)] w-[calc(100%-24px)] max-w-3xl overflow-y-auto"
+                class="console-admin-sold-packages my-3 max-h-[calc(100dvh-24px)] w-[calc(100%-24px)] max-w-3xl overflow-y-auto"
                 ><DialogHeader
                     ><DialogTitle>升降配</DialogTitle
                     ><DialogDescription
@@ -1601,7 +1606,7 @@ async function changePackage() {
                             ><SelectTrigger class="w-full" aria-label="更换套餐"
                                 ><SelectValue
                                     placeholder="请选择基础套餐" /></SelectTrigger
-                            ><SelectContent
+                            ><SelectContent class="console-admin-sold-packages"
                                 ><SelectItem
                                     v-for="row in basePackages.filter(
                                         (p) =>
@@ -1660,46 +1665,3 @@ async function changePackage() {
         />
     </div>
 </template>
-<style scoped>
-.section-title {
-    margin-bottom: 16px;
-    border-left: 3px solid var(--primary);
-    padding-left: 8px;
-    font-weight: 600;
-}
-.sold-grid {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 20px;
-}
-.sold-field {
-    display: grid;
-    grid-template-columns: 100px minmax(0, 1fr);
-    align-items: center;
-    gap: 10px;
-}
-.sold-field > label {
-    justify-content: flex-end;
-    text-align: right;
-    line-height: 1.5;
-}
-@media (max-width: 1000px) {
-    .sold-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-}
-@media (max-width: 760px) {
-    .sold-grid {
-        grid-template-columns: 1fr;
-    }
-}
-@media (max-width: 430px) {
-    .sold-field {
-        grid-template-columns: 1fr;
-    }
-    .sold-field > label {
-        justify-content: flex-start;
-        text-align: left;
-    }
-}
-</style>

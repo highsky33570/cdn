@@ -251,7 +251,9 @@ async function loadDetail() {
 </script>
 
 <template>
-    <div class="message-query-workspace min-w-0 p-4 md:p-6">
+    <div
+        class="console-admin-message-query message-query-workspace min-w-0 p-4 md:p-6"
+    >
         <section class="min-w-0 rounded-xl border bg-card p-4 md:p-5">
             <form
                 class="mb-4 flex flex-wrap items-center gap-2 border-b pb-4"
@@ -260,7 +262,7 @@ async function loadDetail() {
                 <Select v-model="filters.type"
                     ><SelectTrigger class="w-full sm:w-52" aria-label="消息类型"
                         ><SelectValue placeholder="所有类型" /></SelectTrigger
-                    ><SelectContent class="max-h-80"
+                    ><SelectContent class="console-admin-message-query max-h-80"
                         ><SelectItem value="all">所有类型</SelectItem
                         ><SelectItem
                             v-for="[value, label] in typeOptions"
@@ -335,7 +337,7 @@ async function loadDetail() {
         </section>
         <Dialog v-model:open="detailOpen"
             ><DialogScrollContent
-                class="max-h-[90dvh] max-w-2xl grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden"
+                class="console-admin-message-query max-h-[90dvh] max-w-2xl grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden"
                 ><DialogHeader
                     ><DialogTitle>消息详情（{{ detailId }}）</DialogTitle
                     ><DialogDescription class="sr-only"
@@ -388,12 +390,3 @@ async function loadDetail() {
         >
     </div>
 </template>
-<style scoped>
-.message-table :deep(table) {
-    min-width: 1160px;
-}
-.message-table :deep(td[colspan]) {
-    padding-block: 18px;
-    border-bottom: 1px solid var(--border);
-}
-</style>

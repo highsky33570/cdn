@@ -124,7 +124,7 @@ function key(event: KeyboardEvent) {
 }
 </script>
 <template>
-    <div class="user-picker">
+    <div class="console-certificate-user-picker user-picker">
         <Input
             :id="inputId"
             v-model="text"
@@ -185,55 +185,3 @@ function key(event: KeyboardEvent) {
         </div>
     </div>
 </template>
-<style scoped>
-.user-picker {
-    position: relative;
-    min-width: 0;
-    width: 350px;
-    max-width: 100%;
-}
-input {
-    width: 100%;
-    height: 30px;
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    background: var(--card);
-    padding: 5px 9px;
-    font-size: var(--console-text-body);
-}
-.options {
-    position: absolute;
-    z-index: 60;
-    top: calc(100% + 4px);
-    left: 0;
-    right: 0;
-    max-height: 250px;
-    overflow-y: auto;
-    border: 1px solid var(--border);
-    background: var(--popover);
-    box-shadow: 0 4px 14px #0002;
-    border-radius: 4px;
-    padding: 5px;
-    font-size: var(--console-text-body);
-}
-.options > button {
-    display: block;
-    width: 100%;
-    text-align: left;
-    border: 0;
-    background: transparent;
-    padding: 8px;
-    cursor: pointer;
-}
-.options > button:hover,
-.options > button[aria-selected='true'] {
-    background: var(--muted);
-}
-small {
-    display: block;
-    color: var(--muted-foreground);
-}
-p {
-    padding: 8px;
-}
-</style>

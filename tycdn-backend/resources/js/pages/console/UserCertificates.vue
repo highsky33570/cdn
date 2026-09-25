@@ -732,7 +732,9 @@ async function saveDefault(name: 'cert_default_type' | 'dnsapi') {
 </script>
 
 <template>
-    <div class="console-page user-certificates min-w-0 p-4 md:p-6">
+    <div
+        class="console-user-certificates console-page user-certificates min-w-0 p-4 md:p-6"
+    >
         <section class="cert-workspace bg-card text-card-foreground">
             <div class="cert-tabs" role="tablist" aria-label="证书管理">
                 <Button
@@ -794,6 +796,7 @@ async function saveDefault(name: 'cert_default_type' | 'dnsapi') {
                                     >更多操作<ChevronDown
                                         class="size-4" /></Button></DropdownMenuTrigger
                             ><DropdownMenuContent
+                                class="console-user-certificates"
                                 ><DropdownMenuItem @select="runAction('enable')"
                                     >启用</DropdownMenuItem
                                 ><DropdownMenuItem
@@ -1044,6 +1047,7 @@ async function saveDefault(name: 'cert_default_type' | 'dnsapi') {
                                                             >更多<ChevronDown
                                                                 class="size-4" /></Button></DropdownMenuTrigger
                                                     ><DropdownMenuContent
+                                                        class="console-user-certificates"
                                                         ><DropdownMenuItem
                                                             @select="
                                                                 runAction(
@@ -1196,7 +1200,7 @@ async function saveDefault(name: 'cert_default_type' | 'dnsapi') {
         />
 
         <Dialog v-model:open="certDialogOpen">
-            <DialogScrollContent class="sm:max-w-2xl">
+            <DialogScrollContent class="console-user-certificates sm:max-w-2xl">
                 <DialogHeader>
                     <DialogTitle>{{ dialogTitle }}</DialogTitle>
                     <DialogDescription>
@@ -1297,7 +1301,9 @@ async function saveDefault(name: 'cert_default_type' | 'dnsapi') {
                                         <SelectTrigger
                                             ><SelectValue
                                         /></SelectTrigger>
-                                        <SelectContent>
+                                        <SelectContent
+                                            class="console-user-certificates"
+                                        >
                                             <SelectGroup>
                                                 <SelectItem value="lets"
                                                     >Let's Encrypt</SelectItem
@@ -1325,7 +1331,9 @@ async function saveDefault(name: 'cert_default_type' | 'dnsapi') {
                                             ><SelectValue
                                                 placeholder="选择 DNS API"
                                         /></SelectTrigger>
-                                        <SelectContent>
+                                        <SelectContent
+                                            class="console-user-certificates"
+                                        >
                                             <SelectGroup>
                                                 <SelectItem
                                                     v-for="api in dnsApiOptions"
@@ -1346,7 +1354,9 @@ async function saveDefault(name: 'cert_default_type' | 'dnsapi') {
                                         <SelectTrigger
                                             ><SelectValue
                                         /></SelectTrigger>
-                                        <SelectContent>
+                                        <SelectContent
+                                            class="console-user-certificates"
+                                        >
                                             <SelectGroup>
                                                 <SelectItem value="1"
                                                     >开启</SelectItem
@@ -1372,7 +1382,9 @@ async function saveDefault(name: 'cert_default_type' | 'dnsapi') {
                                     <SelectTrigger
                                         ><SelectValue
                                     /></SelectTrigger>
-                                    <SelectContent>
+                                    <SelectContent
+                                        class="console-user-certificates"
+                                    >
                                         <SelectGroup>
                                             <SelectItem value="1"
                                                 >启用</SelectItem
@@ -1390,7 +1402,9 @@ async function saveDefault(name: 'cert_default_type' | 'dnsapi') {
                                     <SelectTrigger
                                         ><SelectValue
                                     /></SelectTrigger>
-                                    <SelectContent>
+                                    <SelectContent
+                                        class="console-user-certificates"
+                                    >
                                         <SelectGroup>
                                             <SelectItem value="0"
                                                 >不重签</SelectItem
@@ -1449,245 +1463,3 @@ async function saveDefault(name: 'cert_default_type' | 'dnsapi') {
         />
     </div>
 </template>
-
-<style scoped>
-.cert-workspace {
-    padding: 16px;
-    min-width: 0;
-}
-.cert-tabs {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 20px;
-    margin-bottom: 20px;
-    border-bottom: 1px solid var(--border);
-}
-.cert-tabs button {
-    margin-bottom: -1px;
-    padding: 12px 20px;
-    border-bottom: 2px solid transparent;
-    font-size: var(--console-text-body);
-    color: var(--muted-foreground);
-}
-.cert-tabs button[aria-selected='true'] {
-    color: var(--primary);
-    border-color: var(--primary);
-}
-.cert-toolbar {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 10px;
-    margin-bottom: 18px;
-}
-.cert-toolbar button,
-.cert-toolbar input,
-.cert-toolbar :deep([data-slot='select-trigger']) {
-    height: 40px;
-    font-size: var(--console-text-body);
-}
-.cert-search {
-    display: flex;
-    max-width: 100%;
-    min-width: 0;
-    border: 1px solid var(--border);
-    border-radius: 4px;
-}
-.cert-search :deep([data-slot='select-trigger']) {
-    width: 75px;
-    flex-shrink: 0;
-    padding: 0 10px;
-    background: var(--muted);
-    border-radius: 4px 0 0 4px;
-}
-.cert-search input {
-    width: 240px;
-    min-width: 0;
-    border: 0;
-    border-left: 1px solid var(--border);
-    border-radius: 0;
-    box-shadow: none;
-}
-.cert-search button {
-    padding: 0 10px;
-}
-.advanced-cert {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: end;
-    gap: 12px;
-    margin-bottom: 18px;
-    padding: 16px;
-    background: var(--muted);
-    border: 1px solid var(--border);
-}
-.advanced-cert label {
-    display: grid;
-    gap: 6px;
-}
-.advanced-cert :deep([data-slot='select-trigger']) {
-    height: 36px;
-    padding: 0 12px;
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 4px;
-}
-.cert-table-scroll {
-    overflow-x: auto;
-    max-width: 100%;
-    scrollbar-width: auto;
-    scrollbar-color: #909090 var(--muted);
-}
-.cert-table {
-    width: 100%;
-    min-width: 1800px;
-    table-layout: fixed;
-    text-align: left;
-    font-size: var(--console-text-body);
-}
-.cert-table th {
-    height: 48px;
-    padding: 10px 18px;
-    color: var(--muted-foreground);
-    background: var(--muted);
-    font-weight: 600;
-}
-.cert-table td {
-    height: 60px;
-    padding: 6px 18px;
-    border-bottom: 1px solid var(--border);
-}
-.cert-table tbody tr:hover {
-    background: color-mix(in srgb, var(--muted) 40%, transparent);
-}
-.cert-table :deep([data-slot='checkbox']) {
-    width: 19px;
-    height: 19px;
-    accent-color: var(--primary);
-    vertical-align: middle;
-}
-.cert-name {
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-    white-space: normal;
-    height: auto;
-    padding: 0;
-    text-align: left;
-    line-height: 24px;
-    font-size: var(--console-text-body);
-    overflow-wrap: anywhere;
-}
-.cert-actions {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    white-space: nowrap;
-}
-.cert-actions button {
-    padding: 0;
-    height: auto;
-    font-size: var(--console-text-body);
-}
-.cert-status {
-    display: inline-flex;
-    align-items: center;
-    gap: 9px;
-    font-size: var(--console-text-body);
-}
-.cert-status i {
-    width: 14px;
-    height: 14px;
-    flex-shrink: 0;
-    border-radius: 50%;
-    background: #19be6b;
-}
-.cert-status[data-tone='muted'] i {
-    background: #9ca3af;
-}
-.cert-status[data-tone='error'] i {
-    background: #f43f5e;
-}
-.cert-status[data-tone='pending'] i {
-    background: #f59e0b;
-}
-.empty {
-    text-align: center;
-    color: var(--muted-foreground);
-}
-.cert-defaults {
-    padding: 8px 4px 20px;
-    min-height: 200px;
-    font-size: var(--console-text-body);
-}
-.default-row {
-    display: flex;
-    align-items: start;
-    gap: 16px;
-    margin-bottom: 40px;
-}
-.default-row > :first-child {
-    width: 70px;
-    flex-shrink: 0;
-    padding-top: 8px;
-}
-.default-radios {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 12px;
-    padding-top: 8px;
-}
-.default-radios label {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
-.default-radios input {
-    width: 19px;
-    height: 19px;
-    accent-color: var(--primary);
-}
-.default-dns {
-    width: 500px;
-    max-width: 100%;
-    min-width: 0;
-}
-.default-dns :deep([data-slot='select-trigger']) {
-    height: 40px;
-    width: 100%;
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    padding: 0 12px;
-}
-.default-dns p {
-    margin-top: 16px;
-    font-size: var(--console-text-body);
-    line-height: 1.6;
-    color: var(--muted-foreground);
-}
-@media (max-width: 640px) {
-    .cert-workspace {
-        padding: 12px;
-    }
-    .cert-tabs {
-        gap: 0;
-    }
-    .cert-tabs button {
-        padding: 10px 12px;
-        font-size: var(--console-text-body);
-    }
-    .cert-search {
-        width: 100%;
-    }
-    .cert-search input {
-        width: 0;
-        flex: 1;
-    }
-    .default-row {
-        gap: 10px;
-    }
-}
-</style>

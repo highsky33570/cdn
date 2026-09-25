@@ -246,7 +246,9 @@ onUnmounted(() => {
 </script>
 
 <template>
-    <div class="package-monitor-workspace min-w-0 p-4 md:p-6">
+    <div
+        class="console-admin-package-monitor package-monitor-workspace min-w-0 p-4 md:p-6"
+    >
         <div
             class="console-panel rounded-xl border bg-card p-4 text-card-foreground md:p-5"
         >
@@ -257,7 +259,7 @@ onUnmounted(() => {
                 <Select v-model="order"
                     ><SelectTrigger aria-label="排序方式" class="w-full sm:w-44"
                         ><SelectValue /></SelectTrigger
-                    ><SelectContent
+                    ><SelectContent class="console-admin-package-monitor"
                         ><SelectItem value="bandwidth">按带宽排序</SelectItem
                         ><SelectItem value="connection"
                             >按连接数排序</SelectItem
@@ -335,7 +337,9 @@ onUnmounted(() => {
             />
         </div>
         <Dialog v-model:open="detailOpen"
-            ><DialogScrollContent class="sm:max-w-3xl">
+            ><DialogScrollContent
+                class="console-admin-package-monitor sm:max-w-3xl"
+            >
                 <DialogHeader
                     ><DialogTitle
                         >用户套餐({{ packageId }})资源用量节点分布</DialogTitle
@@ -391,34 +395,3 @@ onUnmounted(() => {
         >
     </div>
 </template>
-
-<style scoped>
-.monitor-filter {
-    display: flex;
-    width: 18rem;
-    max-width: 100%;
-}
-.monitor-filter label {
-    display: flex;
-    align-items: center;
-    white-space: nowrap;
-    padding: 0 0.75rem;
-    border: 1px solid var(--border);
-    border-right: 0;
-    border-radius: var(--radius) 0 0 var(--radius);
-    background: var(--muted);
-    color: var(--muted-foreground);
-}
-.monitor-filter input {
-    border-top-left-radius: 0;
-    border-bottom-left-radius: 0;
-}
-.node-monitor-table :deep(table) {
-    min-width: 560px;
-}
-@media (max-width: 640px) {
-    .monitor-filter {
-        width: 100%;
-    }
-}
-</style>

@@ -1,5 +1,5 @@
 <template>
-  <section id="plans" class="plans-section">
+  <section data-public-style id="plans" class="public-plans-section plans-section">
     <div class="container-page">
       <div class="plans-head">
         <span class="eyebrow">FLEXIBLE PRICING</span>
@@ -26,42 +26,3 @@
 import ProductCatalog from './ProductCatalog.vue'
 import { contact } from '../data/landing'
 </script>
-
-<style scoped>
-.plans-section {
-  padding: 96px 0;
-  background: var(--panel-2);
-  border-block: 1px solid var(--border);
-}
-.plans-head {
-  text-align: center;
-  margin-bottom: 40px;
-}
-.eyebrow {
-  display: inline-block;
-  margin-bottom: 16px;
-}
-.plans-note {
-  margin-top: 28px;
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  gap: 12px;
-  color: var(--text-2);
-  line-height: 1.8;
-}
-.plans-note p {
-  margin: 0;
-}
-.plans-note a {
-  color: var(--accent);
-}
-.plans-note a:hover {
-  text-decoration: underline;
-}
-@media (max-width: 640px) {
-  .plans-section {
-    padding: 64px 0;
-  }
-}
-</style>

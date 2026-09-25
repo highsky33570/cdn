@@ -1,5 +1,5 @@
 <template>
-  <section id="network" class="map-section">
+  <section data-public-style id="network" class="public-map-section map-section">
     <div class="container-page">
       <div class="map-heading">
         <span class="eyebrow">EDGE NETWORK</span>
@@ -15,21 +15,3 @@
 <script setup>
 import NetworkMap from './NetworkMap.vue'
 </script>
-<style scoped>
-.map-section {
-  padding: 96px 0;
-}
-.map-heading {
-  margin-bottom: 40px;
-  text-align: center;
-}
-.eyebrow {
-  display: inline-block;
-  margin-bottom: 16px;
-}
-@media (max-width: 640px) {
-  .map-section {
-    padding: 64px 0;
-  }
-}
-</style>

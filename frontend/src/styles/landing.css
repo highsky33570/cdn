@@ -1,0 +1,1695 @@
+/* Global landing styles. Loaded by global.css.
+ * Stable public-* namespaces isolate layouts. data-public-style marks nested
+ * component roots; their internals keep their own styles and remain unaffected
+ * by an enclosing page's type selectors. :where() adds no specificity.
+ */
+
+/* components/AdvantagesSection.vue */
+.adv-section:is(.public-advantages-section, .public-advantages-section *):not(:where(.public-advantages-section [data-public-style] *)) {
+  padding: 120px 0;
+}
+.adv-head:is(.public-advantages-section, .public-advantages-section *):not(:where(.public-advantages-section [data-public-style] *)) {
+  text-align: center;
+  margin-bottom: 56px;
+}
+.eyebrow:is(.public-advantages-section, .public-advantages-section *):not(:where(.public-advantages-section [data-public-style] *)) {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  color: var(--accent);
+  margin-bottom: 16px;
+}
+.adv-title:is(.public-advantages-section, .public-advantages-section *):not(:where(.public-advantages-section [data-public-style] *)) {
+  letter-spacing: -0.02em;
+}
+.adv-grid:is(.public-advantages-section, .public-advantages-section *):not(:where(.public-advantages-section [data-public-style] *)) {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  overflow: hidden;
+}
+
+/*
+  A hairline grid rather than four floating cards with drop shadows. The
+  reference site's soft-shadowed card grid is exactly the look the client called
+  dated; a shared 1px lattice reads as one object instead of four stickers.
+*/
+.adv-card:is(.public-advantages-section, .public-advantages-section *):not(:where(.public-advantages-section [data-public-style] *)) {
+  position: relative;
+  background: var(--panel);
+  padding: 40px 36px 44px;
+  opacity: 0;
+  transform: translateY(16px);
+  transition: background 0.3s;
+}
+.is-visible .adv-card:is(.public-advantages-section, .public-advantages-section *):not(:where(.public-advantages-section [data-public-style] *)) {
+  animation: adv-in-public-advantages-section 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+  animation-delay: calc(var(--i) * 90ms);
+}
+@keyframes adv-in-public-advantages-section {
+to {
+    opacity: 1;
+    transform: none;
+}
+}
+.adv-card:is(.public-advantages-section, .public-advantages-section *):not(:where(.public-advantages-section [data-public-style] *)):hover {
+  background: var(--panel);
+}
+.adv-tag:is(.public-advantages-section, .public-advantages-section *):not(:where(.public-advantages-section [data-public-style] *)) {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--accent-2);
+  background: var(--accent-glow);
+  border: 1px solid var(--accent-border);
+  border-radius: 999px;
+  padding: 4px 12px;
+  margin-bottom: 22px;
+}
+.adv-card-title:is(.public-advantages-section, .public-advantages-section *):not(:where(.public-advantages-section [data-public-style] *)) {
+  margin: 0;
+  font-size: 21px;
+  font-weight: 800;
+  line-height: 1.4;
+  color: var(--text);
+  letter-spacing: -0.01em;
+}
+.adv-card-desc:is(.public-advantages-section, .public-advantages-section *):not(:where(.public-advantages-section [data-public-style] *)) {
+  margin: 14px 0 0;
+  font-size: 15px;
+  line-height: 1.8;
+  color: var(--text-2);
+}
+
+/* a short accent rule that grows on hover — a small signal of liveness */
+.adv-rule:is(.public-advantages-section, .public-advantages-section *):not(:where(.public-advantages-section [data-public-style] *)) {
+  position: absolute;
+  left: 36px;
+  bottom: 0;
+  height: 2px;
+  width: 28px;
+  background: var(--accent);
+  border-radius: 2px 2px 0 0;
+  transition: width 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.adv-card:hover .adv-rule:is(.public-advantages-section, .public-advantages-section *):not(:where(.public-advantages-section [data-public-style] *)) {
+  width: 72px;
+}
+@media (max-width: 860px) {
+.adv-grid:is(.public-advantages-section, .public-advantages-section *):not(:where(.public-advantages-section [data-public-style] *)) {
+    grid-template-columns: minmax(0, 1fr);
+}
+.adv-section:is(.public-advantages-section, .public-advantages-section *):not(:where(.public-advantages-section [data-public-style] *)) {
+    padding: 72px 0;
+}
+.adv-card:is(.public-advantages-section, .public-advantages-section *):not(:where(.public-advantages-section [data-public-style] *)) {
+    padding: 32px 24px 36px;
+}
+.adv-rule:is(.public-advantages-section, .public-advantages-section *):not(:where(.public-advantages-section [data-public-style] *)) {
+    left: 24px;
+}
+}
+@media (prefers-reduced-motion: reduce) {
+.adv-card:is(.public-advantages-section, .public-advantages-section *):not(:where(.public-advantages-section [data-public-style] *)),
+  .is-visible .adv-card:is(.public-advantages-section, .public-advantages-section *):not(:where(.public-advantages-section [data-public-style] *)) {
+    animation: none;
+    opacity: 1;
+    transform: none;
+}
+}
+
+/* components/ComparisonSection.vue */
+.cmp-section:is(.public-comparison-section, .public-comparison-section *):not(:where(.public-comparison-section [data-public-style] *)) {
+  padding: 120px 0;
+}
+.cmp-head:is(.public-comparison-section, .public-comparison-section *):not(:where(.public-comparison-section [data-public-style] *)) {
+  text-align: center;
+  margin-bottom: 48px;
+}
+.eyebrow:is(.public-comparison-section, .public-comparison-section *):not(:where(.public-comparison-section [data-public-style] *)) {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  color: var(--accent);
+  margin-bottom: 16px;
+}
+.cmp-title:is(.public-comparison-section, .public-comparison-section *):not(:where(.public-comparison-section [data-public-style] *)) {
+  font-size: clamp(28px, 3.2vw, 44px);
+  font-weight: 800;
+  margin: 0;
+  color: var(--text);
+  letter-spacing: -0.02em;
+}
+.cmp-sub:is(.public-comparison-section, .public-comparison-section *):not(:where(.public-comparison-section [data-public-style] *)) {
+  margin: 14px 0 0;
+  font-size: 16px;
+  color: var(--text-2);
+}
+.cmp-table-wrap:is(.public-comparison-section, .public-comparison-section *):not(:where(.public-comparison-section [data-public-style] *)) {
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  overflow: hidden;
+  background: var(--panel);
+}
+.cmp-table:is(.public-comparison-section, .public-comparison-section *):not(:where(.public-comparison-section [data-public-style] *)) {
+  width: 100%;
+  border-collapse: collapse;
+}
+.cmp-corner:is(.public-comparison-section, .public-comparison-section *):not(:where(.public-comparison-section [data-public-style] *)) {
+  width: 15%;
+  padding: 20px 22px;
+  text-align: left;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-3);
+  border-bottom: 1px solid var(--border);
+}
+.cmp-col-head:is(.public-comparison-section, .public-comparison-section *):not(:where(.public-comparison-section [data-public-style] *)) {
+  padding: 20px 18px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-2);
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+  vertical-align: bottom;
+  width: 21.25%;
+}
+
+/* a continuous tinted spine down our column, so the eye follows one line */
+.cmp-col-head.is-us:is(.public-comparison-section, .public-comparison-section *):not(:where(.public-comparison-section [data-public-style] *)) {
+  color: var(--text);
+  font-size: 17px;
+  background: linear-gradient(180deg, var(--ok-soft), var(--ok-soft));
+  border-bottom-color: var(--ok-border);
+}
+.cmp-us-mark:is(.public-comparison-section, .public-comparison-section *):not(:where(.public-comparison-section [data-public-style] *)) {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: var(--ok);
+  margin-bottom: 7px;
+}
+.cmp-row-head:is(.public-comparison-section, .public-comparison-section *):not(:where(.public-comparison-section [data-public-style] *)) {
+  padding: 14px 22px;
+  text-align: left;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  border-bottom: 1px solid var(--surface);
+  white-space: nowrap;
+}
+.cmp-cell:is(.public-comparison-section, .public-comparison-section *):not(:where(.public-comparison-section [data-public-style] *)) {
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--surface);
+  vertical-align: middle;
+}
+.cmp-cell.is-us:is(.public-comparison-section, .public-comparison-section *):not(:where(.public-comparison-section [data-public-style] *)) {
+  background: var(--ok-soft);
+}
+.cmp-table tbody tr:last-child .cmp-row-head:is(.public-comparison-section, .public-comparison-section *):not(:where(.public-comparison-section [data-public-style] *)),
+.cmp-table tbody tr:last-child .cmp-cell:is(.public-comparison-section, .public-comparison-section *):not(:where(.public-comparison-section [data-public-style] *)) {
+  border-bottom: none;
+}
+.cmp-table tbody tr:hover .cmp-cell:is(.public-comparison-section, .public-comparison-section *):not(:where(.public-comparison-section [data-public-style] *)),
+.cmp-table tbody tr:hover .cmp-row-head:is(.public-comparison-section, .public-comparison-section *):not(:where(.public-comparison-section [data-public-style] *)) {
+  background: var(--surface);
+}
+.cmp-table tbody tr:hover .cmp-cell.is-us:is(.public-comparison-section, .public-comparison-section *):not(:where(.public-comparison-section [data-public-style] *)) {
+  background: var(--ok-soft);
+}
+
+/* ── pills ────────────────────────────────────────────── */
+.pill:is(.public-comparison-section, .public-comparison-section *):not(:where(.public-comparison-section [data-public-style] *)) {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 13px;
+  border-radius: 999px;
+  font-size: 13px;
+  line-height: 1.45;
+  border: 1px solid transparent;
+}
+.pill-good:is(.public-comparison-section, .public-comparison-section *):not(:where(.public-comparison-section [data-public-style] *)) {
+  color: var(--ok-2);
+  background: var(--ok-soft);
+  border-color: var(--ok-border);
+  font-weight: 700;
+}
+.pill-bad:is(.public-comparison-section, .public-comparison-section *):not(:where(.public-comparison-section [data-public-style] *)) {
+  color: var(--danger);
+  background: var(--danger-soft);
+  border-color: var(--danger-border);
+}
+.pill-warn:is(.public-comparison-section, .public-comparison-section *):not(:where(.public-comparison-section [data-public-style] *)) {
+  color: var(--warn);
+  background: var(--warn-soft);
+  border-color: var(--warn-border);
+}
+.pill-muted:is(.public-comparison-section, .public-comparison-section *):not(:where(.public-comparison-section [data-public-style] *)) {
+  color: var(--text-3);
+  background: var(--surface);
+  border-color: var(--border);
+}
+.pill-check:is(.public-comparison-section, .public-comparison-section *):not(:where(.public-comparison-section [data-public-style] *)) {
+  width: 13px;
+  height: 13px;
+  flex: none;
+}
+.cmp-table tbody tr:is(.public-comparison-section, .public-comparison-section *):not(:where(.public-comparison-section [data-public-style] *)) {
+  opacity: 0;
+}
+.is-visible .cmp-table tbody tr:is(.public-comparison-section, .public-comparison-section *):not(:where(.public-comparison-section [data-public-style] *)) {
+  animation: cmp-in-public-comparison-section 0.45s ease forwards;
+  animation-delay: calc(var(--i) * 50ms);
+}
+@keyframes cmp-in-public-comparison-section {
+to {
+    opacity: 1;
+}
+}
+.cmp-foot:is(.public-comparison-section, .public-comparison-section *):not(:where(.public-comparison-section [data-public-style] *)) {
+  margin: 20px 0 0;
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-3);
+}
+
+/* ── mobile ───────────────────────────────────────────── */
+.cmp-cards:is(.public-comparison-section, .public-comparison-section *):not(:where(.public-comparison-section [data-public-style] *)) {
+  display: grid;
+  gap: 14px;
+}
+.cmp-card:is(.public-comparison-section, .public-comparison-section *):not(:where(.public-comparison-section [data-public-style] *)) {
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--panel);
+  padding: 20px;
+}
+.cmp-card-title:is(.public-comparison-section, .public-comparison-section *):not(:where(.public-comparison-section [data-public-style] *)) {
+  margin: 0 0 14px;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+}
+.cmp-card-list:is(.public-comparison-section, .public-comparison-section *):not(:where(.public-comparison-section [data-public-style] *)) {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+.cmp-card-row:is(.public-comparison-section, .public-comparison-section *):not(:where(.public-comparison-section [data-public-style] *)) {
+  display: grid;
+  grid-template-columns: 84px minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+}
+.cmp-card-col:is(.public-comparison-section, .public-comparison-section *):not(:where(.public-comparison-section [data-public-style] *)) {
+  font-size: 12px;
+  color: var(--text-3);
+}
+.cmp-card-row:first-child .cmp-card-col:is(.public-comparison-section, .public-comparison-section *):not(:where(.public-comparison-section [data-public-style] *)) {
+  color: var(--ok-2);
+  font-weight: 700;
+}
+.visually-hidden:is(.public-comparison-section, .public-comparison-section *):not(:where(.public-comparison-section [data-public-style] *)) {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+.desktop-only:is(.public-comparison-section, .public-comparison-section *):not(:where(.public-comparison-section [data-public-style] *)) {
+  display: block;
+}
+.mobile-only:is(.public-comparison-section, .public-comparison-section *):not(:where(.public-comparison-section [data-public-style] *)) {
+  display: none;
+}
+@media (max-width: 1080px) {
+.desktop-only:is(.public-comparison-section, .public-comparison-section *):not(:where(.public-comparison-section [data-public-style] *)) {
+    display: none;
+}
+.mobile-only:is(.public-comparison-section, .public-comparison-section *):not(:where(.public-comparison-section [data-public-style] *)) {
+    display: grid;
+}
+.cmp-section:is(.public-comparison-section, .public-comparison-section *):not(:where(.public-comparison-section [data-public-style] *)) {
+    padding: 72px 0;
+}
+}
+@media (prefers-reduced-motion: reduce) {
+.cmp-table tbody tr:is(.public-comparison-section, .public-comparison-section *):not(:where(.public-comparison-section [data-public-style] *)),
+  .is-visible .cmp-table tbody tr:is(.public-comparison-section, .public-comparison-section *):not(:where(.public-comparison-section [data-public-style] *)) {
+    animation: none;
+    opacity: 1;
+}
+}
+
+/* components/ContactCta.vue */
+.cta-section:is(.public-contact-cta, .public-contact-cta *):not(:where(.public-contact-cta [data-public-style] *)) {
+  padding: 40px 0 120px;
+}
+.cta-panel:is(.public-contact-cta, .public-contact-cta *):not(:where(.public-contact-cta [data-public-style] *)) {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 40px;
+  flex-wrap: wrap;
+  padding: 52px 56px;
+  border-radius: 22px;
+  border: 1px solid var(--accent-border);
+  background: radial-gradient(ellipse at 12% 0%, var(--accent-glow), transparent 60%), var(--panel);
+  opacity: 0;
+  transform: translateY(16px);
+  transition:
+    opacity 0.6s cubic-bezier(0.2, 0.8, 0.2, 1),
+    transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.cta-panel.is-visible:is(.public-contact-cta, .public-contact-cta *):not(:where(.public-contact-cta [data-public-style] *)) {
+  opacity: 1;
+  transform: none;
+}
+.cta-title:is(.public-contact-cta, .public-contact-cta *):not(:where(.public-contact-cta [data-public-style] *)) {
+  margin: 0;
+  font-size: clamp(24px, 2.6vw, 34px);
+  font-weight: 800;
+  color: var(--text);
+  letter-spacing: -0.02em;
+}
+.cta-sub:is(.public-contact-cta, .public-contact-cta *):not(:where(.public-contact-cta [data-public-style] *)) {
+  margin: 12px 0 0;
+  font-size: 16px;
+  line-height: 1.8;
+  color: var(--text-2);
+  max-width: 46ch;
+}
+.cta-actions:is(.public-contact-cta, .public-contact-cta *):not(:where(.public-contact-cta [data-public-style] *)) {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  flex-wrap: wrap;
+}
+:is(.public-contact-cta, .public-contact-cta *):not(:where(.public-contact-cta [data-public-style] *)) .cta-btn.arco-btn {
+  height: 52px;
+  min-width: 168px;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 700;
+}
+.cta-tg:is(.public-contact-cta, .public-contact-cta *):not(:where(.public-contact-cta [data-public-style] *)) {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--accent-2);
+  transition: color 0.2s;
+}
+.cta-tg:is(.public-contact-cta, .public-contact-cta *):not(:where(.public-contact-cta [data-public-style] *)):hover {
+  color: var(--accent-3);
+}
+@media (max-width: 768px) {
+.cta-section:is(.public-contact-cta, .public-contact-cta *):not(:where(.public-contact-cta [data-public-style] *)) {
+    padding: 24px 0 72px;
+}
+.cta-panel:is(.public-contact-cta, .public-contact-cta *):not(:where(.public-contact-cta [data-public-style] *)) {
+    padding: 34px 24px;
+}
+.cta-actions:is(.public-contact-cta, .public-contact-cta *):not(:where(.public-contact-cta [data-public-style] *)) {
+    width: 100%;
+}
+:is(.public-contact-cta, .public-contact-cta *):not(:where(.public-contact-cta [data-public-style] *)) .cta-btn.arco-btn {
+    flex: 1;
+}
+}
+@media (prefers-reduced-motion: reduce) {
+.cta-panel:is(.public-contact-cta, .public-contact-cta *):not(:where(.public-contact-cta [data-public-style] *)) {
+    opacity: 1;
+    transform: none;
+    transition: none;
+}
+}
+
+/* components/DefenseSection.vue */
+.def-section:is(.public-defense-section, .public-defense-section *):not(:where(.public-defense-section [data-public-style] *)) {
+  padding: 120px 0;
+  background: radial-gradient(ellipse at 78% 40%, var(--accent-glow), transparent 62%);
+}
+.def-inner:is(.public-defense-section, .public-defense-section *):not(:where(.public-defense-section [data-public-style] *)) {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+  gap: 72px;
+  align-items: center;
+}
+.eyebrow:is(.public-defense-section, .public-defense-section *):not(:where(.public-defense-section [data-public-style] *)) {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  color: var(--accent);
+  margin-bottom: 18px;
+}
+.def-title:is(.public-defense-section, .public-defense-section *):not(:where(.public-defense-section [data-public-style] *)) {
+  font-size: clamp(28px, 3.2vw, 42px);
+  line-height: 1.26;
+  font-weight: 800;
+  margin: 0;
+  color: var(--text);
+  letter-spacing: -0.02em;
+}
+.def-sub:is(.public-defense-section, .public-defense-section *):not(:where(.public-defense-section [data-public-style] *)) {
+  margin: 20px 0 0;
+  font-size: 16px;
+  line-height: 1.85;
+  color: var(--text-2);
+  max-width: 46ch;
+}
+.def-list:is(.public-defense-section, .public-defense-section *):not(:where(.public-defense-section [data-public-style] *)) {
+  list-style: none;
+  margin: 40px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 4px;
+}
+.def-item:is(.public-defense-section, .public-defense-section *):not(:where(.public-defense-section [data-public-style] *)) {
+  display: grid;
+  grid-template-columns: 78px minmax(0, 1fr);
+  gap: 18px;
+  padding: 18px 0;
+  border-top: 1px solid var(--border);
+}
+.def-layer:is(.public-defense-section, .public-defense-section *):not(:where(.public-defense-section [data-public-style] *)) {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: var(--accent-2);
+  padding-top: 3px;
+}
+.def-item-title:is(.public-defense-section, .public-defense-section *):not(:where(.public-defense-section [data-public-style] *)) {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+}
+.def-item-desc:is(.public-defense-section, .public-defense-section *):not(:where(.public-defense-section [data-public-style] *)) {
+  margin: 6px 0 0;
+  font-size: 14px;
+  line-height: 1.75;
+  color: var(--text-2);
+}
+
+/* ── figure ───────────────────────────────────────────── */
+.def-figure:is(.public-defense-section, .public-defense-section *):not(:where(.public-defense-section [data-public-style] *)) {
+  margin: 0;
+  text-align: center;
+}
+.def-svg:is(.public-defense-section, .public-defense-section *):not(:where(.public-defense-section [data-public-style] *)) {
+  width: 100%;
+  max-width: 360px;
+  height: auto;
+  display: block;
+  margin: 0 auto;
+}
+.def-band rect:is(.public-defense-section, .public-defense-section *):not(:where(.public-defense-section [data-public-style] *)) {
+  fill: var(--panel);
+  stroke: var(--accent-border);
+  stroke-width: 1;
+  opacity: 0;
+  transform: translateY(10px);
+}
+.is-visible .def-band rect:is(.public-defense-section, .public-defense-section *):not(:where(.public-defense-section [data-public-style] *)) {
+  animation: band-in-public-defense-section 0.55s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+  animation-delay: var(--d);
+}
+@keyframes band-in-public-defense-section {
+to {
+    opacity: 1;
+    transform: none;
+}
+}
+.def-origin:is(.public-defense-section, .public-defense-section *):not(:where(.public-defense-section [data-public-style] *)) {
+  fill: var(--panel);
+  stroke: var(--ok-border);
+  stroke-width: 1;
+}
+.svg-l:is(.public-defense-section, .public-defense-section *):not(:where(.public-defense-section [data-public-style] *)) {
+  fill: var(--text);
+  font-size: 13px;
+  font-weight: 700;
+}
+.svg-s:is(.public-defense-section, .public-defense-section *):not(:where(.public-defense-section [data-public-style] *)) {
+  fill: var(--text-2);
+  font-size: 11px;
+}
+.svg-cap:is(.public-defense-section, .public-defense-section *):not(:where(.public-defense-section [data-public-style] *)) {
+  fill: var(--text-3);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+}
+.def-cap:is(.public-defense-section, .public-defense-section *):not(:where(.public-defense-section [data-public-style] *)) {
+  margin-top: 14px;
+  font-size: 13px;
+  color: var(--ok);
+  letter-spacing: 0.08em;
+}
+@media (max-width: 1024px) {
+.def-inner:is(.public-defense-section, .public-defense-section *):not(:where(.public-defense-section [data-public-style] *)) {
+    grid-template-columns: 1fr;
+    gap: 48px;
+}
+.def-sub:is(.public-defense-section, .public-defense-section *):not(:where(.public-defense-section [data-public-style] *)) {
+    max-width: none;
+}
+}
+@media (max-width: 768px) {
+.def-section:is(.public-defense-section, .public-defense-section *):not(:where(.public-defense-section [data-public-style] *)) {
+    padding: 72px 0;
+}
+}
+@media (prefers-reduced-motion: reduce) {
+.def-band rect:is(.public-defense-section, .public-defense-section *):not(:where(.public-defense-section [data-public-style] *)),
+  .is-visible .def-band rect:is(.public-defense-section, .public-defense-section *):not(:where(.public-defense-section [data-public-style] *)) {
+    animation: none;
+    opacity: 1;
+    transform: none;
+}
+}
+
+/* components/FaqSection.vue */
+.faq-section:is(.public-faq-section, .public-faq-section *):not(:where(.public-faq-section [data-public-style] *)) {
+  padding: 120px 0;
+}
+.faq-inner:is(.public-faq-section, .public-faq-section *):not(:where(.public-faq-section [data-public-style] *)) {
+  display: grid;
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+  gap: 72px;
+  align-items: start;
+}
+.faq-lede:is(.public-faq-section, .public-faq-section *):not(:where(.public-faq-section [data-public-style] *)) {
+  position: sticky;
+  top: calc(var(--header-h) + 48px);
+}
+.eyebrow:is(.public-faq-section, .public-faq-section *):not(:where(.public-faq-section [data-public-style] *)) {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  color: var(--accent);
+  margin-bottom: 18px;
+}
+.faq-title:is(.public-faq-section, .public-faq-section *):not(:where(.public-faq-section [data-public-style] *)) {
+  font-size: clamp(28px, 3.2vw, 42px);
+  line-height: 1.26;
+  font-weight: 800;
+  margin: 0;
+  color: var(--text);
+  letter-spacing: -0.02em;
+}
+.faq-sub:is(.public-faq-section, .public-faq-section *):not(:where(.public-faq-section [data-public-style] *)) {
+  margin: 18px 0 0;
+  font-size: 15px;
+  line-height: 1.8;
+  color: var(--text-2);
+  max-width: 30ch;
+}
+.faq-contact:is(.public-faq-section, .public-faq-section *):not(:where(.public-faq-section [data-public-style] *)) {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 20px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--accent-2);
+  transition: color 0.2s;
+}
+.faq-contact:is(.public-faq-section, .public-faq-section *):not(:where(.public-faq-section [data-public-style] *)):hover {
+  color: var(--accent-3);
+}
+.faq-list:is(.public-faq-section, .public-faq-section *):not(:where(.public-faq-section [data-public-style] *)) {
+  border-top: 1px solid var(--border);
+}
+.faq-item:is(.public-faq-section, .public-faq-section *):not(:where(.public-faq-section [data-public-style] *)) {
+  border-bottom: 1px solid var(--border);
+}
+.faq-q:is(.public-faq-section, .public-faq-section *):not(:where(.public-faq-section [data-public-style] *)) {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 22px 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+  cursor: pointer;
+  list-style: none;
+  transition: color 0.2s;
+}
+.faq-q:is(.public-faq-section, .public-faq-section *):not(:where(.public-faq-section [data-public-style] *))::-webkit-details-marker {
+  display: none;
+}
+.faq-q:is(.public-faq-section, .public-faq-section *):not(:where(.public-faq-section [data-public-style] *)):hover {
+  color: var(--accent-3);
+}
+.faq-q:is(.public-faq-section, .public-faq-section *):not(:where(.public-faq-section [data-public-style] *)):focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+  border-radius: 4px;
+}
+
+/* a plus that becomes a minus — cheaper and calmer than a rotating chevron */
+.faq-icon:is(.public-faq-section, .public-faq-section *):not(:where(.public-faq-section [data-public-style] *)) {
+  position: relative;
+  flex: none;
+  width: 14px;
+  height: 14px;
+}
+.faq-icon:is(.public-faq-section, .public-faq-section *):not(:where(.public-faq-section [data-public-style] *))::before,
+.faq-icon:is(.public-faq-section, .public-faq-section *):not(:where(.public-faq-section [data-public-style] *))::after {
+  content: '';
+  position: absolute;
+  background: var(--accent-2);
+  border-radius: 1px;
+  transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.faq-icon:is(.public-faq-section, .public-faq-section *):not(:where(.public-faq-section [data-public-style] *))::before {
+  inset: 6px 0 6px 0;
+  height: 2px;
+}
+.faq-icon:is(.public-faq-section, .public-faq-section *):not(:where(.public-faq-section [data-public-style] *))::after {
+  inset: 0 6px 0 6px;
+  width: 2px;
+}
+.faq-item[open] .faq-icon:is(.public-faq-section, .public-faq-section *):not(:where(.public-faq-section [data-public-style] *))::after {
+  transform: scaleY(0);
+}
+.faq-a:is(.public-faq-section, .public-faq-section *):not(:where(.public-faq-section [data-public-style] *)) {
+  margin: 0;
+  padding: 0 40px 24px 0;
+  font-size: 15px;
+  line-height: 1.85;
+  color: var(--text-2);
+}
+@media (max-width: 1024px) {
+.faq-inner:is(.public-faq-section, .public-faq-section *):not(:where(.public-faq-section [data-public-style] *)) {
+    grid-template-columns: 1fr;
+    gap: 40px;
+}
+.faq-lede:is(.public-faq-section, .public-faq-section *):not(:where(.public-faq-section [data-public-style] *)) {
+    position: static;
+}
+.faq-sub:is(.public-faq-section, .public-faq-section *):not(:where(.public-faq-section [data-public-style] *)) {
+    max-width: none;
+}
+}
+@media (max-width: 768px) {
+.faq-section:is(.public-faq-section, .public-faq-section *):not(:where(.public-faq-section [data-public-style] *)) {
+    padding: 72px 0;
+}
+.faq-a:is(.public-faq-section, .public-faq-section *):not(:where(.public-faq-section [data-public-style] *)) {
+    padding-right: 0;
+}
+}
+
+/* components/HeroSection.vue */
+.hero-section:is(.public-hero-section, .public-hero-section *):not(:where(.public-hero-section [data-public-style] *)) {
+  position: relative;
+  overflow: hidden;
+  padding: calc(var(--header-h) + 72px) 0 96px;
+}
+.hero-glow:is(.public-hero-section, .public-hero-section *):not(:where(.public-hero-section [data-public-style] *)) {
+  position: absolute;
+  inset: -20% -10% auto auto;
+  width: 70%;
+  height: 90%;
+  pointer-events: none;
+  background: radial-gradient(ellipse at 70% 30%, var(--accent-glow), transparent 62%);
+}
+.hero-inner:is(.public-hero-section, .public-hero-section *):not(:where(.public-hero-section [data-public-style] *)) {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: minmax(0, 1.02fr) minmax(0, 0.98fr);
+  gap: 40px;
+  align-items: center;
+}
+
+/* staged entrance */
+.hero-copy:is(.public-hero-section, .public-hero-section *):not(:where(.public-hero-section [data-public-style] *)) > * {
+  opacity: 0;
+  animation: rise-public-hero-section 0.75s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+.hero-copy > .hero-badge:is(.public-hero-section, .public-hero-section *):not(:where(.public-hero-section [data-public-style] *)) {
+  animation-delay: 0.05s;
+}
+.hero-copy > .hero-kicker:is(.public-hero-section, .public-hero-section *):not(:where(.public-hero-section [data-public-style] *)) {
+  animation-delay: 0.15s;
+}
+.hero-copy > .hero-h1:is(.public-hero-section, .public-hero-section *):not(:where(.public-hero-section [data-public-style] *)) {
+  animation-delay: 0.25s;
+}
+.hero-copy > .hero-lede:is(.public-hero-section, .public-hero-section *):not(:where(.public-hero-section [data-public-style] *)) {
+  animation-delay: 0.35s;
+}
+.hero-copy > .hero-actions:is(.public-hero-section, .public-hero-section *):not(:where(.public-hero-section [data-public-style] *)) {
+  animation-delay: 0.45s;
+}
+.hero-copy > .hero-stats:is(.public-hero-section, .public-hero-section *):not(:where(.public-hero-section [data-public-style] *)) {
+  animation-delay: 0.58s;
+}
+.hero-copy > .hero-scenarios:is(.public-hero-section, .public-hero-section *):not(:where(.public-hero-section [data-public-style] *)) {
+  animation-delay: 0.7s;
+}
+@keyframes rise-public-hero-section {
+from {
+    opacity: 0;
+    transform: translateY(18px);
+}
+to {
+    opacity: 1;
+    transform: none;
+}
+}
+.hero-badge:is(.public-hero-section, .public-hero-section *):not(:where(.public-hero-section [data-public-style] *)) {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  height: 34px;
+  padding: 0 16px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+}
+.hero-badge-dot:is(.public-hero-section, .public-hero-section *):not(:where(.public-hero-section [data-public-style] *)) {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--ok);
+  animation: pulse-dot-public-hero-section 2.2s infinite;
+}
+@keyframes pulse-dot-public-hero-section {
+0% {
+    box-shadow: 0 0 0 0 var(--ok-border);
+}
+70% {
+    box-shadow: 0 0 0 7px transparent;
+}
+100% {
+    box-shadow: 0 0 0 0 transparent;
+}
+}
+
+/*
+  The reference site's two-tier headline — a small provocation above the claim —
+  is a good device: it names the reader's problem before selling. Kept, in a
+  restrained accent rather than orange-on-cream.
+*/
+.hero-kicker:is(.public-hero-section, .public-hero-section *):not(:where(.public-hero-section [data-public-style] *)) {
+  margin: 26px 0 0;
+  font-size: clamp(15px, 1.5vw, 18px);
+  font-weight: 700;
+  color: var(--text-2);
+}
+.hero-kicker-mark:is(.public-hero-section, .public-hero-section *):not(:where(.public-hero-section [data-public-style] *)) {
+  color: var(--warn);
+  padding: 0 2px;
+}
+.hero-h1:is(.public-hero-section, .public-hero-section *):not(:where(.public-hero-section [data-public-style] *)) {
+  margin: 12px 0 0;
+  font-size: clamp(34px, 4.4vw, 58px);
+  line-height: 1.15;
+  font-weight: 800;
+  color: var(--text);
+  letter-spacing: -0.03em;
+}
+.hero-h1-accent:is(.public-hero-section, .public-hero-section *):not(:where(.public-hero-section [data-public-style] *)) {
+  background: linear-gradient(96deg, var(--accent-2), var(--ok));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.hero-lede:is(.public-hero-section, .public-hero-section *):not(:where(.public-hero-section [data-public-style] *)) {
+  margin: 22px 0 0;
+  max-width: 46ch;
+  font-size: 16px;
+  line-height: 1.85;
+  color: var(--text-2);
+}
+.hero-actions:is(.public-hero-section, .public-hero-section *):not(:where(.public-hero-section [data-public-style] *)) {
+  margin-top: 34px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+:is(.public-hero-section, .public-hero-section *):not(:where(.public-hero-section [data-public-style] *)) .hero-btn.arco-btn {
+  height: 50px;
+  min-width: 156px;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 700;
+}
+:is(.public-hero-section, .public-hero-section *):not(:where(.public-hero-section [data-public-style] *)) .hero-btn-ghost.arco-btn {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
+}
+.hero-tg:is(.public-hero-section, .public-hero-section *):not(:where(.public-hero-section [data-public-style] *)) {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--accent-2);
+  transition: color 0.2s;
+}
+.hero-tg:is(.public-hero-section, .public-hero-section *):not(:where(.public-hero-section [data-public-style] *)):hover {
+  color: var(--accent-3);
+}
+
+/* ── stats ────────────────────────────────────────────── */
+.hero-stats:is(.public-hero-section, .public-hero-section *):not(:where(.public-hero-section [data-public-style] *)) {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 40px 0 0;
+  padding: 24px 0;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+.hero-stat:is(.public-hero-section, .public-hero-section *):not(:where(.public-hero-section [data-public-style] *)) {
+  padding-right: 14px;
+  margin-right: 14px;
+  border-right: 1px solid var(--border);
+}
+.hero-stat:is(.public-hero-section, .public-hero-section *):not(:where(.public-hero-section [data-public-style] *)):last-child {
+  border-right: none;
+  margin-right: 0;
+  padding-right: 0;
+}
+.hero-stat-value:is(.public-hero-section, .public-hero-section *):not(:where(.public-hero-section [data-public-style] *)) {
+  margin: 0;
+  font-size: 30px;
+  font-weight: 800;
+  color: var(--text);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+.hero-stat-value small:is(.public-hero-section, .public-hero-section *):not(:where(.public-hero-section [data-public-style] *)) {
+  font-size: 15px;
+  font-weight: 700;
+  margin-left: 2px;
+}
+.hero-stat-value.is-pending:is(.public-hero-section, .public-hero-section *):not(:where(.public-hero-section [data-public-style] *)) {
+  color: var(--text-3);
+  font-size: 23px;
+}
+.hero-stat-label:is(.public-hero-section, .public-hero-section *):not(:where(.public-hero-section [data-public-style] *)) {
+  margin-top: 7px;
+  font-size: 13px;
+  color: var(--text-3);
+}
+.hero-stat-note:is(.public-hero-section, .public-hero-section *):not(:where(.public-hero-section [data-public-style] *)) {
+  margin: 6px 0 0;
+  color: var(--text-3);
+  font-size: 10px;
+  line-height: 1.6;
+}
+.hero-monitor-note:is(.public-hero-section, .public-hero-section *):not(:where(.public-hero-section [data-public-style] *)) {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  color: var(--text-3);
+  font-size: 10px;
+  margin: 10px 0 0;
+}
+
+/* ── scenarios ────────────────────────────────────────── */
+.hero-scenarios:is(.public-hero-section, .public-hero-section *):not(:where(.public-hero-section [data-public-style] *)) {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-top: 22px;
+}
+.hero-scenarios-label:is(.public-hero-section, .public-hero-section *):not(:where(.public-hero-section [data-public-style] *)) {
+  font-size: 13px;
+  color: var(--text-3);
+  white-space: nowrap;
+}
+.hero-scenario-list:is(.public-hero-section, .public-hero-section *):not(:where(.public-hero-section [data-public-style] *)) {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.hero-scenario:is(.public-hero-section, .public-hero-section *):not(:where(.public-hero-section [data-public-style] *)) {
+  padding: 6px 13px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  font-size: 13px;
+  color: var(--text-2);
+  transition:
+    border-color 0.2s,
+    color 0.2s;
+}
+.hero-scenario:is(.public-hero-section, .public-hero-section *):not(:where(.public-hero-section [data-public-style] *)):hover {
+  border-color: var(--accent-border);
+  color: var(--accent-3);
+}
+
+/* ── visual ───────────────────────────────────────────── */
+.hero-visual:is(.public-hero-section, .public-hero-section *):not(:where(.public-hero-section [data-public-style] *)) {
+  opacity: 0;
+  animation: rise-public-hero-section 0.9s cubic-bezier(0.2, 0.8, 0.2, 1) 0.35s forwards;
+}
+@media (max-width: 1024px) {
+.hero-inner:is(.public-hero-section, .public-hero-section *):not(:where(.public-hero-section [data-public-style] *)) {
+    grid-template-columns: 1fr;
+    gap: 48px;
+}
+.hero-lede:is(.public-hero-section, .public-hero-section *):not(:where(.public-hero-section [data-public-style] *)) {
+    max-width: none;
+}
+.hero-visual:is(.public-hero-section, .public-hero-section *):not(:where(.public-hero-section [data-public-style] *)) {
+    width: 100%;
+    max-width: 620px;
+    margin-inline: auto;
+}
+}
+@media (max-width: 768px) {
+.hero-section:is(.public-hero-section, .public-hero-section *):not(:where(.public-hero-section [data-public-style] *)) {
+    padding: calc(var(--header-h) + 44px) 0 64px;
+}
+.hero-stat:is(.public-hero-section, .public-hero-section *):not(:where(.public-hero-section [data-public-style] *)) {
+    padding-right: 10px;
+    margin-right: 10px;
+}
+.hero-stat-value:is(.public-hero-section, .public-hero-section *):not(:where(.public-hero-section [data-public-style] *)) {
+    font-size: 24px;
+}
+.hero-stat-value.is-pending:is(.public-hero-section, .public-hero-section *):not(:where(.public-hero-section [data-public-style] *)) {
+    font-size: 20px;
+}
+.hero-stat-label:is(.public-hero-section, .public-hero-section *):not(:where(.public-hero-section [data-public-style] *)) {
+    font-size: 11px;
+}
+.hero-stat-note:is(.public-hero-section, .public-hero-section *):not(:where(.public-hero-section [data-public-style] *)) {
+    font-size: 9px;
+}
+:is(.public-hero-section, .public-hero-section *):not(:where(.public-hero-section [data-public-style] *)) .hero-btn.arco-btn {
+    flex: 1 1 100%;
+}
+}
+@media (prefers-reduced-motion: reduce) {
+.hero-copy:is(.public-hero-section, .public-hero-section *):not(:where(.public-hero-section [data-public-style] *)) > *,
+  .hero-visual:is(.public-hero-section, .public-hero-section *):not(:where(.public-hero-section [data-public-style] *)) {
+    animation: none;
+    opacity: 1;
+    transform: none;
+}
+.hero-badge-dot:is(.public-hero-section, .public-hero-section *):not(:where(.public-hero-section [data-public-style] *)) {
+    animation: none;
+}
+}
+
+/* components/MapSection.vue */
+.map-section:is(.public-map-section, .public-map-section *):not(:where(.public-map-section [data-public-style] *)) {
+  padding: 96px 0;
+}
+.map-heading:is(.public-map-section, .public-map-section *):not(:where(.public-map-section [data-public-style] *)) {
+  margin-bottom: 40px;
+  text-align: center;
+}
+.eyebrow:is(.public-map-section, .public-map-section *):not(:where(.public-map-section [data-public-style] *)) {
+  display: inline-block;
+  margin-bottom: 16px;
+}
+@media (max-width: 640px) {
+.map-section:is(.public-map-section, .public-map-section *):not(:where(.public-map-section [data-public-style] *)) {
+    padding: 64px 0;
+}
+}
+
+/* components/NetworkMap.vue */
+.network-map:is(.public-network-map, .public-network-map *):not(:where(.public-network-map [data-public-style] *)) {
+  --network-accent: var(--map-accent);
+  overflow: hidden;
+  position: relative;
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  background: var(--map-bg);
+  box-shadow: var(--shadow);
+}
+.network-heading:is(.public-network-map, .public-network-map *):not(:where(.public-network-map [data-public-style] *)) {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 28px 32px 0;
+}
+.network-eyebrow:is(.public-network-map, .public-network-map *):not(:where(.public-network-map [data-public-style] *)) {
+  font:
+    600 10px/1.5 'Cascadia Code',
+    Consolas,
+    monospace;
+  letter-spacing: 0.16em;
+  color: var(--text-3);
+}
+h3:is(.public-network-map, .public-network-map *):not(:where(.public-network-map [data-public-style] *)) {
+  margin: 8px 0 0;
+  color: var(--text-strong);
+  font-size: 20px;
+  letter-spacing: -0.03em;
+}
+.network-status:is(.public-network-map, .public-network-map *):not(:where(.public-network-map [data-public-style] *)) {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-2);
+  font-size: 11px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--map-badge);
+  white-space: nowrap;
+}
+.status-dot:is(.public-network-map, .public-network-map *):not(:where(.public-network-map [data-public-style] *)) {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--warn);
+}
+.network-status.is-ready:is(.public-network-map, .public-network-map *):not(:where(.public-network-map [data-public-style] *)) {
+  color: var(--network-accent);
+}
+.is-ready .status-dot:is(.public-network-map, .public-network-map *):not(:where(.public-network-map [data-public-style] *)) {
+  background: var(--network-accent);
+  box-shadow: 0 0 12px var(--network-accent);
+}
+.network-canvas:is(.public-network-map, .public-network-map *):not(:where(.public-network-map [data-public-style] *)) {
+  position: relative;
+  aspect-ratio: 1.85;
+  margin: 16px 24px 0;
+  isolation: isolate;
+}
+.network-grid:is(.public-network-map, .public-network-map *):not(:where(.public-network-map [data-public-style] *)) {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background-image:
+    linear-gradient(var(--map-grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--map-grid) 1px, transparent 1px);
+  background-size: 40px 40px;
+  mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
+}
+.network-geography:is(.public-network-map, .public-network-map *):not(:where(.public-network-map [data-public-style] *)) {
+  position: absolute;
+  width: 90%;
+  aspect-ratio: 3933 / 2540;
+  left: 5%;
+  top: 50%;
+  transform: translateY(-50%) scaleY(0.85);
+}
+.network-land:is(.public-network-map, .public-network-map *):not(:where(.public-network-map [data-public-style] *)) {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle, var(--map-land) 1.15px, transparent 1.4px);
+  background-size: 6px 6px;
+  mask: url('/images/world-map-japan.svg') center / 100% 100% no-repeat;
+  -webkit-mask: url('/images/world-map-japan.svg') center / 100% 100% no-repeat;
+}
+.network-routes:is(.public-network-map, .public-network-map *):not(:where(.public-network-map [data-public-style] *)) {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.route-line:is(.public-network-map, .public-network-map *):not(:where(.public-network-map [data-public-style] *)) {
+  stroke: var(--map-route);
+  stroke-width: 1.4;
+  vector-effect: non-scaling-stroke;
+}
+.route-packet:is(.public-network-map, .public-network-map *):not(:where(.public-network-map [data-public-style] *)) {
+  stroke: var(--network-accent);
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-dasharray: 0.4 99.6;
+  animation: travel-public-network-map 6s linear infinite;
+  filter: drop-shadow(0 0 3px var(--network-accent));
+  vector-effect: non-scaling-stroke;
+}
+.audience-ring:is(.public-network-map, .public-network-map *):not(:where(.public-network-map [data-public-style] *)) {
+  stroke: var(--map-route);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+.audience-dot:is(.public-network-map, .public-network-map *):not(:where(.public-network-map [data-public-style] *)) {
+  fill: var(--network-accent);
+}
+.network-marker:is(.public-network-map, .public-network-map *):not(:where(.public-network-map [data-public-style] *)) {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  transform: translate(-50%, -50%) scaleY(1.176);
+  color: var(--network-accent);
+}
+.marker-dot:is(.public-network-map, .public-network-map *):not(:where(.public-network-map [data-public-style] *)) {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 18px var(--network-accent);
+}
+.marker-ring:is(.public-network-map, .public-network-map *):not(:where(.public-network-map [data-public-style] *)),
+.marker-orbit:is(.public-network-map, .public-network-map *):not(:where(.public-network-map [data-public-style] *)) {
+  position: absolute;
+  inset: -7px;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+}
+.marker-orbit:is(.public-network-map, .public-network-map *):not(:where(.public-network-map [data-public-style] *)) {
+  inset: -15px;
+  opacity: 0.25;
+}
+.marker-ring:is(.public-network-map, .public-network-map *):not(:where(.public-network-map [data-public-style] *)) {
+  animation: ping-public-network-map 3s ease-out infinite;
+}
+.marker-label:is(.public-network-map, .public-network-map *):not(:where(.public-network-map [data-public-style] *)) {
+  position: absolute;
+  left: 21px;
+  top: -14px;
+  white-space: nowrap;
+  color: var(--text-strong);
+  font-size: 12px;
+  font-weight: 700;
+  text-shadow: 0 1px 6px var(--map-bg);
+}
+.marker-label small:is(.public-network-map, .public-network-map *):not(:where(.public-network-map [data-public-style] *)) {
+  display: block;
+  margin-top: 2px;
+  font-size: 10px;
+  color: var(--text-2);
+  font-weight: 400;
+}
+.network-coordinate:is(.public-network-map, .public-network-map *):not(:where(.public-network-map [data-public-style] *)) {
+  position: absolute;
+  top: 8px;
+  left: 10px;
+  font:
+    9px/1.5 Consolas,
+    monospace;
+  color: var(--text-3);
+  letter-spacing: 0.06em;
+}
+.network-counter:is(.public-network-map, .public-network-map *):not(:where(.public-network-map [data-public-style] *)) {
+  position: absolute;
+  bottom: 20px;
+  left: 8px;
+  display: grid;
+  gap: 5px;
+  padding: 13px 16px;
+  border: 1px solid var(--border);
+  background: var(--map-badge);
+  border-radius: 8px;
+  backdrop-filter: blur(12px);
+}
+.network-counter > span:is(.public-network-map, .public-network-map *):not(:where(.public-network-map [data-public-style] *)) {
+  color: var(--text-2);
+  font-size: 10px;
+}
+.network-counter strong:is(.public-network-map, .public-network-map *):not(:where(.public-network-map [data-public-style] *)) {
+  color: var(--network-accent);
+  font-size: 28px;
+  line-height: 1.15;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+.network-counter strong small:is(.public-network-map, .public-network-map *):not(:where(.public-network-map [data-public-style] *)) {
+  font-size: 13px;
+  color: var(--text-3);
+  font-weight: 400;
+}
+.network-counter .counter-note:is(.public-network-map, .public-network-map *):not(:where(.public-network-map [data-public-style] *)) {
+  color: var(--text-3);
+  font-size: 9px;
+}
+.network-legend:is(.public-network-map, .public-network-map *):not(:where(.public-network-map [data-public-style] *)) {
+  position: absolute;
+  bottom: 22px;
+  right: 8px;
+  color: var(--text-2);
+  text-align: right;
+  font-size: 10px;
+  line-height: 2;
+}
+.network-legend span:is(.public-network-map, .public-network-map *):not(:where(.public-network-map [data-public-style] *)),
+.network-legend i:is(.public-network-map, .public-network-map *):not(:where(.public-network-map [data-public-style] *)) {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin: 0 5px 1px 10px;
+  border-radius: 50%;
+  background: var(--network-accent);
+}
+.network-legend i:is(.public-network-map, .public-network-map *):not(:where(.public-network-map [data-public-style] *)) {
+  background: transparent;
+  border: 1px solid var(--network-accent);
+}
+.network-legend small:is(.public-network-map, .public-network-map *):not(:where(.public-network-map [data-public-style] *)) {
+  color: var(--text-3);
+  font-size: 9px;
+}
+.network-footer:is(.public-network-map, .public-network-map *):not(:where(.public-network-map [data-public-style] *)) {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 16px 32px;
+  border-top: 1px solid var(--border);
+  color: var(--text-3);
+  font-size: 11px;
+}
+.footer-dot:is(.public-network-map, .public-network-map *):not(:where(.public-network-map [data-public-style] *)) {
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  margin: 0 7px 2px 0;
+  border-radius: 50%;
+  background: var(--network-accent);
+}
+.network-map--compact .network-heading:is(.public-network-map, .public-network-map *):not(:where(.public-network-map [data-public-style] *)) {
+  padding: 22px 22px 0;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.network-map--compact h3:is(.public-network-map, .public-network-map *):not(:where(.public-network-map [data-public-style] *)) {
+  font-size: 17px;
+}
+.network-map--compact .network-status:is(.public-network-map, .public-network-map *):not(:where(.public-network-map [data-public-style] *)) {
+  padding: 6px 9px;
+  font-size: 10px;
+}
+.network-map--compact .network-canvas:is(.public-network-map, .public-network-map *):not(:where(.public-network-map [data-public-style] *)) {
+  aspect-ratio: 1.4;
+  margin: 12px 12px 0;
+}
+.network-map--compact .network-geography:is(.public-network-map, .public-network-map *):not(:where(.public-network-map [data-public-style] *)) {
+  width: 96%;
+  left: 2%;
+  top: 42%;
+}
+.network-map--compact .network-land:is(.public-network-map, .public-network-map *):not(:where(.public-network-map [data-public-style] *)) {
+  background-size: 4px 4px;
+  background-image: radial-gradient(circle, var(--map-land) 0.8px, transparent 1px);
+}
+.network-map--compact .network-coordinate:is(.public-network-map, .public-network-map *):not(:where(.public-network-map [data-public-style] *)) {
+  font-size: 8px;
+}
+.network-map--compact .network-counter:is(.public-network-map, .public-network-map *):not(:where(.public-network-map [data-public-style] *)) {
+  left: 10px;
+  bottom: 16px;
+  padding: 10px 12px;
+}
+.network-map--compact .network-counter strong:is(.public-network-map, .public-network-map *):not(:where(.public-network-map [data-public-style] *)) {
+  font-size: 24px;
+}
+.network-map--compact .network-footer:is(.public-network-map, .public-network-map *):not(:where(.public-network-map [data-public-style] *)) {
+  padding: 14px 22px;
+  font-size: 10px;
+  flex-wrap: wrap;
+}
+@keyframes travel-public-network-map {
+to {
+    stroke-dashoffset: -100;
+}
+}
+@keyframes ping-public-network-map {
+from {
+    transform: scale(0.7);
+    opacity: 0.8;
+}
+to {
+    transform: scale(1.6);
+    opacity: 0;
+}
+}
+@media (max-width: 640px) {
+.network-heading:is(.public-network-map, .public-network-map *):not(:where(.public-network-map [data-public-style] *)) {
+    padding: 20px 20px 0;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+h3:is(.public-network-map, .public-network-map *):not(:where(.public-network-map [data-public-style] *)) {
+    font-size: 17px;
+}
+.network-status:is(.public-network-map, .public-network-map *):not(:where(.public-network-map [data-public-style] *)) {
+    padding: 6px 9px;
+    font-size: 10px;
+}
+.network-canvas:is(.public-network-map, .public-network-map *):not(:where(.public-network-map [data-public-style] *)) {
+    aspect-ratio: 1.2;
+    margin: 12px 8px 0;
+}
+.network-map--compact .network-canvas:is(.public-network-map, .public-network-map *):not(:where(.public-network-map [data-public-style] *)) {
+    aspect-ratio: 1.2;
+}
+.network-geography:is(.public-network-map, .public-network-map *):not(:where(.public-network-map [data-public-style] *)) {
+    width: 98%;
+    left: 1%;
+    top: 40%;
+}
+.network-map--compact .network-geography:is(.public-network-map, .public-network-map *):not(:where(.public-network-map [data-public-style] *)) {
+    top: 40%;
+}
+.network-land:is(.public-network-map, .public-network-map *):not(:where(.public-network-map [data-public-style] *)) {
+    background-size: 4px 4px;
+    background-image: radial-gradient(circle, var(--map-land) 0.8px, transparent 1px);
+}
+.marker-label:is(.public-network-map, .public-network-map *):not(:where(.public-network-map [data-public-style] *)) {
+    left: auto;
+    right: 18px;
+    top: 0;
+    font-size: 11px;
+    text-align: right;
+}
+.marker-label small:is(.public-network-map, .public-network-map *):not(:where(.public-network-map [data-public-style] *)) {
+    font-size: 9px;
+}
+.network-counter:is(.public-network-map, .public-network-map *):not(:where(.public-network-map [data-public-style] *)) {
+    bottom: 12px;
+    padding: 10px;
+}
+.network-legend:is(.public-network-map, .public-network-map *):not(:where(.public-network-map [data-public-style] *)) {
+    bottom: 14px;
+    font-size: 9px;
+}
+.network-footer:is(.public-network-map, .public-network-map *):not(:where(.public-network-map [data-public-style] *)) {
+    flex-wrap: wrap;
+    padding: 14px 20px;
+    font-size: 10px;
+}
+}
+@media (prefers-reduced-motion: reduce) {
+.route-packet:is(.public-network-map, .public-network-map *):not(:where(.public-network-map [data-public-style] *)),
+  .marker-ring:is(.public-network-map, .public-network-map *):not(:where(.public-network-map [data-public-style] *)) {
+    animation: none;
+}
+}
+
+/* components/PainPointsSection.vue */
+.pain-section:is(.public-pain-points-section, .public-pain-points-section *):not(:where(.public-pain-points-section [data-public-style] *)) {
+  padding: 120px 0;
+  position: relative;
+}
+.pain-section:is(.public-pain-points-section, .public-pain-points-section *):not(:where(.public-pain-points-section [data-public-style] *))::before {
+  /* a single soft light source, rather than a card-shaped glow behind each item */
+  content: '';
+  position: absolute;
+  inset: 0 auto auto 0;
+  width: 46%;
+  height: 60%;
+  background: radial-gradient(ellipse at top left, var(--accent-glow), transparent 70%);
+  pointer-events: none;
+}
+.pain-inner:is(.public-pain-points-section, .public-pain-points-section *):not(:where(.public-pain-points-section [data-public-style] *)) {
+  display: grid;
+  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+  gap: 72px;
+  align-items: start;
+  position: relative;
+}
+.pain-lede:is(.public-pain-points-section, .public-pain-points-section *):not(:where(.public-pain-points-section [data-public-style] *)) {
+  position: sticky;
+  top: calc(var(--header-h) + 48px);
+}
+.eyebrow:is(.public-pain-points-section, .public-pain-points-section *):not(:where(.public-pain-points-section [data-public-style] *)) {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  color: var(--accent);
+  margin-bottom: 20px;
+}
+.pain-title:is(.public-pain-points-section, .public-pain-points-section *):not(:where(.public-pain-points-section [data-public-style] *)) {
+  font-size: clamp(30px, 3.4vw, 46px);
+  line-height: 1.24;
+  font-weight: 800;
+  margin: 0;
+  color: var(--text);
+  letter-spacing: -0.02em;
+}
+.pain-sub:is(.public-pain-points-section, .public-pain-points-section *):not(:where(.public-pain-points-section [data-public-style] *)) {
+  margin: 20px 0 0;
+  font-size: 16px;
+  line-height: 1.8;
+  color: var(--text-2);
+  max-width: 34ch;
+}
+.pain-list:is(.public-pain-points-section, .public-pain-points-section *):not(:where(.public-pain-points-section [data-public-style] *)) {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid var(--border);
+}
+.pain-item:is(.public-pain-points-section, .public-pain-points-section *):not(:where(.public-pain-points-section [data-public-style] *)) {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr);
+  gap: 20px;
+  padding: 26px 0;
+  border-bottom: 1px solid var(--border);
+  opacity: 0;
+  transform: translateY(14px);
+}
+.is-visible .pain-item:is(.public-pain-points-section, .public-pain-points-section *):not(:where(.public-pain-points-section [data-public-style] *)) {
+  animation: pain-in-public-pain-points-section 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+  animation-delay: calc(var(--i) * 70ms);
+}
+@keyframes pain-in-public-pain-points-section {
+to {
+    opacity: 1;
+    transform: none;
+}
+}
+.pain-n:is(.public-pain-points-section, .public-pain-points-section *):not(:where(.public-pain-points-section [data-public-style] *)) {
+  font-size: 13px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-3);
+  padding-top: 4px;
+  letter-spacing: 0.06em;
+}
+.pain-item-title:is(.public-pain-points-section, .public-pain-points-section *):not(:where(.public-pain-points-section [data-public-style] *)) {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.5;
+  color: var(--text);
+}
+.pain-item-desc:is(.public-pain-points-section, .public-pain-points-section *):not(:where(.public-pain-points-section [data-public-style] *)) {
+  margin: 8px 0 0;
+  font-size: 15px;
+  line-height: 1.75;
+  color: var(--text-2);
+}
+
+/* the hairline brightens on hover — the only motion, kept cheap */
+.pain-item:is(.public-pain-points-section, .public-pain-points-section *):not(:where(.public-pain-points-section [data-public-style] *)) {
+  transition: border-color 0.25s;
+}
+.pain-item:is(.public-pain-points-section, .public-pain-points-section *):not(:where(.public-pain-points-section [data-public-style] *)):hover {
+  border-bottom-color: var(--accent-border);
+}
+@media (max-width: 1024px) {
+.pain-inner:is(.public-pain-points-section, .public-pain-points-section *):not(:where(.public-pain-points-section [data-public-style] *)) {
+    grid-template-columns: 1fr;
+    gap: 44px;
+}
+.pain-lede:is(.public-pain-points-section, .public-pain-points-section *):not(:where(.public-pain-points-section [data-public-style] *)) {
+    position: static;
+}
+.pain-sub:is(.public-pain-points-section, .public-pain-points-section *):not(:where(.public-pain-points-section [data-public-style] *)) {
+    max-width: none;
+}
+}
+@media (max-width: 768px) {
+.pain-section:is(.public-pain-points-section, .public-pain-points-section *):not(:where(.public-pain-points-section [data-public-style] *)) {
+    padding: 72px 0;
+}
+.pain-item:is(.public-pain-points-section, .public-pain-points-section *):not(:where(.public-pain-points-section [data-public-style] *)) {
+    grid-template-columns: 40px minmax(0, 1fr);
+    gap: 14px;
+    padding: 20px 0;
+}
+}
+@media (prefers-reduced-motion: reduce) {
+.pain-item:is(.public-pain-points-section, .public-pain-points-section *):not(:where(.public-pain-points-section [data-public-style] *)),
+  .is-visible .pain-item:is(.public-pain-points-section, .public-pain-points-section *):not(:where(.public-pain-points-section [data-public-style] *)) {
+    animation: none;
+    opacity: 1;
+    transform: none;
+}
+}
+
+/* components/SolutionsSection.vue */
+.why-cdn-section:is(.public-solutions-section, .public-solutions-section *):not(:where(.public-solutions-section [data-public-style] *)) {
+  position: relative;
+  overflow: hidden;
+  padding: 110px 0 120px;
+  background: none;
+  opacity: 0;
+}
+.why-cdn-section.is-visible:is(.public-solutions-section, .public-solutions-section *):not(:where(.public-solutions-section [data-public-style] *)) {
+  animation: fadeInUp-public-solutions-section 0.8s ease-out forwards;
+}
+@keyframes fadeInUp-public-solutions-section {
+from {
+    opacity: 0;
+    transform: translateY(30px);
+}
+to {
+    opacity: 1;
+    transform: translateY(0);
+}
+}
+.why-cdn-container:is(.public-solutions-section, .public-solutions-section *):not(:where(.public-solutions-section [data-public-style] *)) {
+  position: relative;
+  z-index: 1;
+  width: min(1280px, calc(100% - 48px));
+  margin: 0 auto;
+}
+.why-cdn-heading:is(.public-solutions-section, .public-solutions-section *):not(:where(.public-solutions-section [data-public-style] *)) {
+  max-width: 920px;
+  margin: 0 auto 52px;
+  text-align: center;
+}
+.why-cdn-kicker:is(.public-solutions-section, .public-solutions-section *):not(:where(.public-solutions-section [data-public-style] *)) {
+  margin: 0 0 14px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.24em;
+  color: var(--accent-2);
+}
+.why-cdn-heading h2:is(.public-solutions-section, .public-solutions-section *):not(:where(.public-solutions-section [data-public-style] *)) {
+  margin: 0;
+  font-size: clamp(34px, 4.2vw, 58px);
+  line-height: 1.18;
+  font-weight: 800;
+  color: var(--text);
+}
+.why-cdn-subtitle:is(.public-solutions-section, .public-solutions-section *):not(:where(.public-solutions-section [data-public-style] *)) {
+  margin: 18px auto 0;
+  max-width: 860px;
+  font-size: 18px;
+  line-height: 1.9;
+  color: var(--text-2);
+}
+.why-cdn-grid:is(.public-solutions-section, .public-solutions-section *):not(:where(.public-solutions-section [data-public-style] *)) {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 48px;
+}
+.why-cdn-card:is(.public-solutions-section, .public-solutions-section *):not(:where(.public-solutions-section [data-public-style] *)) {
+  position: relative;
+  min-height: 240px;
+  padding: 26px 28px 24px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: linear-gradient(180deg, var(--panel) 0%, var(--panel) 100%);
+  box-shadow: none;
+  overflow: hidden;
+}
+.why-cdn-card:is(.public-solutions-section, .public-solutions-section *):not(:where(.public-solutions-section [data-public-style] *))::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    var(--accent-glow) 0%,
+    transparent 34%,
+    transparent 66%,
+    var(--accent-glow) 100%
+  );
+  pointer-events: none;
+}
+.why-cdn-card__icon:is(.public-solutions-section, .public-solutions-section *):not(:where(.public-solutions-section [data-public-style] *)) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  margin-bottom: 24px;
+  border-radius: 50%;
+  border: 1px solid var(--accent-border);
+  background: var(--accent-soft);
+  box-shadow: none;
+}
+.why-cdn-card__icon span:is(.public-solutions-section, .public-solutions-section *):not(:where(.public-solutions-section [data-public-style] *)) {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+}
+.why-cdn-card h3:is(.public-solutions-section, .public-solutions-section *):not(:where(.public-solutions-section [data-public-style] *)) {
+  margin: 0 0 18px;
+  font-size: 26px;
+  line-height: 1.3;
+  font-weight: 800;
+  color: var(--text);
+}
+.why-cdn-card p:is(.public-solutions-section, .public-solutions-section *):not(:where(.public-solutions-section [data-public-style] *)) {
+  margin: 0;
+  font-size: 17px;
+  line-height: 1.9;
+  color: var(--text-3);
+}
+@media (max-width: 991px) {
+.why-cdn-grid:is(.public-solutions-section, .public-solutions-section *):not(:where(.public-solutions-section [data-public-style] *)) {
+    grid-template-columns: 1fr;
+}
+.why-cdn-card:is(.public-solutions-section, .public-solutions-section *):not(:where(.public-solutions-section [data-public-style] *)) {
+    min-height: auto;
+}
+}
+@media (max-width: 767px) {
+.why-cdn-section:is(.public-solutions-section, .public-solutions-section *):not(:where(.public-solutions-section [data-public-style] *)) {
+    padding: 84px 0 92px;
+}
+.why-cdn-container:is(.public-solutions-section, .public-solutions-section *):not(:where(.public-solutions-section [data-public-style] *)) {
+    width: min(100% - 28px, 1280px);
+}
+.why-cdn-heading:is(.public-solutions-section, .public-solutions-section *):not(:where(.public-solutions-section [data-public-style] *)) {
+    margin-bottom: 34px;
+}
+.why-cdn-subtitle:is(.public-solutions-section, .public-solutions-section *):not(:where(.public-solutions-section [data-public-style] *)) {
+    font-size: 15px;
+    line-height: 1.8;
+}
+.why-cdn-card:is(.public-solutions-section, .public-solutions-section *):not(:where(.public-solutions-section [data-public-style] *)) {
+    padding: 26px 22px 24px;
+    border-radius: 22px;
+}
+.why-cdn-card h3:is(.public-solutions-section, .public-solutions-section *):not(:where(.public-solutions-section [data-public-style] *)) {
+    font-size: 22px;
+}
+.why-cdn-card p:is(.public-solutions-section, .public-solutions-section *):not(:where(.public-solutions-section [data-public-style] *)) {
+    font-size: 15px;
+    line-height: 1.85;
+}
+}

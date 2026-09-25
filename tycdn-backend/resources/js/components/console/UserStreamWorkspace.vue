@@ -546,7 +546,7 @@ function tabKey(event: KeyboardEvent) {
 </script>
 
 <template>
-    <section class="user-stream-workspace">
+    <section class="console-user-stream-workspace user-stream-workspace">
         <nav
             class="stream-tabs"
             role="tablist"
@@ -609,7 +609,9 @@ function tabKey(event: KeyboardEvent) {
                             更多操作
                             <ChevronDown
                                 :size="16" /></Button></DropdownMenuTrigger
-                    ><DropdownMenuContent align="start"
+                    ><DropdownMenuContent
+                        class="console-user-stream-workspace"
+                        align="start"
                         ><DropdownMenuItem
                             :disabled="!selected.length"
                             @select="
@@ -991,7 +993,9 @@ function tabKey(event: KeyboardEvent) {
                                                         :size="
                                                             14
                                                         " /></Button></DropdownMenuTrigger
-                                            ><DropdownMenuContent align="end"
+                                            ><DropdownMenuContent
+                                                class="console-user-stream-workspace"
+                                                align="end"
                                                 ><DropdownMenuItem
                                                     @select="
                                                         mutate(
@@ -1076,7 +1080,8 @@ function tabKey(event: KeyboardEvent) {
             @updated="load()"
         />
         <Dialog v-model:open="editorOpen"
-            ><DialogScrollContent class="stream-resource-dialog sm:max-w-lg"
+            ><DialogScrollContent
+                class="console-user-stream-workspace stream-resource-dialog sm:max-w-lg"
                 ><DialogHeader
                     ><DialogTitle
                         >{{ editing ? '编辑' : '新增'
@@ -1194,7 +1199,8 @@ function tabKey(event: KeyboardEvent) {
             ></Dialog
         >
         <Dialog v-model:open="batchOpen"
-            ><DialogScrollContent class="stream-resource-dialog sm:max-w-lg"
+            ><DialogScrollContent
+                class="console-user-stream-workspace stream-resource-dialog sm:max-w-lg"
                 ><DialogHeader
                     ><DialogTitle>批量修改</DialogTitle
                     ><DialogDescription
@@ -1276,269 +1282,3 @@ function tabKey(event: KeyboardEvent) {
         />
     </section>
 </template>
-
-<style scoped>
-.user-stream-workspace {
-    min-width: 0;
-    padding: 0 14px 24px;
-    background: var(--card);
-    color: var(--muted-foreground);
-    font-size: var(--console-text-body);
-}
-.stream-tabs {
-    display: flex;
-    gap: 20px;
-    border-bottom: 1px solid var(--border);
-    margin-bottom: 20px;
-}
-.stream-tabs button {
-    padding: 14px 20px;
-    border-bottom: 2px solid transparent;
-    margin-bottom: -1px;
-    white-space: nowrap;
-    font-size: var(--console-text-body);
-}
-.stream-tabs button[aria-selected='true'] {
-    color: var(--primary);
-    border-bottom-color: var(--primary);
-}
-.stream-toolbar {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 18px;
-}
-.stream-button {
-    height: 40px;
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    background: var(--card);
-    padding: 0 19px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    white-space: nowrap;
-    font-size: var(--console-text-body);
-}
-.stream-button.primary {
-    background: var(--primary);
-    color: var(--primary-foreground);
-    border-color: var(--primary);
-}
-.text-action {
-    color: var(--primary);
-}
-.stream-search {
-    display: flex;
-    height: 40px;
-}
-.stream-search :deep([data-slot='select-trigger']) {
-    width: 110px;
-    border: 1px solid var(--border);
-    border-radius: 4px 0 0 4px;
-    padding: 0 10px;
-    background: var(--muted);
-}
-.stream-search input {
-    width: 175px;
-    min-width: 0;
-    border-block: 1px solid var(--border);
-    padding: 0 10px;
-    outline: none;
-}
-.stream-search input::placeholder {
-    color: var(--muted-foreground);
-    opacity: 0.55;
-}
-.stream-search input:focus {
-    border-color: var(--primary);
-}
-.stream-search .stream-button {
-    border-radius: 0 4px 4px 0;
-}
-.advanced-filters {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: end;
-    gap: 12px;
-    margin: 0 0 18px;
-}
-.advanced-filters label {
-    display: grid;
-    gap: 6px;
-    font-size: var(--console-text-body);
-}
-.advanced-filters :deep([data-slot='select-trigger']) {
-    width: 170px;
-    height: 40px;
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    background: var(--card);
-    padding: 0 10px;
-}
-.stream-table-scroll {
-    overflow-x: auto;
-    scrollbar-width: auto;
-    scrollbar-color: #909090 var(--muted);
-}
-.stream-table {
-    width: 100%;
-    min-width: 780px;
-    table-layout: fixed;
-    font-size: var(--console-text-body);
-}
-.stream-table.forwarding-table {
-    min-width: 1680px;
-}
-.stream-table th {
-    height: 48px;
-    padding: 10px 18px;
-    font-weight: 600;
-    text-align: left;
-    background: var(--muted);
-    border-bottom: 1px solid var(--border);
-}
-.stream-table td {
-    height: 60px;
-    padding: 10px 18px;
-    border-bottom: 1px solid var(--border);
-    overflow-wrap: anywhere;
-}
-.stream-table th:first-child,
-.stream-table td:first-child {
-    text-align: center;
-}
-.stream-table input {
-    width: 19px;
-    height: 19px;
-    accent-color: var(--primary);
-    vertical-align: middle;
-}
-.stream-table tbody tr:hover {
-    background: color-mix(in srgb, var(--primary) 4%, var(--card));
-}
-.truncate-cell {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-.empty {
-    text-align: center;
-}
-.row-actions,
-.row-more {
-    display: flex;
-    gap: 14px;
-    align-items: center;
-    white-space: nowrap;
-}
-.row-more {
-    gap: 4px;
-}
-.stream-status {
-    display: inline-flex;
-    gap: 8px;
-    align-items: center;
-}
-.stream-status i {
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    background: #19be6b;
-    flex-shrink: 0;
-}
-.stream-status[data-state='异常'] i {
-    background: var(--destructive);
-}
-.stream-status[data-state='已停用'] i,
-.stream-status[data-state='同步中'] i {
-    background: #f59e0b;
-}
-button:not(:disabled) {
-    cursor: pointer;
-}
-button:disabled,
-input:disabled,
-:deep([data-slot='select-trigger']):disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-button:focus-visible,
-input:focus-visible,
-:deep([data-slot='select-trigger']):focus-visible {
-    outline: 2px solid var(--primary);
-    outline-offset: 2px;
-}
-.error {
-    color: var(--destructive);
-    margin: 12px 0;
-    font-size: var(--console-text-body);
-}
-.resource-form {
-    display: grid;
-    gap: 16px;
-}
-.resource-form label {
-    display: grid;
-    gap: 6px;
-    font-size: var(--console-text-body);
-}
-.resource-form input:not([type='checkbox']),
-.resource-form :deep([data-slot='select-trigger']) {
-    height: 38px;
-    width: 100%;
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    background: var(--card);
-    padding: 0 10px;
-}
-.modal-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 10px;
-    margin-top: 8px;
-}
-.batch-field {
-    display: grid;
-    grid-template-columns: 150px 1fr;
-    gap: 14px;
-    align-items: center;
-}
-.batch-field label {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-.batch-field :deep([data-slot='checkbox']) {
-    width: 18px;
-    height: 18px;
-    accent-color: var(--primary);
-}
-@media (max-width: 640px) {
-    .user-stream-workspace {
-        padding: 0 10px 20px;
-    }
-    .stream-tabs {
-        gap: 0;
-    }
-    .stream-tabs button {
-        padding: 12px 10px;
-        font-size: var(--console-text-body);
-    }
-    .stream-search {
-        width: 100%;
-    }
-    .stream-search input {
-        width: 0;
-        flex: 1;
-    }
-    .advanced-filters label {
-        flex: 1 1 140px;
-    }
-    .advanced-filters :deep([data-slot='select-trigger']) {
-        width: 100%;
-    }
-}
-</style>

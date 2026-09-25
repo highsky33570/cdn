@@ -82,6 +82,18 @@ for (const folder of [
     }
 }
 
+// Page styles live in global CSS, so audit their typography declarations too.
+const layouts = 'resources/css/console-pages.css';
+postcss
+    .parse(fs.readFileSync(path.join(root, layouts), 'utf8'))
+    .walkDecls('font-size', (declaration) => {
+        if (!/^var\(--console-text-[\w-]+\)$/.test(declaration.value)) {
+            failures.push(
+                `${layouts}: ${declaration.parent.selector} must use a shared typography token`,
+            );
+        }
+    });
+
 if (failures.length) {
     console.error(failures.join('\n'));
     process.exitCode = 1;

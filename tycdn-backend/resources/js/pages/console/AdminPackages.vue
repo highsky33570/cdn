@@ -2038,7 +2038,9 @@ onMounted(() => {
 </script>
 
 <template>
-    <div class="packages-workspace flex flex-1 flex-col gap-4 p-4 md:p-6">
+    <div
+        class="console-admin-packages packages-workspace flex flex-1 flex-col gap-4 p-4 md:p-6"
+    >
         <section
             class="console-panel rounded-xl border bg-card p-4 text-card-foreground md:p-5"
         >
@@ -2098,7 +2100,7 @@ onMounted(() => {
                         ><DropdownMenuTrigger as-child
                             ><Button size="sm" variant="outline"
                                 >更多操作<ChevronDown /></Button></DropdownMenuTrigger
-                        ><DropdownMenuContent>
+                        ><DropdownMenuContent class="console-admin-packages">
                             <DropdownMenuItem
                                 :disabled="!selectedCount || actionBusy"
                                 @select="runPackageAction({ enable: 1 })"
@@ -2130,7 +2132,7 @@ onMounted(() => {
                         ><SelectTrigger class="w-44" aria-label="套餐分组筛选"
                             ><SelectValue
                                 placeholder="所有套餐分组" /></SelectTrigger
-                        ><SelectContent
+                        ><SelectContent class="console-admin-packages"
                             ><SelectItem value="all">所有套餐分组</SelectItem
                             ><SelectItem
                                 v-for="group in packageOptions.package_groups"
@@ -2299,7 +2301,7 @@ onMounted(() => {
                                     variant="ghost"
                                     :aria-label="`更多操作 ${getPackageId(row)}`"
                                     ><MoreHorizontal /></Button></DropdownMenuTrigger
-                            ><DropdownMenuContent
+                            ><DropdownMenuContent class="console-admin-packages"
                                 ><DropdownMenuItem
                                     @select="openDetailDialog(row)"
                                     >查看详情</DropdownMenuItem
@@ -2410,7 +2412,7 @@ onMounted(() => {
             </div>
         </section>
         <Dialog v-model:open="syncOpen"
-            ><DialogScrollContent
+            ><DialogScrollContent class="console-admin-packages"
                 ><DialogHeader
                     ><DialogTitle>同步数据到已售套餐</DialogTitle
                     ><DialogDescription
@@ -2470,7 +2472,7 @@ onMounted(() => {
         />
 
         <Dialog v-model:open="grantDialogOpen">
-            <DialogScrollContent class="max-w-lg">
+            <DialogScrollContent class="console-admin-packages max-w-lg">
                 <DialogHeader>
                     <DialogTitle>为用户开通套餐</DialogTitle>
                     <DialogDescription>
@@ -2527,7 +2529,7 @@ onMounted(() => {
                                     "
                                 />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent class="console-admin-packages">
                                 <SelectGroup>
                                     <SelectItem
                                         v-for="user in grantUsers"
@@ -2551,7 +2553,7 @@ onMounted(() => {
                         <Label>开通时长</Label>
                         <Select v-model="grantForm.duration">
                             <SelectTrigger><SelectValue /></SelectTrigger>
-                            <SelectContent>
+                            <SelectContent class="console-admin-packages">
                                 <SelectGroup>
                                     <SelectItem
                                         v-for="duration in PACKAGE_DURATION_OPTIONS"
@@ -2599,7 +2601,7 @@ onMounted(() => {
             :open="packageDialogOpen"
             @update:open="!saving && (packageDialogOpen = $event)"
             ><DialogScrollContent
-                class="package-editor my-3 flex max-h-[calc(100dvh-24px)] w-[calc(100%-24px)] max-w-6xl flex-col gap-0 overflow-hidden p-0"
+                class="console-admin-packages package-editor my-3 flex max-h-[calc(100dvh-24px)] w-[calc(100%-24px)] max-w-6xl flex-col gap-0 overflow-hidden p-0"
                 ><DialogHeader class="shrink-0 border-b px-5 py-4"
                     ><DialogTitle>{{
                         dialogMode === 'create' ? '添加套餐' : '管理套餐'
@@ -2660,6 +2662,7 @@ onMounted(() => {
                                                         '请选择套餐分组'
                                                     }}<ChevronDown /></Button></DropdownMenuTrigger
                                             ><DropdownMenuContent
+                                                class="console-admin-packages"
                                                 ><DropdownMenuCheckboxItem
                                                     v-for="option in packageOptions.package_groups"
                                                     :key="String(option.id)"
@@ -2700,6 +2703,7 @@ onMounted(() => {
                                                 ><SelectValue
                                                     placeholder="请选择" /></SelectTrigger
                                             ><SelectContent
+                                                class="console-admin-packages"
                                                 ><SelectItem
                                                     v-for="option in packageOptions.regions"
                                                     :key="optionValue(option)"
@@ -2724,6 +2728,7 @@ onMounted(() => {
                                                 ><SelectValue
                                                     placeholder="请选择" /></SelectTrigger
                                             ><SelectContent
+                                                class="console-admin-packages"
                                                 ><SelectItem
                                                     v-for="option in packageLineOptions"
                                                     :key="optionValue(option)"
@@ -2748,6 +2753,7 @@ onMounted(() => {
                                                 ><SelectValue
                                                     placeholder="请选择" /></SelectTrigger
                                             ><SelectContent
+                                                class="console-admin-packages"
                                                 ><SelectItem
                                                     :value="BACKUP_NONE_VALUE"
                                                     >无（不使用备用）</SelectItem
@@ -2836,6 +2842,7 @@ onMounted(() => {
                                                     class="w-24 shrink-0 rounded-l-none"
                                                     ><SelectValue /></SelectTrigger
                                                 ><SelectContent
+                                                    class="console-admin-packages"
                                                     ><SelectItem value="Mbps"
                                                         >Mbps</SelectItem
                                                     ><SelectItem value="Gbps"
@@ -3024,6 +3031,7 @@ onMounted(() => {
                                                         ><SelectValue
                                                             placeholder="请选择" /></SelectTrigger
                                                     ><SelectContent
+                                                        class="console-admin-packages"
                                                         ><SelectItem
                                                             v-for="option in cnameDomainOptions"
                                                             :key="
@@ -3056,6 +3064,7 @@ onMounted(() => {
                                                         aria-label="CNAME模式"
                                                         ><SelectValue /></SelectTrigger
                                                     ><SelectContent
+                                                        class="console-admin-packages"
                                                         ><SelectItem
                                                             v-for="option in cnameModeOptions"
                                                             :key="option.value"
@@ -3384,7 +3393,7 @@ onMounted(() => {
             ></Dialog
         >
         <Dialog v-model:open="batchDialogOpen">
-            <DialogScrollContent class="max-w-4xl">
+            <DialogScrollContent class="console-admin-packages max-w-4xl">
                 <DialogHeader>
                     <DialogTitle>批量修改基础套餐</DialogTitle>
                     <DialogDescription>
@@ -3406,7 +3415,7 @@ onMounted(() => {
                             <SelectTrigger class="w-full">
                                 <SelectValue placeholder="不修改" />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent class="console-admin-packages">
                                 <SelectGroup>
                                     <SelectItem :value="SELECT_KEEP_VALUE">
                                         不修改
@@ -3511,7 +3520,7 @@ onMounted(() => {
                             <SelectTrigger class="w-full">
                                 <SelectValue placeholder="不修改" />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent class="console-admin-packages">
                                 <SelectGroup>
                                     <SelectItem :value="SELECT_KEEP_VALUE">
                                         不修改
@@ -3528,7 +3537,7 @@ onMounted(() => {
                             <SelectTrigger class="w-full">
                                 <SelectValue placeholder="不修改" />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent class="console-admin-packages">
                                 <SelectGroup>
                                     <SelectItem :value="SELECT_KEEP_VALUE">
                                         不修改
@@ -3547,7 +3556,7 @@ onMounted(() => {
                             <SelectTrigger class="w-full">
                                 <SelectValue placeholder="不修改" />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent class="console-admin-packages">
                                 <SelectGroup>
                                     <SelectItem :value="SELECT_KEEP_VALUE">
                                         不修改
@@ -3566,7 +3575,7 @@ onMounted(() => {
                             <SelectTrigger class="w-full">
                                 <SelectValue placeholder="不修改" />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent class="console-admin-packages">
                                 <SelectGroup>
                                     <SelectItem :value="SELECT_KEEP_VALUE">
                                         不修改
@@ -3583,7 +3592,7 @@ onMounted(() => {
                             <SelectTrigger class="w-full">
                                 <SelectValue placeholder="不修改" />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent class="console-admin-packages">
                                 <SelectGroup>
                                     <SelectItem :value="SELECT_KEEP_VALUE">
                                         不修改
@@ -3600,7 +3609,7 @@ onMounted(() => {
                             <SelectTrigger class="w-full">
                                 <SelectValue placeholder="不修改" />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent class="console-admin-packages">
                                 <SelectGroup>
                                     <SelectItem :value="SELECT_KEEP_VALUE">
                                         不修改
@@ -3643,7 +3652,9 @@ onMounted(() => {
                                         <SelectTrigger class="w-full">
                                             <SelectValue placeholder="不修改" />
                                         </SelectTrigger>
-                                        <SelectContent>
+                                        <SelectContent
+                                            class="console-admin-packages"
+                                        >
                                             <SelectGroup>
                                                 <SelectItem
                                                     :value="SELECT_KEEP_VALUE"
@@ -3676,7 +3687,9 @@ onMounted(() => {
                                         <SelectTrigger class="w-full">
                                             <SelectValue placeholder="不修改" />
                                         </SelectTrigger>
-                                        <SelectContent>
+                                        <SelectContent
+                                            class="console-admin-packages"
+                                        >
                                             <SelectGroup>
                                                 <SelectItem
                                                     :value="SELECT_KEEP_VALUE"
@@ -3727,7 +3740,9 @@ onMounted(() => {
                                         <SelectTrigger class="w-full">
                                             <SelectValue placeholder="不修改" />
                                         </SelectTrigger>
-                                        <SelectContent>
+                                        <SelectContent
+                                            class="console-admin-packages"
+                                        >
                                             <SelectGroup>
                                                 <SelectItem
                                                     :value="SELECT_KEEP_VALUE"
@@ -3753,7 +3768,9 @@ onMounted(() => {
                                         <SelectTrigger class="w-full">
                                             <SelectValue placeholder="不修改" />
                                         </SelectTrigger>
-                                        <SelectContent>
+                                        <SelectContent
+                                            class="console-admin-packages"
+                                        >
                                             <SelectGroup>
                                                 <SelectItem
                                                     :value="SELECT_KEEP_VALUE"
@@ -3829,7 +3846,7 @@ onMounted(() => {
         </Dialog>
 
         <Dialog v-model:open="detailDialogOpen">
-            <DialogScrollContent class="max-w-3xl">
+            <DialogScrollContent class="console-admin-packages max-w-3xl">
                 <DialogHeader>
                     <DialogTitle>基础套餐详情</DialogTitle>
                     <DialogDescription>
@@ -3968,7 +3985,7 @@ onMounted(() => {
 
         <!-- Package Group create/edit dialog -->
         <Dialog v-model:open="pgDialogOpen">
-            <DialogScrollContent class="max-w-md">
+            <DialogScrollContent class="console-admin-packages max-w-md">
                 <DialogHeader>
                     <DialogTitle>{{
                         pgEditing ? '编辑分组' : '新增分组'
@@ -4031,7 +4048,7 @@ onMounted(() => {
 
         <!-- Package Group delete confirm -->
         <Dialog v-model:open="pgDeleteOpen">
-            <DialogScrollContent class="max-w-md">
+            <DialogScrollContent class="console-admin-packages max-w-md">
                 <DialogHeader>
                     <DialogTitle>确认删除</DialogTitle>
                     <DialogDescription>
@@ -4063,52 +4080,3 @@ onMounted(() => {
         <AdminPackageUpgrades v-if="activeTab === 'upgrades'" embedded />
     </div>
 </template>
-
-<style scoped>
-.package-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 18px 28px;
-}
-.package-purchase > :nth-child(1) {
-    order: 1;
-}
-.package-purchase > :nth-child(2) {
-    order: 4;
-}
-.package-purchase > :nth-child(3) {
-    order: 2;
-}
-.package-purchase > :nth-child(4) {
-    order: 3;
-}
-.package-field {
-    display: grid;
-    grid-template-columns: 130px minmax(0, 1fr);
-    align-items: center;
-    gap: 12px;
-}
-.package-field > label {
-    justify-content: flex-end;
-    text-align: right;
-    line-height: 1.5;
-}
-@media (max-width: 760px) {
-    .package-grid {
-        grid-template-columns: 1fr;
-    }
-    .package-field {
-        grid-template-columns: 110px minmax(0, 1fr);
-    }
-}
-@media (max-width: 430px) {
-    .package-field {
-        grid-template-columns: 1fr;
-        gap: 8px;
-    }
-    .package-field > label {
-        justify-content: flex-start;
-        text-align: left;
-    }
-}
-</style>

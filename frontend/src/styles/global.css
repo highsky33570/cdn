@@ -1,3 +1,8 @@
+@import './shell.css';
+@import './landing.css';
+@import './catalog.css';
+@import './auth.css';
+
 /* Shared semantic palette. Every page follows the explicit theme selection. */
 :root {
   --bg: #0b1120;

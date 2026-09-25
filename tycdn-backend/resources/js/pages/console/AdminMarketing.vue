@@ -524,7 +524,7 @@ const detailLabels = {
 </script>
 
 <template>
-    <div class="marketing-workspace min-w-0 p-4 md:p-6">
+    <div class="console-admin-marketing marketing-workspace min-w-0 p-4 md:p-6">
         <div
             class="console-panel rounded-xl border bg-card p-4 text-card-foreground md:p-5"
         >
@@ -781,7 +781,9 @@ const detailLabels = {
                     if (!saving) editorOpen = value;
                 }
             "
-            ><DialogScrollContent class="marketing-editor sm:max-w-xl">
+            ><DialogScrollContent
+                class="console-admin-marketing marketing-editor sm:max-w-xl"
+            >
                 <DialogHeader
                     ><DialogTitle
                         >{{ editingId ? '编辑' : '新增'
@@ -857,6 +859,7 @@ const detailLabels = {
                                         class="w-full"
                                         ><SelectValue /></SelectTrigger
                                     ><SelectContent
+                                        class="console-admin-marketing"
                                         ><SelectItem
                                             v-for="(
                                                 label, value
@@ -1198,7 +1201,7 @@ const detailLabels = {
             @cancel="!busy && (deleteOpen = false)"
         />
         <Dialog v-model:open="detailsOpen"
-            ><DialogScrollContent class="sm:max-w-xl"
+            ><DialogScrollContent class="console-admin-marketing sm:max-w-xl"
                 ><DialogHeader
                     ><DialogTitle>优惠码使用详情</DialogTitle
                     ><DialogDescription>{{
@@ -1216,43 +1219,3 @@ const detailLabels = {
         >
     </div>
 </template>
-
-<style scoped>
-.marketing-field {
-    display: grid;
-    grid-template-columns: 6rem minmax(0, 1fr);
-    align-items: center;
-    gap: 1rem;
-}
-.marketing-field > label {
-    justify-content: flex-end;
-}
-.marketing-unit,
-.marketing-addon {
-    display: flex;
-    align-items: center;
-    white-space: nowrap;
-    padding: 0 0.75rem;
-    border: 1px solid var(--border);
-    background: var(--muted);
-    color: var(--muted-foreground);
-    font-size: var(--console-text-body);
-}
-.marketing-unit {
-    border-left: 0;
-    border-radius: 0 var(--radius) var(--radius) 0;
-}
-.marketing-addon {
-    border-right: 0;
-    border-radius: var(--radius) 0 0 var(--radius);
-}
-@media (max-width: 480px) {
-    .marketing-field {
-        grid-template-columns: 1fr;
-        gap: 0.5rem;
-    }
-    .marketing-field > label {
-        justify-content: flex-start;
-    }
-}
-</style>

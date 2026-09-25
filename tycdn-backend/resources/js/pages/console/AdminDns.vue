@@ -388,7 +388,7 @@ onMounted(() => {
 </script>
 
 <template>
-    <div class="min-w-0 flex-1 p-4 md:p-6">
+    <div class="console-admin-dns min-w-0 flex-1 p-4 md:p-6">
         <section
             class="dns-panel rounded-xl border bg-card p-5 text-card-foreground shadow-sm"
         >
@@ -766,7 +766,7 @@ onMounted(() => {
             :open="dialog"
             @update:open="(value) => !domainSaving && (dialog = value)"
             ><DialogScrollContent
-                class="my-5 w-[calc(100%_-_2rem)] self-start bg-card sm:max-w-[490px]"
+                class="console-admin-dns my-5 w-[calc(100%_-_2rem)] self-start bg-card sm:max-w-[490px]"
                 ><DialogHeader
                     ><DialogTitle
                         >{{ editingId ? '编辑' : '新增' }}域名</DialogTitle
@@ -838,7 +838,7 @@ onMounted(() => {
         <Dialog
             :open="cleanupOpen"
             @update:open="(value) => !repairing && (cleanupOpen = value)"
-            ><DialogScrollContent class="bg-card sm:max-w-md"
+            ><DialogScrollContent class="console-admin-dns bg-card sm:max-w-md"
                 ><DialogHeader
                     ><DialogTitle>清除CDN无关解析</DialogTitle
                     ><DialogDescription
@@ -870,43 +870,3 @@ onMounted(() => {
         >
     </div>
 </template>
-
-<style scoped>
-.form-row {
-    display: grid;
-    grid-template-columns: 92px minmax(0, 1fr);
-    align-items: center;
-    gap: 12px;
-}
-.form-row.items-start {
-    align-items: start;
-}
-.form-row label {
-    justify-content: flex-end;
-    font-weight: 400;
-}
-.form-row input {
-    height: 32px;
-}
-.dns-panel th {
-    height: 36px;
-    padding: 0 12px;
-    font-weight: 500;
-}
-.dns-panel td {
-    height: 46px;
-    padding: 8px 12px;
-}
-@media (max-width: 540px) {
-    .form-row {
-        grid-template-columns: 1fr;
-        gap: 8px;
-    }
-    .form-row label {
-        justify-content: flex-start;
-    }
-    .form-row > span:empty {
-        display: none;
-    }
-}
-</style>

@@ -3,7 +3,9 @@
     "private": true,
     "type": "module",
     "scripts": {
+        "prebuild": "npm run check:styles",
         "build": "vite build",
+        "prebuild:ssr": "npm run check:styles",
         "build:ssr": "vite build && vite build --ssr",
         "dev": "vite",
         "format": "prettier --write resources/",
@@ -13,6 +15,7 @@
         "types:check": "vue-tsc --noEmit",
         "check:forms": "node scripts/check-form-controls.mjs",
         "check:typography": "node scripts/check-console-typography.mjs",
+        "check:styles": "node scripts/check-console-styles.mjs",
         "test:contracts": "node --test tests/js/cdnfly-contracts.test.mjs"
     },
     "devDependencies": {

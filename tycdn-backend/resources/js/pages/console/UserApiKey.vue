@@ -166,7 +166,11 @@ onUnmounted(() => {
 </script>
 
 <template>
-    <section class="user-api-key" aria-label="API密钥管理" :aria-busy="busy">
+    <section
+        class="console-user-api-key user-api-key"
+        aria-label="API密钥管理"
+        :aria-busy="busy"
+    >
         <Alert v-if="error" variant="destructive" class="key-error"
             ><AlertDescription
                 >{{ error
@@ -262,111 +266,3 @@ onUnmounted(() => {
         </div>
     </section>
 </template>
-
-<style scoped>
-.user-api-key {
-    min-width: 0;
-    margin: 16px;
-    padding: 0 14px 38px;
-    background: var(--card);
-    color: var(--foreground);
-    font-size: var(--console-text-body);
-}
-.key-row {
-    display: flex;
-    align-items: center;
-    min-height: 72px;
-    gap: 16px;
-}
-.key-label {
-    width: 74px;
-    flex-shrink: 0;
-    text-align: right;
-}
-.key-value {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    min-width: 0;
-}
-.credential {
-    overflow-wrap: anywhere;
-    min-width: 0;
-}
-.copy-key {
-    flex-shrink: 0;
-    color: var(--primary);
-    cursor: pointer;
-    padding: 4px;
-}
-.copy-key:disabled {
-    opacity: 0.5;
-    cursor: wait;
-}
-.copy-key:focus-visible {
-    outline: 2px solid var(--primary);
-    outline-offset: 3px;
-}
-.whitelist-control {
-    display: flex;
-    min-width: 0;
-    flex: 1;
-    gap: 10px;
-}
-.whitelist-control input {
-    min-width: 0;
-    width: 100%;
-    height: 40px;
-    border: 1px solid var(--input);
-    border-radius: 4px;
-    padding: 0 10px;
-    background: transparent;
-    outline: none;
-}
-.whitelist-control input:focus {
-    border-color: var(--primary);
-}
-.whitelist-control input::placeholder {
-    color: var(--muted-foreground);
-}
-.whitelist-control input:disabled {
-    background: var(--muted);
-    opacity: 0.7;
-}
-.key-actions {
-    margin-left: 90px;
-    margin-top: 16px;
-}
-.user-api-key :deep(.reset-key),
-.user-api-key :deep(.save-ip) {
-    height: 40px;
-    padding: 0 20px;
-    background: var(--primary);
-    color: var(--primary-foreground);
-    border-radius: 4px;
-    font-size: var(--console-text-body);
-    font-weight: 400;
-    box-shadow: none;
-}
-.key-error {
-    margin-top: 14px;
-}
-@media (max-width: 640px) {
-    .user-api-key {
-        margin: 8px;
-        padding-inline: 8px;
-    }
-    .key-row {
-        gap: 10px;
-    }
-    .key-label {
-        width: 74px;
-    }
-    .key-actions {
-        margin-left: 84px;
-    }
-    .whitelist-control {
-        flex-wrap: wrap;
-    }
-}
-</style>

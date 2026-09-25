@@ -1698,7 +1698,7 @@ async function exportSites() {
 
 <template>
     <div
-        class="console-page user-sites min-w-0"
+        class="console-user-sites console-page user-sites min-w-0"
         :class="props.embedded ? 'embedded-sites' : 'p-4 md:p-6'"
     >
         <section class="sites-workspace bg-card text-card-foreground">
@@ -1760,7 +1760,7 @@ async function exportSites() {
                                 :disabled="!selected.length || busy"
                                 >更多操作<ChevronDown
                                     class="size-4" /></Button></DropdownMenuTrigger
-                        ><DropdownMenuContent>
+                        ><DropdownMenuContent class="console-user-sites">
                             <DropdownMenuItem @select="runBulk('enable')"
                                 >启用</DropdownMenuItem
                             ><DropdownMenuItem @select="runBulk('disable')"
@@ -2016,6 +2016,7 @@ async function exportSites() {
                                                             >更多<ChevronDown
                                                                 class="size-4" /></Button></DropdownMenuTrigger
                                                     ><DropdownMenuContent
+                                                        class="console-user-sites"
                                                         ><DropdownMenuItem
                                                             @select="
                                                                 toggleSiteEnabled(
@@ -2145,7 +2146,7 @@ async function exportSites() {
             </div>
         </section>
         <Dialog v-model:open="bulkOpen"
-            ><DialogScrollContent class="sm:max-w-lg"
+            ><DialogScrollContent class="console-user-sites sm:max-w-lg"
                 ><DialogHeader
                     ><DialogTitle>{{ bulkTitle }}</DialogTitle
                     ><DialogDescription
@@ -2207,7 +2208,7 @@ async function exportSites() {
         >
 
         <Dialog v-model:open="siteDialogOpen">
-            <DialogScrollContent class="sm:max-w-3xl">
+            <DialogScrollContent class="console-user-sites sm:max-w-3xl">
                 <DialogHeader
                     ><DialogTitle>{{
                         editingSite ? '编辑站点' : '创建站点'
@@ -2246,7 +2247,7 @@ async function exportSites() {
                                 <SelectTrigger id="site-package"
                                     ><SelectValue placeholder="选择已购套餐"
                                 /></SelectTrigger>
-                                <SelectContent
+                                <SelectContent class="console-user-sites"
                                     ><SelectGroup
                                         ><SelectItem
                                             v-for="pkg in userPackages"
@@ -2277,7 +2278,7 @@ async function exportSites() {
                             <Label>状态</Label
                             ><Select v-model="siteForm.enable"
                                 ><SelectTrigger><SelectValue /></SelectTrigger
-                                ><SelectContent
+                                ><SelectContent class="console-user-sites"
                                     ><SelectGroup
                                         ><SelectItem value="1">启用</SelectItem
                                         ><SelectItem value="0"
@@ -2332,7 +2333,7 @@ async function exportSites() {
 
         <!-- ── 分组弹窗 ── -->
         <Dialog v-model:open="groupDialogOpen">
-            <DialogScrollContent class="sm:max-w-lg">
+            <DialogScrollContent class="console-user-sites sm:max-w-lg">
                 <DialogHeader
                     ><DialogTitle>{{
                         editingGroup ? '编辑分组' : '新建分组'
@@ -2374,7 +2375,7 @@ async function exportSites() {
 
         <!-- ── 默认设置弹窗 ── -->
         <Dialog v-model:open="configDialogOpen">
-            <DialogScrollContent class="sm:max-w-2xl">
+            <DialogScrollContent class="console-user-sites sm:max-w-2xl">
                 <DialogHeader
                     ><DialogTitle>{{
                         editingConfig ? '编辑配置' : '添加配置'
@@ -2394,7 +2395,7 @@ async function exportSites() {
                             <Label>配置类别</Label>
                             <Select v-model="configForm.type"
                                 ><SelectTrigger><SelectValue /></SelectTrigger
-                                ><SelectContent
+                                ><SelectContent class="console-user-sites"
                                     ><SelectGroup
                                         ><SelectItem
                                             v-for="t in CONFIG_TYPE_OPTIONS"
@@ -2412,7 +2413,7 @@ async function exportSites() {
                                 ><SelectTrigger
                                     ><SelectValue
                                         placeholder="选择配置项" /></SelectTrigger
-                                ><SelectContent
+                                ><SelectContent class="console-user-sites"
                                     ><SelectGroup
                                         ><SelectItem
                                             v-for="c in SITE_CONFIG_NAMES"
@@ -2439,7 +2440,7 @@ async function exportSites() {
                         >
                             <Select v-model="configForm.value"
                                 ><SelectTrigger><SelectValue /></SelectTrigger
-                                ><SelectContent
+                                ><SelectContent class="console-user-sites"
                                     ><SelectGroup
                                         ><SelectItem value="1">开启</SelectItem
                                         ><SelectItem value="0"
@@ -2466,7 +2467,7 @@ async function exportSites() {
                         >
                             <Select v-model="configForm.value"
                                 ><SelectTrigger><SelectValue /></SelectTrigger
-                                ><SelectContent
+                                ><SelectContent class="console-user-sites"
                                     ><SelectGroup
                                         ><SelectItem
                                             v-for="o in currentConfigMeta.options"
@@ -2496,7 +2497,7 @@ async function exportSites() {
                             <Label>生效范围</Label>
                             <Select v-model="configForm.scope_name"
                                 ><SelectTrigger><SelectValue /></SelectTrigger
-                                ><SelectContent
+                                ><SelectContent class="console-user-sites"
                                     ><SelectGroup
                                         ><SelectItem value="global"
                                             >全局</SelectItem
@@ -2516,7 +2517,7 @@ async function exportSites() {
                                 ><SelectTrigger
                                     ><SelectValue
                                         placeholder="选择分组" /></SelectTrigger
-                                ><SelectContent
+                                ><SelectContent class="console-user-sites"
                                     ><SelectGroup
                                         ><SelectItem
                                             v-for="g in siteGroupOptions"
@@ -2533,7 +2534,7 @@ async function exportSites() {
                             <Label>状态</Label>
                             <Select v-model="configForm.enable"
                                 ><SelectTrigger><SelectValue /></SelectTrigger
-                                ><SelectContent
+                                ><SelectContent class="console-user-sites"
                                     ><SelectGroup
                                         ><SelectItem value="1">启用</SelectItem
                                         ><SelectItem value="0"
@@ -2567,7 +2568,7 @@ async function exportSites() {
 
         <!-- ── DNS API 弹窗 ── -->
         <Dialog v-model:open="dnsDialogOpen">
-            <DialogScrollContent class="sm:max-w-2xl">
+            <DialogScrollContent class="console-user-sites sm:max-w-2xl">
                 <DialogHeader
                     ><DialogTitle>{{
                         editingDns ? '编辑 DNS API' : '新增 DNS API'
@@ -2593,7 +2594,7 @@ async function exportSites() {
                                 v-model="dnsForm.type"
                                 @update:model-value="applyAuthTemplate"
                                 ><SelectTrigger><SelectValue /></SelectTrigger
-                                ><SelectContent
+                                ><SelectContent class="console-user-sites"
                                     ><SelectGroup
                                         ><SelectItem
                                             v-for="t in DNS_TYPES"
@@ -2649,250 +2650,3 @@ async function exportSites() {
         />
     </div>
 </template>
-
-<style scoped>
-.sites-workspace {
-    padding: 16px;
-    min-width: 0;
-}
-.embedded-sites .sites-workspace {
-    padding: 0;
-}
-.sites-tabs {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 20px;
-    border-bottom: 1px solid var(--border);
-    margin-bottom: 20px;
-}
-.sites-tabs button {
-    padding: 12px 20px;
-    font-size: var(--console-text-body);
-    border-bottom: 2px solid transparent;
-    margin-bottom: -1px;
-    color: var(--muted-foreground);
-}
-.sites-tabs button[aria-selected='true'] {
-    color: var(--primary);
-    border-color: var(--primary);
-}
-.sites-toolbar {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 18px;
-}
-.sites-toolbar > button,
-.sites-toolbar :deep([data-slot='select-trigger']),
-.sites-toolbar input,
-.quick-search button {
-    height: 40px;
-    font-size: var(--console-text-body);
-}
-.sites-toolbar :deep([data-slot='select-trigger']),
-.advanced-search :deep([data-slot='select-trigger']) {
-    border: 1px solid var(--border);
-    background: var(--card);
-    border-radius: 4px;
-    padding: 0 12px;
-}
-.quick-search {
-    display: flex;
-    max-width: 100%;
-    min-width: 0;
-}
-.quick-search :deep([data-slot='select-trigger']) {
-    width: 78px;
-    flex-shrink: 0;
-    border-right: 0;
-    border-radius: 4px 0 0 4px;
-    background: var(--muted);
-}
-.quick-search input {
-    width: 210px;
-    min-width: 0;
-    border-radius: 0;
-}
-.quick-search button {
-    border-radius: 0 4px 4px 0;
-}
-.input-group {
-    display: flex;
-    align-items: center;
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    background: var(--muted);
-    padding-left: 10px;
-    gap: 8px;
-    white-space: nowrap;
-}
-.input-group input {
-    width: 190px;
-    border: 0;
-    border-left: 1px solid var(--border);
-    border-radius: 0 4px 4px 0;
-}
-.resolve-toolbar :deep([data-slot='select-trigger']) {
-    width: 245px;
-    max-width: 100%;
-}
-.advanced-search {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: end;
-    gap: 12px;
-    border: 1px solid var(--border);
-    padding: 16px;
-    margin-bottom: 18px;
-    background: var(--muted);
-}
-.advanced-search label {
-    display: grid;
-    gap: 6px;
-    max-width: 210px;
-}
-.advanced-search :deep([data-slot='select-trigger']) {
-    height: 36px;
-}
-.sites-table-scroll {
-    max-width: 100%;
-    overflow-x: auto;
-    scrollbar-width: auto;
-    scrollbar-color: #909090 var(--muted);
-}
-.sites-table {
-    width: 100%;
-    table-layout: fixed;
-    min-width: 700px;
-    text-align: left;
-    font-size: var(--console-text-body);
-}
-.site-list-table {
-    min-width: 1720px;
-}
-.resolve-table {
-    min-width: 1200px;
-}
-.sites-table th {
-    height: 48px;
-    padding: 10px 18px;
-    background: var(--muted);
-    color: var(--muted-foreground);
-    font-weight: 600;
-}
-.sites-table td {
-    height: 60px;
-    padding: 10px 18px;
-    border-bottom: 1px solid var(--border);
-}
-.sites-table tbody tr:hover {
-    background: color-mix(in srgb, var(--muted) 40%, transparent);
-}
-.sites-table :deep([data-slot='checkbox']) {
-    width: 19px;
-    height: 19px;
-    accent-color: var(--primary);
-    vertical-align: middle;
-}
-.cell-value {
-    display: block;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-.site-list-table .cell-value,
-.resolve-table .cell-value {
-    white-space: nowrap;
-}
-.site-list-table td:nth-child(8) .cell-value {
-    white-space: normal;
-    overflow-wrap: anywhere;
-    display: -webkit-box;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
-    line-height: 24px;
-}
-.site-list-table td:nth-child(8) {
-    padding: 6px 12px;
-}
-.row-actions {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    white-space: nowrap;
-}
-.row-actions button,
-.domain-link {
-    height: auto;
-    padding: 0;
-    font-size: var(--console-text-body);
-}
-.domain-link {
-    display: block;
-    max-width: 100%;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    text-align: left;
-}
-.status-icon {
-    width: 16px;
-    height: 16px;
-}
-.site-status {
-    display: inline-flex;
-    gap: 8px;
-    align-items: center;
-    font-size: var(--console-text-body);
-    white-space: nowrap;
-}
-.site-status i {
-    display: inline-block;
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    background: #19be6b;
-}
-.site-status[data-tone='danger'] i {
-    background: #f43f5e;
-}
-.site-status[data-tone='warning'] i {
-    background: #f59e0b;
-}
-.site-status[data-tone='muted'] i {
-    background: #9ca3af;
-}
-.empty-cell {
-    text-align: center;
-    color: var(--muted-foreground);
-}
-@media (max-width: 640px) {
-    .sites-workspace {
-        padding: 12px;
-    }
-    .sites-tabs {
-        gap: 0;
-    }
-    .sites-tabs button {
-        padding: 10px 12px;
-        font-size: var(--console-text-body);
-    }
-    .quick-search {
-        width: 100%;
-    }
-    .quick-search input {
-        flex: 1;
-        width: 0;
-    }
-    .input-group {
-        max-width: 100%;
-    }
-    .input-group input {
-        width: 0;
-        min-width: 0;
-        flex: 1;
-    }
-    .resolve-toolbar .input-group {
-        width: 100%;
-    }
-}
-</style>

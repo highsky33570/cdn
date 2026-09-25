@@ -642,7 +642,7 @@ async function saveEditor() {
 </script>
 
 <template>
-    <div class="p-3 md:p-5">
+    <div class="console-admin-certificates p-3 md:p-5">
         <section class="cert-workspace rounded-xl border bg-card p-4 shadow-sm">
             <nav role="tablist" aria-label="证书管理" class="cert-tabs">
                 <Button
@@ -704,7 +704,9 @@ async function saveEditor() {
                             >
                                 更多操作
                                 <ChevronDown /></Button></DropdownMenuTrigger
-                        ><DropdownMenuContent align="start"
+                        ><DropdownMenuContent
+                            class="console-admin-certificates"
+                            align="start"
                             ><DropdownMenuItem
                                 :disabled="!selected.length || busy"
                                 @select="batch('enable')"
@@ -1047,7 +1049,9 @@ async function saveEditor() {
                                                 >
                                                     更多
                                                     <ChevronDown /></Button></DropdownMenuTrigger
-                                            ><DropdownMenuContent align="end"
+                                            ><DropdownMenuContent
+                                                class="console-admin-certificates"
+                                                align="end"
                                                 ><DropdownMenuItem
                                                     :disabled="busy"
                                                     @select="
@@ -1206,7 +1210,7 @@ async function saveEditor() {
                     }
                 "
                 ><DialogScrollContent
-                    class="certificate-editor w-[calc(100%_-_2rem)] bg-card sm:max-w-[620px]"
+                    class="console-admin-certificates certificate-editor w-[calc(100%_-_2rem)] bg-card sm:max-w-[620px]"
                     ><DialogHeader
                         ><DialogTitle>{{
                             editing ? '管理证书' : '添加证书'
@@ -1406,336 +1410,3 @@ async function saveEditor() {
         </section>
     </div>
 </template>
-
-<style scoped>
-.cert-workspace {
-    font-size: var(--console-text-body);
-}
-.cert-tabs {
-    display: flex;
-    gap: 5px;
-    margin-bottom: 14px;
-    flex-wrap: wrap;
-}
-.cert-tabs button {
-    border: 0;
-    background: transparent;
-    padding: 6px 13px;
-}
-.cert-tabs button[aria-selected='true'] {
-    color: #2d8cf0;
-    background: #2d8cf01a;
-    border-radius: 5px;
-}
-button,
-input:not([type='checkbox']),
-:deep([data-slot='select-trigger']),
-:deep([data-slot='textarea']) {
-    font-size: var(--console-text-body);
-    border: 1px solid var(--border);
-    background: var(--card);
-    border-radius: 3px;
-}
-button {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 5px;
-    padding: 4px 12px;
-    min-height: 28px;
-    cursor: pointer;
-}
-button:disabled {
-    opacity: 0.45;
-    cursor: not-allowed;
-}
-button svg {
-    width: 13px;
-    height: 13px;
-}
-input:not([type='checkbox']),
-:deep([data-slot='select-trigger']) {
-    height: 29px;
-    padding: 4px 8px;
-    min-width: 0;
-}
-:deep([data-slot='checkbox']) {
-    accent-color: #2d8cf0;
-    width: 14px;
-    height: 14px;
-    vertical-align: middle;
-}
-button:focus-visible,
-input:focus-visible,
-:deep([data-slot='select-trigger']):focus-visible,
-:deep([data-slot='textarea']):focus-visible {
-    outline: 2px solid #2d8cf0;
-    outline-offset: 2px;
-}
-.primary {
-    background: #2d8cf0;
-    color: white;
-    border-color: #2d8cf0;
-}
-.link {
-    border: 0;
-    background: transparent;
-    color: #2d8cf0;
-    padding: 0;
-    min-height: 0;
-}
-.copy {
-    border: 0;
-    background: transparent;
-    color: var(--muted-foreground);
-    padding: 1px;
-    min-height: 0;
-}
-.copy svg {
-    width: 10px;
-    height: 10px;
-}
-.toolbar {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-bottom: 8px;
-}
-.search {
-    display: flex;
-    align-items: center;
-    margin-left: auto;
-}
-.search > * {
-    border-radius: 0;
-}
-.search input {
-    width: 330px;
-    max-width: 40vw;
-}
-.filters {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    align-items: center;
-    padding: 12px;
-    border: 1px solid var(--border);
-    margin-bottom: 10px;
-}
-.filters label {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
-.filters input {
-    width: 100px;
-}
-.summary {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 7px;
-    margin-bottom: 10px;
-}
-.summary button {
-    border: 1px solid transparent;
-    background: color-mix(in srgb, var(--muted) 60%, var(--card));
-    border-radius: 20px;
-    font-size: var(--console-text-body);
-    padding: 2px 10px;
-    min-height: 24px;
-    gap: 2px;
-}
-.summary button.active {
-    color: #2d8cf0;
-    border-color: #2d8cf040;
-    background: #2d8cf005;
-}
-.summary b {
-    font-weight: 500;
-}
-.muted {
-    color: var(--muted-foreground);
-}
-.summary > span {
-    font-size: var(--console-text-helper);
-}
-.table-scroll {
-    overflow-x: auto;
-}
-table {
-    border-collapse: collapse;
-    white-space: nowrap;
-    width: 100%;
-    text-align: left;
-}
-th {
-    height: 34px;
-    background: color-mix(in srgb, var(--muted) 25%, var(--card));
-    font-weight: 500;
-    font-size: var(--console-text-body);
-    padding: 6px 10px;
-    border-bottom: 1px solid var(--border);
-}
-td {
-    height: 42px;
-    padding: 3px 10px;
-    border-bottom: 1px solid var(--border);
-    font-size: var(--console-text-body);
-    vertical-align: top;
-}
-td.selection {
-    padding-top: 5px;
-}
-.selection {
-    width: 44px;
-    text-align: center;
-}
-tbody tr:hover {
-    background: color-mix(in srgb, var(--primary) 3%, var(--card));
-}
-.cert-info {
-    min-width: 215px;
-    max-width: 310px;
-}
-.copy-line {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-}
-.cert-name {
-    font-weight: 500;
-    max-width: 280px;
-    text-overflow: ellipsis;
-    overflow: hidden;
-    white-space: nowrap;
-}
-.subline {
-    font-size: var(--console-text-helper);
-    line-height: 18px;
-    color: var(--muted-foreground);
-}
-.actions {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-.pill {
-    display: inline-block;
-    border-radius: 12px;
-    padding: 1px 8px;
-    font-size: var(--console-text-helper);
-    border: 1px solid transparent;
-}
-.success {
-    color: #13b96a;
-    background: #19be6b12;
-    border-color: #19be6b25;
-}
-.danger {
-    color: #f44b35;
-    background: #f44b3510;
-    border-color: #f44b3525;
-}
-.warning {
-    color: #ed960d;
-    background: #ff990010;
-    border-color: #ff990025;
-}
-.pill.muted {
-    background: var(--muted);
-}
-.empty {
-    text-align: center;
-    height: 44px;
-    vertical-align: middle;
-    color: var(--muted-foreground);
-}
-.default-settings {
-    padding: 4px 20px 2px;
-    display: grid;
-    gap: 18px;
-}
-.setting-row {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    min-height: 28px;
-}
-.setting-row > span:first-child {
-    width: 64px;
-    text-align: right;
-    flex-shrink: 0;
-}
-.placeholder-pill {
-    padding: 6px 10px;
-    border-radius: 20px;
-    color: var(--muted-foreground);
-    background: color-mix(in srgb, var(--muted) 60%, var(--card));
-}
-.setting-row :deep([data-slot='select-trigger']) {
-    min-width: 220px;
-}
-.certificate-form {
-    display: grid;
-    gap: 16px;
-}
-.certificate-form label {
-    display: grid;
-    grid-template-columns: 80px minmax(0, 1fr);
-    align-items: center;
-    gap: 12px;
-}
-.certificate-form :deep([data-slot='textarea']) {
-    padding: 6px;
-    min-width: 0;
-    resize: vertical;
-}
-.certificate-form .replace-pem {
-    display: flex;
-    justify-content: flex-end;
-}
-.certificate-form input:not([type='checkbox']) {
-    width: 100%;
-}
-:global(.certificate-editor [data-slot='dialog-footer'] button) {
-    min-height: 28px;
-    border: 1px solid var(--border);
-    border-radius: 3px;
-    padding: 4px 12px;
-    font-size: var(--console-text-body);
-}
-:global(.certificate-editor [data-slot='dialog-footer'] button.primary) {
-    background: #2d8cf0;
-    color: white;
-    border-color: #2d8cf0;
-}
-@media (max-width: 640px) {
-    .search {
-        margin-left: 0;
-        max-width: 100%;
-    }
-    .search input {
-        width: 155px;
-    }
-    .default-settings {
-        padding: 0;
-    }
-    .setting-row {
-        gap: 8px;
-        flex-wrap: wrap;
-    }
-    .setting-row > span:first-child {
-        width: 55px;
-    }
-    .setting-row :deep(.user-picker) {
-        width: 100%;
-    }
-    .certificate-form label {
-        grid-template-columns: 1fr;
-        gap: 6px;
-    }
-}
-</style>

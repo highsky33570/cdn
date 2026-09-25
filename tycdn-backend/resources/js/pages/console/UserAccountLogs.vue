@@ -218,7 +218,10 @@ function showDiff(row: CdnflyRecord) {
 </script>
 
 <template>
-    <section class="account-logs" aria-label="账户日志">
+    <section
+        class="console-user-account-logs account-logs"
+        aria-label="账户日志"
+    >
         <div class="log-tabs" role="tablist" aria-label="日志类型">
             <Button
                 variant="ghost"
@@ -476,7 +479,7 @@ function showDiff(row: CdnflyRecord) {
             />
         </div>
         <Dialog v-model:open="detailOpen"
-            ><DialogScrollContent class="sm:max-w-2xl"
+            ><DialogScrollContent class="console-user-account-logs sm:max-w-2xl"
                 ><DialogHeader
                     ><DialogTitle>变更详情</DialogTitle
                     ><DialogDescription
@@ -496,189 +499,3 @@ function showDiff(row: CdnflyRecord) {
         >
     </section>
 </template>
-
-<style scoped>
-.account-logs {
-    min-width: 0;
-    margin: 16px;
-    padding: 0 14px 20px;
-    background: var(--card);
-    color: var(--foreground);
-    font-size: var(--console-text-body);
-}
-.log-tabs {
-    display: flex;
-    gap: 20px;
-    border-bottom: 1px solid var(--input);
-    margin-bottom: 20px;
-}
-.log-tabs button {
-    height: 52px;
-    padding: 0 20px;
-    border-bottom: 2px solid transparent;
-    cursor: pointer;
-    font-size: var(--console-text-body);
-}
-.log-tabs button[aria-selected='true'] {
-    color: var(--primary);
-    border-bottom-color: var(--primary);
-}
-.log-filters {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    align-items: center;
-    margin-bottom: 12px;
-}
-.log-filters :deep([data-slot='select-trigger']) {
-    width: 188px;
-    height: 40px;
-    padding: 0 10px;
-    border: 1px solid var(--input);
-    border-radius: 4px;
-    background: transparent;
-}
-.log-filters :deep(.log-date) {
-    width: 268px;
-    max-width: 100%;
-    height: 40px;
-    flex-direction: row-reverse;
-    justify-content: space-between;
-    background: transparent;
-    border: 1px solid var(--input);
-    border-radius: 4px;
-    font-size: var(--console-text-body);
-}
-.log-input {
-    display: flex;
-    height: 40px;
-    border: 1px solid var(--input);
-    border-radius: 4px;
-    overflow: hidden;
-    width: 250px;
-}
-.log-input.small {
-    width: 188px;
-}
-.log-input span {
-    display: flex;
-    align-items: center;
-    padding: 0 10px;
-    background: var(--muted);
-    border-right: 1px solid var(--input);
-    white-space: nowrap;
-}
-.log-input input {
-    width: 0;
-    min-width: 0;
-    flex: 1;
-    padding: 0 10px;
-    background: transparent;
-    outline: none;
-}
-.log-input:focus-within {
-    border-color: var(--primary);
-}
-.log-input input::placeholder {
-    color: var(--muted-foreground);
-}
-.text-link {
-    color: var(--primary);
-    cursor: pointer;
-}
-.log-scroll {
-    overflow-x: auto;
-    border-bottom: 1px solid var(--input);
-}
-table {
-    width: 100%;
-    min-width: 760px;
-    table-layout: fixed;
-    border-collapse: collapse;
-}
-.operation-table {
-    min-width: 1300px;
-}
-th,
-td {
-    border-bottom: 1px solid var(--border);
-    padding: 0 22px;
-    text-align: left;
-    font-size: var(--console-text-body);
-}
-th {
-    height: 48px;
-    background: var(--muted);
-    font-weight: 600;
-}
-td {
-    height: 60px;
-    white-space: nowrap;
-}
-td.location {
-    white-space: normal;
-    overflow-wrap: anywhere;
-    padding-block: 6px;
-}
-tbody tr:hover {
-    background: var(--accent);
-}
-.truncate-cell {
-    display: block;
-    width: 100%;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    text-align: left;
-}
-.status-icon {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 15px;
-    height: 15px;
-    border-radius: 50%;
-    color: var(--primary-foreground);
-}
-.success {
-    background: #12bf74;
-}
-.failed {
-    background: #ff4949;
-}
-.empty {
-    padding: 0;
-    text-align: center;
-}
-.empty span {
-    position: sticky;
-    left: 0;
-    display: block;
-    width: min(100%, calc(100vw - 340px));
-}
-.log-error {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 12px;
-    margin-bottom: 12px;
-    color: var(--destructive);
-}
-@media (max-width: 640px) {
-    .account-logs {
-        margin: 8px;
-        padding: 0 8px 16px;
-    }
-    .log-tabs {
-        gap: 10px;
-    }
-    .log-input,
-    .log-input.small,
-    .log-filters :deep([data-slot='select-trigger']) {
-        flex: 1 1 160px;
-    }
-    .empty span {
-        width: calc(100vw - 50px);
-    }
-}
-</style>

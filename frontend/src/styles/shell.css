@@ -1,0 +1,280 @@
+/* Global shell styles. Loaded by global.css.
+ * Stable public-* namespaces isolate layouts. data-public-style marks nested
+ * component roots; their internals keep their own styles and remain unaffected
+ * by an enclosing page's type selectors. :where() adds no specificity.
+ */
+
+/* components/AppFooter.vue */
+.site-footer:is(.public-app-footer, .public-app-footer *):not(:where(.public-app-footer [data-public-style] *)) {
+  padding: 72px 0 34px;
+  border-top: 1px solid var(--surface);
+  background: linear-gradient(180deg, var(--surface) 0%, var(--surface) 100%), var(--panel);
+}
+.footer-top:is(.public-app-footer, .public-app-footer *):not(:where(.public-app-footer [data-public-style] *)) {
+  display: flex;
+  justify-content: space-between;
+  gap: 56px;
+  padding-bottom: 42px;
+}
+.footer-brand:is(.public-app-footer, .public-app-footer *):not(:where(.public-app-footer [data-public-style] *)) {
+  max-width: 520px;
+}
+.footer-brand__logo:is(.public-app-footer, .public-app-footer *):not(:where(.public-app-footer [data-public-style] *)) {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+}
+.footer-brand__mark:is(.public-app-footer, .public-app-footer *):not(:where(.public-app-footer [data-public-style] *)) {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 14px;
+  background: var(--accent-fill);
+  color: var(--accent-ink);
+  font-size: 22px;
+  font-weight: 800;
+  box-shadow: var(--shadow);
+}
+.footer-brand__name:is(.public-app-footer, .public-app-footer *):not(:where(.public-app-footer [data-public-style] *)) {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--text);
+}
+.footer-brand__desc:is(.public-app-footer, .public-app-footer *):not(:where(.public-app-footer [data-public-style] *)) {
+  margin: 24px 0 0;
+  color: var(--text-2);
+  font-size: 16px;
+  line-height: 1.9;
+}
+.footer-links:is(.public-app-footer, .public-app-footer *):not(:where(.public-app-footer [data-public-style] *)) {
+  display: grid;
+  /* 合并后恢复为 2 列 */
+  grid-template-columns: repeat(2, minmax(140px, 1fr));
+  gap: 64px;
+  flex: 0 0 auto;
+}
+.footer-column:is(.public-app-footer, .public-app-footer *):not(:where(.public-app-footer [data-public-style] *)) {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+.footer-title:is(.public-app-footer, .public-app-footer *):not(:where(.public-app-footer [data-public-style] *)) {
+  margin-bottom: 22px;
+  color: var(--text);
+  font-size: 18px;
+  font-weight: 700;
+}
+.footer-link:is(.public-app-footer, .public-app-footer *):not(:where(.public-app-footer [data-public-style] *)) {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  color: var(--text-3);
+  font-size: 16px;
+  transition: color 0.2s ease;
+  margin-bottom: 12px; /* 与下方的按钮拉开距离 */
+}
+.footer-link:is(.public-app-footer, .public-app-footer *):not(:where(.public-app-footer [data-public-style] *)):hover {
+  color: var(--text);
+}
+.footer-bottom:is(.public-app-footer, .public-app-footer *):not(:where(.public-app-footer [data-public-style] *)) {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  padding-top: 24px;
+  border-top: 1px solid var(--surface);
+  color: var(--text-3);
+  font-size: 14px;
+  line-height: 1.8;
+}
+@media (max-width: 900px) {
+.footer-top:is(.public-app-footer, .public-app-footer *):not(:where(.public-app-footer [data-public-style] *)) {
+    flex-direction: column;
+    gap: 36px;
+}
+.footer-links:is(.public-app-footer, .public-app-footer *):not(:where(.public-app-footer [data-public-style] *)) {
+    gap: 36px;
+}
+.footer-bottom:is(.public-app-footer, .public-app-footer *):not(:where(.public-app-footer [data-public-style] *)) {
+    flex-direction: column;
+}
+}
+@media (max-width: 560px) {
+.footer-links:is(.public-app-footer, .public-app-footer *):not(:where(.public-app-footer [data-public-style] *)) {
+    grid-template-columns: 1fr;
+}
+}
+
+/* components/AppHeader.vue */
+.site-header:is(.public-app-header, .public-app-header *):not(:where(.public-app-header [data-public-style] *)) {
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: 1000;
+  height: var(--header-h);
+  background: var(--header-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--header-border);
+}
+.header-inner:is(.public-app-header, .public-app-header *):not(:where(.public-app-header [data-public-style] *)) {
+  display: flex;
+  height: 100%;
+  align-items: center;
+  gap: 36px;
+}
+.brand:is(.public-app-header, .public-app-header *):not(:where(.public-app-header [data-public-style] *)) {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 21px;
+  font-weight: 800;
+  color: var(--text-strong);
+  letter-spacing: -0.04em;
+  white-space: nowrap;
+}
+.brand-mark:is(.public-app-header, .public-app-header *):not(:where(.public-app-header [data-public-style] *)) {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  color: var(--accent-ink);
+  background: var(--accent-fill);
+  font-size: 21px;
+}
+.desktop-nav:is(.public-app-header, .public-app-header *):not(:where(.public-app-header [data-public-style] *)) {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.nav-link:is(.public-app-header, .public-app-header *):not(:where(.public-app-header [data-public-style] *)) {
+  padding: 9px 12px;
+  border-radius: 8px;
+  color: var(--text-2);
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+  transition:
+    background 0.2s,
+    color 0.2s;
+}
+.nav-link:is(.public-app-header, .public-app-header *):not(:where(.public-app-header [data-public-style] *)):hover {
+  color: var(--text);
+  background: var(--surface);
+}
+.nav-link.is-active:is(.public-app-header, .public-app-header *):not(:where(.public-app-header [data-public-style] *)) {
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+.header-right:is(.public-app-header, .public-app-header *):not(:where(.public-app-header [data-public-style] *)) {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-left: auto;
+}
+.header-login:is(.public-app-header, .public-app-header *):not(:where(.public-app-header [data-public-style] *)) {
+  padding: 10px 12px;
+  color: var(--text);
+  font-weight: 600;
+  border-radius: 9px;
+}
+.header-login:is(.public-app-header, .public-app-header *):not(:where(.public-app-header [data-public-style] *)):hover {
+  color: var(--accent);
+  background: var(--surface);
+}
+.header-register:is(.public-app-header, .public-app-header *):not(:where(.public-app-header [data-public-style] *)) {
+  min-height: 40px;
+  padding: 9px 17px;
+}
+.menu-toggle:is(.public-app-header, .public-app-header *):not(:where(.public-app-header [data-public-style] *)) {
+  display: none;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text);
+  background: var(--panel);
+  cursor: pointer;
+}
+.menu-toggle svg:is(.public-app-header, .public-app-header *):not(:where(.public-app-header [data-public-style] *)) {
+  width: 20px;
+  height: 20px;
+}
+.mobile-nav:is(.public-app-header, .public-app-header *):not(:where(.public-app-header [data-public-style] *)) {
+  display: none;
+}
+@media (max-width: 1060px) {
+.desktop-nav:is(.public-app-header, .public-app-header *):not(:where(.public-app-header [data-public-style] *)) {
+    display: none;
+}
+.menu-toggle:is(.public-app-header, .public-app-header *):not(:where(.public-app-header [data-public-style] *)) {
+    display: grid;
+}
+.mobile-nav:is(.public-app-header, .public-app-header *):not(:where(.public-app-header [data-public-style] *)) {
+    display: grid;
+    gap: 6px;
+    padding: 16px 20px 20px;
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+    box-shadow: var(--shadow);
+}
+}
+@media (max-width: 480px) {
+.header-inner:is(.public-app-header, .public-app-header *):not(:where(.public-app-header [data-public-style] *)) {
+    padding-inline: 16px;
+    gap: 12px;
+}
+.header-right:is(.public-app-header, .public-app-header *):not(:where(.public-app-header [data-public-style] *)) {
+    gap: 7px;
+}
+.brand:is(.public-app-header, .public-app-header *):not(:where(.public-app-header [data-public-style] *)) {
+    font-size: 18px;
+    gap: 7px;
+}
+.brand-mark:is(.public-app-header, .public-app-header *):not(:where(.public-app-header [data-public-style] *)) {
+    width: 30px;
+    height: 30px;
+    font-size: 18px;
+}
+.header-login:is(.public-app-header, .public-app-header *):not(:where(.public-app-header [data-public-style] *)) {
+    padding-inline: 5px;
+    font-size: 13px;
+}
+.header-register:is(.public-app-header, .public-app-header *):not(:where(.public-app-header [data-public-style] *)) {
+    padding-inline: 10px;
+    font-size: 13px;
+}
+.header-register span:is(.public-app-header, .public-app-header *):not(:where(.public-app-header [data-public-style] *)) {
+    display: none;
+}
+}
+
+/* components/ThemeToggle.vue */
+.theme-toggle:is(.public-theme-toggle, .public-theme-toggle *):not(:where(.public-theme-toggle [data-public-style] *)) {
+  display: inline-grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  background: var(--panel);
+  color: var(--text-2);
+  cursor: pointer;
+  transition:
+    background 0.2s,
+    color 0.2s;
+}
+.theme-toggle:is(.public-theme-toggle, .public-theme-toggle *):not(:where(.public-theme-toggle [data-public-style] *)):hover {
+  background: var(--surface);
+  color: var(--accent);
+  border-color: var(--accent-border);
+}
+svg:is(.public-theme-toggle, .public-theme-toggle *):not(:where(.public-theme-toggle [data-public-style] *)) {
+  width: 19px;
+  height: 19px;
+}

@@ -393,7 +393,7 @@ function presetRange(days: number): void {
 
 <template>
     <div
-        class="console-page min-w-0 p-4 md:p-6"
+        class="console-admin-block-logs console-page min-w-0 p-4 md:p-6"
         :class="{ 'user-block-log': userScope }"
     >
         <section
@@ -545,7 +545,7 @@ function presetRange(days: number): void {
                                 ><PopoverContent
                                     align="end"
                                     :side-offset="8"
-                                    class="z-50 w-80 max-w-[calc(100vw-2rem)] rounded-lg border bg-popover p-4 text-popover-foreground shadow-lg"
+                                    class="console-admin-block-logs z-50 w-80 max-w-[calc(100vw-2rem)] rounded-lg border bg-popover p-4 text-popover-foreground shadow-lg"
                                     aria-label="历史拉黑时间范围"
                                 >
                                     <div class="mb-4 flex gap-2">
@@ -830,7 +830,7 @@ function presetRange(days: number): void {
             </div>
         </section>
         <Dialog v-model:open="siteDialog"
-            ><DialogContent class="sm:max-w-sm"
+            ><DialogContent class="console-admin-block-logs sm:max-w-sm"
                 ><DialogHeader
                     ><DialogTitle>解锁指定网站黑名单</DialogTitle
                     ><DialogDescription
@@ -875,83 +875,3 @@ function presetRange(days: number): void {
         >
     </div>
 </template>
-
-<style scoped>
-.user-block-log [role='tablist'] {
-    border-bottom: 1px solid var(--border);
-    gap: 1rem;
-}
-.user-block-log [role='tab'] {
-    border-radius: 0;
-    border-bottom: 2px solid transparent;
-    background: transparent;
-    font-weight: 400;
-}
-.user-block-log [role='tab'][aria-selected='true'] {
-    border-bottom-color: var(--primary);
-    color: var(--primary);
-}
-.user-block-log [role='tabpanel'] > div:first-child {
-    display: block;
-}
-.user-block-log [role='tabpanel'] > div:first-child > form {
-    width: 100%;
-    margin-top: 0.75rem;
-}
-.user-block-log .block-log-filter {
-    width: min(28%, 24rem);
-    min-width: 14rem;
-}
-.user-block-log nav {
-    justify-content: flex-start;
-}
-.user-block-log td[colspan] {
-    height: 3.75rem;
-}
-.block-log-table th {
-    padding: 0.75rem;
-    font-weight: 600;
-    white-space: nowrap;
-}
-.block-log-table td {
-    padding: 0.875rem 0.75rem;
-}
-.block-log-table tr {
-    border-bottom: 1px solid var(--border);
-}
-.block-log-filter {
-    display: flex;
-    align-items: center;
-    width: 14rem;
-    max-width: 100%;
-    border: 1px solid var(--input);
-    border-radius: 0.375rem;
-    overflow: hidden;
-    background: var(--background);
-}
-.block-log-filter label {
-    flex-shrink: 0;
-    padding: 0.5rem;
-    border-right: 1px solid var(--input);
-    background: var(--muted);
-    color: var(--muted-foreground);
-    font-weight: 400;
-}
-.block-log-filter :deep(input) {
-    min-width: 0;
-    height: 2rem;
-    border: 0;
-    border-radius: 0;
-    box-shadow: none;
-}
-.block-log-filter:focus-within {
-    outline: 2px solid var(--ring);
-    outline-offset: 1px;
-}
-@media (max-width: 639px) {
-    .block-log-filter,
-    .user-block-log .block-log-filter {
-        width: 100%;
-    }
-}
-</style>

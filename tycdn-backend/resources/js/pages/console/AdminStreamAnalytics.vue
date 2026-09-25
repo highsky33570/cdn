@@ -197,7 +197,7 @@ onUnmounted(() => {
 </script>
 <template>
     <div
-        class="console-page min-w-0 p-4 md:p-6"
+        class="console-admin-stream-analytics console-page min-w-0 p-4 md:p-6"
         :class="{ 'user-stream-analytics': userScope }"
     >
         <section
@@ -490,109 +490,3 @@ onUnmounted(() => {
         </section>
     </div>
 </template>
-
-<style scoped>
-.user-stream-analytics .stream-analytics-panel {
-    border: 0;
-    border-radius: 0;
-    box-shadow: none;
-}
-.user-stream-analytics [role='tablist'] {
-    gap: 20px;
-    margin-bottom: 20px;
-    border-bottom: 1px solid var(--border);
-}
-.user-stream-analytics [role='tab'] {
-    margin-bottom: -1px;
-    padding: 12px 20px;
-    border-radius: 0;
-    border-bottom: 2px solid transparent;
-    background: transparent;
-    font-size: var(--console-text-body);
-    font-weight: 400;
-}
-.user-stream-analytics [role='tab'][aria-selected='true'] {
-    color: var(--primary);
-    border-bottom-color: var(--primary);
-}
-.user-stream-analytics .stream-toolbar {
-    gap: 10px;
-    margin-bottom: 20px;
-    padding: 0;
-    border: 0;
-    background: transparent;
-}
-.user-stream-analytics .stream-toolbar input {
-    height: 40px;
-    font-size: var(--console-text-body);
-}
-.user-stream-analytics input[aria-label='端口'] {
-    width: 313px;
-}
-.user-stream-analytics .stream-toolbar button {
-    height: 40px;
-    padding: 0 19px;
-    font-size: var(--console-text-body);
-    font-weight: 400;
-}
-.user-stream-analytics .stream-toolbar [role='group'] {
-    flex-wrap: wrap;
-}
-.user-stream-analytics .stream-toolbar button[aria-pressed='true'] {
-    height: 42px;
-    background: transparent;
-    border-radius: 0;
-}
-.user-stream-analytics .stream-toolbar button[aria-pressed='true']:first-child {
-    border-radius: 4px 0 0 4px;
-}
-.user-stream-analytics .stream-toolbar button[aria-pressed='true']:last-child {
-    border-radius: 0 4px 4px 0;
-}
-.user-stream-analytics :deep(.stream-chart) {
-    min-height: 420px;
-    padding: 4px;
-    border: 0;
-    border-radius: 0;
-}
-.user-stream-analytics :deep(.stream-chart h3) {
-    font-size: var(--console-text-section-title);
-}
-.user-stream-analytics :deep(.stream-chart svg) {
-    height: 350px;
-}
-.user-stream-analytics :deep(.stream-chart svg text) {
-    font-size: var(--console-text-helper);
-}
-.user-stream-analytics .stream-ranking {
-    max-width: 1000px;
-    border: 0;
-    border-radius: 0;
-    border-bottom: 1px solid var(--border);
-}
-.user-stream-analytics .stream-ranking th {
-    height: 48px;
-    padding: 10px 22px;
-    font-size: var(--console-text-body);
-}
-.user-stream-analytics .stream-ranking td {
-    height: 60px;
-    padding: 12px 22px;
-    font-size: var(--console-text-body);
-}
-@media (max-width: 640px) {
-    .user-stream-analytics .stream-analytics-panel {
-        padding: 12px;
-    }
-    .user-stream-analytics .stream-toolbar button {
-        padding: 0 10px;
-        font-size: var(--console-text-body);
-    }
-    .user-stream-analytics :deep(.stream-chart) {
-        min-height: 350px;
-    }
-    .user-stream-analytics :deep(.stream-chart svg) {
-        height: 300px;
-    }
-}
-</style>

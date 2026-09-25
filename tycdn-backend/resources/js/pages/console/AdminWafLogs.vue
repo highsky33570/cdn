@@ -304,7 +304,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-    <div class="console-page min-w-0 p-4 md:p-6">
+    <div class="console-admin-waf-logs console-page min-w-0 p-4 md:p-6">
         <section
             class="waf-card min-w-0 rounded-xl border bg-card p-4 text-card-foreground shadow-sm"
             aria-label="WAF日志"
@@ -739,7 +739,8 @@ onUnmounted(() => {
             </div>
         </section>
         <Dialog v-model:open="detailOpen"
-            ><DialogContent class="max-h-[85vh] overflow-y-auto sm:max-w-3xl"
+            ><DialogContent
+                class="console-admin-waf-logs max-h-[85vh] overflow-y-auto sm:max-w-3xl"
                 ><DialogHeader
                     ><DialogTitle>攻击日志详情</DialogTitle
                     ><DialogDescription
@@ -808,7 +809,7 @@ onUnmounted(() => {
             ></Dialog
         >
         <Dialog v-model:open="actionOpen"
-            ><DialogContent
+            ><DialogContent class="console-admin-waf-logs"
                 ><DialogHeader
                     ><DialogTitle>{{
                         action === 'unlock'
@@ -848,18 +849,3 @@ onUnmounted(() => {
         >
     </div>
 </template>
-<style scoped>
-.waf-log-table th {
-    padding: 0.65rem 0.75rem;
-    font-weight: 600;
-    white-space: nowrap;
-}
-.waf-log-table td {
-    padding: 0.8rem 0.75rem;
-}
-.waf-log-table th,
-.waf-log-table td {
-    border-right: 1px solid var(--border);
-    border-bottom: 1px solid var(--border);
-}
-</style>

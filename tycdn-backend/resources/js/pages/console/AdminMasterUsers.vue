@@ -576,7 +576,9 @@ onUnmounted(() => {
 </script>
 
 <template>
-    <div class="master-users-workspace min-w-0 p-4 md:p-6">
+    <div
+        class="console-admin-master-users master-users-workspace min-w-0 p-4 md:p-6"
+    >
         <section
             class="console-panel min-w-0 rounded-xl border bg-card p-4 text-card-foreground md:p-5"
         >
@@ -604,6 +606,7 @@ onUnmounted(() => {
                                     >更多操作<ChevronDown
                                         class="ml-2 size-4" /></Button></DropdownMenuTrigger
                             ><DropdownMenuContent
+                                class="console-admin-master-users"
                                 ><DropdownMenuItem
                                     :disabled="!selected.length"
                                     @select="askAction('enable')"
@@ -625,7 +628,7 @@ onUnmounted(() => {
                         <Select v-model="filters.cert_verified" :disabled="busy"
                             ><SelectTrigger class="w-44" aria-label="实名状态"
                                 ><SelectValue /></SelectTrigger
-                            ><SelectContent
+                            ><SelectContent class="console-admin-master-users"
                                 ><SelectItem value="all"
                                     >所有实名状态</SelectItem
                                 ><SelectItem value="1">已实名</SelectItem
@@ -636,7 +639,7 @@ onUnmounted(() => {
                         ><Select v-model="filters.user_group" :disabled="busy"
                             ><SelectTrigger class="w-44" aria-label="用户组筛选"
                                 ><SelectValue /></SelectTrigger
-                            ><SelectContent
+                            ><SelectContent class="console-admin-master-users"
                                 ><SelectItem value="all">所有用户组</SelectItem
                                 ><SelectItem
                                     v-for="group in groups"
@@ -885,7 +888,7 @@ onUnmounted(() => {
         </section>
         <Dialog :open="editorOpen" @update:open="closeEditor"
             ><DialogScrollContent
-                class="max-h-[95dvh] max-w-[940px] grid-rows-[auto_minmax(0,1fr)_auto] gap-0 overflow-hidden p-0"
+                class="console-admin-master-users max-h-[95dvh] max-w-[940px] grid-rows-[auto_minmax(0,1fr)_auto] gap-0 overflow-hidden p-0"
                 ><DialogHeader class="border-b px-5 py-4"
                     ><DialogTitle>{{
                         editId ? '编辑用户' : '新增用户'
@@ -968,6 +971,7 @@ onUnmounted(() => {
                                             aria-label="用户分组"
                                             ><SelectValue /></SelectTrigger
                                         ><SelectContent
+                                            class="console-admin-master-users"
                                             ><SelectItem value="none"
                                                 >不分组</SelectItem
                                             ><SelectItem
@@ -1203,7 +1207,7 @@ onUnmounted(() => {
                     if (!busy) groupOpen = v;
                 }
             "
-            ><DialogScrollContent class="max-w-xl"
+            ><DialogScrollContent class="console-admin-master-users max-w-xl"
                 ><DialogHeader
                     ><DialogTitle>{{
                         groupId ? '编辑用户组' : '新增用户组'
@@ -1262,7 +1266,7 @@ onUnmounted(() => {
                     if (!busy) actionOpen = v;
                 }
             "
-            ><DialogScrollContent
+            ><DialogScrollContent class="console-admin-master-users"
                 ><DialogHeader
                     ><DialogTitle>{{ actionLabel }}确认</DialogTitle
                     ><DialogDescription
@@ -1295,7 +1299,7 @@ onUnmounted(() => {
         >
         <Dialog v-model:open="localOpen"
             ><DialogScrollContent
-                class="max-h-[95dvh] max-w-[1400px] overflow-auto"
+                class="console-admin-master-users max-h-[95dvh] max-w-[1400px] overflow-auto"
                 ><DialogHeader
                     ><DialogTitle>本地账号管理</DialogTitle
                     ><DialogDescription
@@ -1305,50 +1309,3 @@ onUnmounted(() => {
         ></Dialog>
     </div>
 </template>
-<style scoped>
-.users-table :deep(table) {
-    min-width: 1480px;
-}
-.groups-table :deep(table) {
-    min-width: 740px;
-}
-.user-form {
-    max-width: 690px;
-}
-.user-field {
-    display: grid;
-    grid-template-columns: 120px minmax(0, 1fr);
-    align-items: center;
-    gap: 16px;
-}
-.user-field > label {
-    justify-content: flex-end;
-    text-align: right;
-}
-@media (max-width: 600px) {
-    .user-field {
-        grid-template-columns: minmax(0, 1fr);
-        gap: 8px;
-    }
-    .user-field > label {
-        justify-content: flex-start;
-        text-align: left;
-    }
-}
-:deep([data-slot='textarea']) {
-    width: 100%;
-    min-height: 72px;
-    border: 1px solid var(--input);
-    border-radius: var(--radius);
-    padding: 8px 12px;
-    background: transparent;
-    font-size: var(--console-text-body);
-    resize: vertical;
-}
-:deep([data-slot='textarea']):focus-visible {
-    outline: 2px solid var(--ring);
-}
-:deep([data-slot='textarea'])::placeholder {
-    color: var(--muted-foreground);
-}
-</style>
