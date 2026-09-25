@@ -383,7 +383,11 @@ const resolving = ref<CdnflyRecord | null>(null);
             aria-label="线路分组"
         >
             <div v-if="nodeId" class="mb-3 flex items-center gap-3 text-sm">
-                节点ID：{{ nodeId }} 的线路组列表<button
+                节点ID：{{ nodeId }} 的线路组列表<Button
+                    variant="link"
+                    size="inline"
+                    type="button"
+                    data-slot="console-link"
                     class="text-primary"
                     @click="
                         nodeId = '';
@@ -391,7 +395,7 @@ const resolving = ref<CdnflyRecord | null>(null);
                     "
                 >
                     显示所有
-                </button>
+                </Button>
             </div>
             <div class="mb-2 flex gap-2">
                 <Button
@@ -436,21 +440,26 @@ const resolving = ref<CdnflyRecord | null>(null);
                         aria-label="搜索线路分组"
                         class="h-8 pr-8"
                         placeholder="填名称或解析值搜索"
-                    /><button
+                    /><Button
+                        variant="ghost"
+                        size="icon-sm"
                         type="submit"
                         aria-label="搜索"
                         class="absolute inset-y-0 right-2 text-muted-foreground"
                     >
                         <Search class="size-4" />
-                    </button>
+                    </Button>
                 </div>
-                <button
+                <Button
+                    variant="link"
+                    size="inline"
+                    data-slot="console-link"
                     type="button"
                     class="text-sm text-primary hover:underline"
                     @click="clear"
                 >
                     清除
-                </button>
+                </Button>
             </form>
             <div
                 v-if="referenceError"
@@ -458,7 +467,15 @@ const resolving = ref<CdnflyRecord | null>(null);
                 class="mb-3 text-sm text-destructive"
             >
                 {{ referenceError }}
-                <button class="underline" @click="loadRegions">重试区域</button>
+                <Button
+                    variant="link"
+                    size="inline"
+                    type="button"
+                    data-slot="console-link"
+                    class="underline"
+                    @click="loadRegions"
+                    >重试区域</Button
+                >
             </div>
             <div
                 v-if="error"
@@ -466,7 +483,15 @@ const resolving = ref<CdnflyRecord | null>(null);
                 class="mb-3 text-sm text-destructive"
             >
                 {{ error }}
-                <button class="underline" @click="load()">重试</button>
+                <Button
+                    variant="link"
+                    size="inline"
+                    type="button"
+                    data-slot="console-link"
+                    class="underline"
+                    @click="load()"
+                    >重试</Button
+                >
             </div>
             <div class="overflow-x-auto">
                 <table class="w-full min-w-[1050px] text-left text-sm">
@@ -527,12 +552,16 @@ const resolving = ref<CdnflyRecord | null>(null);
                             </td>
                             <td>{{ row.id }}</td>
                             <td>
-                                <button
+                                <Button
+                                    variant="link"
+                                    size="inline"
+                                    type="button"
+                                    data-slot="console-link"
                                     class="text-primary hover:underline"
                                     @click="openEditor(row)"
                                 >
                                     {{ row.name }}
-                                </button>
+                                </Button>
                             </td>
                             <td>{{ regionName(row) }}</td>
                             <td>
@@ -552,15 +581,31 @@ const resolving = ref<CdnflyRecord | null>(null);
                                 <div
                                     class="flex justify-center gap-2 whitespace-nowrap text-primary"
                                 >
-                                    <button @click="resolving = row">
-                                        配置解析</button
-                                    ><button @click="openEditor(row)">
-                                        编辑</button
-                                    ><button
+                                    <Button
+                                        variant="link"
+                                        size="inline"
+                                        type="button"
+                                        data-slot="console-link"
+                                        @click="resolving = row"
+                                    >
+                                        配置解析</Button
+                                    ><Button
+                                        variant="link"
+                                        size="inline"
+                                        type="button"
+                                        data-slot="console-link"
+                                        @click="openEditor(row)"
+                                    >
+                                        编辑</Button
+                                    ><Button
+                                        variant="link"
+                                        size="inline"
+                                        type="button"
+                                        data-slot="console-link"
                                         @click="confirmDelete([Number(row.id)])"
                                     >
                                         删除
-                                    </button>
+                                    </Button>
                                 </div>
                             </td>
                         </tr>
@@ -734,7 +779,9 @@ const resolving = ref<CdnflyRecord | null>(null);
                                         </div>
                                     </SelectContent>
                                 </Select>
-                                <button
+                                <Button
+                                    variant="ghost"
+                                    size="icon-sm"
                                     v-if="form.l2_config_id"
                                     type="button"
                                     class="absolute top-1/2 right-7 -translate-y-1/2 text-muted-foreground"
@@ -743,13 +790,14 @@ const resolving = ref<CdnflyRecord | null>(null);
                                     @click="form.l2_config_id = ''"
                                 >
                                     ×
-                                </button>
+                                </Button>
                             </div>
                         </div>
                         <p
+                            data-typography="body"
                             v-if="l2Error"
                             role="alert"
-                            class="text-sm text-destructive"
+                            class="text-destructive"
                         >
                             {{ l2Error }}
                         </p>
@@ -760,7 +808,8 @@ const resolving = ref<CdnflyRecord | null>(null);
                                 aria-label="备用IP切换"
                                 class="switch-options"
                             >
-                                <button
+                                <Button
+                                    variant="ghost"
                                     data-slot="console-segment"
                                     type="button"
                                     :aria-pressed="
@@ -772,8 +821,9 @@ const resolving = ref<CdnflyRecord | null>(null);
                                     "
                                 >
                                     有主IP下线时
-                                </button>
-                                <button
+                                </Button>
+                                <Button
+                                    variant="ghost"
                                     data-slot="console-segment"
                                     type="button"
                                     :aria-pressed="
@@ -785,8 +835,9 @@ const resolving = ref<CdnflyRecord | null>(null);
                                     "
                                 >
                                     在线IP数少于备用IP数时
-                                </button>
-                                <button
+                                </Button>
+                                <Button
+                                    variant="ghost"
                                     data-slot="console-segment"
                                     type="button"
                                     :aria-pressed="
@@ -797,7 +848,7 @@ const resolving = ref<CdnflyRecord | null>(null);
                                     "
                                 >
                                     间隔切换
-                                </button>
+                                </Button>
                             </div>
                         </div>
                         <template v-if="form.backup_switch_type === 'interval'">
@@ -924,7 +975,7 @@ const resolving = ref<CdnflyRecord | null>(null);
     text-align: left;
 }
 :global(.line-group-editor [data-slot='dialog-title']) {
-    font-size: 14px;
+    font-size: var(--console-text-dialog-title);
     font-weight: 400;
 }
 .line-group-editor .group-form {
@@ -936,7 +987,7 @@ const resolving = ref<CdnflyRecord | null>(null);
     gap: 10px;
 }
 .line-group-editor .form-row :deep(label) {
-    font-size: 12px;
+    font-size: var(--console-text-body);
     white-space: nowrap;
 }
 .line-group-editor .form-row :deep(input),
@@ -946,7 +997,7 @@ const resolving = ref<CdnflyRecord | null>(null);
     min-height: 28px;
     border-radius: 3px;
     padding: 3px 7px;
-    font-size: 12px;
+    font-size: var(--console-text-body);
     box-shadow: none;
 }
 .line-group-editor .switch-row {
@@ -965,7 +1016,7 @@ const resolving = ref<CdnflyRecord | null>(null);
     background: var(--card);
     border-radius: 2px;
     padding: 5px 12px;
-    font-size: 12px;
+    font-size: var(--console-text-body);
     line-height: 16px;
     white-space: nowrap;
 }
@@ -983,7 +1034,7 @@ const resolving = ref<CdnflyRecord | null>(null);
     height: 28px;
     border-radius: 3px;
     padding: 4px 12px;
-    font-size: 12px;
+    font-size: var(--console-text-body);
 }
 :global(.line-group-editor [data-slot='dialog-footer'] button[type='submit']) {
     background: #2d8cf0;

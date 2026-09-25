@@ -550,8 +550,8 @@ async function mutate(ids: number[], method: string, payload?: CdnflyRecord) {
         >
             <header v-if="tab === 'defaults'" class="default-heading">
                 <div>
-                    <h2>四层转发默认配置</h2>
-                    <p>
+                    <h2 data-typography="section-title">四层转发默认配置</h2>
+                    <p data-typography="description">
                         配置新增四层转发时自动带入的监听协议、负载方式与 Proxy
                         Protocol。
                     </p>
@@ -954,7 +954,12 @@ async function mutate(ids: number[], method: string, payload?: CdnflyRecord) {
                     }}</DialogDescription></DialogHeader
                 >
                 <form class="resource-form" @submit.prevent="saveResource">
-                    <p v-if="editorError" role="alert" class="error">
+                    <p
+                        data-typography="body"
+                        v-if="editorError"
+                        role="alert"
+                        class="error"
+                    >
                         {{ editorError }}
                     </p>
                     <label
@@ -1073,7 +1078,12 @@ async function mutate(ids: number[], method: string, payload?: CdnflyRecord) {
                     ></DialogHeader
                 >
                 <form class="resource-form" @submit.prevent="applyBatch">
-                    <p v-if="batchError" role="alert" class="error">
+                    <p
+                        data-typography="body"
+                        v-if="batchError"
+                        role="alert"
+                        class="error"
+                    >
                         {{ batchError }}
                     </p>
                     <div
@@ -1234,7 +1244,7 @@ input::placeholder {
 }
 .muted {
     color: var(--muted-foreground);
-    font-size: 12px;
+    font-size: var(--console-text-body);
     line-height: 1.8;
 }
 footer {
@@ -1273,7 +1283,7 @@ footer.right {
     margin-right: 7px;
 }
 .default-heading p {
-    font-size: 12px;
+    font-size: var(--console-text-body);
     color: var(--muted-foreground);
     margin-top: 6px;
 }

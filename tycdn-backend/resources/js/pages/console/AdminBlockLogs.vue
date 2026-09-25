@@ -405,7 +405,9 @@ function presetRange(days: number): void {
                 role="tablist"
                 aria-label="拉黑日志分类"
             >
-                <button
+                <Button
+                    variant="ghost"
+                    data-slot="console-tab"
                     v-for="tab in tabs"
                     :id="`block-tab-${tab.key}`"
                     :key="tab.key"
@@ -422,7 +424,7 @@ function presetRange(days: number): void {
                     @click="switchTab(tab.key)"
                 >
                     {{ tab.label }}
-                </button>
+                </Button>
             </div>
 
             <div
@@ -583,9 +585,10 @@ function presetRange(days: number): void {
                                         </div>
                                     </div>
                                     <p
+                                        data-typography="body"
                                         v-if="rangeError"
                                         role="alert"
-                                        class="mt-3 text-sm text-destructive"
+                                        class="mt-3 text-destructive"
                                     >
                                         {{ rangeError }}
                                     </p>
@@ -846,8 +849,9 @@ function presetRange(days: number): void {
                         />
                     </div>
                     <p
+                        data-typography="body"
                         v-if="unlockError"
-                        class="text-sm text-destructive"
+                        class="text-destructive"
                         role="alert"
                     >
                         {{ unlockError }}

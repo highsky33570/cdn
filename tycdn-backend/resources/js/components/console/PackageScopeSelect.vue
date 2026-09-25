@@ -62,7 +62,11 @@ function select(id: string, checked: boolean) {
                 @select.prevent
                 >{{ item.name }}</DropdownMenuCheckboxItem
             >
-            <p v-if="!choices.length" class="p-3 text-sm text-muted-foreground">
+            <p
+                data-typography="body"
+                v-if="!choices.length"
+                class="p-3 text-muted-foreground"
+            >
                 暂无选项
             </p></DropdownMenuContent
         ></DropdownMenu

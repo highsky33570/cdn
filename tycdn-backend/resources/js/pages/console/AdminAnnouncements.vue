@@ -482,7 +482,12 @@ async function mutate(ids: (string | number)[], visible?: boolean) {
                             :disabled="busy"
                             class="space-y-5 rounded-xl border bg-muted/10 p-4 md:p-5"
                         >
-                            <h3 class="section-heading">基础信息</h3>
+                            <h3
+                                data-typography="section-title"
+                                class="section-heading"
+                            >
+                                基础信息
+                            </h3>
                             <div class="form-row">
                                 <Label for="anno-title">标题：</Label
                                 ><Input
@@ -556,7 +561,12 @@ async function mutate(ids: (string | number)[], visible?: boolean) {
                             :disabled="busy"
                             class="space-y-5 rounded-xl border bg-muted/10 p-4 md:p-5"
                         >
-                            <h3 class="section-heading">展示状态</h3>
+                            <h3
+                                data-typography="section-title"
+                                class="section-heading"
+                            >
+                                展示状态
+                            </h3>
                             <div class="form-row">
                                 <Label for="anno-show">显示：</Label>
                                 <div class="flex items-center gap-3">

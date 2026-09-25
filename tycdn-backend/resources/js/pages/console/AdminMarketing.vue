@@ -616,22 +616,27 @@ const detailLabels = {
                         @click="history ? showDetails(row) : edit(row)"
                         >{{ history ? row.code : row.name }}</Button
                     >
-                    <p class="mt-1 text-xs text-muted-foreground">
+                    <p
+                        data-typography="helper"
+                        class="mt-1 text-muted-foreground"
+                    >
                         ID: {{ history ? row.coupon_id : row.id
                         }}<template v-if="tab === 'coupons'">
                             / {{ row.code }}</template
                         >
                     </p>
                     <p
+                        data-typography="helper"
                         v-if="tab === 'discounts'"
-                        class="mt-1 text-xs text-muted-foreground"
+                        class="mt-1 text-muted-foreground"
                     >
                         优先级: {{ row.priority ?? 100 }} / 用户组:
                         {{ row.user_group || '全部用户' }}
                     </p>
                     <p
+                        data-typography="helper"
                         v-if="!history && row.des"
-                        class="mt-1 max-w-64 truncate text-xs text-muted-foreground"
+                        class="mt-1 max-w-64 truncate text-muted-foreground"
                         :title="String(row.des)"
                     >
                         {{ row.des }}
@@ -654,19 +659,31 @@ const detailLabels = {
                             )
                         }}<template
                             v-if="tab === 'discounts' && row.cate === 'package'"
-                            ><p class="mt-1 text-xs text-muted-foreground">
+                            ><p
+                                data-typography="helper"
+                                class="mt-1 text-muted-foreground"
+                            >
                                 季价: {{ formatMoney(row.quarter_price) }}
                             </p>
-                            <p class="mt-1 text-xs text-muted-foreground">
+                            <p
+                                data-typography="helper"
+                                class="mt-1 text-muted-foreground"
+                            >
                                 年价: {{ formatMoney(row.year_price) }}
                             </p></template
                         ></template
                     ><template v-if="tab === 'coupons'"
-                        ><p class="mt-1 text-xs text-muted-foreground">
+                        ><p
+                            data-typography="helper"
+                            class="mt-1 text-muted-foreground"
+                        >
                             已用: {{ row.used_times ?? 0 }} /
                             {{ row.max_times ?? '不限' }}
                         </p>
-                        <p class="mt-1 text-xs text-muted-foreground">
+                        <p
+                            data-typography="helper"
+                            class="mt-1 text-muted-foreground"
+                        >
                             原价门槛:
                             {{
                                 row.price_gt === null ||
@@ -678,7 +695,7 @@ const detailLabels = {
                     ></template
                 >
                 <template #cell-dates="{ row }"
-                    ><p class="text-xs">
+                    ><p data-typography="helper" class="">
                         开始:
                         {{
                             row.start_at
@@ -686,7 +703,10 @@ const detailLabels = {
                                 : '立即生效'
                         }}
                     </p>
-                    <p class="mt-1 text-xs text-muted-foreground">
+                    <p
+                        data-typography="helper"
+                        class="mt-1 text-muted-foreground"
+                    >
                         结束:
                         {{
                             row.end_at
@@ -706,8 +726,13 @@ const detailLabels = {
                     ></template
                 >
                 <template #cell-price="{ row }"
-                    ><p>{{ formatMoney(row.real_price) }}</p>
-                    <p class="mt-1 text-xs text-muted-foreground">
+                    ><p data-typography="body">
+                        {{ formatMoney(row.real_price) }}
+                    </p>
+                    <p
+                        data-typography="helper"
+                        class="mt-1 text-muted-foreground"
+                    >
                         原价: {{ formatMoney(row.orgin_price) }}
                     </p></template
                 >
@@ -766,6 +791,7 @@ const detailLabels = {
                     ></DialogHeader
                 >
                 <p
+                    data-typography="body"
                     v-if="editorLoading"
                     class="py-8 text-center text-muted-foreground"
                 >
@@ -997,7 +1023,8 @@ const detailLabels = {
                                         @update:checked="form.persist = $event"
                                     />
                                     <p
-                                        class="text-xs leading-5 text-muted-foreground"
+                                        data-typography="helper"
+                                        class="leading-5 text-muted-foreground"
                                     >
                                         开启后，用户使用此优惠码购买或续费时，下次续费直接享受优惠价而无需输入优惠码。
                                     </p>
@@ -1094,7 +1121,10 @@ const detailLabels = {
                                     type="datetime-local"
                                     step="1"
                                 />
-                                <p class="text-xs text-muted-foreground">
+                                <p
+                                    data-typography="helper"
+                                    class="text-muted-foreground"
+                                >
                                     留空立即生效
                                 </p>
                             </div>
@@ -1108,7 +1138,10 @@ const detailLabels = {
                                     type="datetime-local"
                                     step="1"
                                 />
-                                <p class="text-xs text-muted-foreground">
+                                <p
+                                    data-typography="helper"
+                                    class="text-muted-foreground"
+                                >
                                     留空永久生效
                                 </p>
                             </div>
@@ -1203,7 +1236,7 @@ const detailLabels = {
     border: 1px solid var(--border);
     background: var(--muted);
     color: var(--muted-foreground);
-    font-size: 0.875rem;
+    font-size: var(--console-text-body);
 }
 .marketing-unit {
     border-left: 0;

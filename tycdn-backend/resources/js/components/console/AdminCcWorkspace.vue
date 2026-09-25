@@ -10,6 +10,7 @@ import { computed, onMounted, onUnmounted, reactive, ref } from 'vue';
 import { toast } from 'vue-sonner';
 import ConfirmDeleteDialog from '@/components/console/ConfirmDeleteDialog.vue';
 import ConsolePagination from '@/components/console/ConsolePagination.vue';
+import { Button } from '@/components/ui/button';
 import CheckboxField from '@/components/ui/checkbox/CheckboxField.vue';
 import {
     DropdownMenu,
@@ -225,7 +226,10 @@ async function remove() {
 <template>
     <section class="cc-workspace rounded-xl border bg-card p-3 shadow-sm">
         <nav role="tablist" aria-label="CC规则" class="cc-tabs">
-            <button
+            <Button
+                variant="ghost"
+                type="button"
+                data-slot="console-tab"
                 v-for="item in ccKinds"
                 :key="item.key"
                 role="tab"
@@ -234,33 +238,39 @@ async function remove() {
                 @click="selectKind(item.key)"
             >
                 {{ item.label }}
-            </button>
+            </Button>
         </nav>
         <div role="tabpanel" :aria-busy="loading">
             <div class="toolbar" :class="{ 'rule-toolbar': kind === 'rule' }">
-                <button
+                <Button
+                    variant="default"
+                    type="button"
                     data-slot="console-action"
                     class="primary"
                     :disabled="busy"
                     @click="emit('create', kind)"
                 >
-                    <Plus />添加{{ label }}</button
-                ><button
+                    <Plus />添加{{ label }}</Button
+                ><Button
+                    variant="outline"
+                    type="button"
                     data-slot="console-action"
                     v-if="kind === 'rule'"
                     :disabled="loading || busy"
                     @click="load()"
                 >
-                    <RefreshCw />刷新</button
+                    <RefreshCw />刷新</Button
                 ><DropdownMenu
                     ><DropdownMenuTrigger as-child
-                        ><button
+                        ><Button
+                            variant="outline"
+                            type="button"
                             data-slot="console-action"
                             :class="{ 'ml-auto': kind === 'rule' }"
                             :disabled="busy"
                         >
                             {{ kind === 'rule' ? '批量操作' : '更多操作' }}
-                            <ChevronDown /></button></DropdownMenuTrigger
+                            <ChevronDown /></Button></DropdownMenuTrigger
                     ><DropdownMenuContent align="end"
                         ><DropdownMenuItem
                             :disabled="!selected.length || busy"
@@ -350,17 +360,20 @@ async function remove() {
                         inputmode="numeric"
                         @change="load(1)" /></label
                 ><template v-else
-                    ><button
+                    ><Button
+                        variant="outline"
                         data-slot="console-action"
                         type="button"
                         :aria-expanded="advanced"
                         @click="advanced = !advanced"
                     >
-                        <Filter />更多筛选</button
+                        <Filter />更多筛选</Button
                     ><span class="muted"
                         >已筛选 <b>{{ activeFilters }}</b> 项</span
                     ></template
-                ><button
+                ><Button
+                    variant="link"
+                    size="inline"
                     data-slot="console-link"
                     v-if="kind === 'rule'"
                     type="button"
@@ -369,7 +382,7 @@ async function remove() {
                     @click="clearFilters"
                 >
                     清除
-                </button>
+                </Button>
             </form>
             <form
                 v-if="advanced && kind !== 'rule'"
@@ -384,13 +397,17 @@ async function remove() {
                         placeholder="请输入用户ID"
                         :disabled="busy"
                         inputmode="numeric" /></label
-                ><button
+                ><Button
+                    variant="default"
+                    type="submit"
                     data-slot="console-action"
                     class="primary"
                     :disabled="busy"
                 >
-                    查询</button
-                ><button
+                    查询</Button
+                ><Button
+                    variant="link"
+                    size="inline"
                     data-slot="console-link"
                     type="button"
                     class="link"
@@ -398,18 +415,26 @@ async function remove() {
                     @click="clearFilters"
                 >
                     清除
-                </button>
+                </Button>
             </form>
-            <p v-if="error" role="alert" class="error-message">
+            <p
+                data-typography="body"
+                v-if="error"
+                role="alert"
+                class="error-message"
+            >
                 {{ error }}
-                <button
+                <Button
+                    variant="link"
+                    size="inline"
+                    type="button"
                     data-slot="console-link"
                     class="link"
                     :disabled="busy"
                     @click="load()"
                 >
                     重试
-                </button>
+                </Button>
             </p>
             <div v-if="kind === 'rule'" class="summary">
                 <span
@@ -482,14 +507,17 @@ async function remove() {
                             <td>{{ row.id }}</td>
                             <template v-if="kind === 'rule'"
                                 ><td class="rule-name">
-                                    <button
+                                    <Button
+                                        variant="link"
+                                        size="inline"
+                                        type="button"
                                         data-slot="console-link"
                                         class="link"
                                         :disabled="busy"
                                         @click="emit('manage', kind, row)"
                                     >
                                         {{ row.name }}
-                                    </button>
+                                    </Button>
                                     <div class="subline">
                                         {{
                                             ccSystem(row)
@@ -535,13 +563,17 @@ async function remove() {
                                     }}
                                 </td>
                                 <td class="resource-name">
-                                    <button
+                                    <Button
+                                        variant="link"
+                                        size="inline"
+                                        type="button"
+                                        data-slot="console-link"
                                         class="name-button"
                                         :disabled="busy"
                                         @click="emit('manage', kind, row)"
                                     >
                                         {{ row.name }}
-                                    </button>
+                                    </Button>
                                 </td>
                                 <td>
                                     <span class="pill source">{{
@@ -568,16 +600,22 @@ async function remove() {
                             </td>
                             <td>
                                 <div class="row-actions">
-                                    <button
+                                    <Button
+                                        variant="link"
+                                        size="inline"
+                                        type="button"
                                         data-slot="console-link"
                                         class="link"
                                         :disabled="busy"
                                         @click="emit('manage', kind, row)"
                                     >
-                                        管理</button
+                                        管理</Button
                                     ><DropdownMenu
                                         ><DropdownMenuTrigger as-child
-                                            ><button
+                                            ><Button
+                                                variant="link"
+                                                size="inline"
+                                                type="button"
                                                 data-slot="console-link"
                                                 class="link row-more"
                                                 :aria-label="`更多操作 ${row.id}`"
@@ -587,8 +625,7 @@ async function remove() {
                                                     >更多
                                                     <ChevronDown /></template
                                                 ><MoreHorizontal
-                                                    v-else
-                                                /></button></DropdownMenuTrigger
+                                                    v-else /></Button></DropdownMenuTrigger
                                         ><DropdownMenuContent align="end"
                                             ><DropdownMenuItem
                                                 v-if="
@@ -651,7 +688,7 @@ async function remove() {
 </template>
 <style scoped>
 .cc-workspace {
-    font-size: 12px;
+    font-size: var(--console-text-body);
     min-width: 0;
 }
 .cc-tabs {
@@ -672,7 +709,7 @@ async function remove() {
 button,
 input,
 :deep([data-slot='select-trigger']) {
-    font-size: 12px;
+    font-size: var(--console-text-body);
     border: 1px solid var(--border);
     background: var(--card);
     border-radius: 3px;
@@ -755,7 +792,7 @@ input:focus-visible,
     padding: 4px 6px;
     background: color-mix(in srgb, var(--muted) 60%, var(--card));
     white-space: nowrap;
-    font-size: 11px;
+    font-size: var(--console-text-body);
 }
 .input-group input {
     border: 0;
@@ -768,14 +805,14 @@ input:focus-visible,
 }
 .filter-bar button {
     min-height: 27px;
-    font-size: 11px;
+    font-size: var(--console-text-body);
     padding: 4px 9px;
 }
 .filter-bar .link {
     padding: 0;
 }
 .filter-bar .muted {
-    font-size: 11px;
+    font-size: var(--console-text-helper);
 }
 .muted,
 .subline {
@@ -805,13 +842,13 @@ b {
     display: inline-block;
     border-radius: 14px;
     padding: 2px 8px;
-    font-size: 10px;
+    font-size: var(--console-text-helper);
     line-height: 16px;
     background: color-mix(in srgb, var(--muted) 65%, var(--card));
     white-space: nowrap;
 }
 .summary .pill {
-    font-size: 11px;
+    font-size: var(--console-text-helper);
     padding: 3px 11px;
 }
 .summary .all b,
@@ -838,7 +875,7 @@ table {
     white-space: nowrap;
 }
 th {
-    font-size: 12px;
+    font-size: var(--console-text-body);
     font-weight: 500;
     height: 33px;
     background: color-mix(in srgb, var(--muted) 20%, var(--card));
@@ -848,7 +885,7 @@ th {
 td {
     height: 40px;
     padding: 2px 10px;
-    font-size: 11px;
+    font-size: var(--console-text-body);
     border-bottom: 1px solid var(--border);
 }
 .selection {
@@ -874,7 +911,7 @@ th:nth-child(2) {
     min-width: 180px;
 }
 .subline {
-    font-size: 10px;
+    font-size: var(--console-text-helper);
     line-height: 17px;
 }
 .rule-name .link {
@@ -885,7 +922,7 @@ th:nth-child(2) {
     padding: 0;
     min-height: 0;
     background: transparent;
-    font-size: 11px;
+    font-size: var(--console-text-body);
 }
 .source {
     color: color-mix(in srgb, #2d8cf0 35%, var(--foreground));

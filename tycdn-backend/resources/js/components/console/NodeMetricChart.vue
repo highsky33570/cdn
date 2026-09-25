@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
+import { Button } from '@/components/ui/button';
 import { nodeDate, nodeValue } from '@/lib/nodeRealtime';
 import type { NodeChart, NodePoint } from '@/lib/nodeRealtime';
 const props = defineProps<{
@@ -124,12 +125,17 @@ function toggle(name: string) {
         :aria-label="`${chart.title}图表`"
     >
         <div class="relative flex flex-wrap items-center gap-3">
-            <h3 class="text-sm font-semibold">{{ chart.title }}</h3>
+            <h3 data-typography="section-title" class="font-semibold">
+                {{ chart.title }}
+            </h3>
             <div
                 v-if="chart.series.length > 1"
                 class="flex flex-1 justify-center gap-4 text-xs text-muted-foreground"
             >
-                <button
+                <Button
+                    variant="link"
+                    size="inline"
+                    data-slot="console-link"
                     v-for="(line, i) in chart.series"
                     :key="line.name"
                     type="button"
@@ -142,7 +148,7 @@ function toggle(name: string) {
                         class="inline-block h-2 w-4 rounded-full border-2"
                         :style="{ borderColor: colors[i % colors.length] }"
                     />{{ line.name }}
-                </button>
+                </Button>
             </div>
         </div>
         <div ref="container" class="relative mt-2 min-w-0">
@@ -234,8 +240,14 @@ function toggle(name: string) {
                     left: `${Math.max(0, Math.min(x(hover) + 12, width - 210))}px`,
                 }"
             >
-                <p class="mb-1">{{ nodeDate(new Date(hover)) }}</p>
-                <p v-for="line in selected" :key="line.name">
+                <p data-typography="body" class="mb-1">
+                    {{ nodeDate(new Date(hover)) }}
+                </p>
+                <p
+                    data-typography="body"
+                    v-for="line in selected"
+                    :key="line.name"
+                >
                     <span :style="{ color: line.color }">●</span>
                     {{ line.name }}:
                     {{

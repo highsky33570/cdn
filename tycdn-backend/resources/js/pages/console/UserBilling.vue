@@ -1666,7 +1666,9 @@ function trafficPackMetric(record: CdnflyRecord): string {
                 </DialogHeader>
 
                 <div class="flex gap-6 border-b">
-                    <button
+                    <Button
+                        variant="ghost"
+                        data-slot="console-tab"
                         type="button"
                         class="-mb-px border-b-2 px-4 py-2 text-sm transition-colors"
                         :class="
@@ -1677,8 +1679,10 @@ function trafficPackMetric(record: CdnflyRecord): string {
                         @click="usageTab = 'usage'"
                     >
                         使用情况
-                    </button>
-                    <button
+                    </Button>
+                    <Button
+                        variant="ghost"
+                        data-slot="console-tab"
                         type="button"
                         class="-mb-px border-b-2 px-4 py-2 text-sm transition-colors"
                         :class="
@@ -1689,7 +1693,7 @@ function trafficPackMetric(record: CdnflyRecord): string {
                         @click="usageTab = 'details'"
                     >
                         套餐详情
-                    </button>
+                    </Button>
                 </div>
 
                 <div class="grid min-h-80 gap-4">

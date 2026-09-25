@@ -546,7 +546,10 @@ onUnmounted(() => {
                         ></template
                     >
                     <template #cell-data="{ row }"
-                        ><button
+                        ><Button
+                            variant="link"
+                            size="inline"
+                            data-slot="console-link"
                             v-if="more(row)"
                             type="button"
                             class="block max-w-40 truncate text-left text-primary hover:underline"
@@ -554,7 +557,7 @@ onUnmounted(() => {
                             :aria-label="`订单 ${row.id} 更多信息`"
                             @click="showMore(row)"
                         >
-                            {{ more(row) }}</button
+                            {{ more(row) }}</Button
                         ><span v-else>—</span></template
                     >
                     <template #cell-state="{ row }"
@@ -811,7 +814,8 @@ onUnmounted(() => {
                     ></DialogHeader
                 >
                 <p
-                    class="max-h-[60dvh] overflow-auto text-sm break-words whitespace-pre-wrap"
+                    data-typography="body"
+                    class="max-h-[60dvh] overflow-auto break-words whitespace-pre-wrap"
                 >
                     {{ moreText }}
                 </p>

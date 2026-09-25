@@ -294,7 +294,11 @@ const activeProps = computed(() =>
         :key="props.moduleKey"
         v-bind="activeProps"
     />
-    <p v-else class="rounded-lg border bg-card p-6 text-muted-foreground">
+    <p
+        data-typography="body"
+        v-else
+        class="rounded-lg border bg-card p-6 text-muted-foreground"
+    >
         页面不存在，请从菜单选择功能。
     </p>
 </template>

@@ -349,7 +349,9 @@ onMounted(load);
             class="monitor-panel rounded-xl border bg-card p-5 text-card-foreground shadow-sm"
         >
             <div class="mb-3 flex items-center justify-between gap-3">
-                <h2 class="text-base font-semibold">节点监控设置</h2>
+                <h2 data-typography="page-title" class="font-semibold">
+                    节点监控设置
+                </h2>
                 <span
                     v-if="saving"
                     role="status"
@@ -367,7 +369,10 @@ onMounted(load);
                 aria-label="节点监控设置"
                 class="mb-4 flex gap-1"
             >
-                <button
+                <Button
+                    variant="ghost"
+                    type="button"
+                    data-slot="console-tab"
                     v-for="item in [
                         { key: 'monitor', label: '监控配置' },
                         { key: 'notify', label: '通知配置' },
@@ -385,35 +390,55 @@ onMounted(load);
                     @click="switchTab(item.key)"
                 >
                     {{ item.label }}
-                </button>
+                </Button>
             </div>
             <p
+                data-typography="body"
                 v-if="saveError"
                 role="alert"
-                class="mb-4 text-sm text-destructive"
+                class="mb-4 text-destructive"
             >
                 {{ saveError }}
-                <button class="underline" :disabled="saving" @click="save">
+                <Button
+                    variant="link"
+                    size="inline"
+                    type="button"
+                    data-slot="console-link"
+                    class="underline"
+                    :disabled="saving"
+                    @click="save"
+                >
                     重试保存
-                </button>
+                </Button>
             </p>
             <template v-if="tab !== 'logs'">
                 <div v-if="loading" class="py-16">
                     <Spinner class="mx-auto" />
                 </div>
                 <p
+                    data-typography="body"
                     v-else-if="loadError"
                     role="alert"
-                    class="text-sm text-destructive"
+                    class="text-destructive"
                 >
                     {{ loadError }}
-                    <button class="underline" @click="load">重试加载</button>
+                    <Button
+                        variant="link"
+                        size="inline"
+                        type="button"
+                        data-slot="console-link"
+                        class="underline"
+                        @click="load"
+                        >重试加载</Button
+                    >
                 </p>
                 <div v-else-if="config" class="max-w-[1050px] space-y-4">
                     <template v-if="tab === 'monitor'">
                         <section class="settings-section">
                             <div class="flex justify-between">
-                                <h3>探测基础</h3>
+                                <h3 data-typography="section-title">
+                                    探测基础
+                                </h3>
                                 <span
                                     class="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2 py-1 text-xs text-emerald-600 dark:text-emerald-400"
                                     >{{
@@ -423,7 +448,7 @@ onMounted(load);
                                     }}</span
                                 >
                             </div>
-                            <p class="section-hint">
+                            <p data-typography="helper" class="section-hint">
                                 配置节点默认探测方式和请求参数，新建节点会优先沿用这里的默认值。
                             </p>
                             <div class="form-row">
@@ -523,8 +548,8 @@ onMounted(load);
                             ></template>
                         </section>
                         <section class="settings-section">
-                            <h3>判定策略</h3>
-                            <p class="section-hint">
+                            <h3 data-typography="section-title">判定策略</h3>
+                            <p data-typography="helper" class="section-hint">
                                 设置失败阈值和处理动作，决定节点在异常时是否自动暂停。
                             </p>
                             <div class="form-row items-start">
@@ -540,7 +565,8 @@ onMounted(load);
                                         "
                                     />
                                     <p
-                                        class="mt-2 max-w-[640px] rounded border bg-card p-2 text-xs leading-6 text-muted-foreground"
+                                        data-typography="helper"
+                                        class="mt-2 max-w-[640px] rounded border bg-card p-2 leading-6 text-muted-foreground"
                                     >
                                         选择多个监控组时，任意一个监控组里的监控点失败比率高于设定的值，则会禁用此节点。比如选择电信、联通和移动组，表示节点在电信、联通和移动三个运营商的任意一个运营商不可用，则会禁用此节点。
                                     </p>
@@ -609,8 +635,8 @@ onMounted(load);
                     </template>
                     <template v-else>
                         <section class="settings-section">
-                            <h3>通知渠道</h3>
-                            <p class="section-hint">
+                            <h3 data-typography="section-title">通知渠道</h3>
+                            <p data-typography="helper" class="section-hint">
                                 选择发送时间、接收方式和订阅事件，修改后会自动保存。
                             </p>
                             <div class="form-row items-start">
@@ -690,8 +716,8 @@ onMounted(load);
                             </div>
                         </section>
                         <section class="settings-section">
-                            <h3>通知模板</h3>
-                            <p class="section-hint">
+                            <h3 data-typography="section-title">通知模板</h3>
+                            <p data-typography="helper" class="section-hint">
                                 按通知类型维护邮件正文或短信模板
                                 ID，短信模式可复制转换后的模板内容。
                             </p>
@@ -707,8 +733,9 @@ onMounted(load);
                                 />
                             </div>
                             <p
+                                data-typography="body"
                                 v-if="smsError && templateType === 'sms'"
-                                class="mb-3 text-sm text-destructive"
+                                class="mb-3 text-destructive"
                             >
                                 {{ smsError }}
                             </p>
@@ -830,21 +857,33 @@ onMounted(load);
                             @change="loadLogs(1)"
                         />
                     </div>
-                    <button
+                    <Button
+                        variant="link"
+                        size="inline"
+                        data-slot="console-link"
                         type="button"
                         class="text-sm text-primary"
                         @click="clearFilters"
                     >
                         清除
-                    </button>
+                    </Button>
                 </form>
                 <p
+                    data-typography="body"
                     v-if="logError"
                     role="alert"
-                    class="mb-3 text-sm text-destructive"
+                    class="mb-3 text-destructive"
                 >
                     {{ logError }}
-                    <button class="underline" @click="loadLogs()">重试</button>
+                    <Button
+                        variant="link"
+                        size="inline"
+                        type="button"
+                        data-slot="console-link"
+                        class="underline"
+                        @click="loadLogs()"
+                        >重试</Button
+                    >
                 </p>
                 <div class="overflow-x-auto">
                     <table class="w-full min-w-[950px] text-left text-sm">
@@ -888,7 +927,11 @@ onMounted(load);
                                 <td>{{ log.ip }}</td>
                                 <td>{{ log.action }}</td>
                                 <td>
-                                    <button
+                                    <Button
+                                        variant="link"
+                                        size="inline"
+                                        type="button"
+                                        data-slot="console-link"
                                         class="text-primary"
                                         @click="
                                             detail = log;
@@ -896,7 +939,7 @@ onMounted(load);
                                         "
                                     >
                                         通知详情
-                                    </button>
+                                    </Button>
                                 </td>
                             </tr>
                             <tr v-if="!logLoading && !logs.length">
@@ -937,7 +980,10 @@ onMounted(load);
                         :key="channel.key"
                         class="rounded border p-4"
                     >
-                        <h3 class="mb-3 font-semibold">
+                        <h3
+                            data-typography="section-title"
+                            class="mb-3 font-semibold"
+                        >
                             {{ channel.label }} ·
                             {{ channelStatus(channel.key) }}
                         </h3>
@@ -957,7 +1003,10 @@ onMounted(load);
                             <dt>发送时间</dt>
                             <dd>{{ detail[channel.key + '_time'] || '--' }}</dd>
                         </dl>
-                        <p class="mt-4 text-sm break-all whitespace-pre-wrap">
+                        <p
+                            data-typography="body"
+                            class="mt-4 break-all whitespace-pre-wrap"
+                        >
                             {{
                                 textValue(detail[channel.key + '_ret']) || '--'
                             }}
@@ -977,7 +1026,7 @@ onMounted(load);
     padding: 16px;
 }
 .settings-section h3 {
-    font-size: 14px;
+    font-size: var(--console-text-section-title);
     font-weight: 600;
     display: flex;
     align-items: center;
@@ -991,7 +1040,7 @@ onMounted(load);
     border-radius: 2px;
 }
 .section-hint {
-    font-size: 12px;
+    font-size: var(--console-text-helper);
     color: var(--muted-foreground);
     margin: 6px 0 16px;
 }
@@ -1034,7 +1083,7 @@ onMounted(load);
     border: 1px solid var(--border);
     border-left: 0;
     padding: 0 8px;
-    font-size: 12px;
+    font-size: var(--console-text-body);
     border-radius: 0 4px 4px 0;
     background: var(--card);
 }
@@ -1045,7 +1094,7 @@ onMounted(load);
     border: 1px solid var(--border);
     border-right: 0;
     padding: 0 8px;
-    font-size: 13px;
+    font-size: var(--console-text-body);
     font-weight: 400;
     background: var(--card);
 }
@@ -1071,7 +1120,7 @@ onMounted(load);
         padding: 12px;
     }
     .template-label {
-        font-size: 11px;
+        font-size: var(--console-text-body);
         padding: 0 4px;
     }
 }

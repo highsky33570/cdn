@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { reactive, ref, watch } from 'vue';
 import { toast } from 'vue-sonner';
+import { Button } from '@/components/ui/button';
 import CheckboxField from '@/components/ui/checkbox/CheckboxField.vue';
 import {
     Dialog,
@@ -343,7 +344,9 @@ async function save() {
                     role="tablist"
                     aria-label="编辑节点设置"
                 >
-                    <button
+                    <Button
+                        variant="ghost"
+                        data-slot="console-tab"
                         v-for="item in tabs"
                         :key="item.key"
                         type="button"
@@ -353,28 +356,33 @@ async function save() {
                         @click="selectTab(item.key)"
                     >
                         {{ item.label }}
-                    </button>
+                    </Button>
                 </div>
                 <p
+                    data-typography="helper"
                     v-if="loading"
-                    class="p-6 text-center text-xs text-muted-foreground"
+                    class="p-6 text-center text-muted-foreground"
                 >
                     加载中…
                 </p>
                 <p
+                    data-typography="helper"
                     v-if="error"
                     role="alert"
-                    class="mb-3 text-xs text-destructive"
+                    class="mb-3 text-destructive"
                 >
                     {{ error }}
-                    <button
+                    <Button
+                        variant="link"
+                        size="inline"
+                        data-slot="console-link"
                         v-if="!detail.id"
                         type="button"
                         class="underline"
                         @click="loadDetail"
                     >
                         重试
-                    </button>
+                    </Button>
                 </p>
                 <form v-if="!loading && detail.id" @submit.prevent="save">
                     <fieldset :disabled="saving" class="min-w-0">
@@ -407,7 +415,7 @@ async function save() {
                                     v-model="basic.ip"
                                     required
                                 />
-                                <p class="help">
+                                <p data-typography="helper" class="help">
                                     如果新IP是不同节点，请使用待初始化里的替换节点功能
                                 </p>
                             </div>
@@ -428,31 +436,36 @@ async function save() {
                                         />L2中间节点</label
                                     >
                                 </RadioGroup>
-                                <p class="help">
+                                <p data-typography="helper" class="help">
                                     L1边缘节点是用户实际访问的节点;<br />L2中间节点是L1与源服务器之间的节点，用于汇聚L1节点请求，提高缓存命中率，或者优化回源线路
                                 </p>
                             </div>
                         </div>
                         <template v-else-if="tab === 'config'">
                             <p
+                                data-typography="helper"
                                 v-if="configLoading"
-                                class="p-6 text-center text-xs text-muted-foreground"
+                                class="p-6 text-center text-muted-foreground"
                             >
                                 加载中…
                             </p>
                             <p
+                                data-typography="helper"
                                 v-else-if="configError"
                                 role="alert"
-                                class="text-xs text-destructive"
+                                class="text-destructive"
                             >
                                 {{ configError }}
-                                <button
+                                <Button
+                                    variant="link"
+                                    size="inline"
+                                    data-slot="console-link"
                                     type="button"
                                     class="underline"
                                     @click="loadConfig"
                                 >
                                     重试加载
-                                </button>
+                                </Button>
                             </p>
                             <div v-else-if="configReady" class="edit-fields">
                                 <label for="edit-node-cache">缓存目录</label
@@ -484,7 +497,7 @@ async function save() {
                         </template>
                         <div v-else-if="tab === 'location'" class="edit-fields">
                             <span class="field-label">说明</span>
-                            <p class="help mt-0!">
+                            <p data-typography="helper" class="help mt-0!">
                                 这些数据用于条件源站和L2条件里的国家代码，省份，城市，ISP的匹配。默认由节点IP自动解析生成；只有IP库解析不准、节点实际出口/Anycast与管理IP不一致，或需要临时修正条件调度时才编辑。
                             </p>
                             <template
@@ -612,7 +625,8 @@ async function save() {
                             />
                         </div>
                         <div class="edit-actions mt-6 flex gap-2">
-                            <button
+                            <Button
+                                variant="default"
                                 data-slot="console-action"
                                 type="submit"
                                 class="primary"
@@ -622,15 +636,16 @@ async function save() {
                                         (!configReady || !!configError))
                                 "
                             >
-                                {{ saving ? '保存中…' : '确定' }}</button
-                            ><button
+                                {{ saving ? '保存中…' : '确定' }}</Button
+                            ><Button
+                                variant="outline"
                                 data-slot="console-action"
                                 type="button"
                                 class="cancel"
                                 @click="open = false"
                             >
                                 取消
-                            </button>
+                            </Button>
                         </div>
                     </fieldset>
                 </form>
@@ -646,7 +661,7 @@ async function save() {
     margin-bottom: -1px;
     white-space: nowrap;
     padding: 5px 12px;
-    font-size: 12px;
+    font-size: var(--console-text-body);
     border: 1px solid var(--border);
     border-radius: 3px 3px 0 0;
     background: var(--muted);
@@ -662,7 +677,7 @@ async function save() {
     grid-template-columns: 56px minmax(0, 1fr);
     gap: 22px 10px;
     align-items: start;
-    font-size: 12px;
+    font-size: var(--console-text-body);
 }
 .edit-fields > label,
 .field-label {
@@ -692,7 +707,7 @@ async function save() {
 }
 .help {
     margin-top: 5px;
-    font-size: 11px;
+    font-size: var(--console-text-helper);
     line-height: 1.7;
     color: var(--muted-foreground);
 }
@@ -723,7 +738,7 @@ async function save() {
     background: var(--muted);
     border: 1px solid var(--border);
     border-radius: 0 3px 3px 0;
-    font-size: 12px;
+    font-size: var(--console-text-body);
 }
 .input-group > * + * {
     margin-left: -1px;
@@ -737,7 +752,7 @@ async function save() {
 .edit-actions button {
     border-radius: 3px;
     padding: 5px 12px;
-    font-size: 12px;
+    font-size: var(--console-text-body);
 }
 .primary {
     background: #2d8cf0;

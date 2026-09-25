@@ -280,7 +280,7 @@ onMounted(() => {
 <template>
     <div class="console-page flex flex-1 flex-col gap-5 p-4 md:p-6">
         <div class="flex items-center justify-between">
-            <h1 class="text-xl font-semibold">
+            <h1 data-typography="page-title" class="font-semibold">
                 {{
                     settingsSections.find((t) => t.key === active)?.label ??
                     '系统配置'
@@ -309,13 +309,15 @@ onMounted(() => {
                 />
             </div>
             <p
+                data-typography="body"
                 v-if="error"
                 role="alert"
-                class="mb-4 rounded-lg border border-destructive/30 p-4 text-sm text-destructive"
+                class="mb-4 rounded-lg border border-destructive/30 p-4 text-destructive"
             >
                 {{ error }}
             </p>
             <p
+                data-typography="body"
                 v-if="loading"
                 role="status"
                 class="p-10 text-center text-muted-foreground"
@@ -323,6 +325,7 @@ onMounted(() => {
                 正在加载配置…
             </p>
             <p
+                data-typography="body"
                 v-else-if="!visible.length"
                 class="p-10 text-center text-muted-foreground"
             >
@@ -334,7 +337,8 @@ onMounted(() => {
                     :key="key(row)"
                     class="overflow-hidden rounded-lg border"
                 >
-                    <button
+                    <Button
+                        variant="outline"
                         data-slot="console-action"
                         type="button"
                         class="flex w-full items-center justify-between gap-3 bg-muted/30 px-4 py-3 text-left"
@@ -348,7 +352,7 @@ onMounted(() => {
                             {{ changed(row) ? '· 未保存' : '' }}
                             {{ expanded[key(row)] ? '−' : '＋' }}</span
                         >
-                    </button>
+                    </Button>
                     <form
                         v-if="expanded[key(row)]"
                         class="grid gap-4 p-5"
@@ -453,9 +457,10 @@ onMounted(() => {
                         :disabled="!!saving"
                     />
                     <p
+                        data-typography="body"
                         v-if="createError"
                         role="alert"
-                        class="text-sm text-destructive"
+                        class="text-destructive"
                     >
                         {{ createError }}
                     </p>

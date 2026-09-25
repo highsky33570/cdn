@@ -6,6 +6,7 @@ import AdminSiteWorkspace from '@/components/console/AdminSiteWorkspace.vue';
 import CertificateUserPicker from '@/components/console/CertificateUserPicker.vue';
 import ConfirmDeleteDialog from '@/components/console/ConfirmDeleteDialog.vue';
 import ConsolePagination from '@/components/console/ConsolePagination.vue';
+import { Button } from '@/components/ui/button';
 import CheckboxField from '@/components/ui/checkbox/CheckboxField.vue';
 import {
     Dialog,
@@ -644,7 +645,10 @@ async function saveEditor() {
     <div class="p-3 md:p-5">
         <section class="cert-workspace rounded-xl border bg-card p-4 shadow-sm">
             <nav role="tablist" aria-label="证书管理" class="cert-tabs">
-                <button
+                <Button
+                    variant="ghost"
+                    type="button"
+                    data-slot="console-tab"
                     v-for="item in tabs"
                     :key="item.key"
                     role="tab"
@@ -653,41 +657,53 @@ async function saveEditor() {
                     @click="selectTab(item.key)"
                 >
                     {{ item.label }}
-                </button>
+                </Button>
             </nav>
             <div v-if="tab === 'list'" role="tabpanel" :aria-busy="loading">
                 <p
+                    data-typography="body"
                     v-if="error"
                     role="alert"
                     class="mb-3 rounded border border-destructive/30 p-3 text-destructive"
                 >
                     {{ error }}
-                    <button
+                    <Button
+                        variant="link"
+                        size="inline"
+                        type="button"
                         data-slot="console-link"
                         class="link"
                         @click="load()"
                     >
                         重试
-                    </button>
+                    </Button>
                 </p>
                 <div class="toolbar">
-                    <button
+                    <Button
+                        variant="default"
+                        type="button"
                         data-slot="console-action"
                         class="primary"
                         @click="openEditor()"
                     >
-                        添加证书</button
-                    ><button
+                        添加证书</Button
+                    ><Button
+                        variant="outline"
+                        type="button"
                         data-slot="console-action"
                         :disabled="!selected.length || busy"
                         @click="batch('reissue')"
                     >
-                        重新申请</button
+                        重新申请</Button
                     ><DropdownMenu
                         ><DropdownMenuTrigger as-child
-                            ><button data-slot="console-action">
+                            ><Button
+                                variant="outline"
+                                type="button"
+                                data-slot="console-action"
+                            >
                                 更多操作
-                                <ChevronDown /></button></DropdownMenuTrigger
+                                <ChevronDown /></Button></DropdownMenuTrigger
                         ><DropdownMenuContent align="start"
                             ><DropdownMenuItem
                                 :disabled="!selected.length || busy"
@@ -727,23 +743,32 @@ async function saveEditor() {
                             v-model="search"
                             aria-label="搜索证书"
                             placeholder="输入域名,模糊搜索"
-                        /><button data-slot="console-action" class="primary">
+                        /><Button
+                            variant="default"
+                            type="submit"
+                            data-slot="console-action"
+                            class="primary"
+                        >
                             查询
-                        </button>
+                        </Button>
                     </form>
-                    <button
+                    <Button
+                        variant="outline"
+                        type="button"
                         data-slot="console-action"
                         :aria-expanded="filterOpen"
                         @click="filterOpen = !filterOpen"
                     >
-                        <Filter />筛选</button
-                    ><button
+                        <Filter />筛选</Button
+                    ><Button
+                        variant="outline"
+                        type="button"
                         data-slot="console-action"
                         :disabled="busy"
                         @click="exportRows"
                     >
                         <Download />导出
-                    </button>
+                    </Button>
                 </div>
                 <form
                     v-if="filterOpen"
@@ -791,18 +816,26 @@ async function saveEditor() {
                             <SelectOption value="failed">同步失败</SelectOption>
                         </SelectField></label
                     ><label>DNS API ID<Input v-model="filters.dnsapi" /></label
-                    ><button data-slot="console-action" class="primary">
-                        查询</button
-                    ><button
+                    ><Button
+                        variant="default"
+                        type="submit"
+                        data-slot="console-action"
+                        class="primary"
+                    >
+                        查询</Button
+                    ><Button
+                        variant="outline"
                         data-slot="console-action"
                         type="button"
                         @click="clearFilters"
                     >
                         清除
-                    </button>
+                    </Button>
                 </form>
                 <div class="summary">
-                    <button
+                    <Button
+                        variant="outline"
+                        type="button"
                         data-slot="console-action"
                         v-for="item in summaryItems"
                         :key="item.key"
@@ -819,7 +852,7 @@ async function saveEditor() {
                                       : 'text-emerald-500'
                             "
                             >{{ summary[item.key] }}</b
-                        ></button
+                        ></Button
                     ><span class="muted ml-auto">统计当前页</span>
                 </div>
                 <div class="table-scroll">
@@ -880,33 +913,42 @@ async function saveEditor() {
                                 </td>
                                 <td class="cert-info">
                                     <div class="copy-line">
-                                        <button
+                                        <Button
+                                            variant="link"
+                                            size="inline"
+                                            type="button"
                                             data-slot="console-link"
                                             class="link cert-name"
                                             :title="String(row.name ?? '')"
                                             @click="openEditor(row)"
                                         >
-                                            {{ row.name || '—' }}</button
-                                        ><button
+                                            {{ row.name || '—' }}</Button
+                                        ><Button
+                                            variant="ghost"
+                                            size="icon-sm"
+                                            type="button"
                                             class="copy"
                                             :aria-label="`复制证书名称 ${row.id}`"
                                             @click="copy(row.name)"
                                         >
                                             <Copy />
-                                        </button>
+                                        </Button>
                                     </div>
                                     <div class="copy-line subline">
                                         <span
                                             class="truncate"
                                             :title="String(row.domain ?? '')"
                                             >域名: {{ row.domain || '—' }}</span
-                                        ><button
+                                        ><Button
+                                            variant="ghost"
+                                            size="icon-sm"
+                                            type="button"
                                             class="copy"
                                             :aria-label="`复制域名 ${row.id}`"
                                             @click="copy(row.domain)"
                                         >
                                             <Copy />
-                                        </button>
+                                        </Button>
                                     </div>
                                 </td>
                                 <td>
@@ -969,13 +1011,19 @@ async function saveEditor() {
                                 </td>
                                 <td>
                                     <div class="actions">
-                                        <button
+                                        <Button
+                                            variant="link"
+                                            size="inline"
+                                            type="button"
                                             data-slot="console-link"
                                             class="link"
                                             @click="openEditor(row)"
                                         >
-                                            管理</button
-                                        ><button
+                                            管理</Button
+                                        ><Button
+                                            variant="link"
+                                            size="inline"
+                                            type="button"
                                             data-slot="console-link"
                                             v-if="row.type !== 'custom'"
                                             class="link"
@@ -986,16 +1034,19 @@ async function saveEditor() {
                                                 ])
                                             "
                                         >
-                                            重新申请</button
+                                            重新申请</Button
                                         ><DropdownMenu
                                             ><DropdownMenuTrigger as-child
-                                                ><button
+                                                ><Button
+                                                    variant="link"
+                                                    size="inline"
+                                                    type="button"
                                                     data-slot="console-link"
                                                     class="link"
                                                     :aria-label="`更多操作 ${row.id}`"
                                                 >
                                                     更多
-                                                    <ChevronDown /></button></DropdownMenuTrigger
+                                                    <ChevronDown /></Button></DropdownMenuTrigger
                                             ><DropdownMenuContent align="end"
                                                 ><DropdownMenuItem
                                                     :disabled="busy"
@@ -1074,16 +1125,24 @@ async function saveEditor() {
                         @select="chooseDefaultUser"
                     />
                 </div>
-                <p v-if="defaultError" role="alert" class="text-destructive">
+                <p
+                    data-typography="body"
+                    v-if="defaultError"
+                    role="alert"
+                    class="text-destructive"
+                >
                     {{ defaultError }}
-                    <button
+                    <Button
+                        variant="link"
+                        size="inline"
+                        type="button"
                         data-slot="console-link"
                         v-if="!defaultReady"
                         class="link"
                         @click="loadDefaults"
                     >
                         重试
-                    </button>
+                    </Button>
                 </p>
                 <div class="setting-row">
                     <span>证书类型</span
@@ -1156,7 +1215,7 @@ async function saveEditor() {
                             >证书配置</DialogDescription
                         ></DialogHeader
                     >
-                    <p v-if="editorLoading">加载中…</p>
+                    <p data-typography="body" v-if="editorLoading">加载中…</p>
                     <form
                         v-else
                         id="certificate-form"
@@ -1164,18 +1223,22 @@ async function saveEditor() {
                         @submit.prevent="saveEditor"
                     >
                         <p
+                            data-typography="body"
                             v-if="editorError"
                             role="alert"
                             class="text-destructive"
                         >
                             {{ editorError }}
-                            <button
+                            <Button
+                                variant="link"
+                                size="inline"
+                                data-slot="console-link"
                                 v-if="!editorReady && editing"
                                 type="button"
                                 @click="openEditor({ id: editing })"
                             >
                                 重试
-                            </button>
+                            </Button>
                         </p>
                         <template v-if="editorReady"
                             ><label
@@ -1241,17 +1304,21 @@ async function saveEditor() {
                                     />
                                 </label>
                                 <p
+                                    data-typography="body"
                                     v-if="editorDnsError"
                                     role="alert"
                                     class="text-destructive"
                                 >
                                     {{ editorDnsError }}
-                                    <button
+                                    <Button
+                                        variant="link"
+                                        size="inline"
+                                        data-slot="console-link"
                                         type="button"
                                         @click="loadEditorDns"
                                     >
                                         重试
-                                    </button>
+                                    </Button>
                                 </p>
                                 <label
                                     >DNS API<SelectField
@@ -1306,21 +1373,24 @@ async function saveEditor() {
                         >
                     </form>
                     <DialogFooter
-                        ><button
+                        ><Button
+                            variant="default"
                             data-slot="console-action"
                             class="primary"
                             type="submit"
                             form="certificate-form"
                             :disabled="saving || !editorReady || editorLoading"
                         >
-                            确定</button
-                        ><button
+                            确定</Button
+                        ><Button
+                            variant="outline"
+                            type="button"
                             data-slot="console-action"
                             :disabled="saving"
                             @click="closeEditor"
                         >
                             取消
-                        </button></DialogFooter
+                        </Button></DialogFooter
                     ></DialogScrollContent
                 ></Dialog
             >
@@ -1339,7 +1409,7 @@ async function saveEditor() {
 
 <style scoped>
 .cert-workspace {
-    font-size: 12px;
+    font-size: var(--console-text-body);
 }
 .cert-tabs {
     display: flex;
@@ -1361,7 +1431,7 @@ button,
 input:not([type='checkbox']),
 :deep([data-slot='select-trigger']),
 :deep([data-slot='textarea']) {
-    font-size: 12px;
+    font-size: var(--console-text-body);
     border: 1px solid var(--border);
     background: var(--card);
     border-radius: 3px;
@@ -1472,7 +1542,7 @@ input:focus-visible,
     border: 1px solid transparent;
     background: color-mix(in srgb, var(--muted) 60%, var(--card));
     border-radius: 20px;
-    font-size: 11px;
+    font-size: var(--console-text-body);
     padding: 2px 10px;
     min-height: 24px;
     gap: 2px;
@@ -1489,7 +1559,7 @@ input:focus-visible,
     color: var(--muted-foreground);
 }
 .summary > span {
-    font-size: 10px;
+    font-size: var(--console-text-helper);
 }
 .table-scroll {
     overflow-x: auto;
@@ -1504,7 +1574,7 @@ th {
     height: 34px;
     background: color-mix(in srgb, var(--muted) 25%, var(--card));
     font-weight: 500;
-    font-size: 12px;
+    font-size: var(--console-text-body);
     padding: 6px 10px;
     border-bottom: 1px solid var(--border);
 }
@@ -1512,7 +1582,7 @@ td {
     height: 42px;
     padding: 3px 10px;
     border-bottom: 1px solid var(--border);
-    font-size: 11px;
+    font-size: var(--console-text-body);
     vertical-align: top;
 }
 td.selection {
@@ -1543,7 +1613,7 @@ tbody tr:hover {
     white-space: nowrap;
 }
 .subline {
-    font-size: 10px;
+    font-size: var(--console-text-helper);
     line-height: 18px;
     color: var(--muted-foreground);
 }
@@ -1556,7 +1626,7 @@ tbody tr:hover {
     display: inline-block;
     border-radius: 12px;
     padding: 1px 8px;
-    font-size: 10px;
+    font-size: var(--console-text-helper);
     border: 1px solid transparent;
 }
 .success {
@@ -1635,7 +1705,7 @@ tbody tr:hover {
     border: 1px solid var(--border);
     border-radius: 3px;
     padding: 4px 12px;
-    font-size: 12px;
+    font-size: var(--console-text-body);
 }
 :global(.certificate-editor [data-slot='dialog-footer'] button.primary) {
     background: #2d8cf0;

@@ -322,13 +322,17 @@ async function confirmDelete() {
         class="node-panel rounded-xl border bg-card p-5 text-card-foreground shadow-sm"
         :aria-busy="loading || busy"
     >
-        <h1 class="mb-3 text-base font-semibold">节点管理</h1>
+        <h1 data-typography="page-title" class="mb-3 font-semibold">
+            节点管理
+        </h1>
         <div
             class="mb-4 flex flex-wrap gap-1"
             role="tablist"
             aria-label="节点管理"
         >
-            <button
+            <Button
+                variant="ghost"
+                data-slot="console-tab"
                 v-for="tab in tabs"
                 :id="`node-tab-${tab.key}`"
                 :key="tab.key"
@@ -346,7 +350,7 @@ async function confirmDelete() {
                 @click="changeTab(tab.key)"
             >
                 {{ tab.label }}
-            </button>
+            </Button>
         </div>
         <div
             id="node-tab-content"
@@ -440,23 +444,28 @@ async function confirmDelete() {
                             placeholder="填ID、IP或名称搜索"
                             class="h-8 w-52 pr-8"
                             :disabled="busy"
-                        /><button
+                        /><Button
+                            variant="ghost"
+                            size="icon-sm"
                             type="submit"
                             aria-label="搜索"
                             class="absolute inset-y-0 right-2 text-muted-foreground"
                             :disabled="busy"
                         >
                             <Search class="size-4" />
-                        </button>
+                        </Button>
                     </div>
-                    <button
+                    <Button
+                        variant="link"
+                        size="inline"
+                        data-slot="console-link"
                         type="button"
                         class="text-sm text-primary"
                         :disabled="busy"
                         @click="clearFilters"
                     >
                         清除
-                    </button>
+                    </Button>
                 </form>
             </div>
             <div
@@ -514,7 +523,15 @@ async function confirmDelete() {
                 class="mb-3 rounded-md border border-destructive/30 p-3 text-sm text-destructive"
             >
                 区域选项加载失败：{{ referenceError }}
-                <button class="underline" @click="loadRegions">重试</button>
+                <Button
+                    variant="link"
+                    size="inline"
+                    type="button"
+                    data-slot="console-link"
+                    class="underline"
+                    @click="loadRegions"
+                    >重试</Button
+                >
             </div>
             <div
                 v-if="error"
@@ -522,9 +539,17 @@ async function confirmDelete() {
                 class="mb-3 rounded-md border border-destructive/30 p-3 text-sm text-destructive"
             >
                 {{ error }}
-                <button :disabled="busy" class="underline" @click="refresh()">
+                <Button
+                    variant="link"
+                    size="inline"
+                    type="button"
+                    data-slot="console-link"
+                    :disabled="busy"
+                    class="underline"
+                    @click="refresh()"
+                >
                     重试
-                </button>
+                </Button>
             </div>
             <div class="overflow-x-auto">
                 <table
@@ -608,13 +633,17 @@ async function confirmDelete() {
                             <td>{{ row.id }}</td>
                             <template v-if="active === 'nodes'">
                                 <td>
-                                    <button
+                                    <Button
+                                        variant="link"
+                                        size="inline"
+                                        type="button"
+                                        data-slot="console-link"
                                         v-if="!Number(row.pid)"
                                         class="text-primary"
                                         @click="emit('edit', row)"
                                     >
                                         {{ row.name }}
-                                    </button>
+                                    </Button>
                                 </td>
                                 <td>
                                     <template v-if="!Number(row.pid)"
@@ -630,7 +659,10 @@ async function confirmDelete() {
                                 </td>
                                 <td>
                                     <div class="flex items-center gap-2">
-                                        <button
+                                        <Button
+                                            variant="ghost"
+                                            size="icon-sm"
+                                            type="button"
                                             v-if="hasChildren(row.id)"
                                             :aria-label="`${expanded.includes(Number(row.id)) ? '收起' : '展开'} ${row.ip}`"
                                             :aria-expanded="
@@ -649,11 +681,9 @@ async function confirmDelete() {
                                                         Number(row.id),
                                                     )
                                                 "
-                                                class="size-3"
-                                            /><Plus
+                                                class="size-3" /><Plus
                                                 v-else
-                                                class="size-3"
-                                            /></button
+                                                class="size-3" /></Button
                                         ><span
                                             :class="
                                                 Number(row.pid) > 0
@@ -670,7 +700,11 @@ async function confirmDelete() {
                                             ? row.check_protocol
                                             : '未开启'
                                     }}</span>
-                                    <button
+                                    <Button
+                                        variant="link"
+                                        size="inline"
+                                        type="button"
+                                        data-slot="console-link"
                                         class="ml-1 text-primary"
                                         @click="
                                             logNodeId = Number(row.id);
@@ -678,7 +712,7 @@ async function confirmDelete() {
                                         "
                                     >
                                         [日志]
-                                    </button>
+                                    </Button>
                                 </td>
                                 <td>
                                     <Link
@@ -730,21 +764,28 @@ async function confirmDelete() {
                                 <td>{{ row.sort }}</td>
                                 <td>
                                     <div class="flex items-center gap-2">
-                                        <button
+                                        <Button
+                                            variant="link"
+                                            size="inline"
+                                            type="button"
+                                            data-slot="console-link"
                                             v-if="!Number(row.pid)"
                                             class="text-primary"
                                             @click="emit('edit', row)"
                                         >
-                                            管理</button
+                                            管理</Button
                                         ><DropdownMenu
                                             ><DropdownMenuTrigger as-child
-                                                ><button
+                                                ><Button
+                                                    variant="link"
+                                                    size="inline"
+                                                    type="button"
+                                                    data-slot="console-link"
                                                     class="inline-flex items-center gap-0.5 text-primary"
                                                     :disabled="busy"
                                                 >
                                                     更多<ChevronDown
-                                                        class="size-3"
-                                                    /></button></DropdownMenuTrigger
+                                                        class="size-3" /></Button></DropdownMenuTrigger
                                             ><DropdownMenuContent align="end"
                                                 ><DropdownMenuItem
                                                     @select="
@@ -776,18 +817,26 @@ async function confirmDelete() {
                                 ><td>{{ row.ip }}</td>
                                 <td>{{ row.create_at ?? row.created_at }}</td>
                                 <td>
-                                    <button
+                                    <Button
+                                        variant="link"
+                                        size="inline"
+                                        type="button"
+                                        data-slot="console-link"
                                         class="mr-3 text-primary"
                                         @click="emit('initialize', row)"
                                     >
-                                        初始化</button
-                                    ><button
+                                        初始化</Button
+                                    ><Button
+                                        variant="link"
+                                        size="inline"
+                                        type="button"
+                                        data-slot="console-link"
                                         class="text-primary"
                                         :disabled="busy"
                                         @click="askDelete(row)"
                                     >
                                         删除
-                                    </button>
+                                    </Button>
                                 </td></template
                             >
                             <template v-else-if="active === 'disabled'"
@@ -795,40 +844,56 @@ async function confirmDelete() {
                                 <td>{{ row.des }}</td>
                                 <td>{{ row.disable_at }}</td>
                                 <td>
-                                    <button
+                                    <Button
+                                        variant="link"
+                                        size="inline"
+                                        type="button"
+                                        data-slot="console-link"
                                         class="text-primary"
                                         :disabled="busy"
                                         @click="enableNodes(true, row)"
                                     >
                                         启用
-                                    </button>
+                                    </Button>
                                 </td></template
                             >
                             <template v-else
                                 ><td>
-                                    <button
+                                    <Button
+                                        variant="link"
+                                        size="inline"
+                                        type="button"
+                                        data-slot="console-link"
                                         class="text-primary"
                                         @click="emit('editRegion', row)"
                                     >
                                         {{ row.name }}
-                                    </button>
+                                    </Button>
                                 </td>
                                 <td>{{ row.des }}</td>
                                 <td>{{ row.sort }}</td>
                                 <td>{{ row.create_at ?? row.created_at }}</td>
                                 <td>
-                                    <button
+                                    <Button
+                                        variant="link"
+                                        size="inline"
+                                        type="button"
+                                        data-slot="console-link"
                                         class="mr-3 text-primary"
                                         @click="emit('editRegion', row)"
                                     >
-                                        编辑</button
-                                    ><button
+                                        编辑</Button
+                                    ><Button
+                                        variant="link"
+                                        size="inline"
+                                        type="button"
+                                        data-slot="console-link"
                                         class="text-primary"
                                         :disabled="busy"
                                         @click="askDelete(row)"
                                     >
                                         删除
-                                    </button>
+                                    </Button>
                                 </td></template
                             >
                         </tr>

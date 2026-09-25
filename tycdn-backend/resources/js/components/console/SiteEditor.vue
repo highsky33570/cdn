@@ -366,7 +366,9 @@ onBeforeUnmount(() => {
                     ><Link :href="back" aria-label="返回网站列表"
                         ><ArrowLeft class="size-5" /></Link
                 ></Button>
-                <h1 class="truncate text-xl font-semibold">{{ title }}</h1>
+                <h1 data-typography="page-title" class="truncate font-semibold">
+                    {{ title }}
+                </h1>
                 <Badge
                     :variant="
                         Number(draft.enable) === 1 ? 'secondary' : 'outline'
@@ -398,6 +400,7 @@ onBeforeUnmount(() => {
             {{ referenceError }}
         </div>
         <p
+            data-typography="body"
             v-if="loading"
             role="status"
             class="p-10 text-center text-muted-foreground"
@@ -464,12 +467,16 @@ onBeforeUnmount(() => {
                         :key="section.title"
                         class="rounded-lg border p-4 md:p-5"
                     >
-                        <h2 class="mb-1 text-base font-semibold">
+                        <h2
+                            data-typography="section-title"
+                            class="mb-1 font-semibold"
+                        >
                             {{ section.title }}
                         </h2>
                         <p
+                            data-typography="description"
                             v-if="section.help"
-                            class="mb-4 text-sm text-muted-foreground"
+                            class="mb-4 text-muted-foreground"
                         >
                             {{ section.help }}
                         </p>
@@ -487,7 +494,11 @@ onBeforeUnmount(() => {
                             :fields="wafFields"
                             :disabled="saving"
                         />
-                        <p v-else class="text-sm text-destructive">
+                        <p
+                            data-typography="body"
+                            v-else
+                            class="text-destructive"
+                        >
                             规则库加载失败，请刷新重试。
                         </p>
                     </section>

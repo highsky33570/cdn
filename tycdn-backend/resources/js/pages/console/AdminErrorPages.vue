@@ -337,8 +337,9 @@ onMounted(load);
                 aria-label="全局配置"
             >
                 <p
+                    data-typography="body"
                     v-if="loading"
-                    class="py-6 text-sm text-muted-foreground"
+                    class="py-6 text-muted-foreground"
                     role="status"
                 >
                     正在加载配置…
@@ -647,9 +648,10 @@ onMounted(load);
                         />
                     </section>
                     <p
+                        data-typography="body"
                         v-if="editorError"
                         role="alert"
-                        class="text-sm text-destructive"
+                        class="text-destructive"
                     >
                         {{ editorError }}
                     </p>

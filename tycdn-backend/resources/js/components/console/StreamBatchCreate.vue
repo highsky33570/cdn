@@ -147,7 +147,7 @@ defineExpose({ show });
                     class="min-h-48 rounded-lg border bg-background p-3 font-mono text-sm"
                 /><Button @click="preview">检查并预览</Button></template
             ><template v-else
-                ><p class="text-sm text-muted-foreground">
+                ><p data-typography="body" class="text-muted-foreground">
                     {{ rows.length }} 条记录 · 已购套餐 #{{ userPackage }}
                 </p>
                 <div class="max-h-80 overflow-auto rounded-lg border">
@@ -189,13 +189,19 @@ defineExpose({ show });
                     </table>
                 </div>
                 <p
+                    data-typography="body"
                     v-if="rows.some((row) => row.status === 'failed')"
-                    class="text-sm text-destructive"
+                    class="text-destructive"
                 >
                     已在失败记录处停止。请先核对主控是否已创建该记录，避免重复提交。
                 </p></template
             >
-            <p v-if="error" role="alert" class="text-sm text-destructive">
+            <p
+                data-typography="body"
+                v-if="error"
+                role="alert"
+                class="text-destructive"
+            >
                 {{ error }}
             </p>
             <DialogFooter

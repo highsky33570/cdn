@@ -331,7 +331,9 @@ const body = computed(() =>
                     :placeholder="`请输入${label}`"
                     inputmode="numeric"
             /></label>
-            <button
+            <Button
+                variant="link"
+                size="inline"
                 data-slot="console-link"
                 v-if="hasFilters"
                 type="button"
@@ -339,7 +341,7 @@ const body = computed(() =>
                 @click="clear"
             >
                 清除
-            </button>
+            </Button>
         </form>
         <Alert v-if="error" variant="destructive" class="mb-4"
             ><AlertDescription
@@ -425,14 +427,17 @@ const body = computed(() =>
                             <td>{{ text(row.site_id) }}</td>
                             <td>{{ time(row) }}</td>
                             <td>
-                                <button
+                                <Button
+                                    variant="link"
+                                    size="inline"
+                                    type="button"
                                     data-slot="console-link"
                                     class="text-link"
                                     :aria-label="`查看消息 ${text(row.id)} 详情`"
                                     @click="openDetail(row)"
                                 >
                                     详情
-                                </button>
+                                </Button>
                             </td>
                         </tr></template
                     >
@@ -474,24 +479,39 @@ const body = computed(() =>
                     class="min-h-0 space-y-5 overflow-y-auto"
                 >
                     <div>
-                        <h3 class="font-semibold break-words">
+                        <h3
+                            data-typography="section-title"
+                            class="font-semibold break-words"
+                        >
                             {{ title(detail) }}
                         </h3>
-                        <p class="mt-2 text-sm text-muted-foreground">
+                        <p
+                            data-typography="description"
+                            class="mt-2 text-muted-foreground"
+                        >
                             {{ time(detail) }} ·
                             {{
                                 labels[String(detail.type)] || text(detail.type)
                             }}
                         </p>
                     </div>
-                    <p class="text-sm break-words whitespace-pre-wrap">
+                    <p
+                        data-typography="body"
+                        class="break-words whitespace-pre-wrap"
+                    >
                         {{ body || '暂无消息内容' }}
                     </p>
                     <div v-if="detail.phone_content">
-                        <h4 class="mb-2 text-sm text-muted-foreground">
+                        <h4
+                            data-typography="section-title"
+                            class="mb-2 text-muted-foreground"
+                        >
                             短信内容
                         </h4>
-                        <p class="text-sm break-words whitespace-pre-wrap">
+                        <p
+                            data-typography="description"
+                            class="break-words whitespace-pre-wrap"
+                        >
                             {{ text(detail.phone_content) }}
                         </p>
                     </div>
@@ -523,7 +543,7 @@ const body = computed(() =>
     padding: 12px 14px 20px;
     background: var(--card);
     color: var(--foreground);
-    font-size: 14px;
+    font-size: var(--console-text-body);
 }
 .message-filters {
     display: flex;
@@ -594,7 +614,7 @@ th,
 td {
     padding: 0 22px;
     border-bottom: 1px solid var(--border);
-    font-size: 14px;
+    font-size: var(--console-text-body);
     text-align: left;
 }
 th {

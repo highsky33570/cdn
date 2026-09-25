@@ -58,9 +58,10 @@ for (const directory of roots) {
                     ['select', 'option', 'textarea'].includes(node.tag) ||
                     (node.tag === 'input' && attribute('type') !== 'hidden') ||
                     (node.tag === 'button' &&
-                        ['switch', 'radio', 'checkbox'].includes(
-                            attribute('role'),
-                        ));
+                        (directory === roots[0] ||
+                            ['switch', 'radio', 'checkbox'].includes(
+                                attribute('role'),
+                            )));
                 const nativeWidget =
                     node.tag === 'Input' &&
                     /date|time|checkbox|radio/.test(

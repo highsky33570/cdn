@@ -1348,7 +1348,8 @@ function formatInputDate(date: Date): string {
                     class="flex flex-wrap gap-x-6 border-b px-5 pt-3"
                     data-realtime-tabs
                 >
-                    <button
+                    <Button
+                        variant="ghost"
                         v-for="g in metricGroups"
                         :key="g.key"
                         type="button"
@@ -1367,7 +1368,7 @@ function formatInputDate(date: Date): string {
                         "
                     >
                         {{ g.label }}
-                    </button>
+                    </Button>
                 </div>
 
                 <!-- 控制栏 -->
@@ -1392,7 +1393,8 @@ function formatInputDate(date: Date): string {
                             data-slot="console-segment-group"
                             class="flex h-9 max-w-full overflow-x-auto rounded-md border"
                         >
-                            <button
+                            <Button
+                                variant="ghost"
                                 data-slot="console-segment"
                                 v-for="range in [
                                     { minutes: 60, label: '近1小时' },
@@ -1410,8 +1412,9 @@ function formatInputDate(date: Date): string {
                                 @click="setRtTimeRange(range.minutes)"
                             >
                                 {{ range.label }}
-                            </button>
-                            <button
+                            </Button>
+                            <Button
+                                variant="ghost"
                                 type="button"
                                 class="px-4 text-sm transition-colors"
                                 :class="
@@ -1422,7 +1425,7 @@ function formatInputDate(date: Date): string {
                                 @click="useCustomRtRange"
                             >
                                 自定义
-                            </button>
+                            </Button>
                         </div>
                         <DateRangePicker
                             v-if="rtRangePreset === 'custom'"
@@ -1485,7 +1488,10 @@ function formatInputDate(date: Date): string {
                         <CardHeader
                             class="flex flex-row items-center justify-between px-5 pt-5 pb-2"
                         >
-                            <CardTitle class="text-sm font-medium">
+                            <CardTitle
+                                data-typography="label"
+                                class="font-medium"
+                            >
                                 {{ m.label }}
                             </CardTitle>
                         </CardHeader>
@@ -1539,7 +1545,9 @@ function formatInputDate(date: Date): string {
                     role="tablist"
                     aria-label="Ranking dimensions"
                 >
-                    <button
+                    <Button
+                        variant="ghost"
+                        data-slot="console-tab"
                         v-for="tab in topTabs"
                         :key="tab.key"
                         type="button"
@@ -1554,7 +1562,7 @@ function formatInputDate(date: Date): string {
                         @click="activeTopTab = tab.key"
                     >
                         {{ tab.label }}
-                    </button>
+                    </Button>
                 </div>
 
                 <!-- 控制栏 -->
@@ -1566,7 +1574,8 @@ function formatInputDate(date: Date): string {
                         data-slot="console-segment-group"
                         class="flex overflow-hidden rounded-sm border"
                     >
-                        <button
+                        <Button
+                            variant="ghost"
                             data-slot="console-segment"
                             v-for="t in [
                                 { v: '10m', label: '10分钟实时' },
@@ -1585,7 +1594,7 @@ function formatInputDate(date: Date): string {
                             @click="setTopRecentTime(t.v)"
                         >
                             {{ t.label }}
-                        </button>
+                        </Button>
                     </div>
 
                     <!-- 自定义时间（仅 custom 模式显示） -->
@@ -1636,7 +1645,10 @@ function formatInputDate(date: Date): string {
                         <RefreshCw v-else data-icon="inline-start" />
                         刷新
                     </Button>
-                    <button
+                    <Button
+                        variant="link"
+                        size="inline"
+                        data-slot="console-link"
                         v-if="topFilters.domain || topFilters.server_port"
                         type="button"
                         class="text-sm text-primary hover:underline"
@@ -1647,7 +1659,7 @@ function formatInputDate(date: Date): string {
                         "
                     >
                         清除
-                    </button>
+                    </Button>
                     <span
                         v-if="topFilters.domain"
                         class="rounded border px-2 py-1 text-xs text-muted-foreground"
@@ -1780,13 +1792,16 @@ function formatInputDate(date: Date): string {
                                                 v-if="col.type === 'action'"
                                                 class="px-4 py-0"
                                             >
-                                                <button
+                                                <Button
+                                                    variant="link"
+                                                    size="inline"
+                                                    data-slot="console-link"
                                                     type="button"
                                                     class="inline-flex items-center text-sm text-primary hover:underline"
                                                     @click="goToLogs(row)"
                                                 >
                                                     查看日志
-                                                </button>
+                                                </Button>
                                             </td>
                                             <td
                                                 v-else
@@ -1825,7 +1840,9 @@ function formatInputDate(date: Date): string {
         <template v-else-if="props.view === 'logs'">
             <!-- 二级 Tab -->
             <div class="flex w-fit gap-1 rounded-lg border bg-muted/40 p-1">
-                <button
+                <Button
+                    variant="ghost"
+                    data-slot="console-tab"
                     type="button"
                     class="rounded-md px-4 py-1.5 text-sm font-medium transition-colors"
                     :class="
@@ -1836,8 +1853,10 @@ function formatInputDate(date: Date): string {
                     @click="switchLogsTab('query')"
                 >
                     日志查询
-                </button>
-                <button
+                </Button>
+                <Button
+                    variant="ghost"
+                    data-slot="console-tab"
                     v-if="scope !== 'admin'"
                     type="button"
                     class="rounded-md px-4 py-1.5 text-sm font-medium transition-colors"
@@ -1849,7 +1868,7 @@ function formatInputDate(date: Date): string {
                     @click="switchLogsTab('jobs')"
                 >
                     申请记录
-                </button>
+                </Button>
             </div>
 
             <!-- ── 日志查询 Tab ── -->
@@ -1895,7 +1914,8 @@ function formatInputDate(date: Date): string {
                             >
                                 申请下载
                             </Button>
-                            <button
+                            <Button
+                                variant="ghost"
                                 type="button"
                                 class="flex h-9 items-center gap-1 rounded-md px-3 text-sm font-medium transition-colors"
                                 :class="
@@ -1906,7 +1926,7 @@ function formatInputDate(date: Date): string {
                                 @click="showAdvanced = !showAdvanced"
                             >
                                 高级搜索
-                            </button>
+                            </Button>
                         </div>
 
                         <!-- 高级搜索面板 -->
@@ -2168,13 +2188,16 @@ function formatInputDate(date: Date): string {
                                 >
                                     重置
                                 </Button>
-                                <button
+                                <Button
+                                    variant="link"
+                                    size="inline"
+                                    data-slot="console-link"
                                     type="button"
                                     class="ml-1 text-sm text-primary underline-offset-2 hover:underline"
                                     @click="showAdvanced = false"
                                 >
                                     收起搜索
-                                </button>
+                                </Button>
                             </div>
                         </div>
                     </CardHeader>
@@ -2649,14 +2672,21 @@ function formatInputDate(date: Date): string {
                     <div
                         class="flex items-center justify-between border-b px-5 py-4"
                     >
-                        <h2 class="text-sm font-semibold">申请下载访问日志</h2>
-                        <button
+                        <h2
+                            data-typography="dialog-title"
+                            class="font-semibold"
+                        >
+                            申请下载访问日志
+                        </h2>
+                        <Button
+                            variant="ghost"
+                            size="icon-sm"
                             type="button"
                             class="text-muted-foreground hover:text-foreground"
                             @click="applyDialogOpen = false"
                         >
                             ✕
-                        </button>
+                        </Button>
                     </div>
                     <form
                         class="grid gap-4 px-5 py-4"
@@ -2683,7 +2713,11 @@ function formatInputDate(date: Date): string {
                                 @update:end="applyEnd = $event"
                             />
                         </div>
-                        <p v-if="applyError" class="text-xs text-red-500">
+                        <p
+                            data-typography="helper"
+                            v-if="applyError"
+                            class="text-red-500"
+                        >
                             {{ applyError }}
                         </p>
                         <div class="flex justify-end gap-2">

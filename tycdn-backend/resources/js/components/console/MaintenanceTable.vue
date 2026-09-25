@@ -138,10 +138,20 @@ const table = computed(() => {
                         :colspan="Math.max(table.columns.length, 1)"
                         class="px-5 py-8 text-center"
                     >
-                        <p v-if="error" role="alert" class="text-destructive">
+                        <p
+                            data-typography="body"
+                            v-if="error"
+                            role="alert"
+                            class="text-destructive"
+                        >
                             {{ error }}
                         </p>
-                        <p v-else role="status" class="text-muted-foreground">
+                        <p
+                            data-typography="body"
+                            v-else
+                            role="status"
+                            class="text-muted-foreground"
+                        >
                             {{
                                 loading ? '加载中…' : emptyMessage || '暂无数据'
                             }}

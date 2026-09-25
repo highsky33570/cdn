@@ -560,7 +560,12 @@ function maskSensitive(key: string, value: unknown): string {
                          overview endpoint returns counters only -->
                     <section class="space-y-3">
                         <div class="flex items-center justify-between gap-3">
-                            <h3 class="text-sm font-medium">账户信息</h3>
+                            <h3
+                                data-typography="section-title"
+                                class="font-medium"
+                            >
+                                账户信息
+                            </h3>
                             <!-- editing lives in settings, which already owns the
                                  validation and password-confirmation flow -->
                             <Button as-child variant="outline" size="sm">
@@ -590,7 +595,9 @@ function maskSensitive(key: string, value: unknown): string {
 
                     <!-- 2. security state, each fact from whichever side owns it -->
                     <section class="space-y-3 border-t pt-6">
-                        <h3 class="text-sm font-medium">安全状态</h3>
+                        <h3 data-typography="section-title" class="font-medium">
+                            安全状态
+                        </h3>
                         <div class="flex flex-wrap gap-x-8 gap-y-3">
                             <div
                                 v-for="badge in securityBadges"
@@ -633,14 +640,17 @@ function maskSensitive(key: string, value: unknown): string {
 
                     <!-- 3. what the account holds, from CDNfly -->
                     <section class="space-y-3 border-t pt-6">
-                        <h3 class="text-sm font-medium">资源用量</h3>
+                        <h3 data-typography="section-title" class="font-medium">
+                            资源用量
+                        </h3>
                         <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
                             <div class="rounded-lg border p-4">
                                 <div class="text-xs text-muted-foreground">
                                     账户余额
                                 </div>
                                 <div
-                                    class="mt-1 text-2xl font-semibold tabular-nums"
+                                    data-typography="metric"
+                                    class="mt-1 font-semibold tabular-nums"
                                 >
                                     {{ accountBalance }}
                                 </div>
@@ -662,7 +672,8 @@ function maskSensitive(key: string, value: unknown): string {
                                     {{ counter.label }}
                                 </div>
                                 <div
-                                    class="mt-1 text-2xl font-semibold tabular-nums"
+                                    data-typography="metric"
+                                    class="mt-1 font-semibold tabular-nums"
                                 >
                                     {{ counter.value }}
                                 </div>
@@ -670,8 +681,9 @@ function maskSensitive(key: string, value: unknown): string {
                         </div>
 
                         <p
+                            data-typography="helper"
                             v-if="overview === null"
-                            class="text-xs text-muted-foreground"
+                            class="text-muted-foreground"
                         >
                             暂时无法读取 CDNfly 用量数据。
                         </p>
@@ -738,7 +750,10 @@ function maskSensitive(key: string, value: unknown): string {
                             step="0.01"
                             inputmode="decimal"
                         />
-                        <p class="text-xs text-muted-foreground">
+                        <p
+                            data-typography="helper"
+                            class="text-muted-foreground"
+                        >
                             确认后将跳转至支付页面，到账后余额自动增加。
                         </p>
                     </div>

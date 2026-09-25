@@ -101,7 +101,11 @@ function add(field: Field) {
                         ><Plus class="size-3.5" />新增</Button
                     >
                 </div>
-                <p v-if="malformed(field)" class="text-sm text-destructive">
+                <p
+                    data-typography="body"
+                    v-if="malformed(field)"
+                    class="text-destructive"
+                >
                     现有配置无法解析，已保留原值。请重新加载后重试。
                 </p>
                 <ConfigFields
@@ -114,8 +118,9 @@ function add(field: Field) {
                 />
                 <div v-else class="grid gap-3">
                     <p
+                        data-typography="body"
                         v-if="!array(field).length"
-                        class="rounded-lg border border-dashed p-5 text-center text-sm text-muted-foreground"
+                        class="rounded-lg border border-dashed p-5 text-center text-muted-foreground"
                     >
                         暂无{{ field.label }}
                     </p>
@@ -313,8 +318,9 @@ function add(field: Field) {
                 />
             </label>
             <p
+                data-typography="helper"
                 v-if="field.help"
-                class="mt-2 text-xs leading-relaxed text-muted-foreground"
+                class="mt-2 leading-relaxed text-muted-foreground"
             >
                 {{ field.help }}
             </p>

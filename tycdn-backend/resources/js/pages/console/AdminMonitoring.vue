@@ -412,8 +412,13 @@ onUnmounted(() => {
                 class="mb-4 flex items-center justify-between gap-3"
             >
                 <div>
-                    <h2 class="font-semibold">{{ currentTitle }}</h2>
-                    <p class="mt-1 text-sm text-muted-foreground">
+                    <h2 data-typography="section-title" class="font-semibold">
+                        {{ currentTitle }}
+                    </h2>
+                    <p
+                        data-typography="description"
+                        class="mt-1 text-muted-foreground"
+                    >
                         共 {{ total }} 条记录<span v-if="tab === 'backup'"
                             >，当前页 {{ rows.length }} 条</span
                         >
@@ -548,10 +553,13 @@ onUnmounted(() => {
                     >
                     <template #cell-time="{ row }"
                         ><template v-if="tab === 'login'"
-                            ><p class="font-semibold">
+                            ><p data-typography="body" class="font-semibold">
                                 {{ time(row).split(/[T ]/)[0] }}
                             </p>
-                            <p class="mt-1 text-xs text-muted-foreground">
+                            <p
+                                data-typography="helper"
+                                class="mt-1 text-muted-foreground"
+                            >
                                 {{ time(row).split(/[T ]/).slice(1).join(' ') }}
                             </p></template
                         ><span v-else class="whitespace-nowrap">{{
@@ -578,9 +586,12 @@ onUnmounted(() => {
                         ></template
                     >
                     <template #cell-object="{ row }"
-                        ><p class="font-semibold">{{ text(row.type) }}</p>
+                        ><p data-typography="body" class="font-semibold">
+                            {{ text(row.type) }}
+                        </p>
                         <p
-                            class="mt-1 max-w-48 truncate text-xs text-muted-foreground"
+                            data-typography="helper"
+                            class="mt-1 max-w-48 truncate text-muted-foreground"
                             :title="text(row.content)"
                         >
                             {{ text(row.content) }}
@@ -601,6 +612,7 @@ onUnmounted(() => {
                         ><div v-if="hasDiff(row)" class="max-w-80">
                             <template v-if="changes(row.diff).length"
                                 ><p
+                                    data-typography="body"
                                     v-for="(change, index) in changes(
                                         row.diff,
                                     ).slice(0, 2)"
@@ -614,14 +626,20 @@ onUnmounted(() => {
                                     >{{ change.old }} → {{ change.next }}
                                 </p>
                                 <p
+                                    data-typography="helper"
                                     v-if="changes(row.diff).length > 2"
-                                    class="text-xs text-muted-foreground"
+                                    class="text-muted-foreground"
                                 >
                                     另有
                                     {{ changes(row.diff).length - 2 }} 项变更
                                 </p></template
                             >
-                            <p v-else class="truncate" :title="raw(row.diff)">
+                            <p
+                                data-typography="body"
+                                v-else
+                                class="truncate"
+                                :title="raw(row.diff)"
+                            >
                                 {{ raw(row.diff) }}
                             </p>
                             <Button
@@ -637,9 +655,12 @@ onUnmounted(() => {
                         ></template
                     >
                     <template #cell-source="{ row }"
-                        ><p class="font-semibold">{{ text(row.ip) }}</p>
+                        ><p data-typography="body" class="font-semibold">
+                            {{ text(row.ip) }}
+                        </p>
                         <p
-                            class="mt-1 max-w-48 truncate text-xs text-muted-foreground"
+                            data-typography="helper"
+                            class="mt-1 max-w-48 truncate text-muted-foreground"
                             :title="text(row.ip_location, '未记录')"
                         >
                             {{ text(row.ip_location, '未记录') }}
@@ -684,9 +705,12 @@ onUnmounted(() => {
                         }}</span></template
                     >
                     <template #cell-recipient="{ row }"
-                        ><p class="font-semibold">{{ text(row.uid) }}</p>
+                        ><p data-typography="body" class="font-semibold">
+                            {{ text(row.uid) }}
+                        </p>
                         <p
-                            class="mt-1 max-w-36 truncate text-xs text-muted-foreground"
+                            data-typography="helper"
+                            class="mt-1 max-w-36 truncate text-muted-foreground"
                             :title="
                                 first(
                                     row,
@@ -720,13 +744,15 @@ onUnmounted(() => {
                     >
                     <template #cell-message="{ row }"
                         ><p
+                            data-typography="body"
                             class="max-w-64 truncate font-medium"
                             :title="text(row.title, '无标题')"
                         >
                             {{ text(row.title, '无标题') }}
                         </p>
                         <p
-                            class="mt-1 max-w-64 truncate text-xs text-muted-foreground"
+                            data-typography="helper"
+                            class="mt-1 max-w-64 truncate text-muted-foreground"
                             :title="
                                 first(
                                     row,

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { Component } from 'vue';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 
 /**
  * The console's section switcher.
@@ -46,7 +47,9 @@ defineEmits<{
         class="console-tabs flex flex-col gap-3 md:flex-row md:items-center md:justify-between"
     >
         <div class="flex flex-wrap gap-1" role="tablist">
-            <button
+            <Button
+                variant="ghost"
+                data-slot="console-tab"
                 v-for="tab in tabs"
                 :key="tab.key"
                 type="button"
@@ -69,7 +72,7 @@ defineEmits<{
                 >
                     {{ tab.count }}
                 </Badge>
-            </button>
+            </Button>
         </div>
 
         <div

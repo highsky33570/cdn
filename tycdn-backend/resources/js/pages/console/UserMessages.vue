@@ -183,13 +183,16 @@ onUnmounted(() => {
                                     <span>{{
                                         saveErrors[row.type].message
                                     }}</span
-                                    ><button
+                                    ><Button
+                                        variant="link"
+                                        size="inline"
+                                        data-slot="console-link"
                                         type="button"
                                         :aria-label="`重试保存${labels[row.type] || row.type}`"
                                         @click="retry(row)"
                                     >
                                         重试
-                                    </button>
+                                    </Button>
                                 </div>
                             </td>
                             <td>
@@ -212,7 +215,14 @@ onUnmounted(() => {
                 </tbody>
             </table>
         </div>
-        <p class="sr-only" role="status" aria-live="polite">{{ saved }}</p>
+        <p
+            data-typography="body"
+            class="sr-only"
+            role="status"
+            aria-live="polite"
+        >
+            {{ saved }}
+        </p>
     </section>
 </template>
 
@@ -223,7 +233,7 @@ onUnmounted(() => {
     padding: 10px 8px 0;
     background: var(--card);
     color: var(--foreground);
-    font-size: 14px;
+    font-size: var(--console-text-body);
 }
 .subscription-scroll {
     border-bottom: 1px solid var(--input);
@@ -237,7 +247,7 @@ th,
 td {
     padding: 0 22px;
     border-bottom: 1px solid var(--border);
-    font-size: 14px;
+    font-size: var(--console-text-body);
     text-align: left;
 }
 th {
@@ -276,7 +286,7 @@ tbody tr:hover {
     gap: 8px;
     padding-block: 6px;
     color: var(--destructive);
-    font-size: 12px;
+    font-size: var(--console-text-helper);
 }
 .save-error button {
     color: var(--primary);

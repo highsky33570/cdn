@@ -8,6 +8,7 @@ import {
 } from 'reka-ui';
 import { computed, onUnmounted, ref, watch } from 'vue';
 import ConsolePagination from '@/components/console/ConsolePagination.vue';
+import { Button } from '@/components/ui/button';
 import DatePicker from '@/components/ui/date-picker/DatePicker.vue';
 import {
     Dialog,
@@ -247,6 +248,7 @@ const time = (value: unknown) => String(value ?? '—').replace(/^\d{4}-/, '');
                                                 required
                                         /></label>
                                         <p
+                                            data-typography="body"
                                             v-if="rangeError"
                                             role="alert"
                                             class="text-destructive"
@@ -254,20 +256,22 @@ const time = (value: unknown) => String(value ?? '—').replace(/^\d{4}-/, '');
                                             {{ rangeError }}
                                         </p>
                                         <div class="flex justify-end gap-2">
-                                            <button
+                                            <Button
+                                                variant="ghost"
                                                 data-slot="console-segment"
                                                 type="button"
                                                 class="rounded border px-3 py-1"
                                                 @click="rangeOpen = false"
                                             >
-                                                取消</button
-                                            ><button
+                                                取消</Button
+                                            ><Button
+                                                variant="default"
                                                 data-slot="console-action"
                                                 type="submit"
                                                 class="rounded bg-[#2d8cf0] px-3 py-1 text-white"
                                             >
                                                 确定
-                                            </button>
+                                            </Button>
                                         </div>
                                     </form></PopoverContent
                                 ></PopoverPortal
@@ -294,12 +298,21 @@ const time = (value: unknown) => String(value ?? '—').replace(/^\d{4}-/, '');
                     </template>
                 </div>
                 <p
+                    data-typography="helper"
                     v-if="error"
                     role="alert"
-                    class="mb-3 text-xs text-destructive"
+                    class="mb-3 text-destructive"
                 >
                     {{ error }}
-                    <button class="underline" @click="load(page)">重试</button>
+                    <Button
+                        variant="link"
+                        size="inline"
+                        type="button"
+                        data-slot="console-link"
+                        class="underline"
+                        @click="load(page)"
+                        >重试</Button
+                    >
                 </p>
                 <table
                     class="w-full table-fixed text-left text-xs"
@@ -361,7 +374,7 @@ const time = (value: unknown) => String(value ?? '—').replace(/^\d{4}-/, '');
     grid-template-columns: 58px minmax(0, 1fr);
     gap: 21px 9px;
     align-items: center;
-    font-size: 12px;
+    font-size: var(--console-text-body);
 }
 .log-filters label {
     text-align: right;
@@ -372,7 +385,7 @@ const time = (value: unknown) => String(value ?? '—').replace(/^\d{4}-/, '');
     width: 100%;
     border-radius: 3px;
     padding: 3px 7px;
-    font-size: 12px;
+    font-size: var(--console-text-body);
     box-shadow: none;
 }
 .range-trigger {
@@ -383,7 +396,7 @@ const time = (value: unknown) => String(value ?? '—').replace(/^\d{4}-/, '');
     padding: 3px 6px;
     border: 1px solid var(--border);
     border-radius: 3px;
-    font-size: 11px;
+    font-size: var(--console-text-body);
     text-align: left;
 }
 .range-trigger span {
@@ -398,7 +411,7 @@ th {
 }
 td {
     padding: 9px 8px;
-    font-size: 11px;
+    font-size: var(--console-text-body);
 }
 th,
 td {

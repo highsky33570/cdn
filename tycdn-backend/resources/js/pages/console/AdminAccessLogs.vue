@@ -428,7 +428,9 @@ onUnmounted(() => {
                 role="tablist"
                 aria-label="访问日志分类"
             >
-                <button
+                <Button
+                    variant="ghost"
+                    data-slot="console-tab"
                     v-for="tab in [
                         { key: 'query', label: '日志查询' },
                         { key: 'jobs', label: '申请记录' },
@@ -448,7 +450,7 @@ onUnmounted(() => {
                     @click="switchTab(tab.key)"
                 >
                     {{ tab.label }}
-                </button>
+                </Button>
             </div>
             <div
                 id="access-log-panel"
@@ -660,7 +662,8 @@ onUnmounted(() => {
                         class="mb-3 flex flex-wrap items-center gap-2 text-xs"
                         aria-label="已应用筛选"
                     >
-                        <button
+                        <Button
+                            variant="default"
                             data-slot="console-action"
                             type="button"
                             class="rounded border px-2 py-1 text-muted-foreground hover:text-primary"
@@ -671,7 +674,7 @@ onUnmounted(() => {
                         >
                             时间范围：{{ filters.start.replace('T', ' ') }} -
                             {{ filters.end.replace('T', ' ') }}
-                        </button>
+                        </Button>
                         <span
                             v-for="tag in tags"
                             :key="tag.key"
@@ -683,13 +686,15 @@ onUnmounted(() => {
                                         ? `（${filters.uri_match_type === 'prefix' ? '前缀' : '精确'}）`
                                         : ''
                                 }}</span
-                            ><button
+                            ><Button
+                                variant="ghost"
+                                size="icon-sm"
                                 type="button"
                                 :aria-label="`移除${tag.label}筛选`"
                                 class="shrink-0 hover:text-foreground"
                                 @click="removeFilter(tag.key)"
                             >
-                                <X class="size-3" /></button
+                                <X class="size-3" /></Button
                         ></span>
                         <Button
                             variant="link"
@@ -933,7 +938,9 @@ onUnmounted(() => {
                     role="tablist"
                     aria-label="日志详情"
                 >
-                    <button
+                    <Button
+                        variant="ghost"
+                        data-slot="console-tab"
                         v-for="tab in [
                             { key: 'req_header', label: '请求头' },
                             { key: 'resp_header', label: '响应头' },
@@ -952,13 +959,14 @@ onUnmounted(() => {
                         @click="detailTab = tab.key"
                     >
                         {{ tab.label }}
-                    </button>
+                    </Button>
                 </div>
                 <Spinner v-if="detailLoading" />
                 <p
+                    data-typography="body"
                     v-else-if="detailError"
                     role="alert"
-                    class="text-sm text-destructive"
+                    class="text-destructive"
                 >
                     {{ detailError }}
                 </p>
@@ -1022,7 +1030,7 @@ onUnmounted(() => {
     padding: 0.75rem 1.25rem;
     margin-bottom: -1px;
     font-weight: 400;
-    font-size: 1rem;
+    font-size: var(--console-text-body);
 }
 .user-access-log [role='tab'][aria-selected='true'],
 .user-access-detail [role='tab'][aria-selected='true'] {
@@ -1051,7 +1059,7 @@ onUnmounted(() => {
 .user-access-log nav button,
 .user-access-log nav :deep([data-slot='select-trigger']) {
     height: 2.5rem;
-    font-size: 1rem;
+    font-size: var(--console-text-body);
 }
 .user-access-log nav button {
     min-width: 2.5rem;
@@ -1060,7 +1068,7 @@ onUnmounted(() => {
     margin-top: 1.5rem;
 }
 .user-access-log .access-table {
-    font-size: 1rem;
+    font-size: var(--console-text-body);
 }
 .user-access-log .access-table th {
     height: 3rem;
@@ -1086,7 +1094,7 @@ onUnmounted(() => {
 .user-access-log nav,
 .user-access-log [role='tab'],
 .user-access-detail [role='tab'] {
-    font-size: 16px;
+    font-size: var(--console-text-body);
 }
 .user-access-log .access-table th {
     height: 48px;
@@ -1096,7 +1104,7 @@ onUnmounted(() => {
     height: 60px;
 }
 .user-access-log [aria-label='已应用筛选'] {
-    font-size: 14px;
+    font-size: var(--console-text-body);
 }
 .user-access-log .access-toolbar input,
 .user-access-log .access-toolbar button,
@@ -1105,7 +1113,7 @@ onUnmounted(() => {
 .user-access-log nav button,
 .user-access-log nav :deep([data-slot='select-trigger']) {
     height: 40px;
-    font-size: 16px;
+    font-size: var(--console-text-body);
 }
 .user-access-log .access-toolbar form input,
 .user-access-log
@@ -1136,7 +1144,7 @@ onUnmounted(() => {
     border: 0;
     background: transparent;
     font-family: inherit;
-    font-size: 1rem;
+    font-size: var(--console-text-body);
     line-height: 1.65;
 }
 .user-access-detail > label {

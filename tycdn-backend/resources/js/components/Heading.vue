@@ -13,6 +13,9 @@ withDefaults(defineProps<Props>(), {
 <template>
     <header :class="variant === 'small' ? '' : 'mb-8 space-y-0.5'">
         <h2
+            :data-typography="
+                variant === 'small' ? 'section-title' : 'page-title'
+            "
             :class="
                 variant === 'small'
                     ? 'mb-0.5 text-base font-medium'
@@ -21,7 +24,11 @@ withDefaults(defineProps<Props>(), {
         >
             {{ title }}
         </h2>
-        <p v-if="description" class="text-sm text-muted-foreground">
+        <p
+            v-if="description"
+            data-typography="description"
+            class="text-sm text-muted-foreground"
+        >
             {{ description }}
         </p>
     </header>

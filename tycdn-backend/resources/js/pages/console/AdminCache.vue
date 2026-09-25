@@ -3,6 +3,7 @@ import { Copy, RefreshCw, Search } from 'lucide-vue-next';
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { toast } from 'vue-sonner';
 import ConsolePagination from '@/components/console/ConsolePagination.vue';
+import { Button } from '@/components/ui/button';
 import CheckboxField from '@/components/ui/checkbox/CheckboxField.vue';
 import {
     Dialog,
@@ -337,32 +338,40 @@ function showDetail(row: CdnflyRecord, kind: 'reason' | 'progress') {
     <div class="p-3 md:p-5">
         <section class="cache-workspace rounded-xl border bg-card shadow-sm">
             <nav class="tabs" role="tablist" aria-label="刷新预热">
-                <button
+                <Button
+                    variant="ghost"
+                    type="button"
+                    data-slot="console-tab"
                     role="tab"
                     :aria-selected="tab === 'submit'"
                     :disabled="submitting"
                     @click="changeTab('submit')"
                 >
-                    刷新预热</button
-                ><button
+                    刷新预热</Button
+                ><Button
+                    variant="ghost"
+                    type="button"
+                    data-slot="console-tab"
                     role="tab"
                     :aria-selected="tab === 'history'"
                     :disabled="submitting"
                     @click="changeTab('history')"
                 >
                     操作记录
-                </button>
+                </Button>
             </nav>
             <div v-if="tab === 'submit'" role="tabpanel" class="submit-layout">
                 <div class="main-column">
                     <section class="mode-panel inset">
                         <div class="section-head">
-                            <h2 class="marked">操作类型</h2>
+                            <h2 data-typography="section-title" class="marked">
+                                操作类型
+                            </h2>
                             <span class="current-mode"
                                 >当前：{{ currentMode.label }}</span
                             >
                         </div>
-                        <p class="muted helper">
+                        <p data-typography="helper" class="muted helper">
                             选择任务类型后会刷新对应的今日额度。
                         </p>
                         <div
@@ -370,7 +379,10 @@ function showDetail(row: CdnflyRecord, kind: 'reason' | 'progress') {
                             role="group"
                             aria-label="操作类型"
                         >
-                            <button
+                            <Button
+                                variant="ghost"
+                                type="button"
+                                data-slot="console-option"
                                 v-for="item in cacheModes"
                                 :key="item.value"
                                 :aria-pressed="mode === item.value"
@@ -378,7 +390,7 @@ function showDetail(row: CdnflyRecord, kind: 'reason' | 'progress') {
                                 @click="changeMode(item.value)"
                             >
                                 {{ item.label }}
-                            </button>
+                            </Button>
                         </div>
                     </section>
                     <form class="url-panel" @submit.prevent="submit">
@@ -390,7 +402,9 @@ function showDetail(row: CdnflyRecord, kind: 'reason' | 'progress') {
                                 >已输入 <b>{{ urls.length }}</b> 条</span
                             >
                         </div>
-                        <p class="helper muted">{{ currentMode.helper }}</p>
+                        <p data-typography="helper" class="helper muted">
+                            {{ currentMode.helper }}
+                        </p>
                         <Textarea
                             id="admin-cache-urls"
                             v-model="input"
@@ -404,12 +418,18 @@ function showDetail(row: CdnflyRecord, kind: 'reason' | 'progress') {
                             "
                         />
                         <p
+                            data-typography="helper"
                             class="input-hint inset"
                             :class="{ 'error-text': inputInvalid }"
                         >
                             <span class="dot">●</span> {{ inputHint }}
                         </p>
-                        <p v-if="formError" role="alert" class="error-text">
+                        <p
+                            data-typography="body"
+                            v-if="formError"
+                            role="alert"
+                            class="error-text"
+                        >
                             {{ formError }}
                         </p>
                         <div class="submit-footer">
@@ -418,7 +438,8 @@ function showDetail(row: CdnflyRecord, kind: 'reason' | 'progress') {
                                 <b>{{ urls.length }}</b> 个任务</span
                             >
                             <div>
-                                <button
+                                <Button
+                                    variant="outline"
                                     data-slot="console-action"
                                     type="button"
                                     :disabled="!input || submitting"
@@ -428,14 +449,16 @@ function showDetail(row: CdnflyRecord, kind: 'reason' | 'progress') {
                                         submitted = false;
                                     "
                                 >
-                                    清空</button
-                                ><button
+                                    清空</Button
+                                ><Button
+                                    variant="default"
+                                    type="submit"
                                     data-slot="console-action"
                                     class="primary"
                                     :disabled="submitDisabled"
                                 >
                                     {{ submitting ? '提交中…' : '提交任务' }}
-                                </button>
+                                </Button>
                             </div>
                         </div>
                     </form>
@@ -445,9 +468,9 @@ function showDetail(row: CdnflyRecord, kind: 'reason' | 'progress') {
                         class="quota-panel inset"
                         :aria-busy="quotaLoading"
                     >
-                        <h2>今日额度</h2>
+                        <h2 data-typography="section-title">今日额度</h2>
                         <div class="quota-value">
-                            <strong>{{
+                            <strong data-typography="metric">{{
                                 quotaLoading ? '…' : (remaining ?? '—')
                             }}</strong
                             ><span class="muted"
@@ -479,19 +502,27 @@ function showDetail(row: CdnflyRecord, kind: 'reason' | 'progress') {
                         >
                             <span :style="{ width: usagePercent + '%' }" />
                         </div>
-                        <p v-if="quotaError" role="alert" class="error-text">
+                        <p
+                            data-typography="body"
+                            v-if="quotaError"
+                            role="alert"
+                            class="error-text"
+                        >
                             {{ quotaError }}
-                            <button
+                            <Button
+                                variant="link"
+                                size="inline"
+                                type="button"
                                 data-slot="console-link"
                                 class="link"
                                 @click="loadQuota"
                             >
                                 重试
-                            </button>
+                            </Button>
                         </p>
                     </section>
                     <section class="state-panel inset">
-                        <h2>提交状态</h2>
+                        <h2 data-typography="section-title">提交状态</h2>
                         <span
                             class="status-pill"
                             :class="
@@ -503,7 +534,7 @@ function showDetail(row: CdnflyRecord, kind: 'reason' | 'progress') {
                             "
                             >● {{ submitState }}</span
                         >
-                        <p class="muted helper">
+                        <p data-typography="helper" class="muted helper">
                             提交成功后可在操作记录里查看进度。
                         </p>
                     </section>
@@ -516,7 +547,9 @@ function showDetail(row: CdnflyRecord, kind: 'reason' | 'progress') {
                 :aria-busy="loading"
             >
                 <div class="history-toolbar">
-                    <button
+                    <Button
+                        variant="outline"
+                        type="button"
                         data-slot="console-action"
                         :class="{ primary: selected.length > 0 }"
                         :disabled="!selected.length || submitting || loading"
@@ -525,7 +558,7 @@ function showDetail(row: CdnflyRecord, kind: 'reason' | 'progress') {
                         <RefreshCw />{{
                             submitting ? '提交中…' : '重新提交选中'
                         }}
-                    </button>
+                    </Button>
                     <form class="history-filters" @submit.prevent="loadJobs(1)">
                         <SelectField
                             v-model="typeFilter"
@@ -548,16 +581,19 @@ function showDetail(row: CdnflyRecord, kind: 'reason' | 'progress') {
                                 aria-label="搜索 URL 或域名"
                                 placeholder="搜索 URL 或域名"
                                 :disabled="submitting"
-                            /><button
+                            /><Button
+                                variant="outline"
                                 data-slot="console-action"
                                 type="submit"
                                 aria-label="搜索"
                                 :disabled="submitting"
                             >
                                 <Search />
-                            </button>
+                            </Button>
                         </div>
-                        <button
+                        <Button
+                            variant="link"
+                            size="inline"
                             data-slot="console-link"
                             type="button"
                             class="link"
@@ -565,19 +601,27 @@ function showDetail(row: CdnflyRecord, kind: 'reason' | 'progress') {
                             @click="clearFilters"
                         >
                             清空
-                        </button>
+                        </Button>
                     </form>
                 </div>
-                <p v-if="listError" role="alert" class="error-text list-error">
+                <p
+                    data-typography="body"
+                    v-if="listError"
+                    role="alert"
+                    class="error-text list-error"
+                >
                     {{ listError }}
-                    <button
+                    <Button
+                        variant="link"
+                        size="inline"
+                        type="button"
                         data-slot="console-link"
                         class="link"
                         :disabled="submitting"
                         @click="loadJobs()"
                     >
                         刷新记录
-                    </button>
+                    </Button>
                 </p>
                 <div class="history-summary inset">
                     <div>
@@ -679,7 +723,10 @@ function showDetail(row: CdnflyRecord, kind: 'reason' | 'progress') {
                                         <span :title="cacheJobUrl(row)">{{
                                             cacheJobUrl(row) || '未记录 URL'
                                         }}</span
-                                        ><button
+                                        ><Button
+                                            variant="ghost"
+                                            size="icon-sm"
+                                            type="button"
                                             data-slot="console-link"
                                             v-if="cacheJobUrl(row)"
                                             class="link copy"
@@ -687,7 +734,7 @@ function showDetail(row: CdnflyRecord, kind: 'reason' | 'progress') {
                                             @click="copy(cacheJobUrl(row))"
                                         >
                                             <Copy />
-                                        </button>
+                                        </Button>
                                     </div>
                                 </td>
                                 <td>
@@ -707,7 +754,10 @@ function showDetail(row: CdnflyRecord, kind: 'reason' | 'progress') {
                                 </td>
                                 <td>
                                     <div class="row-actions">
-                                        <button
+                                        <Button
+                                            variant="link"
+                                            size="inline"
+                                            type="button"
                                             data-slot="console-link"
                                             v-if="
                                                 cacheJobStatus(row).group ===
@@ -716,16 +766,22 @@ function showDetail(row: CdnflyRecord, kind: 'reason' | 'progress') {
                                             class="link"
                                             @click="showDetail(row, 'progress')"
                                         >
-                                            查看进度</button
+                                            查看进度</Button
                                         ><template v-else
-                                            ><button
+                                            ><Button
+                                                variant="link"
+                                                size="inline"
+                                                type="button"
                                                 data-slot="console-link"
                                                 class="link"
                                                 :disabled="submitting"
                                                 @click="resubmit([row])"
                                             >
-                                                重新提交</button
-                                            ><button
+                                                重新提交</Button
+                                            ><Button
+                                                variant="link"
+                                                size="inline"
+                                                type="button"
                                                 data-slot="console-link"
                                                 v-if="
                                                     cacheJobStatus(row)
@@ -737,7 +793,7 @@ function showDetail(row: CdnflyRecord, kind: 'reason' | 'progress') {
                                                 "
                                             >
                                                 查看原因
-                                            </button></template
+                                            </Button></template
                                         >
                                     </div>
                                 </td>
@@ -776,20 +832,24 @@ function showDetail(row: CdnflyRecord, kind: 'reason' | 'progress') {
                     >
                     <pre class="detail-text">{{ detailText }}</pre>
                     <DialogFooter
-                        ><button
+                        ><Button
+                            variant="outline"
+                            type="button"
                             data-slot="console-action"
                             v-if="detailKind === 'progress'"
                             :disabled="loading"
                             @click="loadJobs()"
                         >
-                            刷新</button
-                        ><button
+                            刷新</Button
+                        ><Button
+                            variant="default"
+                            type="button"
                             data-slot="console-action"
                             class="primary"
                             @click="detail = null"
                         >
                             关闭
-                        </button></DialogFooter
+                        </Button></DialogFooter
                     ></DialogScrollContent
                 ></Dialog
             >
@@ -799,7 +859,7 @@ function showDetail(row: CdnflyRecord, kind: 'reason' | 'progress') {
 
 <style scoped>
 .cache-workspace {
-    font-size: 12px;
+    font-size: var(--console-text-body);
     min-width: 0;
 }
 .tabs {
@@ -812,7 +872,7 @@ button,
 input,
 :deep([data-slot='select-trigger']),
 :deep([data-slot='textarea']) {
-    font-size: 12px;
+    font-size: var(--console-text-body);
     border: 1px solid var(--border);
     background: var(--card);
     border-radius: 4px;
@@ -869,7 +929,7 @@ input:focus-visible,
 }
 h2 {
     font-weight: 600;
-    font-size: 12px;
+    font-size: var(--console-text-section-title);
 }
 .inset {
     border: 1px solid color-mix(in srgb, var(--border) 65%, var(--card));
@@ -896,7 +956,7 @@ h2 {
     gap: 8px;
 }
 .section-head > span {
-    font-size: 11px;
+    font-size: var(--console-text-helper);
 }
 .marked {
     border-left: 3px solid #2d8cf0;
@@ -904,7 +964,7 @@ h2 {
     padding-left: 7px;
 }
 .helper {
-    font-size: 11px;
+    font-size: var(--console-text-helper);
     margin: 5px 0 8px;
 }
 .current-mode {
@@ -913,7 +973,7 @@ h2 {
     border-radius: 14px;
     padding: 2px 8px;
     background: #2d8cf008;
-    font-size: 10px !important;
+    font-size: var(--console-text-body) !important;
 }
 .mode-options {
     display: flex;
@@ -921,7 +981,7 @@ h2 {
 }
 .mode-options button {
     min-width: 83px;
-    font-size: 11px;
+    font-size: var(--console-text-body);
 }
 .mode-options button[aria-pressed='true'] {
     color: #2d8cf0;
@@ -946,7 +1006,7 @@ h2 {
     border-color: #79afff;
 }
 .input-hint {
-    font-size: 11px;
+    font-size: var(--console-text-helper);
     padding: 7px 8px;
     margin-top: 8px;
     color: var(--muted-foreground);
@@ -962,7 +1022,7 @@ b {
     justify-content: space-between;
     gap: 8px;
     margin-top: 10px;
-    font-size: 11px;
+    font-size: var(--console-text-body);
 }
 .submit-footer > div {
     display: flex;
@@ -970,7 +1030,7 @@ b {
 }
 .submit-footer button {
     min-height: 26px;
-    font-size: 11px;
+    font-size: var(--console-text-body);
 }
 .quota-panel,
 .state-panel {
@@ -983,17 +1043,17 @@ b {
     margin: 6px 0 8px;
 }
 .quota-value strong {
-    font-family: Georgia, serif;
-    font-size: 26px;
+    font-family: inherit;
+    font-size: var(--console-text-metric);
     line-height: 28px;
 }
 .quota-value span {
-    font-size: 11px;
+    font-size: var(--console-text-body);
 }
 .quota-caption {
     display: flex;
     justify-content: space-between;
-    font-size: 10px;
+    font-size: var(--console-text-helper);
 }
 .usage-track {
     height: 5px;
@@ -1023,7 +1083,7 @@ b {
     display: inline-block;
     padding: 3px 9px;
     border-radius: 14px;
-    font-size: 11px;
+    font-size: var(--console-text-helper);
     white-space: nowrap;
     background: var(--muted);
 }
@@ -1056,7 +1116,7 @@ b {
     background: #2d8cf00d;
 }
 .error-text {
-    font-size: 12px;
+    font-size: var(--console-text-body);
     margin-top: 8px;
     overflow-wrap: anywhere;
 }
@@ -1108,7 +1168,7 @@ b {
     gap: 10px;
     padding: 6px 10px;
     margin-bottom: 12px;
-    font-size: 11px;
+    font-size: var(--console-text-body);
 }
 .history-summary > div {
     display: flex;
@@ -1132,7 +1192,7 @@ table {
 }
 th {
     padding: 8px;
-    font-size: 12px;
+    font-size: var(--console-text-body);
     font-weight: 500;
     background: color-mix(in srgb, var(--muted) 20%, var(--card));
     border-bottom: 1px solid var(--border);
@@ -1140,7 +1200,7 @@ th {
 td {
     padding: 8px;
     border-bottom: 1px solid var(--border);
-    font-size: 11px;
+    font-size: var(--console-text-body);
 }
 th.selection {
     width: 44px;
@@ -1166,7 +1226,7 @@ th.selection {
 .job-id span {
     display: inline-block;
     width: 30px;
-    font-size: 10px;
+    font-size: var(--console-text-helper);
 }
 .url-cell {
     min-width: 260px;
@@ -1209,7 +1269,7 @@ th.selection {
     white-space: pre-wrap;
     overflow-wrap: anywhere;
     font-family: inherit;
-    font-size: 13px;
+    font-size: var(--console-text-body);
     line-height: 1.6;
     max-height: 50vh;
     overflow-y: auto;
@@ -1218,7 +1278,7 @@ th.selection {
     padding: 5px 12px;
     border: 1px solid var(--border);
     border-radius: 4px;
-    font-size: 12px;
+    font-size: var(--console-text-body);
 }
 :global(.cache-job-detail [data-slot='dialog-footer'] button.primary) {
     background: #2d8cf0;

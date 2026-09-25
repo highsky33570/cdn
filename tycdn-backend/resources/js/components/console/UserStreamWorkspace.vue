@@ -553,7 +553,9 @@ function tabKey(event: KeyboardEvent) {
             aria-label="四层转发"
             @keydown="tabKey"
         >
-            <button
+            <Button
+                variant="ghost"
+                data-slot="console-tab"
                 v-for="item in tabs"
                 :id="`user-stream-tab-${item.key}`"
                 :key="item.key"
@@ -566,7 +568,7 @@ function tabKey(event: KeyboardEvent) {
                 @click="selectTab(item.key)"
             >
                 {{ item.label }}
-            </button>
+            </Button>
         </nav>
         <div
             id="user-stream-panel"
@@ -575,7 +577,8 @@ function tabKey(event: KeyboardEvent) {
             :aria-busy="loading || busy"
         >
             <div v-if="tab === 'streams'" class="stream-toolbar">
-                <button
+                <Button
+                    variant="default"
                     data-slot="console-action"
                     class="stream-button primary"
                     type="button"
@@ -583,8 +586,9 @@ function tabKey(event: KeyboardEvent) {
                     @click="emit('create')"
                 >
                     添加转发
-                </button>
-                <button
+                </Button>
+                <Button
+                    variant="outline"
                     data-slot="console-action"
                     class="stream-button"
                     type="button"
@@ -592,10 +596,11 @@ function tabKey(event: KeyboardEvent) {
                     @click="openBatch"
                 >
                     批量修改
-                </button>
+                </Button>
                 <DropdownMenu
                     ><DropdownMenuTrigger as-child
-                        ><button
+                        ><Button
+                            variant="outline"
                             data-slot="console-action"
                             class="stream-button"
                             type="button"
@@ -603,8 +608,7 @@ function tabKey(event: KeyboardEvent) {
                         >
                             更多操作
                             <ChevronDown
-                                :size="16"
-                            /></button></DropdownMenuTrigger
+                                :size="16" /></Button></DropdownMenuTrigger
                     ><DropdownMenuContent align="start"
                         ><DropdownMenuItem
                             :disabled="!selected.length"
@@ -647,16 +651,19 @@ function tabKey(event: KeyboardEvent) {
                         aria-label="转发搜索"
                         :placeholder="`输入${searchOptions[searchType as keyof typeof searchOptions]}`"
                         :disabled="busy"
-                    /><button
+                    /><Button
+                        variant="default"
                         data-slot="console-action"
                         class="stream-button primary"
                         type="submit"
                         :disabled="busy || loading"
                     >
                         查询
-                    </button>
+                    </Button>
                 </form>
-                <button
+                <Button
+                    variant="link"
+                    size="inline"
                     data-slot="console-link"
                     type="button"
                     class="text-action"
@@ -665,18 +672,20 @@ function tabKey(event: KeyboardEvent) {
                     @click="advanced = !advanced"
                 >
                     高级搜索
-                </button>
+                </Button>
             </div>
             <div v-else class="stream-toolbar">
-                <button
+                <Button
+                    variant="default"
                     data-slot="console-action"
                     type="button"
                     class="stream-button primary"
                     :disabled="busy || loading"
                     @click="editResource()"
                 >
-                    {{ tab === 'groups' ? '新增分组' : '新增设置' }}</button
-                ><button
+                    {{ tab === 'groups' ? '新增分组' : '新增设置' }}</Button
+                ><Button
+                    variant="outline"
                     data-slot="console-action"
                     type="button"
                     class="stream-button"
@@ -684,7 +693,7 @@ function tabKey(event: KeyboardEvent) {
                     @click="confirmDelete()"
                 >
                     删除
-                </button>
+                </Button>
             </div>
             <form
                 v-if="tab === 'streams' && advanced"
@@ -772,14 +781,17 @@ function tabKey(event: KeyboardEvent) {
                         </SelectOption>
                     </SelectField></label
                 >
-                <button
+                <Button
+                    variant="default"
                     data-slot="console-action"
                     type="submit"
                     class="stream-button primary"
                     :disabled="busy || loading"
                 >
-                    查询</button
-                ><button
+                    查询</Button
+                ><Button
+                    variant="link"
+                    size="inline"
                     data-slot="console-link"
                     type="button"
                     class="text-action"
@@ -787,11 +799,13 @@ function tabKey(event: KeyboardEvent) {
                     @click="clear"
                 >
                     清除
-                </button>
+                </Button>
             </form>
-            <p v-if="error" class="error" role="alert">
+            <p data-typography="body" v-if="error" class="error" role="alert">
                 {{ error }}
-                <button
+                <Button
+                    variant="link"
+                    size="inline"
                     data-slot="console-link"
                     class="text-action"
                     type="button"
@@ -799,7 +813,7 @@ function tabKey(event: KeyboardEvent) {
                     @click="load()"
                 >
                     重试
-                </button>
+                </Button>
             </p>
             <div class="stream-table-scroll">
                 <table
@@ -943,7 +957,9 @@ function tabKey(event: KeyboardEvent) {
                                 >
                                 <td>
                                     <div class="row-actions">
-                                        <button
+                                        <Button
+                                            variant="link"
+                                            size="inline"
                                             data-slot="console-link"
                                             type="button"
                                             class="text-action"
@@ -958,10 +974,12 @@ function tabKey(event: KeyboardEvent) {
                                                 tab === 'streams'
                                                     ? '管理'
                                                     : '编辑'
-                                            }}</button
+                                            }}</Button
                                         ><DropdownMenu v-if="tab === 'streams'"
                                             ><DropdownMenuTrigger as-child
-                                                ><button
+                                                ><Button
+                                                    variant="link"
+                                                    size="inline"
                                                     data-slot="console-link"
                                                     type="button"
                                                     class="text-action row-more"
@@ -970,8 +988,9 @@ function tabKey(event: KeyboardEvent) {
                                                 >
                                                     更多
                                                     <ChevronDown
-                                                        :size="14"
-                                                    /></button></DropdownMenuTrigger
+                                                        :size="
+                                                            14
+                                                        " /></Button></DropdownMenuTrigger
                                             ><DropdownMenuContent align="end"
                                                 ><DropdownMenuItem
                                                     @select="
@@ -1000,7 +1019,9 @@ function tabKey(event: KeyboardEvent) {
                                                     >删除</DropdownMenuItem
                                                 ></DropdownMenuContent
                                             ></DropdownMenu
-                                        ><button
+                                        ><Button
+                                            variant="link"
+                                            size="inline"
                                             data-slot="console-link"
                                             v-else
                                             type="button"
@@ -1011,7 +1032,7 @@ function tabKey(event: KeyboardEvent) {
                                             "
                                         >
                                             删除
-                                        </button>
+                                        </Button>
                                     </div>
                                 </td>
                             </tr>
@@ -1069,7 +1090,12 @@ function tabKey(event: KeyboardEvent) {
                     }}</DialogDescription></DialogHeader
                 >
                 <form class="resource-form" @submit.prevent="saveResource">
-                    <p v-if="editorError" role="alert" class="error">
+                    <p
+                        data-typography="body"
+                        v-if="editorError"
+                        role="alert"
+                        class="error"
+                    >
                         {{ editorError }}
                     </p>
                     <template v-if="editorTab === 'groups'"
@@ -1177,7 +1203,12 @@ function tabKey(event: KeyboardEvent) {
                     ></DialogHeader
                 >
                 <form class="resource-form" @submit.prevent="applyBatch">
-                    <p v-if="batchError" role="alert" class="error">
+                    <p
+                        data-typography="body"
+                        v-if="batchError"
+                        role="alert"
+                        class="error"
+                    >
                         {{ batchError }}
                     </p>
                     <div
@@ -1252,7 +1283,7 @@ function tabKey(event: KeyboardEvent) {
     padding: 0 14px 24px;
     background: var(--card);
     color: var(--muted-foreground);
-    font-size: 16px;
+    font-size: var(--console-text-body);
 }
 .stream-tabs {
     display: flex;
@@ -1265,7 +1296,7 @@ function tabKey(event: KeyboardEvent) {
     border-bottom: 2px solid transparent;
     margin-bottom: -1px;
     white-space: nowrap;
-    font-size: 16px;
+    font-size: var(--console-text-body);
 }
 .stream-tabs button[aria-selected='true'] {
     color: var(--primary);
@@ -1289,7 +1320,7 @@ function tabKey(event: KeyboardEvent) {
     justify-content: center;
     gap: 6px;
     white-space: nowrap;
-    font-size: 16px;
+    font-size: var(--console-text-body);
 }
 .stream-button.primary {
     background: var(--primary);
@@ -1337,7 +1368,7 @@ function tabKey(event: KeyboardEvent) {
 .advanced-filters label {
     display: grid;
     gap: 6px;
-    font-size: 14px;
+    font-size: var(--console-text-body);
 }
 .advanced-filters :deep([data-slot='select-trigger']) {
     width: 170px;
@@ -1356,7 +1387,7 @@ function tabKey(event: KeyboardEvent) {
     width: 100%;
     min-width: 780px;
     table-layout: fixed;
-    font-size: 16px;
+    font-size: var(--console-text-body);
 }
 .stream-table.forwarding-table {
     min-width: 1680px;
@@ -1443,7 +1474,7 @@ input:focus-visible,
 .error {
     color: var(--destructive);
     margin: 12px 0;
-    font-size: 14px;
+    font-size: var(--console-text-body);
 }
 .resource-form {
     display: grid;
@@ -1452,7 +1483,7 @@ input:focus-visible,
 .resource-form label {
     display: grid;
     gap: 6px;
-    font-size: 14px;
+    font-size: var(--console-text-body);
 }
 .resource-form input:not([type='checkbox']),
 .resource-form :deep([data-slot='select-trigger']) {
@@ -1494,7 +1525,7 @@ input:focus-visible,
     }
     .stream-tabs button {
         padding: 12px 10px;
-        font-size: 14px;
+        font-size: var(--console-text-body);
     }
     .stream-search {
         width: 100%;

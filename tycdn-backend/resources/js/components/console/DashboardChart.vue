@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, useId, watch } from 'vue';
+import { Button } from '@/components/ui/button';
 import { dashboardMetric } from '@/lib/adminDashboard';
 import type { DashboardPoint, DashboardMetric } from '@/lib/adminDashboard';
 
@@ -109,8 +110,9 @@ const axis = (n: number) =>
         :aria-busy="loading"
     >
         <p
+            data-typography="section-title"
             v-if="kind === 'bar'"
-            class="px-3 pt-3 text-xs text-muted-foreground"
+            class="px-3 pt-3 text-muted-foreground"
         >
             {{ title }}
         </p>
@@ -129,9 +131,16 @@ const axis = (n: number) =>
                 <span v-if="loading">加载中…</span
                 ><span v-else-if="error" class="px-4 text-destructive"
                     >{{ error }}
-                    <button class="underline" @click="$emit('retry')">
+                    <Button
+                        variant="link"
+                        size="inline"
+                        type="button"
+                        data-slot="console-link"
+                        class="underline"
+                        @click="$emit('retry')"
+                    >
                         重试
-                    </button></span
+                    </Button></span
                 ><span v-else>暂无数据</span>
             </div>
             <svg

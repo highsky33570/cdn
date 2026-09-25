@@ -286,9 +286,13 @@ onUnmounted(() => {
         <div class="grid min-w-0 content-start gap-4">
             <section class="dashboard-card" aria-label="运营数据">
                 <header>
-                    <h2><BarChart3 />运营数据</h2>
+                    <h2 data-typography="section-title">
+                        <BarChart3 />运营数据
+                    </h2>
                     <div class="periods" role="group" aria-label="运营数据周期">
-                        <button
+                        <Button
+                            variant="ghost"
+                            type="button"
                             data-slot="console-segment"
                             v-for="period in operationPeriods"
                             :key="period.key"
@@ -296,7 +300,7 @@ onUnmounted(() => {
                             @click="operationPeriod = period.key"
                         >
                             {{ period.label }}
-                        </button>
+                        </Button>
                     </div>
                 </header>
                 <div class="grid gap-3 p-4 sm:grid-cols-3">
@@ -322,9 +326,13 @@ onUnmounted(() => {
                 :aria-busy="usage.loading"
             >
                 <header>
-                    <h2><BarChart3 />网络概览</h2>
+                    <h2 data-typography="section-title">
+                        <BarChart3 />网络概览
+                    </h2>
                     <div class="periods" role="group" aria-label="网络概览周期">
-                        <button
+                        <Button
+                            variant="ghost"
+                            type="button"
                             data-slot="console-segment"
                             v-for="period in periods"
                             :key="period.key"
@@ -332,11 +340,24 @@ onUnmounted(() => {
                             @click="usagePeriod = period.key"
                         >
                             {{ period.label }}
-                        </button>
+                        </Button>
                     </div>
                 </header>
-                <p v-if="usage.error" role="alert" class="error">
-                    {{ usage.error }} <button @click="loadUsage">重试</button>
+                <p
+                    data-typography="body"
+                    v-if="usage.error"
+                    role="alert"
+                    class="error"
+                >
+                    {{ usage.error }}
+                    <Button
+                        variant="link"
+                        size="inline"
+                        type="button"
+                        data-slot="console-link"
+                        @click="loadUsage"
+                        >重试</Button
+                    >
                 </p>
                 <div class="grid grid-cols-2 gap-3 p-4 lg:grid-cols-4">
                     <div
@@ -344,7 +365,10 @@ onUnmounted(() => {
                         :key="item.key"
                         class="rounded-md border bg-muted/30 p-3"
                     >
-                        <p class="text-xs text-muted-foreground">
+                        <p
+                            data-typography="label"
+                            class="text-muted-foreground"
+                        >
                             {{
                                 item.key === 'bandwidth'
                                     ? '带宽峰值'
@@ -353,7 +377,10 @@ onUnmounted(() => {
                                       : item.label
                             }}
                         </p>
-                        <p class="mt-2 text-lg font-semibold tabular-nums">
+                        <p
+                            data-typography="metric"
+                            class="mt-2 font-semibold tabular-nums"
+                        >
                             {{
                                 usage.loading
                                     ? '加载中…'
@@ -371,13 +398,17 @@ onUnmounted(() => {
             >
                 <section class="dashboard-card min-w-0" aria-label="监控趋势">
                     <header>
-                        <h2><Activity />监控趋势</h2>
+                        <h2 data-typography="section-title">
+                            <Activity />监控趋势
+                        </h2>
                         <div
                             class="periods"
                             role="group"
                             aria-label="监控趋势周期"
                         >
-                            <button
+                            <Button
+                                variant="ghost"
+                                type="button"
                                 data-slot="console-segment"
                                 v-for="period in periods"
                                 :key="period.key"
@@ -385,7 +416,7 @@ onUnmounted(() => {
                                 @click="trendPeriod = period.key"
                             >
                                 {{ period.label }}
-                            </button>
+                            </Button>
                         </div>
                     </header>
                     <div class="p-4">
@@ -394,7 +425,10 @@ onUnmounted(() => {
                             role="tablist"
                             aria-label="监控指标"
                         >
-                            <button
+                            <Button
+                                variant="ghost"
+                                type="button"
+                                data-slot="console-tab"
                                 v-for="item in metrics"
                                 :key="item.key"
                                 role="tab"
@@ -402,7 +436,7 @@ onUnmounted(() => {
                                 @click="metric = item.key"
                             >
                                 {{ item.label }}
-                            </button>
+                            </Button>
                         </div>
                         <DashboardChart
                             :title="
@@ -424,7 +458,9 @@ onUnmounted(() => {
                     :aria-busy="ranking.loading"
                 >
                     <header>
-                        <h2><Activity />TOP10 数据 (近30分钟)</h2>
+                        <h2 data-typography="section-title">
+                            <Activity />TOP10 数据 (近30分钟)
+                        </h2>
                     </header>
                     <div class="p-4">
                         <div
@@ -432,7 +468,10 @@ onUnmounted(() => {
                             role="tablist"
                             aria-label="TOP10 类型"
                         >
-                            <button
+                            <Button
+                                variant="ghost"
+                                type="button"
+                                data-slot="console-tab"
                                 v-for="item in tops"
                                 :key="item.key"
                                 role="tab"
@@ -440,11 +479,23 @@ onUnmounted(() => {
                                 @click="topType = item.key"
                             >
                                 {{ item.label }}
-                            </button>
+                            </Button>
                         </div>
-                        <p v-if="ranking.error" role="alert" class="error">
+                        <p
+                            data-typography="body"
+                            v-if="ranking.error"
+                            role="alert"
+                            class="error"
+                        >
                             {{ ranking.error }}
-                            <button @click="loadRanking">重试</button>
+                            <Button
+                                variant="link"
+                                size="inline"
+                                type="button"
+                                data-slot="console-link"
+                                @click="loadRanking"
+                                >重试</Button
+                            >
                         </p>
                         <div class="overflow-x-auto">
                             <table
@@ -566,12 +617,20 @@ onUnmounted(() => {
                     </div>
                 </div>
                 <p
+                    data-typography="body"
                     v-if="account.error || login.error"
                     role="alert"
                     class="error"
                 >
                     {{ account.error || login.error }}
-                    <button @click="loadAccount">重试</button>
+                    <Button
+                        variant="link"
+                        size="inline"
+                        type="button"
+                        data-slot="console-link"
+                        @click="loadAccount"
+                        >重试</Button
+                    >
                 </p>
             </section>
             <section
@@ -580,12 +639,24 @@ onUnmounted(() => {
                 :aria-busy="system.loading"
             >
                 <header>
-                    <h2><Volume2 />系统状态</h2>
+                    <h2 data-typography="section-title"><Volume2 />系统状态</h2>
                 </header>
                 <div class="p-4">
-                    <p v-if="system.error" role="alert" class="error">
+                    <p
+                        data-typography="body"
+                        v-if="system.error"
+                        role="alert"
+                        class="error"
+                    >
                         {{ system.error }}
-                        <button @click="loadSystem">重试</button>
+                        <Button
+                            variant="link"
+                            size="inline"
+                            type="button"
+                            data-slot="console-link"
+                            @click="loadSystem"
+                            >重试</Button
+                        >
                     </p>
                     <table class="w-full text-xs" aria-label="系统状态">
                         <tbody>
@@ -639,10 +710,18 @@ onUnmounted(() => {
                             </tr>
                         </tbody>
                     </table>
-                    <p class="mt-3 text-xs text-muted-foreground">
+                    <p
+                        data-typography="helper"
+                        class="mt-3 text-muted-foreground"
+                    >
                         Agent状态上次检查时间 {{ agent.check_at ?? '—' }}。
                     </p>
-                    <p v-if="actionError" role="alert" class="error">
+                    <p
+                        data-typography="body"
+                        v-if="actionError"
+                        role="alert"
+                        class="error"
+                    >
                         {{ actionError }}
                     </p>
                 </div>
@@ -653,12 +732,24 @@ onUnmounted(() => {
                 :aria-busy="license.loading"
             >
                 <header>
-                    <h2><Volume2 />系统授权</h2>
+                    <h2 data-typography="section-title"><Volume2 />系统授权</h2>
                 </header>
                 <div class="p-4">
-                    <p v-if="license.error" role="alert" class="error">
+                    <p
+                        data-typography="body"
+                        v-if="license.error"
+                        role="alert"
+                        class="error"
+                    >
                         {{ license.error }}
-                        <button @click="loadLicense">重试</button>
+                        <Button
+                            variant="link"
+                            size="inline"
+                            type="button"
+                            data-slot="console-link"
+                            @click="loadLicense"
+                            >重试</Button
+                        >
                     </p>
                     <table class="w-full text-xs" aria-label="系统授权">
                         <tbody>
@@ -709,7 +800,7 @@ onUnmounted(() => {
             </section>
             <section class="dashboard-card" aria-label="使用统计">
                 <header>
-                    <h2><Grid2X2 />使用统计</h2>
+                    <h2 data-typography="section-title"><Grid2X2 />使用统计</h2>
                 </header>
                 <div class="p-4">
                     <table class="w-full text-xs" aria-label="使用统计">

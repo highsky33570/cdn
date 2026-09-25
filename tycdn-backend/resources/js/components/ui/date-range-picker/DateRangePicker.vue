@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { CalendarDays } from 'lucide-vue-next';
 import { computed, ref, watch } from 'vue';
+import { Button } from '@/components/ui/button';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -335,7 +336,8 @@ function cellClass(cell: Cell): string {
 <template>
     <DropdownMenu v-model:open="open">
         <DropdownMenuTrigger as-child>
-            <button
+            <Button
+                variant="outline"
                 data-slot="date-range-picker"
                 type="button"
                 :class="[
@@ -356,14 +358,17 @@ function cellClass(cell: Cell): string {
                 >
                     {{ triggerLabel }}
                 </span>
-            </button>
+            </Button>
         </DropdownMenuTrigger>
 
         <DropdownMenuContent class="w-auto p-0" :side-offset="6" align="start">
             <div @mouseleave="hoverDate = null">
                 <!-- 快捷按钮 -->
                 <div class="flex gap-1.5 border-b px-3 py-2">
-                    <button
+                    <Button
+                        variant="outline"
+                        size="inline"
+                        data-slot="calendar-preset"
                         v-for="p in [
                             { key: 'today', label: '今天' },
                             { key: 'yesterday', label: '昨天' },
@@ -380,7 +385,7 @@ function cellClass(cell: Cell): string {
                         "
                     >
                         {{ p.label }}
-                    </button>
+                    </Button>
                 </div>
 
                 <!-- 双月日历 -->
@@ -390,13 +395,16 @@ function cellClass(cell: Cell): string {
                     <!-- 左月 -->
                     <div class="w-52">
                         <div class="mb-2 flex items-center justify-between">
-                            <button
+                            <Button
+                                variant="ghost"
+                                size="inline"
+                                data-slot="calendar-navigation"
                                 type="button"
                                 class="flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:bg-accent"
                                 @click="navMonth(-1)"
                             >
                                 ‹
-                            </button>
+                            </Button>
                             <span class="text-xs font-medium"
                                 >{{ leftYear }}年
                                 {{ MONTH_NAMES[leftMonth] }}</span
@@ -413,7 +421,10 @@ function cellClass(cell: Cell): string {
                             </div>
                         </div>
                         <div class="grid grid-cols-7">
-                            <button
+                            <Button
+                                variant="ghost"
+                                size="inline"
+                                data-slot="calendar-cell"
                                 type="button"
                                 v-for="(cell, i) in leftCells"
                                 :key="i"
@@ -425,7 +436,7 @@ function cellClass(cell: Cell): string {
                                 @mouseenter="onHover(cell)"
                             >
                                 {{ cell.empty ? '' : cell.day }}
-                            </button>
+                            </Button>
                         </div>
                     </div>
 
@@ -440,13 +451,16 @@ function cellClass(cell: Cell): string {
                                 >{{ rightYear }}年
                                 {{ MONTH_NAMES[rightMonth] }}</span
                             >
-                            <button
+                            <Button
+                                variant="ghost"
+                                size="inline"
+                                data-slot="calendar-navigation"
                                 type="button"
                                 class="flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:bg-accent"
                                 @click="navMonth(1)"
                             >
                                 ›
-                            </button>
+                            </Button>
                         </div>
                         <div class="mb-1 grid grid-cols-7">
                             <div
@@ -458,7 +472,10 @@ function cellClass(cell: Cell): string {
                             </div>
                         </div>
                         <div class="grid grid-cols-7">
-                            <button
+                            <Button
+                                variant="ghost"
+                                size="inline"
+                                data-slot="calendar-cell"
                                 type="button"
                                 v-for="(cell, i) in rightCells"
                                 :key="i"
@@ -470,7 +487,7 @@ function cellClass(cell: Cell): string {
                                 @mouseenter="onHover(cell)"
                             >
                                 {{ cell.empty ? '' : cell.day }}
-                            </button>
+                            </Button>
                         </div>
                     </div>
                 </div>
@@ -489,17 +506,19 @@ function cellClass(cell: Cell): string {
                         <template v-else>请选择开始和结束日期</template>
                     </span>
                     <div class="flex gap-2">
-                        <button
+                        <Button
+                            variant="outline"
                             type="button"
                             class="rounded-md border px-3 py-1 text-xs transition-colors hover:bg-accent"
                             @click="clear"
                         >
                             清除
-                        </button>
-                        <button
+                        </Button>
+                        <Button
+                            variant="default"
                             type="button"
                             :disabled="!startDate || !endDate"
-                            class="rounded-md bg-foreground px-3 py-1 text-xs text-background transition-opacity"
+                            class="rounded-md px-3 py-1 text-xs transition-opacity"
                             :class="
                                 startDate && endDate
                                     ? 'cursor-pointer opacity-100'
@@ -508,7 +527,7 @@ function cellClass(cell: Cell): string {
                             @click="confirm"
                         >
                             确认
-                        </button>
+                        </Button>
                     </div>
                 </div>
             </div>

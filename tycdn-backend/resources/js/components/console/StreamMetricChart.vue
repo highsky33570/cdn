@@ -92,8 +92,8 @@ const curvePath = (points: [number, number][]) =>
     points
         .map(([time, value], index) => {
             if (!index) {
-return `M ${x(time)},${y(value)}`;
-}
+                return `M ${x(time)},${y(value)}`;
+            }
 
             const previous = points[index - 1];
             const middle = (x(previous[0]) + x(time)) / 2;
@@ -173,7 +173,9 @@ function inspect(event: PointerEvent): void {
                 : undefined
         "
     >
-        <h3 class="text-sm font-semibold">{{ heading ?? title }}</h3>
+        <h3 data-typography="section-title" class="font-semibold">
+            {{ heading ?? title }}
+        </h3>
         <div
             v-if="series.inbound.length && !loading && !error"
             class="absolute top-4 right-4 flex gap-3 text-xs text-muted-foreground"
@@ -303,7 +305,13 @@ function inspect(event: PointerEvent): void {
             v-else-if="error"
             class="absolute inset-x-5 top-14 bottom-10 flex flex-col items-center justify-center gap-2 bg-card/95 text-sm text-destructive"
         >
-            <p role="alert" class="max-w-full break-words">{{ error }}</p>
+            <p
+                data-typography="body"
+                role="alert"
+                class="max-w-full break-words"
+            >
+                {{ error }}
+            </p>
             <Button
                 variant="outline"
                 size="sm"
@@ -313,8 +321,9 @@ function inspect(event: PointerEvent): void {
             >
         </div>
         <p
+            data-typography="body"
             v-else-if="!times.length"
-            class="pointer-events-none absolute inset-0 flex items-center justify-center text-sm text-muted-foreground"
+            class="pointer-events-none absolute inset-0 flex items-center justify-center text-muted-foreground"
         >
             暂无{{ title }}数据
         </p>
@@ -323,10 +332,11 @@ function inspect(event: PointerEvent): void {
             role="status"
             class="pointer-events-none absolute top-12 right-5 rounded border bg-popover p-3 text-xs text-popover-foreground shadow-md"
         >
-            <p class="mb-2">
+            <p data-typography="body" class="mb-2">
                 {{ formatDate(new Date(selected.time).toISOString()) }}
             </p>
             <p
+                data-typography="body"
                 v-for="value in selected.values"
                 :key="value.label"
                 class="flex justify-between gap-5"

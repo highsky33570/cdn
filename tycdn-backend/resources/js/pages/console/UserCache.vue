@@ -3,6 +3,7 @@ import { Search } from 'lucide-vue-next';
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { toast } from 'vue-sonner';
 import PackagePagination from '@/components/console/PackagePagination.vue';
+import { Button } from '@/components/ui/button';
 import CheckboxField from '@/components/ui/checkbox/CheckboxField.vue';
 import {
     Dialog,
@@ -293,7 +294,9 @@ function createdAt(row: CdnflyRecord) {
                 aria-label="刷新预热"
                 @keydown="tabKey"
             >
-                <button
+                <Button
+                    variant="ghost"
+                    data-slot="console-tab"
                     v-for="item in [
                         { value: 'submit', label: '刷新预热' },
                         { value: 'history', label: '操作记录' },
@@ -309,7 +312,7 @@ function createdAt(row: CdnflyRecord) {
                     @click="changeTab(item.value)"
                 >
                     {{ item.label }}
-                </button>
+                </Button>
             </nav>
             <div
                 v-if="tab === 'submit'"
@@ -361,6 +364,7 @@ function createdAt(row: CdnflyRecord) {
                                 aria-describedby="cache-quota cache-form-error"
                             />
                             <p
+                                data-typography="helper"
                                 id="cache-quota"
                                 class="quota-hint"
                                 :aria-busy="quotaLoading"
@@ -371,7 +375,9 @@ function createdAt(row: CdnflyRecord) {
                                 >
                                 <template v-else-if="quotaError"
                                     >额度暂不可用
-                                    <button
+                                    <Button
+                                        variant="link"
+                                        size="inline"
                                         data-slot="console-link"
                                         type="button"
                                         class="text-action"
@@ -379,7 +385,7 @@ function createdAt(row: CdnflyRecord) {
                                         @click="loadQuota"
                                     >
                                         重试
-                                    </button></template
+                                    </Button></template
                                 >
                                 <template v-else-if="quota.total === 0"
                                     >每日不限额</template
@@ -393,6 +399,7 @@ function createdAt(row: CdnflyRecord) {
                                 >
                             </p>
                             <p
+                                data-typography="body"
                                 v-if="formError"
                                 id="cache-form-error"
                                 class="error-message"
@@ -400,14 +407,15 @@ function createdAt(row: CdnflyRecord) {
                             >
                                 {{ formError }}
                             </p>
-                            <button
+                            <Button
+                                variant="default"
                                 data-slot="console-action"
                                 class="cache-button primary submit-button"
                                 type="submit"
                                 :disabled="submitting"
                             >
                                 {{ submitting ? '提交中…' : '提交' }}
-                            </button>
+                            </Button>
                         </div>
                     </div>
                 </form>
@@ -420,7 +428,8 @@ function createdAt(row: CdnflyRecord) {
                 :aria-busy="loading || submitting"
             >
                 <form class="cache-toolbar" @submit.prevent="loadJobs(1)">
-                    <button
+                    <Button
+                        variant="default"
                         data-slot="console-action"
                         type="button"
                         class="cache-button primary"
@@ -428,7 +437,7 @@ function createdAt(row: CdnflyRecord) {
                         @click="resubmit()"
                     >
                         {{ submitting ? '提交中…' : '重新提交' }}
-                    </button>
+                    </Button>
                     <SelectField
                         v-model="typeFilter"
                         aria-label="任务类型"
@@ -450,18 +459,27 @@ function createdAt(row: CdnflyRecord) {
                             aria-label="URL或域名"
                             placeholder="URL或域名"
                             :disabled="submitting"
-                        /><button
+                        /><Button
+                            variant="ghost"
+                            size="icon-sm"
                             type="submit"
                             aria-label="查询"
                             :disabled="loading || submitting"
                         >
                             <Search :size="18" />
-                        </button>
+                        </Button>
                     </div>
                 </form>
-                <p v-if="listError" role="alert" class="error-message">
+                <p
+                    data-typography="body"
+                    v-if="listError"
+                    role="alert"
+                    class="error-message"
+                >
                     {{ listError }}
-                    <button
+                    <Button
+                        variant="link"
+                        size="inline"
                         data-slot="console-link"
                         class="text-action"
                         type="button"
@@ -469,7 +487,7 @@ function createdAt(row: CdnflyRecord) {
                         @click="loadJobs()"
                     >
                         重试
-                    </button>
+                    </Button>
                 </p>
                 <div class="cache-table-scroll">
                     <table>
@@ -546,7 +564,10 @@ function createdAt(row: CdnflyRecord) {
                                         {{ cacheJobUrl(row) || '-' }}
                                     </td>
                                     <td>
-                                        <button
+                                        <Button
+                                            variant="link"
+                                            size="inline"
+                                            data-slot="console-link"
                                             type="button"
                                             class="job-status"
                                             :data-tone="
@@ -555,11 +576,13 @@ function createdAt(row: CdnflyRecord) {
                                             @click="detail = row"
                                         >
                                             {{ cacheJobStatus(row).label }}
-                                        </button>
+                                        </Button>
                                     </td>
                                     <td>{{ createdAt(row) }}</td>
                                     <td>
-                                        <button
+                                        <Button
+                                            variant="link"
+                                            size="inline"
                                             data-slot="console-link"
                                             class="text-action"
                                             type="button"
@@ -567,7 +590,7 @@ function createdAt(row: CdnflyRecord) {
                                             @click="resubmit([row])"
                                         >
                                             重新提交
-                                        </button>
+                                        </Button>
                                     </td>
                                 </tr>
                                 <tr v-if="!rows.length">
@@ -608,14 +631,15 @@ function createdAt(row: CdnflyRecord) {
                     detailText
                 }}</pre>
                 <DialogFooter
-                    ><button
+                    ><Button
+                        variant="outline"
                         data-slot="console-action"
                         class="cache-button"
                         type="button"
                         @click="detail = null"
                     >
                         关闭
-                    </button></DialogFooter
+                    </Button></DialogFooter
                 ></DialogScrollContent
             >
         </Dialog>
@@ -628,7 +652,7 @@ function createdAt(row: CdnflyRecord) {
     color: var(--foreground);
     padding: 0 14px 24px;
     min-width: 0;
-    font-size: 16px;
+    font-size: var(--console-text-body);
 }
 .cache-tabs {
     display: flex;
@@ -711,7 +735,7 @@ function createdAt(row: CdnflyRecord) {
 .quota-hint {
     margin-top: 4px;
     color: var(--muted-foreground);
-    font-size: 14px;
+    font-size: var(--console-text-helper);
     line-height: 22px;
 }
 .cache-button {
@@ -720,7 +744,7 @@ function createdAt(row: CdnflyRecord) {
     border: 1px solid var(--border);
     border-radius: 4px;
     background: var(--card);
-    font-size: 16px;
+    font-size: var(--console-text-body);
     white-space: nowrap;
 }
 .cache-button.primary {
@@ -785,7 +809,7 @@ input:focus-visible,
 }
 table {
     width: 100%;
-    font-size: 16px;
+    font-size: var(--console-text-body);
     color: var(--muted-foreground);
     min-width: 1000px;
     table-layout: fixed;
@@ -820,7 +844,7 @@ tbody tr:hover {
 }
 .task-id {
     display: block;
-    font-size: 13px;
+    font-size: var(--console-text-helper);
     color: var(--muted-foreground);
 }
 .empty {
@@ -848,7 +872,7 @@ tbody tr:hover {
 }
 .error-message {
     margin: 12px 0;
-    font-size: 14px;
+    font-size: var(--console-text-body);
 }
 @media (max-width: 640px) {
     .user-cache-workspace {
@@ -859,11 +883,11 @@ tbody tr:hover {
     }
     .row-label {
         width: 72px;
-        font-size: 14px;
+        font-size: var(--console-text-body);
     }
     .cache-radios {
         gap: 12px;
-        font-size: 14px;
+        font-size: var(--console-text-body);
     }
     .cache-tabs {
         gap: 0;

@@ -220,7 +220,10 @@ function showDiff(row: CdnflyRecord) {
 <template>
     <section class="account-logs" aria-label="账户日志">
         <div class="log-tabs" role="tablist" aria-label="日志类型">
-            <button
+            <Button
+                variant="ghost"
+                type="button"
+                data-slot="console-tab"
                 v-for="(item, index) in tabs"
                 :id="`account-log-tab-${item.key}`"
                 :key="item.key"
@@ -232,7 +235,7 @@ function showDiff(row: CdnflyRecord) {
                 @keydown="switchTab($event, index)"
             >
                 {{ item.label }}
-            </button>
+            </Button>
         </div>
         <div
             id="account-log-panel"
@@ -302,7 +305,9 @@ function showDiff(row: CdnflyRecord) {
                             placeholder="请输入变更内容"
                     /></label>
                 </template>
-                <button
+                <Button
+                    variant="link"
+                    size="inline"
                     data-slot="console-link"
                     v-if="hasFilters"
                     type="button"
@@ -310,7 +315,7 @@ function showDiff(row: CdnflyRecord) {
                     @click="clear"
                 >
                     清除
-                </button>
+                </Button>
             </form>
             <div v-if="error" class="log-error" role="alert">
                 {{ error
@@ -435,7 +440,10 @@ function showDiff(row: CdnflyRecord) {
                                     </td>
                                     <td>{{ text(row.action) }}</td>
                                     <td>
-                                        <button
+                                        <Button
+                                            variant="link"
+                                            size="inline"
+                                            type="button"
                                             data-slot="console-link"
                                             v-if="hasDiff(row)"
                                             class="text-link truncate-cell"
@@ -443,7 +451,7 @@ function showDiff(row: CdnflyRecord) {
                                             :aria-label="`查看第 ${index + 1} 条变更详情`"
                                             @click="showDiff(row)"
                                         >
-                                            {{ text(row.diff) }}</button
+                                            {{ text(row.diff) }}</Button
                                         ><span v-else>—</span>
                                     </td>
                                     <td>{{ text(row.ip) }}</td>
@@ -496,7 +504,7 @@ function showDiff(row: CdnflyRecord) {
     padding: 0 14px 20px;
     background: var(--card);
     color: var(--foreground);
-    font-size: 14px;
+    font-size: var(--console-text-body);
 }
 .log-tabs {
     display: flex;
@@ -509,7 +517,7 @@ function showDiff(row: CdnflyRecord) {
     padding: 0 20px;
     border-bottom: 2px solid transparent;
     cursor: pointer;
-    font-size: 14px;
+    font-size: var(--console-text-body);
 }
 .log-tabs button[aria-selected='true'] {
     color: var(--primary);
@@ -539,7 +547,7 @@ function showDiff(row: CdnflyRecord) {
     background: transparent;
     border: 1px solid var(--input);
     border-radius: 4px;
-    font-size: 14px;
+    font-size: var(--console-text-body);
 }
 .log-input {
     display: flex;
@@ -596,7 +604,7 @@ td {
     border-bottom: 1px solid var(--border);
     padding: 0 22px;
     text-align: left;
-    font-size: 14px;
+    font-size: var(--console-text-body);
 }
 th {
     height: 48px;

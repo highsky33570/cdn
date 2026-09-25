@@ -1038,7 +1038,10 @@ function detailPaginationText<T>(payload: Paginated<T> | null): string {
                 <div v-if="detailUser" class="grid gap-3 md:grid-cols-3">
                     <div class="rounded-md border p-4">
                         <div class="text-xs text-muted-foreground">订单</div>
-                        <div class="mt-1 text-2xl font-semibold">
+                        <div
+                            data-typography="metric"
+                            class="mt-1 font-semibold"
+                        >
                             {{ detailUser.orders_count }}
                         </div>
                     </div>
@@ -1046,7 +1049,10 @@ function detailPaginationText<T>(payload: Paginated<T> | null): string {
                         <div class="text-xs text-muted-foreground">
                             已有套餐 / 服务
                         </div>
-                        <div class="mt-1 text-2xl font-semibold">
+                        <div
+                            data-typography="metric"
+                            class="mt-1 font-semibold"
+                        >
                             {{ detailServiceRows.length }}
                         </div>
                     </div>
@@ -1054,7 +1060,10 @@ function detailPaginationText<T>(payload: Paginated<T> | null): string {
                         <div class="text-xs text-muted-foreground">
                             CDNfly 用户 ID
                         </div>
-                        <div class="mt-1 text-2xl font-semibold">
+                        <div
+                            data-typography="metric"
+                            class="mt-1 font-semibold"
+                        >
                             {{ detailUser.cdnfly_user_id ?? '-' }}
                         </div>
                     </div>

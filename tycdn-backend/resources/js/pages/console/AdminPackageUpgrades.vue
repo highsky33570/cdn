@@ -620,14 +620,22 @@ async function assign() {
                             @click="edit(row)"
                             >{{ row.name }}</Button
                         >
-                        <p class="mt-1 text-xs text-muted-foreground">
+                        <p
+                            data-typography="helper"
+                            class="mt-1 text-muted-foreground"
+                        >
                             ID: {{ row.id }} / 绑定:
                             {{ row.bind_package || '所有套餐' }}
                         </p></template
                     >
                     <template v-else
-                        ><p class="font-medium">{{ row.package_up_name }}</p>
-                        <p class="mt-1 text-xs text-muted-foreground">
+                        ><p data-typography="body" class="font-medium">
+                            {{ row.package_up_name }}
+                        </p>
+                        <p
+                            data-typography="helper"
+                            class="mt-1 text-muted-foreground"
+                        >
                             升级包 ID: {{ row.package_up }} /
                             {{
                                 types[String(row.package_up_type)] ??
@@ -637,8 +645,13 @@ async function assign() {
                     >
                 </template>
                 <template #cell-spec="{ row }"
-                    ><p>{{ types[String(row.type)] ?? row.type }}</p>
-                    <p class="mt-1 text-xs text-muted-foreground">
+                    ><p data-typography="body">
+                        {{ types[String(row.type)] ?? row.type }}
+                    </p>
+                    <p
+                        data-typography="helper"
+                        class="mt-1 text-muted-foreground"
+                    >
                         数量:
                         {{
                             row.type === 'waf_protect'
@@ -650,8 +663,9 @@ async function assign() {
                         / 价格: {{ formatMoney(row.price) }}/月
                     </p>
                     <p
+                        data-typography="helper"
                         v-if="row.create_at"
-                        class="mt-1 text-xs text-muted-foreground"
+                        class="mt-1 text-muted-foreground"
                     >
                         创建: {{ formatDate(String(row.create_at)) }}
                     </p></template
@@ -667,14 +681,24 @@ async function assign() {
                     ></template
                 >
                 <template #cell-user="{ row }"
-                    ><p class="font-medium">{{ row.user_name }}</p>
-                    <p class="mt-1 text-xs text-muted-foreground">
+                    ><p data-typography="body" class="font-medium">
+                        {{ row.user_name }}
+                    </p>
+                    <p
+                        data-typography="helper"
+                        class="mt-1 text-muted-foreground"
+                    >
                         用户 ID: {{ row.uid }} / 记录 ID: {{ row.id }}
                     </p></template
                 >
                 <template #cell-user_package="{ row }"
-                    ><p class="font-medium">{{ row.user_package_name }}</p>
-                    <p class="mt-1 text-xs text-muted-foreground">
+                    ><p data-typography="body" class="font-medium">
+                        {{ row.user_package_name }}
+                    </p>
+                    <p
+                        data-typography="helper"
+                        class="mt-1 text-muted-foreground"
+                    >
                         用户套餐 ID: {{ row.user_package }} /
                         {{
                             row.package_up_type === 'waf_protect'
@@ -739,7 +763,7 @@ async function assign() {
                     ></DialogHeader
                 >
                 <div class="min-h-0 space-y-6 overflow-y-auto p-6">
-                    <p v-if="editorLoading">加载中…</p>
+                    <p data-typography="body" v-if="editorLoading">加载中…</p>
                     <Alert v-if="editorError" variant="destructive"
                         ><AlertDescription
                             >{{ editorError

@@ -84,10 +84,20 @@ const on = computed(() => String(props.value) === props.field.on);
                     >{{ field.unit }}</span
                 >
             </div>
-            <p v-if="field.help" :id="`${id}-help`" class="ng-field-help">
+            <p
+                data-typography="helper"
+                v-if="field.help"
+                :id="`${id}-help`"
+                class="ng-field-help"
+            >
                 {{ field.help }}
             </p>
-            <p v-if="error" :id="`${id}-error`" class="ng-field-error">
+            <p
+                data-typography="body"
+                v-if="error"
+                :id="`${id}-error`"
+                class="ng-field-error"
+            >
                 {{ error }}
             </p>
         </div>

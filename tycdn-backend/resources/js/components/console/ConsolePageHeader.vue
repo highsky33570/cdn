@@ -38,12 +38,16 @@ defineProps<{
                     <component :is="icon" />
                 </div>
                 <div class="min-w-0">
-                    <h1 class="text-base font-semibold tracking-normal">
+                    <h1
+                        data-typography="page-title"
+                        class="font-semibold tracking-normal"
+                    >
                         {{ title }}
                     </h1>
                     <p
+                        data-typography="description"
                         v-if="description"
-                        class="mt-0.5 max-w-3xl text-xs text-muted-foreground"
+                        class="mt-0.5 max-w-3xl text-muted-foreground"
                     >
                         {{ description }}
                     </p>

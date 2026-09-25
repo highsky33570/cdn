@@ -310,8 +310,9 @@ async function cancelTask(row: CdnflyRecord) {
                         :disabled="saving"
                     />
                     <p
+                        data-typography="body"
                         v-if="error"
-                        class="text-sm text-destructive"
+                        class="text-destructive"
                         role="alert"
                     >
                         {{ error }}

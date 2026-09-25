@@ -209,7 +209,9 @@ onUnmounted(() => {
                 role="tablist"
                 aria-label="四层监控分类"
             >
-                <button
+                <Button
+                    variant="ghost"
+                    data-slot="console-tab"
                     v-for="tab in [
                         { key: 'traffic', label: '带宽流量' },
                         { key: 'ranking', label: '端口排行' },
@@ -229,7 +231,7 @@ onUnmounted(() => {
                     @click="switchTab(tab.key)"
                 >
                     {{ tab.label }}
-                </button>
+                </Button>
             </div>
             <div
                 id="stream-panel"
@@ -255,7 +257,8 @@ onUnmounted(() => {
                             role="group"
                             aria-label="时间范围"
                         >
-                            <button
+                            <Button
+                                variant="ghost"
                                 data-slot="console-segment"
                                 v-for="option in [
                                     { value: '1', label: '近1小时' },
@@ -275,7 +278,7 @@ onUnmounted(() => {
                                 @click="selectPeriod(option.value)"
                             >
                                 {{ option.label }}
-                            </button>
+                            </Button>
                         </div>
                         <template v-if="period === 'custom'"
                             ><div
@@ -308,9 +311,10 @@ onUnmounted(() => {
                         >
                     </form>
                     <p
+                        data-typography="body"
                         v-if="validationError"
                         role="alert"
-                        class="mb-3 text-sm text-destructive"
+                        class="mb-3 text-destructive"
                     >
                         {{ validationError }}
                     </p>
@@ -339,7 +343,8 @@ onUnmounted(() => {
                             role="group"
                             aria-label="排行时间范围"
                         >
-                            <button
+                            <Button
+                                variant="ghost"
                                 data-slot="console-segment"
                                 v-for="option in [
                                     { value: '10m', label: '10分钟实时' },
@@ -358,7 +363,7 @@ onUnmounted(() => {
                                 @click="selectRecent(option.value)"
                             >
                                 {{ option.label }}
-                            </button>
+                            </Button>
                         </div>
                         <Button
                             size="sm"
@@ -403,7 +408,10 @@ onUnmounted(() => {
                                                 : 'none'
                                         "
                                     >
-                                        <button
+                                        <Button
+                                            variant="ghost"
+                                            size="inline"
+                                            data-slot="console-sort"
                                             type="button"
                                             class="inline-flex items-center gap-1"
                                             :aria-label="`按${col.label}排序`"
@@ -411,7 +419,7 @@ onUnmounted(() => {
                                         >
                                             {{ col.label
                                             }}<ArrowDownUp class="size-3" />
-                                        </button>
+                                        </Button>
                                     </th>
                                 </tr>
                             </thead>
@@ -500,7 +508,7 @@ onUnmounted(() => {
     border-radius: 0;
     border-bottom: 2px solid transparent;
     background: transparent;
-    font-size: 16px;
+    font-size: var(--console-text-body);
     font-weight: 400;
 }
 .user-stream-analytics [role='tab'][aria-selected='true'] {
@@ -516,7 +524,7 @@ onUnmounted(() => {
 }
 .user-stream-analytics .stream-toolbar input {
     height: 40px;
-    font-size: 16px;
+    font-size: var(--console-text-body);
 }
 .user-stream-analytics input[aria-label='端口'] {
     width: 313px;
@@ -524,7 +532,7 @@ onUnmounted(() => {
 .user-stream-analytics .stream-toolbar button {
     height: 40px;
     padding: 0 19px;
-    font-size: 16px;
+    font-size: var(--console-text-body);
     font-weight: 400;
 }
 .user-stream-analytics .stream-toolbar [role='group'] {
@@ -548,13 +556,13 @@ onUnmounted(() => {
     border-radius: 0;
 }
 .user-stream-analytics :deep(.stream-chart h3) {
-    font-size: 16px;
+    font-size: var(--console-text-section-title);
 }
 .user-stream-analytics :deep(.stream-chart svg) {
     height: 350px;
 }
 .user-stream-analytics :deep(.stream-chart svg text) {
-    font-size: 12px;
+    font-size: var(--console-text-helper);
 }
 .user-stream-analytics .stream-ranking {
     max-width: 1000px;
@@ -565,12 +573,12 @@ onUnmounted(() => {
 .user-stream-analytics .stream-ranking th {
     height: 48px;
     padding: 10px 22px;
-    font-size: 16px;
+    font-size: var(--console-text-body);
 }
 .user-stream-analytics .stream-ranking td {
     height: 60px;
     padding: 12px 22px;
-    font-size: 16px;
+    font-size: var(--console-text-body);
 }
 @media (max-width: 640px) {
     .user-stream-analytics .stream-analytics-panel {
@@ -578,7 +586,7 @@ onUnmounted(() => {
     }
     .user-stream-analytics .stream-toolbar button {
         padding: 0 10px;
-        font-size: 14px;
+        font-size: var(--console-text-body);
     }
     .user-stream-analytics :deep(.stream-chart) {
         min-height: 350px;

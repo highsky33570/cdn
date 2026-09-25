@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Button } from '@/components/ui/button';
 defineProps<{
     label: string;
     options: { value: string | number; label: string }[];
@@ -30,7 +31,8 @@ function select(
 </script>
 <template>
     <div role="group" :aria-label="label" class="flex flex-wrap gap-2">
-        <button
+        <Button
+            variant="default"
             data-slot="console-action"
             v-for="option in options"
             :key="option.value"
@@ -45,6 +47,6 @@ function select(
             @click="select(option.value, modelValue, multiple)"
         >
             {{ option.label }}
-        </button>
+        </Button>
     </div>
 </template>

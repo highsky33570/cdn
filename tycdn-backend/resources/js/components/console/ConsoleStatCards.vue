@@ -47,7 +47,7 @@ withDefaults(
             "
         >
             <div class="flex items-center justify-between gap-2">
-                <span class="text-xs text-muted-foreground">
+                <span data-typography="label" class="text-muted-foreground">
                     {{ stat.label }}
                 </span>
                 <component
@@ -62,7 +62,8 @@ withDefaults(
                 />
             </div>
             <div
-                class="mt-1 text-xl font-semibold"
+                data-typography="metric"
+                class="mt-1 font-semibold"
                 :class="stat.tone === 'warning' ? 'text-destructive' : ''"
             >
                 {{ stat.value }}

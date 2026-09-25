@@ -708,7 +708,7 @@ const serviceDetailFields = computed<{ label: string; value: string }[]>(() => {
                 "
             >
                 <div class="flex items-center justify-between gap-2">
-                    <span class="text-xs text-muted-foreground">
+                    <span data-typography="label" class="text-muted-foreground">
                         {{ card.label }}
                     </span>
                     <component
@@ -722,7 +722,8 @@ const serviceDetailFields = computed<{ label: string; value: string }[]>(() => {
                     />
                 </div>
                 <div
-                    class="mt-2 text-2xl font-semibold"
+                    data-typography="metric"
+                    class="mt-2 font-semibold"
                     :class="card.tone === 'warning' ? 'text-destructive' : ''"
                 >
                     {{ card.value }}

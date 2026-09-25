@@ -411,10 +411,12 @@ function isRecord(value: unknown): value is Record<string, unknown> {
                                         HTML template must not be pasted into it.
                                     -->
                                     <td class="px-4 py-3">
-                                        <button
+                                        <Button
+                                            variant="ghost"
+                                            size="inline"
                                             v-if="row.value.length > 80"
                                             type="button"
-                                            class="w-full text-left"
+                                            class="block w-full text-left"
                                             :title="
                                                 expanded.has(row.key)
                                                     ? '收起'
@@ -440,7 +442,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
                                                         : `展开（${row.value.length} 字符）`
                                                 }}
                                             </span>
-                                        </button>
+                                        </Button>
                                         <span v-else class="tabular-nums">
                                             {{ row.value || '-' }}
                                         </span>
@@ -521,7 +523,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
                         class="min-h-40 w-full resize-y rounded-md border bg-background px-3 py-2 font-mono text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
                         spellcheck="false"
                     />
-                    <p class="text-xs text-muted-foreground">
+                    <p data-typography="helper" class="text-muted-foreground">
                         只会提交这一项，其它配置保持不变。
                     </p>
                 </div>

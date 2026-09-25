@@ -94,20 +94,34 @@ async function execute() {
                         : '核对订单与已售套餐后，再决定是否重试。'
                 }}</DialogDescription></DialogHeader
             >
-            <p v-if="loading" class="py-8 text-center text-muted-foreground">
+            <p
+                data-typography="body"
+                v-if="loading"
+                class="py-8 text-center text-muted-foreground"
+            >
                 正在读取最新数据…
             </p>
-            <p v-if="error" role="alert" class="text-sm text-destructive">
+            <p
+                data-typography="body"
+                v-if="error"
+                role="alert"
+                class="text-destructive"
+            >
                 {{ error }}
             </p>
             <template v-if="!loading && Object.keys(data).length"
                 ><template v-if="kind === 'mapping'"
                     ><div class="rounded-lg border p-4 text-sm">
-                        <p>本地 #{{ local?.id }} · {{ local?.name }}</p>
-                        <p class="mt-2 text-muted-foreground">
+                        <p data-typography="body">
+                            本地 #{{ local?.id }} · {{ local?.name }}
+                        </p>
+                        <p
+                            data-typography="body"
+                            class="mt-2 text-muted-foreground"
+                        >
                             {{ local?.email }}
                         </p>
-                        <p class="mt-2">
+                        <p data-typography="body" class="mt-2">
                             当前主控 ID：{{ local?.cdnfly_user_id ?? '未绑定' }}
                         </p>
                     </div>
@@ -115,19 +129,26 @@ async function execute() {
                         v-if="candidate"
                         class="rounded-lg border bg-muted/30 p-4 text-sm"
                     >
-                        <p>
+                        <p data-typography="body">
                             匹配主控 #{{ candidate.id }} ·
                             {{ candidate.username }}
                         </p>
-                        <p class="mt-2">{{ candidate.email }}</p>
+                        <p data-typography="body" class="mt-2">
+                            {{ candidate.email }}
+                        </p>
                         <p
+                            data-typography="body"
                             v-if="candidate.linked_local_user_id"
                             class="mt-2 text-destructive"
                         >
                             已绑定本地用户 #{{ candidate.linked_local_user_id }}
                         </p>
                     </div>
-                    <p v-else class="text-sm text-muted-foreground">
+                    <p
+                        data-typography="body"
+                        v-else
+                        class="text-muted-foreground"
+                    >
                         没有同邮箱账号。可关闭此窗口后使用“同步 API
                         密钥”创建账号。
                     </p></template
@@ -152,10 +173,13 @@ async function execute() {
                             {{ data.credentials_ready ? '已就绪' : '未就绪' }}
                         </dd>
                     </dl>
-                    <p class="text-sm break-words text-destructive">
+                    <p
+                        data-typography="body"
+                        class="break-words text-destructive"
+                    >
                         {{ data.error }}
                     </p>
-                    <h3 class="text-sm font-semibold">
+                    <h3 data-typography="section-title" class="font-semibold">
                         该用户已有主控套餐（{{ packages.length }}）
                     </h3>
                     <div class="max-h-52 overflow-auto rounded-lg border">
@@ -190,7 +214,11 @@ async function execute() {
                             class="mt-1"
                         />已核对主控套餐与充值记录，确认没有重复开通或未记账的入账。</label
                     >
-                    <p v-else class="text-sm text-muted-foreground">
+                    <p
+                        data-typography="body"
+                        v-else
+                        class="text-muted-foreground"
+                    >
                         当前订单或服务状态不满足重试条件，请先处理映射或开通状态。
                     </p></template
                 ></template

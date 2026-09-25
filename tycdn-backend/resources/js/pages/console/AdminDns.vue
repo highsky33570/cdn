@@ -397,7 +397,10 @@ onMounted(() => {
                 aria-label="DNS配置分类"
                 class="mb-4 flex gap-1"
             >
-                <button
+                <Button
+                    variant="ghost"
+                    type="button"
+                    data-slot="console-tab"
                     v-for="item in [
                         { key: 'setting', label: 'DNS配置' },
                         { key: 'cnames', label: 'CNAME域名' },
@@ -414,22 +417,27 @@ onMounted(() => {
                     @click="switchTab(item.key)"
                 >
                     {{ item.label }}
-                </button>
+                </Button>
             </div>
             <template v-if="tab === 'setting'">
                 <p
+                    data-typography="body"
                     v-if="settingError"
                     role="alert"
-                    class="mb-4 text-sm text-destructive"
+                    class="mb-4 text-destructive"
                 >
                     {{ settingError }}
-                    <button
+                    <Button
+                        variant="link"
+                        size="inline"
+                        type="button"
+                        data-slot="console-link"
                         v-if="!settingsReady"
                         class="underline"
                         @click="loadSetting"
                     >
                         重试
-                    </button>
+                    </Button>
                 </p>
                 <div v-if="settingsLoading" class="py-16">
                     <Spinner class="mx-auto" />
@@ -481,7 +489,9 @@ onMounted(() => {
                                     required
                                     autocomplete="new-password"
                                     class="pr-9"
-                                /><button
+                                /><Button
+                                    variant="ghost"
+                                    size="icon-sm"
                                     type="button"
                                     :aria-label="
                                         showToken ? '隐藏密钥' : '显示密钥'
@@ -493,7 +503,7 @@ onMounted(() => {
                                         v-if="showToken"
                                         class="size-4"
                                     /><Eye v-else class="size-4" />
-                                </button>
+                                </Button>
                             </div>
                         </div>
                         <div class="form-row">
@@ -543,20 +553,24 @@ onMounted(() => {
                                     v-if="statusText === '没有错误'"
                                     class="size-1.5 rounded-full bg-emerald-500"
                                 />{{ statusText }}</span
-                            ><button
+                            ><Button
+                                variant="link"
+                                size="inline"
+                                data-slot="console-link"
                                 v-if="statusError"
                                 type="button"
                                 class="ml-2 text-sm text-primary"
                                 @click="loadStatus"
                             >
                                 重试状态
-                            </button>
+                            </Button>
                         </div>
                     </div>
                     <p
+                        data-typography="body"
                         v-if="repairError && !cleanupOpen"
                         role="alert"
-                        class="text-sm text-destructive"
+                        class="text-destructive"
                     >
                         {{ repairError }}
                     </p>
@@ -617,24 +631,34 @@ onMounted(() => {
                             placeholder="输入域名搜索"
                             class="h-8 pr-8"
                             @input="!search && query()"
-                        /><button
+                        /><Button
+                            variant="ghost"
+                            size="icon-sm"
                             type="submit"
                             aria-label="搜索"
                             class="absolute inset-y-0 right-2 text-muted-foreground"
                         >
                             <Search class="size-4" />
-                        </button>
+                        </Button>
                     </form>
                 </div>
                 <p
+                    data-typography="body"
                     v-if="listError"
                     role="alert"
-                    class="mb-3 text-sm text-destructive"
+                    class="mb-3 text-destructive"
                 >
                     {{ listError }}
-                    <button class="underline" @click="loadDomains()">
+                    <Button
+                        variant="link"
+                        size="inline"
+                        type="button"
+                        data-slot="console-link"
+                        class="underline"
+                        @click="loadDomains()"
+                    >
                         重试
-                    </button>
+                    </Button>
                 </p>
                 <div class="overflow-x-auto">
                     <table class="w-full min-w-[650px] text-left text-sm">
@@ -696,14 +720,24 @@ onMounted(() => {
                                 <td>{{ row.des }}</td>
                                 <td>
                                     <div class="flex gap-2 text-primary">
-                                        <button @click="edit(row)">编辑</button
-                                        ><button
+                                        <Button
+                                            variant="link"
+                                            size="inline"
+                                            type="button"
+                                            data-slot="console-link"
+                                            @click="edit(row)"
+                                            >编辑</Button
+                                        ><Button
+                                            variant="link"
+                                            size="inline"
+                                            type="button"
+                                            data-slot="console-link"
                                             @click="
                                                 confirmDelete([Number(row.id)])
                                             "
                                         >
                                             删除
-                                        </button>
+                                        </Button>
                                     </div>
                                 </td>
                             </tr>
@@ -746,9 +780,10 @@ onMounted(() => {
                     @submit.prevent="saveDomain"
                 >
                     <p
+                        data-typography="body"
                         v-if="domainError"
                         role="alert"
-                        class="text-sm text-destructive"
+                        class="text-destructive"
                     >
                         {{ domainError }}
                     </p>
@@ -811,9 +846,10 @@ onMounted(() => {
                     ></DialogHeader
                 >
                 <p
+                    data-typography="body"
                     v-if="repairError"
                     role="alert"
-                    class="text-sm text-destructive"
+                    class="text-destructive"
                 >
                     {{ repairError }}
                 </p>

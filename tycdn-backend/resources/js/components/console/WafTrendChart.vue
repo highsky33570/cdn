@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue';
+import { Button } from '@/components/ui/button';
 import type { WafTrendPoint } from '@/lib/wafLogs';
 const props = defineProps<{ points: WafTrendPoint[] }>();
 const plot = ref<HTMLElement | null>(null);
@@ -73,7 +74,10 @@ function toggle(key: string): void {
 <template>
     <div class="waf-trend relative rounded-md border p-3" aria-label="攻击趋势">
         <div class="flex justify-center gap-4 text-xs text-muted-foreground">
-            <button
+            <Button
+                variant="link"
+                size="inline"
+                data-slot="console-link"
                 v-for="s in series"
                 :key="s.key"
                 type="button"
@@ -86,7 +90,7 @@ function toggle(key: string): void {
                     class="inline-block h-0.5 w-4"
                     :style="{ background: s.color }"
                 />{{ s.label }}
-            </button>
+            </Button>
         </div>
         <div ref="plot">
             <svg
@@ -181,8 +185,9 @@ function toggle(key: string): void {
             </svg>
         </div>
         <p
+            data-typography="body"
             v-if="empty"
-            class="pointer-events-none absolute inset-0 flex items-center justify-center text-sm text-muted-foreground"
+            class="pointer-events-none absolute inset-0 flex items-center justify-center text-muted-foreground"
         >
             暂无攻击趋势数据
         </p>
@@ -191,8 +196,9 @@ function toggle(key: string): void {
             role="status"
             class="pointer-events-none absolute top-12 right-5 rounded border bg-popover p-3 text-xs text-popover-foreground shadow-md"
         >
-            <p class="mb-2">{{ selected.time }}</p>
+            <p data-typography="body" class="mb-2">{{ selected.time }}</p>
             <p
+                data-typography="body"
                 v-for="s in visible"
                 :key="s.key"
                 class="flex justify-between gap-6"

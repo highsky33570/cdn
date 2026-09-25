@@ -19,7 +19,12 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Spinner } from '@/components/ui/spinner';
 import { siteRankingRows } from '@/lib/cdnflyResponse';
-import { formatDate, formatMoney, getErrorMessage, textValue } from '@/lib/cdnRecord';
+import {
+    formatDate,
+    formatMoney,
+    getErrorMessage,
+    textValue,
+} from '@/lib/cdnRecord';
 import {
     extractCdnflyRecord,
     extractCdnflyRows,
@@ -95,7 +100,9 @@ const currentSeries = computed(() => {
     return bandwidth.value;
 });
 const chartMetric = ref<'bandwidth' | 'request' | 'traffic'>('bandwidth');
-const chartValues = computed(() => currentSeries.value.map((point) => point[1]));
+const chartValues = computed(() =>
+    currentSeries.value.map((point) => point[1]),
+);
 const chartMax = computed(() => Math.max(...chartValues.value, 1));
 const chartPoints = computed(() => {
     const rows = currentSeries.value;
@@ -131,15 +138,28 @@ const chartLabels = computed(() => {
     }));
 });
 
-const peakBandwidth = computed(() => formatBandwidth(Math.max(...bandwidth.value.map((item) => item[1]), 0)));
-const requestTotal = computed(() => formatCount(requests.value.reduce((sum, item) => sum + item[1], 0)));
-const trafficTotal = computed(() => formatBytes(traffic.value.reduce((sum, item) => sum + item[1], 0)));
+const peakBandwidth = computed(() =>
+    formatBandwidth(Math.max(...bandwidth.value.map((item) => item[1]), 0)),
+);
+const requestTotal = computed(() =>
+    formatCount(requests.value.reduce((sum, item) => sum + item[1], 0)),
+);
+const trafficTotal = computed(() =>
+    formatBytes(traffic.value.reduce((sum, item) => sum + item[1], 0)),
+);
 const blockedIps = computed(() =>
-    formatCount(numberValue(overview.value.black_ip_count ?? overview.value.blocked_ip_count)),
+    formatCount(
+        numberValue(
+            overview.value.black_ip_count ?? overview.value.blocked_ip_count,
+        ),
+    ),
 );
 const trafficQuota = computed(() => numberValue(activePackage.value?.traffic));
 const trafficUsed = computed(() => {
-    const raw = usage.value.traffic_usage ?? usage.value.used_traffic ?? activePackage.value?.traffic_usage;
+    const raw =
+        usage.value.traffic_usage ??
+        usage.value.used_traffic ??
+        activePackage.value?.traffic_usage;
     const value = numberValue(raw);
 
     return value > trafficQuota.value * 1024 ? value / 1024 ** 3 : value;
@@ -149,7 +169,10 @@ const trafficPercent = computed(() => {
         return 0;
     }
 
-    return Math.min(100, Math.max(0, (trafficUsed.value / trafficQuota.value) * 100));
+    return Math.min(
+        100,
+        Math.max(0, (trafficUsed.value / trafficQuota.value) * 100),
+    );
 });
 
 const summaryCards = computed(() => [
@@ -211,7 +234,7 @@ async function loadDashboard(): Promise<void> {
             const usageRows = extractCdnflyRows(result);
             usage.value = usageRows.length
                 ? Object.assign({}, ...usageRows)
-                : extractCdnflyRecord(result) ?? {};
+                : (extractCdnflyRecord(result) ?? {});
         } catch {
             usage.value = {};
         }
@@ -219,7 +242,10 @@ async function loadDashboard(): Promise<void> {
 
     const failed = tasks.find((task) => task.status === 'rejected');
 
-    if (tasks.every((task) => task.status === 'rejected') && failed?.status === 'rejected') {
+    if (
+        tasks.every((task) => task.status === 'rejected') &&
+        failed?.status === 'rejected'
+    ) {
         errorMessage.value = getErrorMessage(failed.reason);
     }
 
@@ -261,7 +287,10 @@ function points(payload: unknown): Point[] {
     }
 
     return raw
-        .filter((item): item is unknown[] => Array.isArray(item) && item.length >= 2)
+        .filter(
+            (item): item is unknown[] =>
+                Array.isArray(item) && item.length >= 2,
+        )
         .map((item) => [Number(item[0]), Number(item[1])] as Point)
         .filter((item) => Number.isFinite(item[0]) && Number.isFinite(item[1]));
 }
@@ -322,7 +351,10 @@ function formatBytes(value: number): string {
     }
 
     const units = ['B', 'KB', 'MB', 'GB', 'TB'];
-    const index = Math.min(Math.floor(Math.log(value) / Math.log(1024)), units.length - 1);
+    const index = Math.min(
+        Math.floor(Math.log(value) / Math.log(1024)),
+        units.length - 1,
+    );
 
     return `${trim(value / 1024 ** index)} ${units[index]}`;
 }
@@ -345,7 +377,9 @@ function formatBandwidth(value: number): string {
 }
 
 function trim(value: number): string {
-    return new Intl.NumberFormat('zh-CN', { maximumFractionDigits: 2 }).format(value);
+    return new Intl.NumberFormat('zh-CN', { maximumFractionDigits: 2 }).format(
+        value,
+    );
 }
 
 function timeLabel(value: number): string {
@@ -386,45 +420,111 @@ function messageTitle(row: CdnflyRecord): string {
         </Alert>
 
         <Card class="gap-0 overflow-hidden">
-            <CardContent class="flex flex-col gap-5 p-5 lg:flex-row lg:items-center lg:justify-between">
+            <CardContent
+                class="flex flex-col gap-5 p-5 lg:flex-row lg:items-center lg:justify-between"
+            >
                 <div class="flex min-w-0 items-center gap-4">
-                    <div class="flex size-14 shrink-0 items-center justify-center rounded-full bg-primary text-xl font-semibold text-primary-foreground">
+                    <div
+                        class="flex size-14 shrink-0 items-center justify-center rounded-full bg-primary text-xl font-semibold text-primary-foreground"
+                    >
                         {{ user.name.slice(0, 1).toUpperCase() }}
                     </div>
                     <div class="min-w-0">
                         <div class="flex flex-wrap items-center gap-2">
-                            <h1 class="truncate text-lg font-semibold">{{ user.name }}</h1>
+                            <h1
+                                data-typography="page-title"
+                                class="truncate font-semibold"
+                            >
+                                {{ user.name }}
+                            </h1>
                             <Badge variant="outline">ID {{ user.id }}</Badge>
                         </div>
-                        <p class="mt-1 text-sm text-muted-foreground">欢迎回来，祝你今天工作顺利。</p>
-                        <div class="mt-2 flex flex-wrap gap-x-6 gap-y-1 text-xs text-muted-foreground">
-                            <span>账户余额 <strong class="ml-1 text-foreground">{{ balance }}</strong></span>
-                            <span>注册时间 <strong class="ml-1 font-normal text-foreground">{{ formatDate(user.created_at) }}</strong></span>
+                        <p
+                            data-typography="body"
+                            class="mt-1 text-muted-foreground"
+                        >
+                            欢迎回来，祝你今天工作顺利。
+                        </p>
+                        <div
+                            class="mt-2 flex flex-wrap gap-x-6 gap-y-1 text-xs text-muted-foreground"
+                        >
+                            <span
+                                >账户余额
+                                <strong class="ml-1 text-foreground">{{
+                                    balance
+                                }}</strong></span
+                            >
+                            <span
+                                >注册时间
+                                <strong
+                                    class="ml-1 font-normal text-foreground"
+                                    >{{ formatDate(user.created_at) }}</strong
+                                ></span
+                            >
                         </div>
                     </div>
                 </div>
                 <div class="flex items-center gap-2">
-                    <Button variant="outline" size="sm" :disabled="loading" @click="loadDashboard">
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        :disabled="loading"
+                        @click="loadDashboard"
+                    >
                         <Spinner v-if="loading" data-icon="inline-start" />
                         <RefreshCw v-else data-icon="inline-start" />
                         刷新数据
                     </Button>
-                    <Button size="sm" as-child><Link href="/console/sites">创建站点</Link></Button>
+                    <Button size="sm" as-child
+                        ><Link href="/console/sites">创建站点</Link></Button
+                    >
                 </div>
             </CardContent>
         </Card>
 
         <Card class="gap-0">
-            <CardHeader class="flex flex-row items-center justify-between border-b px-5 py-3">
-                <CardTitle class="flex items-center gap-2 text-sm"><TrendingUp class="size-4 text-primary" />网络概览</CardTitle>
+            <CardHeader
+                class="flex flex-row items-center justify-between border-b px-5 py-3"
+            >
+                <CardTitle class="flex items-center gap-2 text-sm"
+                    ><TrendingUp
+                        class="size-4 text-primary"
+                    />网络概览</CardTitle
+                >
                 <div class="flex rounded-md border bg-background p-0.5">
-                    <button v-for="item in periods" :key="item.value" class="rounded px-3 py-1 text-xs transition-colors" :class="period === item.value ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'" @click="changePeriod(item.value)">{{ item.label }}</button>
+                    <Button
+                        variant="ghost"
+                        type="button"
+                        v-for="item in periods"
+                        :key="item.value"
+                        class="rounded px-3 py-1 text-xs transition-colors"
+                        :class="
+                            period === item.value
+                                ? 'bg-primary text-primary-foreground'
+                                : 'text-muted-foreground hover:text-foreground'
+                        "
+                        @click="changePeriod(item.value)"
+                        >{{ item.label }}</Button
+                    >
                 </div>
             </CardHeader>
-            <CardContent class="grid gap-px bg-border p-0 sm:grid-cols-2 xl:grid-cols-4">
-                <div v-for="item in summaryCards" :key="item.label" class="bg-card px-5 py-5">
-                    <div class="text-xs text-muted-foreground">{{ item.label }}</div>
-                    <div class="mt-2 text-2xl font-medium tracking-tight">{{ item.value }}</div>
+            <CardContent
+                class="grid gap-px bg-border p-0 sm:grid-cols-2 xl:grid-cols-4"
+            >
+                <div
+                    v-for="item in summaryCards"
+                    :key="item.label"
+                    class="bg-card px-5 py-5"
+                >
+                    <div data-typography="label" class="text-muted-foreground">
+                        {{ item.label }}
+                    </div>
+                    <div
+                        data-typography="metric"
+                        class="mt-2 font-medium tracking-tight"
+                    >
+                        {{ item.value }}
+                    </div>
                 </div>
             </CardContent>
         </Card>
@@ -432,37 +532,131 @@ function messageTitle(row: CdnflyRecord): string {
         <div class="grid min-w-0 gap-3 xl:grid-cols-[minmax(0,1fr)_300px]">
             <div class="grid min-w-0 gap-3 lg:grid-cols-[minmax(0,1fr)_320px]">
                 <Card class="min-w-0 gap-0">
-                    <CardHeader class="flex flex-row items-center justify-between border-b px-5 py-3">
-                        <CardTitle class="flex items-center gap-2 text-sm"><Activity class="size-4 text-primary" />监控趋势</CardTitle>
+                    <CardHeader
+                        class="flex flex-row items-center justify-between border-b px-5 py-3"
+                    >
+                        <CardTitle class="flex items-center gap-2 text-sm"
+                            ><Activity
+                                class="size-4 text-primary"
+                            />监控趋势</CardTitle
+                        >
                         <div class="flex gap-1">
-                            <Button v-for="item in [{ key: 'bandwidth', label: '带宽' }, { key: 'request', label: '请求数' }, { key: 'traffic', label: '流量' }]" :key="item.key" size="sm" :variant="chartMetric === item.key ? 'secondary' : 'ghost'" class="h-7 px-3 text-xs" @click="chartMetric = item.key as typeof chartMetric">{{ item.label }}</Button>
+                            <Button
+                                v-for="item in [
+                                    { key: 'bandwidth', label: '带宽' },
+                                    { key: 'request', label: '请求数' },
+                                    { key: 'traffic', label: '流量' },
+                                ]"
+                                :key="item.key"
+                                size="sm"
+                                :variant="
+                                    chartMetric === item.key
+                                        ? 'secondary'
+                                        : 'ghost'
+                                "
+                                class="h-7 px-3 text-xs"
+                                @click="
+                                    chartMetric = item.key as typeof chartMetric
+                                "
+                                >{{ item.label }}</Button
+                            >
                         </div>
                     </CardHeader>
                     <CardContent class="p-5">
-                        <div v-if="loading && currentSeries.length === 0" class="flex h-72 items-center justify-center"><Spinner /></div>
-                        <div v-else-if="currentSeries.length === 0" class="flex h-72 flex-col items-center justify-center gap-2 text-sm text-muted-foreground"><Activity class="size-8 opacity-30" />当前时段暂无监控数据</div>
+                        <div
+                            v-if="loading && currentSeries.length === 0"
+                            class="flex h-72 items-center justify-center"
+                        >
+                            <Spinner />
+                        </div>
+                        <div
+                            v-else-if="currentSeries.length === 0"
+                            class="flex h-72 flex-col items-center justify-center gap-2 text-sm text-muted-foreground"
+                        >
+                            <Activity
+                                class="size-8 opacity-30"
+                            />当前时段暂无监控数据
+                        </div>
                         <div v-else class="relative h-72 pt-2">
-                            <div class="pointer-events-none absolute inset-x-0 top-3 bottom-7 flex flex-col justify-between">
-                                <span v-for="line in 5" :key="line" class="border-t border-dashed"></span>
+                            <div
+                                class="pointer-events-none absolute inset-x-0 top-3 bottom-7 flex flex-col justify-between"
+                            >
+                                <span
+                                    v-for="line in 5"
+                                    :key="line"
+                                    class="border-t border-dashed"
+                                ></span>
                             </div>
-                            <svg class="relative h-[calc(100%-1.75rem)] w-full overflow-visible" viewBox="0 0 100 100" preserveAspectRatio="none" aria-label="监控趋势图">
-                                <polygon :points="chartArea" class="fill-primary/10" />
-                                <polyline :points="chartPoints" fill="none" stroke="currentColor" stroke-width="1.2" vector-effect="non-scaling-stroke" class="text-primary" />
+                            <svg
+                                class="relative h-[calc(100%-1.75rem)] w-full overflow-visible"
+                                viewBox="0 0 100 100"
+                                preserveAspectRatio="none"
+                                aria-label="监控趋势图"
+                            >
+                                <polygon
+                                    :points="chartArea"
+                                    class="fill-primary/10"
+                                />
+                                <polyline
+                                    :points="chartPoints"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="1.2"
+                                    vector-effect="non-scaling-stroke"
+                                    class="text-primary"
+                                />
                             </svg>
-                            <div class="relative mt-2 h-5 text-[10px] text-muted-foreground">
-                                <span v-for="label in chartLabels" :key="label.x" class="absolute -translate-x-1/2 whitespace-nowrap" :style="{ left: `${label.x}%` }">{{ label.text }}</span>
+                            <div
+                                class="relative mt-2 h-5 text-[10px] text-muted-foreground"
+                            >
+                                <span
+                                    v-for="label in chartLabels"
+                                    :key="label.x"
+                                    class="absolute -translate-x-1/2 whitespace-nowrap"
+                                    :style="{ left: `${label.x}%` }"
+                                    >{{ label.text }}</span
+                                >
                             </div>
                         </div>
                     </CardContent>
                 </Card>
 
                 <Card class="gap-0">
-                    <CardHeader class="border-b px-5 py-3"><CardTitle class="flex items-center gap-2 text-sm"><TrendingUp class="size-4 text-primary" />TOP10 域名（近30分钟）</CardTitle></CardHeader>
+                    <CardHeader class="border-b px-5 py-3"
+                        ><CardTitle class="flex items-center gap-2 text-sm"
+                            ><TrendingUp class="size-4 text-primary" />TOP10
+                            域名（近30分钟）</CardTitle
+                        ></CardHeader
+                    >
                     <CardContent class="p-0">
-                        <div class="grid grid-cols-[minmax(0,1fr)_64px_76px] border-b px-4 py-2 text-xs text-muted-foreground"><span>域名</span><span>请求</span><span class="text-right">流量</span></div>
-                        <div v-if="topDomains.length === 0" class="flex h-64 items-center justify-center text-sm text-muted-foreground">暂无排行数据</div>
-                        <div v-else v-for="row in topDomains" :key="topName(row)" class="grid grid-cols-[minmax(0,1fr)_64px_76px] items-center border-b px-4 py-3 text-xs last:border-b-0">
-                            <span class="truncate pr-2 font-medium" :title="topName(row)">{{ topName(row) }}</span><span class="text-muted-foreground">{{ topRequests(row) }}</span><span class="text-right text-muted-foreground">{{ topTraffic(row) }}</span>
+                        <div
+                            class="grid grid-cols-[minmax(0,1fr)_64px_76px] border-b px-4 py-2 text-xs text-muted-foreground"
+                        >
+                            <span>域名</span><span>请求</span
+                            ><span class="text-right">流量</span>
+                        </div>
+                        <div
+                            v-if="topDomains.length === 0"
+                            class="flex h-64 items-center justify-center text-sm text-muted-foreground"
+                        >
+                            暂无排行数据
+                        </div>
+                        <div
+                            v-else
+                            v-for="row in topDomains"
+                            :key="topName(row)"
+                            class="grid grid-cols-[minmax(0,1fr)_64px_76px] items-center border-b px-4 py-3 text-xs last:border-b-0"
+                        >
+                            <span
+                                class="truncate pr-2 font-medium"
+                                :title="topName(row)"
+                                >{{ topName(row) }}</span
+                            ><span class="text-muted-foreground">{{
+                                topRequests(row)
+                            }}</span
+                            ><span class="text-right text-muted-foreground">{{
+                                topTraffic(row)
+                            }}</span>
                         </div>
                     </CardContent>
                 </Card>
@@ -470,32 +664,121 @@ function messageTitle(row: CdnflyRecord): string {
 
             <div class="grid content-start gap-3">
                 <Card class="gap-0">
-                    <CardHeader class="flex flex-row items-center justify-between border-b px-4 py-3"><CardTitle class="flex items-center gap-2 text-sm"><BellRing class="size-4 text-primary" />系统公告</CardTitle><Link href="/console/messages" class="text-xs text-primary">全部</Link></CardHeader>
+                    <CardHeader
+                        class="flex flex-row items-center justify-between border-b px-4 py-3"
+                        ><CardTitle class="flex items-center gap-2 text-sm"
+                            ><BellRing
+                                class="size-4 text-primary"
+                            />系统公告</CardTitle
+                        ><Link
+                            href="/console/messages"
+                            class="text-xs text-primary"
+                            >全部</Link
+                        ></CardHeader
+                    >
                     <CardContent class="p-0">
-                        <div v-if="messages.length === 0" class="px-4 py-8 text-center text-sm text-muted-foreground">暂无公告</div>
-                        <Link v-for="message in messages" v-else :key="textValue(message.id)" href="/console/messages" class="flex items-center justify-between gap-3 border-b px-4 py-3 text-xs last:border-b-0 hover:bg-muted/40">
-                            <span class="truncate font-medium">{{ messageTitle(message) }}</span><span class="shrink-0 text-muted-foreground">{{ formatDate(message.create_at ?? message.created_at) }}</span>
+                        <div
+                            v-if="messages.length === 0"
+                            class="px-4 py-8 text-center text-sm text-muted-foreground"
+                        >
+                            暂无公告
+                        </div>
+                        <Link
+                            v-for="message in messages"
+                            v-else
+                            :key="textValue(message.id)"
+                            href="/console/messages"
+                            class="flex items-center justify-between gap-3 border-b px-4 py-3 text-xs last:border-b-0 hover:bg-muted/40"
+                        >
+                            <span class="truncate font-medium">{{
+                                messageTitle(message)
+                            }}</span
+                            ><span class="shrink-0 text-muted-foreground">{{
+                                formatDate(
+                                    message.create_at ?? message.created_at,
+                                )
+                            }}</span>
                         </Link>
                     </CardContent>
                 </Card>
 
                 <Card class="gap-0">
-                    <CardHeader class="border-b px-4 py-3"><CardTitle class="flex items-center gap-2 text-sm"><PackageCheck class="size-4 text-primary" />套餐流量</CardTitle></CardHeader>
+                    <CardHeader class="border-b px-4 py-3"
+                        ><CardTitle class="flex items-center gap-2 text-sm"
+                            ><PackageCheck
+                                class="size-4 text-primary"
+                            />套餐流量</CardTitle
+                        ></CardHeader
+                    >
                     <CardContent class="space-y-3 p-4">
-                        <div class="flex items-center justify-between gap-3 text-sm"><span class="truncate font-medium">{{ packageName }}</span><Link href="/console/billing/subscriptions" class="shrink-0 text-xs text-primary">查看</Link></div>
-                        <div class="h-2 overflow-hidden rounded-full bg-muted"><div class="h-full rounded-full bg-primary transition-all" :style="{ width: `${trafficPercent}%` }"></div></div>
-                        <div class="flex justify-between text-xs text-muted-foreground"><span>已用 {{ trim(trafficUsed) }} GB</span><span>{{ trafficQuota > 0 ? `${trim(trafficQuota)} GB` : '不限' }}</span></div>
+                        <div
+                            class="flex items-center justify-between gap-3 text-sm"
+                        >
+                            <span class="truncate font-medium">{{
+                                packageName
+                            }}</span
+                            ><Link
+                                href="/console/billing/subscriptions"
+                                class="shrink-0 text-xs text-primary"
+                                >查看</Link
+                            >
+                        </div>
+                        <div class="h-2 overflow-hidden rounded-full bg-muted">
+                            <div
+                                class="h-full rounded-full bg-primary transition-all"
+                                :style="{ width: `${trafficPercent}%` }"
+                            ></div>
+                        </div>
+                        <div
+                            class="flex justify-between text-xs text-muted-foreground"
+                        >
+                            <span>已用 {{ trim(trafficUsed) }} GB</span
+                            ><span>{{
+                                trafficQuota > 0
+                                    ? `${trim(trafficQuota)} GB`
+                                    : '不限'
+                            }}</span>
+                        </div>
                     </CardContent>
                 </Card>
 
                 <Card class="gap-0">
-                    <CardHeader class="border-b px-4 py-3"><CardTitle class="flex items-center gap-2 text-sm"><Globe2 class="size-4 text-primary" />使用统计</CardTitle></CardHeader>
-                    <CardContent class="p-0"><Link v-for="row in resourceRows" :key="row.label" :href="row.href" class="flex items-center justify-between border-b px-4 py-3 text-sm last:border-b-0 hover:bg-muted/40"><span class="text-muted-foreground">{{ row.label }}</span><strong class="font-medium">{{ row.value }}</strong></Link></CardContent>
+                    <CardHeader class="border-b px-4 py-3"
+                        ><CardTitle class="flex items-center gap-2 text-sm"
+                            ><Globe2
+                                class="size-4 text-primary"
+                            />使用统计</CardTitle
+                        ></CardHeader
+                    >
+                    <CardContent class="p-0"
+                        ><Link
+                            v-for="row in resourceRows"
+                            :key="row.label"
+                            :href="row.href"
+                            class="flex items-center justify-between border-b px-4 py-3 text-sm last:border-b-0 hover:bg-muted/40"
+                            ><span class="text-muted-foreground">{{
+                                row.label
+                            }}</span
+                            ><strong class="font-medium">{{
+                                row.value
+                            }}</strong></Link
+                        ></CardContent
+                    >
                 </Card>
 
                 <div class="grid grid-cols-2 gap-2">
-                    <Button variant="outline" class="justify-between" as-child><Link href="/console/certificates"><FileKey2 data-icon="inline-start" />证书<ArrowRight data-icon="inline-end" /></Link></Button>
-                    <Button variant="outline" class="justify-between" as-child><Link href="/console/billing/packages"><ShoppingCart data-icon="inline-start" />套餐<ArrowRight data-icon="inline-end" /></Link></Button>
+                    <Button variant="outline" class="justify-between" as-child
+                        ><Link href="/console/certificates"
+                            ><FileKey2
+                                data-icon="inline-start" />证书<ArrowRight
+                                data-icon="inline-end" /></Link
+                    ></Button>
+                    <Button variant="outline" class="justify-between" as-child
+                        ><Link href="/console/billing/packages"
+                            ><ShoppingCart
+                                data-icon="inline-start" />套餐<ArrowRight
+                                data-icon="inline-end" /></Link
+                    ></Button>
                 </div>
             </div>
         </div>

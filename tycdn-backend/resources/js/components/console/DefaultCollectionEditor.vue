@@ -155,7 +155,7 @@ function quick(event: Event) {
 <template>
     <div class="rounded-lg border bg-card p-3">
         <div class="mb-3 flex flex-wrap items-center justify-between gap-2">
-            <h4 class="text-sm font-medium">
+            <h4 data-typography="section-title" class="font-medium">
                 {{ title }}
                 <span class="text-xs text-muted-foreground"
                     >{{ rows.length }} 条</span
@@ -187,9 +187,11 @@ function quick(event: Event) {
             v-if="!rows.length"
             class="rounded-md border border-dashed p-5 text-center text-sm text-muted-foreground"
         >
-            <p>{{ isCache ? '暂无缓存规则' : '暂无回源请求头' }}</p>
+            <p data-typography="body">
+                {{ isCache ? '暂无缓存规则' : '暂无回源请求头' }}
+            </p>
             <template v-if="isCache"
-                ><p class="my-3 text-xs">
+                ><p data-typography="helper" class="my-3">
                     可以新增规则，或使用快速设置生成常用缓存策略。
                 </p>
                 <Button
@@ -210,7 +212,7 @@ function quick(event: Event) {
                 <strong
                     >#{{ i + 1 }} {{ isCache ? row.type : row.name }}</strong
                 >
-                <p class="text-xs text-muted-foreground">
+                <p data-typography="helper" class="text-muted-foreground">
                     {{
                         isCache
                             ? `${row.content} · ${row.expire} ${row.unit}`
@@ -278,9 +280,10 @@ function quick(event: Event) {
                         :disabled="disabled"
                     />
                     <p
+                        data-typography="body"
                         v-if="error"
                         role="alert"
-                        class="text-sm text-destructive"
+                        class="text-destructive"
                     >
                         {{ error }}
                     </p>

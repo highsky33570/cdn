@@ -398,9 +398,14 @@ async function remove(): Promise<void> {
             class="l2-panel rounded-xl border bg-card p-4 text-card-foreground shadow-sm"
             aria-label="L2 配置"
         >
-            <h2 class="mb-3 text-base font-semibold">L2 配置</h2>
+            <h2 data-typography="page-title" class="mb-3 font-semibold">
+                L2 配置
+            </h2>
             <div class="mb-3 flex gap-1" role="tablist" aria-label="L2配置分类">
-                <button
+                <Button
+                    variant="ghost"
+                    type="button"
+                    data-slot="console-tab"
                     v-for="tab in [
                         { key: 'l2-configs', label: 'L2配置' },
                         { key: 'l2-conds', label: 'L2条件' },
@@ -417,7 +422,7 @@ async function remove(): Promise<void> {
                     @click="switchTab(tab.key)"
                 >
                     {{ tab.label }}
-                </button>
+                </Button>
             </div>
             <div class="mb-3 flex flex-wrap items-center gap-2">
                 <Button
@@ -454,7 +459,11 @@ async function remove(): Promise<void> {
                 </SelectField>
                 <span v-if="isConfig && nodeId" class="text-sm"
                     >节点ID：{{ nodeId }}
-                    <button
+                    <Button
+                        variant="link"
+                        size="inline"
+                        type="button"
+                        data-slot="console-link"
                         class="text-primary"
                         @click="
                             nodeId = '';
@@ -462,20 +471,42 @@ async function remove(): Promise<void> {
                         "
                     >
                         显示所有
-                    </button></span
+                    </Button></span
                 >
             </div>
             <p
+                data-typography="body"
                 v-if="regionError && isConfig"
                 role="alert"
-                class="mb-3 text-sm text-destructive"
+                class="mb-3 text-destructive"
             >
                 {{ regionError }}
-                <button class="underline" @click="loadRegions">重试区域</button>
+                <Button
+                    variant="link"
+                    size="inline"
+                    type="button"
+                    data-slot="console-link"
+                    class="underline"
+                    @click="loadRegions"
+                    >重试区域</Button
+                >
             </p>
-            <p v-if="error" role="alert" class="mb-3 text-sm text-destructive">
+            <p
+                data-typography="body"
+                v-if="error"
+                role="alert"
+                class="mb-3 text-destructive"
+            >
                 {{ error }}
-                <button class="underline" @click="load()">重试</button>
+                <Button
+                    variant="link"
+                    size="inline"
+                    type="button"
+                    data-slot="console-link"
+                    class="underline"
+                    @click="load()"
+                    >重试</Button
+                >
             </p>
             <div class="overflow-x-auto">
                 <table
@@ -543,12 +574,16 @@ async function remove(): Promise<void> {
                             </td>
                             <td>{{ row.id }}</td>
                             <td>
-                                <button
+                                <Button
+                                    variant="link"
+                                    size="inline"
+                                    type="button"
+                                    data-slot="console-link"
                                     v-if="isConfig"
                                     class="text-primary hover:underline"
                                     @click="edit(row)"
                                 >
-                                    {{ row.name }}</button
+                                    {{ row.name }}</Button
                                 ><span v-else>{{ row.name }}</span>
                             </td>
                             <template v-if="isConfig"
@@ -577,7 +612,11 @@ async function remove(): Promise<void> {
                                 <div
                                     class="flex gap-2 whitespace-nowrap text-primary"
                                 >
-                                    <button
+                                    <Button
+                                        variant="link"
+                                        size="inline"
+                                        type="button"
+                                        data-slot="console-link"
                                         v-if="isConfig"
                                         @click="
                                             router.visit(
@@ -585,13 +624,23 @@ async function remove(): Promise<void> {
                                             )
                                         "
                                     >
-                                        配置节点</button
-                                    ><button @click="edit(row)">编辑</button
-                                    ><button
+                                        配置节点</Button
+                                    ><Button
+                                        variant="link"
+                                        size="inline"
+                                        type="button"
+                                        data-slot="console-link"
+                                        @click="edit(row)"
+                                        >编辑</Button
+                                    ><Button
+                                        variant="link"
+                                        size="inline"
+                                        type="button"
+                                        data-slot="console-link"
                                         @click="confirmDelete([Number(row.id)])"
                                     >
                                         删除
-                                    </button>
+                                    </Button>
                                 </div>
                             </td>
                         </tr>
@@ -652,14 +701,22 @@ async function remove(): Promise<void> {
                     <Spinner class="mx-auto" />
                 </div>
                 <p
+                    data-typography="body"
                     v-else-if="detailError"
                     role="alert"
-                    class="text-sm text-destructive"
+                    class="text-destructive"
                 >
                     {{ detailError }}
-                    <button class="underline" @click="edit({ id: editingId })">
+                    <Button
+                        variant="link"
+                        size="inline"
+                        type="button"
+                        data-slot="console-link"
+                        class="underline"
+                        @click="edit({ id: editingId })"
+                    >
                         重试
-                    </button>
+                    </Button>
                 </p>
                 <form
                     v-else
@@ -668,9 +725,10 @@ async function remove(): Promise<void> {
                     @submit.prevent="save"
                 >
                     <p
+                        data-typography="body"
                         v-if="formError"
                         role="alert"
-                        class="text-sm text-destructive"
+                        class="text-destructive"
                     >
                         {{ formError }}
                     </p>
@@ -721,7 +779,8 @@ async function remove(): Promise<void> {
                                     role="group"
                                     aria-label="模式"
                                 >
-                                    <button
+                                    <Button
+                                        variant="outline"
                                         data-slot="console-action"
                                         v-for="choice in [
                                             { value: 'cache', label: '缓存' },
@@ -741,10 +800,11 @@ async function remove(): Promise<void> {
                                         @click="form.mode = choice.value"
                                     >
                                         {{ choice.label }}
-                                    </button>
+                                    </Button>
                                 </div>
                                 <p
-                                    class="mt-1 text-xs leading-5 text-muted-foreground"
+                                    data-typography="helper"
+                                    class="mt-1 leading-5 text-muted-foreground"
                                 >
                                     缓存模式时，只有配置了缓存的URL才会走L2节点回源；<br />全局模式时，所有URL都会走L2节点回源
                                 </p>
@@ -758,7 +818,8 @@ async function remove(): Promise<void> {
                                     role="group"
                                     aria-label="负载方式"
                                 >
-                                    <button
+                                    <Button
+                                        variant="outline"
                                         data-slot="console-action"
                                         v-for="choice in [
                                             { value: 'rr', label: '轮询' },
@@ -781,10 +842,11 @@ async function remove(): Promise<void> {
                                         @click="form.balance_way = choice.value"
                                     >
                                         {{ choice.label }}
-                                    </button>
+                                    </Button>
                                 </div>
                                 <p
-                                    class="mt-1 text-xs leading-5 text-muted-foreground"
+                                    data-typography="helper"
+                                    class="mt-1 leading-5 text-muted-foreground"
                                 >
                                     轮询模式时，会轮流选择一个L2节点回源；<br />URL哈希模式时，同一个URL会固定使用同一个L2节点回源
                                 </p>
@@ -838,19 +900,25 @@ async function remove(): Promise<void> {
                                                 <div
                                                     class="flex gap-2 text-primary"
                                                 >
-                                                    <button
+                                                    <Button
+                                                        variant="link"
+                                                        size="inline"
+                                                        data-slot="console-link"
                                                         type="button"
                                                         @click="editRule(index)"
                                                     >
-                                                        编辑</button
-                                                    ><button
+                                                        编辑</Button
+                                                    ><Button
+                                                        variant="link"
+                                                        size="inline"
+                                                        data-slot="console-link"
                                                         type="button"
                                                         @click="
                                                             removeRule(index)
                                                         "
                                                     >
                                                         删除
-                                                    </button>
+                                                    </Button>
                                                 </div>
                                             </td>
                                         </tr>
@@ -927,15 +995,21 @@ async function remove(): Promise<void> {
                                     placeholder="输入匹配值(可为空)，一行一个，如：&#10;value1&#10;value2"
                                 />
                                 <div class="flex gap-2 sm:flex-col">
-                                    <button
+                                    <Button
+                                        variant="link"
+                                        size="inline"
+                                        data-slot="console-link"
                                         type="button"
                                         class="text-sm text-primary"
                                         @click="addRule"
                                     >
                                         {{
                                             ruleIndex === null ? '添加' : '保存'
-                                        }}</button
-                                    ><button
+                                        }}</Button
+                                    ><Button
+                                        variant="link"
+                                        size="inline"
+                                        data-slot="console-link"
                                         v-if="
                                             ruleIndex !== null ||
                                             matcher.item ||
@@ -947,17 +1021,21 @@ async function remove(): Promise<void> {
                                         @click="resetMatcher"
                                     >
                                         取消
-                                    </button>
+                                    </Button>
                                 </div>
                             </div>
                             <p
+                                data-typography="body"
                                 v-if="ruleError"
                                 role="alert"
-                                class="mt-1 text-sm text-destructive"
+                                class="mt-1 text-destructive"
                             >
                                 {{ ruleError }}
                             </p>
-                            <p class="mt-1 text-xs text-muted-foreground">
+                            <p
+                                data-typography="helper"
+                                class="mt-1 text-muted-foreground"
+                            >
                                 多个匹配条件的关系为且，即需要满足所有条件才算匹配
                             </p>
                         </div>
@@ -1028,7 +1106,7 @@ async function remove(): Promise<void> {
     height: 30px;
     padding: 0 14px;
     border: 1px solid var(--border);
-    font-size: 13px;
+    font-size: var(--console-text-body);
 }
 .choice + .choice {
     margin-left: -1px;

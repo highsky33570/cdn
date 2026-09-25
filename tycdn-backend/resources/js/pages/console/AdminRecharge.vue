@@ -79,8 +79,14 @@ async function submit() {
             class="console-panel rounded-xl border bg-card p-4 text-card-foreground md:p-5"
             aria-labelledby="recharge-title"
         >
-            <h2 id="recharge-title" class="text-lg font-semibold">余额调整</h2>
-            <p class="mt-1 text-sm text-muted-foreground">
+            <h2
+                data-typography="page-title"
+                id="recharge-title"
+                class="font-semibold"
+            >
+                余额调整
+            </h2>
+            <p data-typography="description" class="mt-1 text-muted-foreground">
                 充值或扣款后会写入用户余额记录。
             </p>
             <form
@@ -188,9 +194,10 @@ async function submit() {
                                 }}</AlertDescription></Alert
                             >
                             <p
+                                data-typography="body"
                                 v-if="success"
                                 role="status"
-                                class="text-sm text-primary"
+                                class="text-primary"
                             >
                                 {{ success }}
                             </p>

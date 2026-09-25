@@ -12,6 +12,7 @@
         "lint:check": "eslint .",
         "types:check": "vue-tsc --noEmit",
         "check:forms": "node scripts/check-form-controls.mjs",
+        "check:typography": "node scripts/check-console-typography.mjs",
         "test:contracts": "node --test tests/js/cdnfly-contracts.test.mjs"
     },
     "devDependencies": {

@@ -746,6 +746,7 @@ onUnmounted(() => {
                     /></template>
                     <template #cell-identity="{ row }"
                         ><p
+                            data-typography="body"
                             class="max-w-60 truncate font-semibold"
                             :title="text(row.email)"
                         >
@@ -756,7 +757,10 @@ onUnmounted(() => {
                                 )
                             }}
                         </p>
-                        <p class="mt-1 text-xs text-muted-foreground">
+                        <p
+                            data-typography="helper"
+                            class="mt-1 text-muted-foreground"
+                        >
                             ID {{ row.id }}
                             <span class="ml-2">{{
                                 text(row.name, '未填写用户名')
@@ -764,10 +768,16 @@ onUnmounted(() => {
                         </p></template
                     >
                     <template #cell-contact="{ row }"
-                        ><p :class="!row.phone ? 'text-muted-foreground' : ''">
+                        ><p
+                            data-typography="body"
+                            :class="!row.phone ? 'text-muted-foreground' : ''"
+                        >
                             {{ text(row.phone, '未填写手机号') }}
                         </p>
-                        <p class="mt-1 text-xs text-muted-foreground">
+                        <p
+                            data-typography="helper"
+                            class="mt-1 text-muted-foreground"
+                        >
                             {{ text(row.qq, '未填写QQ') }}
                         </p></template
                     >
@@ -1054,8 +1064,9 @@ onUnmounted(() => {
                                     />
                                 </div>
                                 <p
+                                    data-typography="body"
                                     v-if="!editId"
-                                    class="text-sm text-muted-foreground"
+                                    class="text-muted-foreground"
                                 >
                                     企业信息请在创建用户后编辑保存。
                                 </p>
@@ -1070,7 +1081,8 @@ onUnmounted(() => {
                                             v-model:checked="form.auth2_enable"
                                         />
                                         <p
-                                            class="mt-2 text-sm text-muted-foreground"
+                                            data-typography="body"
+                                            class="mt-2 text-muted-foreground"
                                         >
                                             开启后，用户必须使用首次实名认证的身份证进行二次实名认证；系统将发送邮件和短信通知。
                                         </p>
@@ -1330,7 +1342,7 @@ onUnmounted(() => {
     border-radius: var(--radius);
     padding: 8px 12px;
     background: transparent;
-    font-size: 0.875rem;
+    font-size: var(--console-text-body);
     resize: vertical;
 }
 :deep([data-slot='textarea']):focus-visible {

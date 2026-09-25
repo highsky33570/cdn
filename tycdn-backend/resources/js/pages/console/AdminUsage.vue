@@ -411,7 +411,12 @@ onUnmounted(() => ++requestId);
                     >
                 </div>
             </div>
-            <p v-if="filterError" role="alert" class="text-sm text-destructive">
+            <p
+                data-typography="body"
+                v-if="filterError"
+                role="alert"
+                class="text-destructive"
+            >
                 {{ filterError }}
             </p>
             <div
@@ -443,14 +448,30 @@ onUnmounted(() => ++requestId);
                 :aria-busy="loading"
             >
                 <div>
-                    <p class="mb-1 text-sm text-muted-foreground">峰值</p>
-                    <p class="text-2xl font-semibold tabular-nums">
+                    <p
+                        data-typography="body"
+                        class="mb-1 text-muted-foreground"
+                    >
+                        峰值
+                    </p>
+                    <p
+                        data-typography="metric"
+                        class="font-semibold tabular-nums"
+                    >
                         {{ formatMetric(maximum) }}
                     </p>
                 </div>
                 <div>
-                    <p class="mb-1 text-sm text-muted-foreground">95%值</p>
-                    <p class="text-2xl font-semibold tabular-nums">
+                    <p
+                        data-typography="body"
+                        class="mb-1 text-muted-foreground"
+                    >
+                        95%值
+                    </p>
+                    <p
+                        data-typography="metric"
+                        class="font-semibold tabular-nums"
+                    >
                         {{ formatMetric(percentile) }}
                     </p>
                 </div>
@@ -464,38 +485,70 @@ onUnmounted(() => ++requestId);
                 <div
                     class="rounded-md border border-primary/30 bg-accent/30 p-4"
                 >
-                    <p class="text-sm text-muted-foreground">总流量</p>
-                    <p class="mt-1 text-2xl font-semibold tabular-nums">
+                    <p data-typography="body" class="text-muted-foreground">
+                        总流量
+                    </p>
+                    <p
+                        data-typography="metric"
+                        class="mt-1 font-semibold tabular-nums"
+                    >
                         {{ formatMetric(trafficStats.total) }}
                     </p>
-                    <p class="mt-1 text-xs text-muted-foreground">
+                    <p
+                        data-typography="helper"
+                        class="mt-1 text-muted-foreground"
+                    >
                         {{ periodLabel }}
                     </p>
                 </div>
                 <div class="rounded-md border bg-card p-4">
-                    <p class="text-sm text-muted-foreground">峰值</p>
-                    <p class="mt-1 text-2xl font-semibold tabular-nums">
+                    <p data-typography="body" class="text-muted-foreground">
+                        峰值
+                    </p>
+                    <p
+                        data-typography="metric"
+                        class="mt-1 font-semibold tabular-nums"
+                    >
                         {{ formatMetric(trafficStats.peak) }}
                     </p>
-                    <p class="mt-1 text-xs text-muted-foreground">
+                    <p
+                        data-typography="helper"
+                        class="mt-1 text-muted-foreground"
+                    >
                         单个统计点最大值
                     </p>
                 </div>
                 <div class="rounded-md border bg-card p-4">
-                    <p class="text-sm text-muted-foreground">平均</p>
-                    <p class="mt-1 text-2xl font-semibold tabular-nums">
+                    <p data-typography="body" class="text-muted-foreground">
+                        平均
+                    </p>
+                    <p
+                        data-typography="metric"
+                        class="mt-1 font-semibold tabular-nums"
+                    >
                         {{ formatMetric(trafficStats.average) }}
                     </p>
-                    <p class="mt-1 text-xs text-muted-foreground">
+                    <p
+                        data-typography="helper"
+                        class="mt-1 text-muted-foreground"
+                    >
                         按当前明细均值
                     </p>
                 </div>
                 <div class="rounded-md border bg-card p-4">
-                    <p class="text-sm text-muted-foreground">数据点</p>
-                    <p class="mt-1 text-2xl font-semibold tabular-nums">
+                    <p data-typography="body" class="text-muted-foreground">
+                        数据点
+                    </p>
+                    <p
+                        data-typography="metric"
+                        class="mt-1 font-semibold tabular-nums"
+                    >
                         {{ loading || error ? '—' : `${rows.length} 条` }}
                     </p>
-                    <p class="mt-1 text-xs text-muted-foreground">
+                    <p
+                        data-typography="helper"
+                        class="mt-1 text-muted-foreground"
+                    >
                         更新：{{ updatedAt || '—' }}
                     </p>
                 </div>
@@ -517,7 +570,7 @@ onUnmounted(() => ++requestId);
                 <div
                     class="flex items-center justify-between gap-3 border-b px-4 py-3"
                 >
-                    <h3 class="text-sm font-semibold">
+                    <h3 data-typography="section-title" class="font-semibold">
                         {{ tab === 'bandwidth' ? '明细数据' : '明细列表' }}
                     </h3>
                     <span class="text-xs text-muted-foreground">{{

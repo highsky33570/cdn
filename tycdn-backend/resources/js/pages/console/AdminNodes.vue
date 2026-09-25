@@ -1615,8 +1615,9 @@ function regionNameById(id: unknown): string {
                     </Alert>
 
                     <p
+                        data-typography="body"
                         v-if="lineGroupId === ''"
-                        class="text-sm text-muted-foreground"
+                        class="text-muted-foreground"
                     >
                         先选择一个节点组。线路是把节点 IP 绑定到某条 DNS
                         线路上，不是单独创建的对象。
@@ -1645,7 +1646,9 @@ function regionNameById(id: unknown): string {
                                     <div
                                         class="flex items-center gap-2 border-b bg-muted/40 px-3 py-2.5"
                                     >
-                                        <button
+                                        <Button
+                                            variant="ghost"
+                                            size="icon-sm"
                                             type="button"
                                             class="flex size-6 items-center justify-center rounded text-muted-foreground hover:text-foreground"
                                             @click="
@@ -1666,7 +1669,7 @@ function regionNameById(id: unknown): string {
                                                 v-else
                                                 class="size-4"
                                             />
-                                        </button>
+                                        </Button>
                                         <Server
                                             class="size-4 text-muted-foreground"
                                         />
@@ -1806,7 +1809,9 @@ function regionNameById(id: unknown): string {
                                     <div
                                         class="flex items-center gap-2 border-b bg-muted/40 px-3 py-2.5"
                                     >
-                                        <button
+                                        <Button
+                                            variant="ghost"
+                                            size="icon-sm"
                                             type="button"
                                             class="flex size-6 items-center justify-center rounded text-muted-foreground hover:text-foreground"
                                             @click.stop="
@@ -1827,7 +1832,7 @@ function regionNameById(id: unknown): string {
                                                 v-else
                                                 class="size-4"
                                             />
-                                        </button>
+                                        </Button>
                                         <div
                                             class="flex flex-1 cursor-pointer items-center gap-3"
                                             @click="
@@ -1943,7 +1948,7 @@ function regionNameById(id: unknown): string {
                     </div>
                 </div>
 
-                <p class="text-xs text-muted-foreground">
+                <p data-typography="helper" class="text-muted-foreground">
                     命令中包含 Elasticsearch 密码，请勿转发或截图外发。
                 </p>
 
@@ -2409,7 +2414,10 @@ function regionNameById(id: unknown): string {
                             placeholder="156.234.124.163&#10;156.234.124.164&#10;156.234.124.165&#10;156.234.124.166"
                             class="flex w-full rounded-md border border-input bg-transparent px-3 py-2 font-mono text-sm shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-ring"
                         ></Textarea>
-                        <p class="mt-1 text-xs text-muted-foreground">
+                        <p
+                            data-typography="helper"
+                            class="mt-1 text-muted-foreground"
+                        >
                             在节点上执行
                             <code>ip addr show</code> 可查看该机器的副 IP（标记
                             secondary 的地址）。

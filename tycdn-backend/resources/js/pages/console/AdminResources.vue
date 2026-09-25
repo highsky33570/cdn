@@ -320,7 +320,12 @@ async function remove() {
                     >重试</Button
                 >
             </div>
-            <p v-if="loading" role="status" class="py-8 text-muted-foreground">
+            <p
+                data-typography="body"
+                v-if="loading"
+                role="status"
+                class="py-8 text-muted-foreground"
+            >
                 正在加载配置…
             </p>
             <template v-else-if="ready">
@@ -347,10 +352,16 @@ async function remove() {
                         >
                     </div>
                     <header class="mt-7 mb-4 border-l-2 border-primary pl-3">
-                        <h2 class="text-sm font-semibold">
+                        <h2
+                            data-typography="section-title"
+                            class="font-semibold"
+                        >
                             {{ current.title }}
                         </h2>
-                        <p class="mt-1 text-xs text-muted-foreground">
+                        <p
+                            data-typography="description"
+                            class="mt-1 text-muted-foreground"
+                        >
                             {{ current.help }}
                         </p>
                     </header>
@@ -361,10 +372,16 @@ async function remove() {
                             class="rounded-lg border bg-card p-4"
                             :class="card.wide ? 'lg:col-span-2' : ''"
                         >
-                            <h3 class="text-sm font-semibold">
+                            <h3
+                                data-typography="section-title"
+                                class="font-semibold"
+                            >
                                 {{ card.title }}
                             </h3>
-                            <p class="mt-1 mb-3 text-xs text-muted-foreground">
+                            <p
+                                data-typography="description"
+                                class="mt-1 mb-3 text-muted-foreground"
+                            >
                                 {{ card.help }}
                             </p>
                             <div
@@ -428,8 +445,16 @@ async function remove() {
                         class="mb-4 flex flex-wrap items-center justify-between gap-3"
                     >
                         <div>
-                            <h2 class="text-sm font-semibold">区域资源限制</h2>
-                            <p class="mt-1 text-xs text-muted-foreground">
+                            <h2
+                                data-typography="section-title"
+                                class="font-semibold"
+                            >
+                                区域资源限制
+                            </h2>
+                            <p
+                                data-typography="description"
+                                class="mt-1 text-muted-foreground"
+                            >
                                 按区域覆盖资源限制，只保存与全局不同的站点、转发和公共端口配置。
                             </p>
                         </div>
@@ -604,9 +629,10 @@ async function remove() {
                         @change="editValue = $event"
                     />
                     <p
+                        data-typography="body"
                         v-if="editError"
                         role="alert"
-                        class="text-sm text-destructive"
+                        class="text-destructive"
                     >
                         {{ editError }}
                     </p>

@@ -221,7 +221,11 @@ watch(
                                         :value="manualSetupKey"
                                         class="h-full w-full bg-background p-3 text-foreground"
                                     />
-                                    <button
+                                    <Button
+                                        variant="ghost"
+                                        size="inline"
+                                        type="button"
+                                        data-slot="copy-setup-key"
                                         @click="copy(manualSetupKey || '')"
                                         class="relative block h-auto border-l border-border px-3 hover:bg-muted"
                                     >
@@ -230,7 +234,7 @@ watch(
                                             class="w-4 text-green-500"
                                         />
                                         <Copy v-else class="w-4" />
-                                    </button>
+                                    </Button>
                                 </template>
                             </div>
                         </div>

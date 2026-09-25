@@ -19,7 +19,9 @@ const time = (value: number) =>
 <template>
     <div class="rounded-xl border bg-card p-5">
         <div class="flex justify-between gap-4">
-            <h3 class="font-semibold">{{ series.name }}</h3>
+            <h3 data-typography="section-title" class="font-semibold">
+                {{ series.name }}
+            </h3>
             <span class="text-sm text-muted-foreground tabular-nums">{{
                 series.points.at(-1)?.[1]?.toLocaleString()
             }}</span>

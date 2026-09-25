@@ -311,13 +311,18 @@ onMounted(async () => {
         <section
             class="node-monitoring min-w-0 rounded-xl border bg-card p-4 shadow-sm md:p-5"
         >
-            <h2 class="mb-3 text-lg font-semibold">节点实时监控</h2>
+            <h2 data-typography="page-title" class="mb-3 font-semibold">
+                节点实时监控
+            </h2>
             <div
                 role="tablist"
                 aria-label="节点实时监控"
                 class="mb-4 flex flex-wrap gap-1"
             >
-                <button
+                <Button
+                    variant="ghost"
+                    type="button"
+                    data-slot="console-tab"
                     v-for="item in tabs"
                     :key="item.key"
                     role="tab"
@@ -332,7 +337,7 @@ onMounted(async () => {
                     @click="selectTab(item.key)"
                 >
                     {{ item.label }}
-                </button>
+                </Button>
             </div>
             <div
                 class="toolbar mb-4 flex flex-wrap items-center gap-x-8 gap-y-3 rounded-md border bg-muted/20 px-3 py-3 md:px-7"
@@ -340,7 +345,9 @@ onMounted(async () => {
                 <div v-if="tab !== 'traffic'" class="flex items-center gap-3">
                     <span>指标</span>
                     <div class="segments" role="group" aria-label="指标">
-                        <button
+                        <Button
+                            variant="ghost"
+                            type="button"
                             data-slot="console-segment"
                             v-for="item in metrics"
                             :key="item.key"
@@ -348,7 +355,7 @@ onMounted(async () => {
                             @click="selectMetric(item.key)"
                         >
                             {{ item.label }}
-                        </button>
+                        </Button>
                     </div>
                 </div>
                 <div v-else class="flex items-center gap-3">
@@ -370,7 +377,9 @@ onMounted(async () => {
                 <div class="flex items-center gap-3">
                     <span>时间</span>
                     <div class="segments" role="group" aria-label="时间">
-                        <button
+                        <Button
+                            variant="ghost"
+                            type="button"
                             data-slot="console-segment"
                             v-for="[value, label] in periods"
                             :key="value"
@@ -378,7 +387,7 @@ onMounted(async () => {
                             @click="selectPeriod(value)"
                         >
                             {{ label }}
-                        </button>
+                        </Button>
                     </div>
                 </div>
                 <label v-if="tab !== 'top'" class="flex items-center gap-3"
@@ -442,23 +451,40 @@ onMounted(async () => {
                 </div>
             </div>
             <p
+                data-typography="body"
                 v-if="nodesError"
                 role="alert"
-                class="mb-3 text-sm text-destructive"
+                class="mb-3 text-destructive"
             >
                 {{ nodesError }}
-                <button class="underline" @click="retryNodes">
+                <Button
+                    variant="link"
+                    size="inline"
+                    type="button"
+                    data-slot="console-link"
+                    class="underline"
+                    @click="retryNodes"
+                >
                     重试加载节点
-                </button>
+                </Button>
             </p>
             <div :id="`node-${tab}`" role="tabpanel" :aria-busy="loading">
                 <p
+                    data-typography="body"
                     v-if="error"
                     role="alert"
-                    class="p-6 text-center text-sm text-destructive"
+                    class="p-6 text-center text-destructive"
                 >
                     {{ error }}
-                    <button class="underline" @click="load">重试</button>
+                    <Button
+                        variant="link"
+                        size="inline"
+                        type="button"
+                        data-slot="console-link"
+                        class="underline"
+                        @click="load"
+                        >重试</Button
+                    >
                 </p>
                 <div v-if="tab === 'top'" class="overflow-x-auto">
                     <table class="w-full min-w-[620px] text-left text-xs">
@@ -477,7 +503,11 @@ onMounted(async () => {
                                             : undefined
                                     "
                                 >
-                                    <button
+                                    <Button
+                                        variant="ghost"
+                                        size="inline"
+                                        type="button"
+                                        data-slot="console-sort"
                                         v-if="column.unit"
                                         class="flex items-center gap-1"
                                         @click="sortBy(column.key)"
@@ -489,7 +519,7 @@ onMounted(async () => {
                                                     ? '↓'
                                                     : '↑'
                                                 : '↕'
-                                        }}</span></button
+                                        }}</span></Button
                                     ><span v-else>{{ column.label }}</span>
                                 </th>
                             </tr>
@@ -527,15 +557,17 @@ onMounted(async () => {
                 </div>
                 <template v-else>
                     <p
+                        data-typography="body"
                         v-if="loading && !charts.length"
-                        class="p-12 text-center text-sm text-muted-foreground"
+                        class="p-12 text-center text-muted-foreground"
                     >
                         加载中…
                     </p>
                     <template v-else-if="!error || charts.length">
                         <p
+                            data-typography="helper"
                             v-if="tab === 'traffic' && charts.length"
-                            class="mb-3 inline-block rounded-full border px-3 py-1 text-xs font-semibold"
+                            class="mb-3 inline-block rounded-full border px-3 py-1 font-semibold"
                         >
                             总流量: {{ nodeValue(total, 'MB') }}
                         </p>
@@ -548,8 +580,9 @@ onMounted(async () => {
                             />
                         </div>
                         <p
+                            data-typography="body"
                             v-if="!charts.length"
-                            class="p-12 text-center text-sm text-muted-foreground"
+                            class="p-12 text-center text-muted-foreground"
                         >
                             {{ nodes.length ? '暂无数据' : '暂无节点' }}
                         </p>
@@ -561,7 +594,7 @@ onMounted(async () => {
 </template>
 <style scoped>
 .toolbar {
-    font-size: 12px;
+    font-size: var(--console-text-body);
 }
 .segments {
     display: inline-flex;

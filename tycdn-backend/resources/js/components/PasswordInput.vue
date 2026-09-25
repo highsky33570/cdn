@@ -2,6 +2,7 @@
 import { Eye, EyeOff } from 'lucide-vue-next';
 import { ref, useTemplateRef } from 'vue';
 import type { HTMLAttributes } from 'vue';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 
@@ -28,7 +29,10 @@ defineExpose({
             :class="cn('pr-10', props.class)"
             v-bind="$attrs"
         />
-        <button
+        <Button
+            variant="ghost"
+            size="inline"
+            data-slot="password-toggle"
             type="button"
             @click="showPassword = !showPassword"
             :class="
@@ -41,6 +45,6 @@ defineExpose({
         >
             <EyeOff v-if="showPassword" class="size-4" />
             <Eye v-else class="size-4" />
-        </button>
+        </Button>
     </div>
 </template>

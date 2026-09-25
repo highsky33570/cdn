@@ -233,9 +233,10 @@ async function showDetail(row: CdnflyRecord): Promise<void> {
             </template>
             <Button type="submit">查询</Button>
             <p
+                data-typography="body"
                 v-if="error"
                 role="alert"
-                class="w-full text-sm text-destructive"
+                class="w-full text-destructive"
             >
                 {{ error }}
             </p>
@@ -268,11 +269,16 @@ async function showDetail(row: CdnflyRecord): Promise<void> {
                         title
                     }}</DialogDescription></DialogHeader
                 >
-                <p v-if="detailError" role="alert" class="text-destructive">
+                <p
+                    data-typography="body"
+                    v-if="detailError"
+                    role="alert"
+                    class="text-destructive"
+                >
                     {{ detailError }}
                 </p>
                 <RecordDetails v-else-if="detail" :value="detail" />
-                <p v-else class="text-muted-foreground">
+                <p data-typography="body" v-else class="text-muted-foreground">
                     加载中…
                 </p></DialogContent
             ></Dialog

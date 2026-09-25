@@ -196,7 +196,9 @@ onUnmounted(() => {
                 <span class="credential">{{
                     loaded ? key || '—' : loading ? '加载中…' : '—'
                 }}</span
-                ><button
+                ><Button
+                    variant="ghost"
+                    size="icon-sm"
                     v-if="key"
                     type="button"
                     class="copy-key"
@@ -206,7 +208,7 @@ onUnmounted(() => {
                     @click="copy(key, 'api_key')"
                 >
                     <Copy :size="14" />
-                </button>
+                </Button>
             </div>
         </div>
         <div class="key-row">
@@ -215,7 +217,9 @@ onUnmounted(() => {
                 <span class="credential">{{
                     loaded ? secret || '—' : loading ? '加载中…' : '—'
                 }}</span
-                ><button
+                ><Button
+                    variant="ghost"
+                    size="icon-sm"
                     v-if="secret"
                     type="button"
                     class="copy-key"
@@ -225,7 +229,7 @@ onUnmounted(() => {
                     @click="copy(secret, 'api_secret')"
                 >
                     <Copy :size="14" />
-                </button>
+                </Button>
             </div>
         </div>
         <form class="key-row whitelist-row" @submit.prevent="saveIp">
@@ -266,7 +270,7 @@ onUnmounted(() => {
     padding: 0 14px 38px;
     background: var(--card);
     color: var(--foreground);
-    font-size: 14px;
+    font-size: var(--console-text-body);
 }
 .key-row {
     display: flex;
@@ -340,7 +344,7 @@ onUnmounted(() => {
     background: var(--primary);
     color: var(--primary-foreground);
     border-radius: 4px;
-    font-size: 14px;
+    font-size: var(--console-text-body);
     font-weight: 400;
     box-shadow: none;
 }

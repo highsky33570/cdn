@@ -794,7 +794,10 @@ async function changePackage() {
                         @click="showDetail(row)"
                         >{{ row.name ?? baseName(row) }}</Button
                     >
-                    <p class="mt-1 text-xs text-muted-foreground">
+                    <p
+                        data-typography="helper"
+                        class="mt-1 text-muted-foreground"
+                    >
                         ID: {{ row.id }} / 用户: {{ row.user_name ?? '—' }} ({{
                             row.uid ?? row.user_id
                         }})
@@ -802,16 +805,21 @@ async function changePackage() {
                 >
                 <template #cell-base="{ row }"
                     ><span class="font-medium">{{ baseName(row) }}</span>
-                    <p class="mt-1 text-xs text-muted-foreground">
+                    <p
+                        data-typography="helper"
+                        class="mt-1 text-muted-foreground"
+                    >
                         基础套餐 ID: {{ baseId(row) }}
                     </p></template
                 >
                 <template #cell-period="{ row }"
                     ><div class="space-y-1 text-xs text-muted-foreground">
-                        <p>
+                        <p data-typography="body">
                             购买: {{ formatDate(String(row.create_at ?? '')) }}
                         </p>
-                        <p>到期: {{ formatDate(String(row.end_at ?? '')) }}</p>
+                        <p data-typography="body">
+                            到期: {{ formatDate(String(row.end_at ?? '')) }}
+                        </p>
                     </div></template
                 >
                 <template #cell-traffic="{ row }"
@@ -931,7 +939,11 @@ async function changePackage() {
                             editorError
                         }}</AlertDescription></Alert
                     >
-                    <p v-if="editorLoading" class="text-muted-foreground">
+                    <p
+                        data-typography="body"
+                        v-if="editorLoading"
+                        class="text-muted-foreground"
+                    >
                         加载中…
                     </p>
                     <fieldset
@@ -943,7 +955,12 @@ async function changePackage() {
                         class="min-w-0 space-y-4"
                     >
                         <section class="rounded-lg border bg-card p-4">
-                            <h3 class="section-title">线路分组</h3>
+                            <h3
+                                data-typography="section-title"
+                                class="section-title"
+                            >
+                                线路分组
+                            </h3>
                             <div class="sold-grid">
                                 <div
                                     v-for="field in [
@@ -993,7 +1010,12 @@ async function changePackage() {
                             </div>
                         </section>
                         <section class="rounded-lg border bg-card p-4">
-                            <h3 class="section-title">资源限制</h3>
+                            <h3
+                                data-typography="section-title"
+                                class="section-title"
+                            >
+                                资源限制
+                            </h3>
                             <div class="sold-grid">
                                 <div
                                     v-for="field in soldLimits"
@@ -1037,7 +1059,12 @@ async function changePackage() {
                             </div>
                         </section>
                         <section class="rounded-lg border bg-card p-4">
-                            <h3 class="section-title">功能能力</h3>
+                            <h3
+                                data-typography="section-title"
+                                class="section-title"
+                            >
+                                功能能力
+                            </h3>
                             <div class="sold-grid">
                                 <div
                                     v-for="field in soldCapabilities"
@@ -1069,7 +1096,12 @@ async function changePackage() {
                             </div>
                         </section>
                         <section class="rounded-lg border bg-card p-4">
-                            <h3 class="section-title">到期与续费</h3>
+                            <h3
+                                data-typography="section-title"
+                                class="section-title"
+                            >
+                                到期与续费
+                            </h3>
                             <div class="sold-grid">
                                 <div
                                     v-for="field in [
@@ -1100,7 +1132,12 @@ async function changePackage() {
                             </div>
                         </section>
                         <section class="rounded-lg border bg-card p-4">
-                            <h3 class="section-title">CNAME设置</h3>
+                            <h3
+                                data-typography="section-title"
+                                class="section-title"
+                            >
+                                CNAME设置
+                            </h3>
                             <div class="sold-grid">
                                 <div class="sold-field">
                                     <Label for="sold-cname">主机名</Label
@@ -1175,7 +1212,7 @@ async function changePackage() {
                     ></DialogHeader
                 >
                 <div class="min-h-0 flex-1 space-y-5 overflow-y-auto p-5">
-                    <p v-if="detailLoading">加载中…</p>
+                    <p data-typography="body" v-if="detailLoading">加载中…</p>
                     <Alert v-else-if="detailError" variant="destructive"
                         ><AlertDescription
                             >{{ detailError
@@ -1187,10 +1224,16 @@ async function changePackage() {
                         <section class="rounded-lg border bg-card p-4">
                             <div class="flex items-start justify-between">
                                 <div>
-                                    <p class="text-xs text-muted-foreground">
+                                    <p
+                                        data-typography="helper"
+                                        class="text-muted-foreground"
+                                    >
                                         当前套餐
                                     </p>
-                                    <h2 class="mt-1 text-xl font-semibold">
+                                    <h2
+                                        data-typography="section-title"
+                                        class="mt-1 font-semibold"
+                                    >
                                         {{ detail.name ?? baseName(detail) }}
                                     </h2>
                                 </div>
@@ -1220,10 +1263,16 @@ async function changePackage() {
                                     :key="item.label"
                                     class="rounded-lg border p-3"
                                 >
-                                    <p class="text-xs text-muted-foreground">
+                                    <p
+                                        data-typography="helper"
+                                        class="text-muted-foreground"
+                                    >
                                         {{ item.label }}
                                     </p>
-                                    <p class="mt-1 font-semibold">
+                                    <p
+                                        data-typography="body"
+                                        class="mt-1 font-semibold"
+                                    >
                                         {{ item.value }}
                                     </p>
                                 </div>
@@ -1262,8 +1311,16 @@ async function changePackage() {
                         />
                         <template v-if="detailTab === 'usage'"
                             ><div>
-                                <h3 class="section-title">资源用量</h3>
-                                <p class="text-xs text-muted-foreground">
+                                <h3
+                                    data-typography="section-title"
+                                    class="section-title"
+                                >
+                                    资源用量
+                                </h3>
+                                <p
+                                    data-typography="description"
+                                    class="text-muted-foreground"
+                                >
                                     展示当前套餐叠加升级包后的额度、已用和剩余。
                                 </p>
                             </div>
@@ -1274,7 +1331,10 @@ async function changePackage() {
                                     class="rounded-lg border bg-card p-4"
                                 >
                                     <div class="flex justify-between gap-2">
-                                        <h4 class="font-medium">
+                                        <h4
+                                            data-typography="section-title"
+                                            class="font-medium"
+                                        >
                                             {{ resource.label }}
                                         </h4>
                                         <Badge
@@ -1286,10 +1346,13 @@ async function changePackage() {
                                             >{{ resource.status }}</Badge
                                         >
                                     </div>
-                                    <p class="my-3">
-                                        <strong class="text-2xl">{{
-                                            valueText(resource.used)
-                                        }}</strong
+                                    <p data-typography="body" class="my-3">
+                                        <strong
+                                            data-typography="metric"
+                                            class=""
+                                            >{{
+                                                valueText(resource.used)
+                                            }}</strong
                                         ><span
                                             class="text-sm text-muted-foreground"
                                         >
@@ -1315,7 +1378,8 @@ async function changePackage() {
                                         />
                                     </div>
                                     <p
-                                        class="mt-3 flex justify-between text-xs text-muted-foreground"
+                                        data-typography="helper"
+                                        class="mt-3 flex justify-between text-muted-foreground"
                                     >
                                         <span
                                             >剩余
@@ -1387,12 +1451,17 @@ async function changePackage() {
                     ></DialogHeader
                 >
                 <section class="space-y-5 rounded-lg border bg-card p-4">
-                    <h3 class="section-title">套餐升级</h3>
+                    <h3 data-typography="section-title" class="section-title">
+                        套餐升级
+                    </h3>
                     <div class="grid grid-cols-2 gap-3">
                         <div
                             class="rounded-lg border border-l-4 border-l-primary p-3"
                         >
-                            <p class="text-xs text-muted-foreground">
+                            <p
+                                data-typography="helper"
+                                class="text-muted-foreground"
+                            >
                                 用户套餐ID
                             </p>
                             <strong>#{{ upgradeTarget.id }}</strong>
@@ -1400,7 +1469,10 @@ async function changePackage() {
                         <div
                             class="rounded-lg border border-l-4 border-l-primary p-3"
                         >
-                            <p class="text-xs text-muted-foreground">
+                            <p
+                                data-typography="helper"
+                                class="text-muted-foreground"
+                            >
                                 当前套餐ID
                             </p>
                             <strong>#{{ baseId(upgradeTarget) }}</strong>
@@ -1428,17 +1500,25 @@ async function changePackage() {
                         ></Alert
                     >
                     <template v-if="upgradeTab === 'upgrades'"
-                        ><p v-if="upgradeLoading">加载中…</p>
+                        ><p data-typography="body" v-if="upgradeLoading">
+                            加载中…
+                        </p>
                         <template v-else-if="!upgradeError"
                             ><div class="flex justify-between">
-                                <h4 class="font-semibold">当前升级包</h4>
+                                <h4
+                                    data-typography="section-title"
+                                    class="font-semibold"
+                                >
+                                    当前升级包
+                                </h4>
                                 <Badge variant="outline"
                                     >已购买 {{ upgrades.length }} 项</Badge
                                 >
                             </div>
                             <p
+                                data-typography="body"
                                 v-if="!upgrades.length"
-                                class="rounded-lg border border-dashed py-6 text-center text-sm text-muted-foreground"
+                                class="rounded-lg border border-dashed py-6 text-center text-muted-foreground"
                             >
                                 暂无已购买升级包
                             </p>
@@ -1466,14 +1546,20 @@ async function changePackage() {
                                 >
                             </article>
                             <div class="flex justify-between border-t pt-5">
-                                <h4 class="font-semibold">可购买升级包</h4>
+                                <h4
+                                    data-typography="section-title"
+                                    class="font-semibold"
+                                >
+                                    可购买升级包
+                                </h4>
                                 <Badge variant="outline"
                                     >可选 {{ available.length }} 项</Badge
                                 >
                             </div>
                             <p
+                                data-typography="body"
                                 v-if="!available.length"
-                                class="rounded-lg border border-dashed py-6 text-center text-sm text-muted-foreground"
+                                class="rounded-lg border border-dashed py-6 text-center text-muted-foreground"
                             >
                                 暂无可购买升级包
                             </p>
@@ -1528,17 +1614,21 @@ async function changePackage() {
                                 ></SelectContent
                             ></Select
                         >
-                        <p v-if="quoteLoading">计算差价中…</p>
+                        <p data-typography="body" v-if="quoteLoading">
+                            计算差价中…
+                        </p>
                         <div
                             v-if="quote"
                             class="rounded-lg border bg-muted/30 p-3 text-sm"
                         >
-                            <p>
+                            <p data-typography="body">
                                 当前价格 {{ valueText(quote.curr_price) }} /
                                 新价格 {{ valueText(quote.new_price) }}
                             </p>
-                            <p>剩余 {{ valueText(quote.remain_days) }} 天</p>
-                            <p>
+                            <p data-typography="body">
+                                剩余 {{ valueText(quote.remain_days) }} 天
+                            </p>
+                            <p data-typography="body">
                                 {{
                                     Number(quote.diff_price) >= 0
                                         ? '需补差价'

@@ -735,7 +735,10 @@ async function saveDefault(name: 'cert_default_type' | 'dnsapi') {
     <div class="console-page user-certificates min-w-0 p-4 md:p-6">
         <section class="cert-workspace bg-card text-card-foreground">
             <div class="cert-tabs" role="tablist" aria-label="证书管理">
-                <button
+                <Button
+                    variant="ghost"
+                    type="button"
+                    data-slot="console-tab"
                     v-for="tab in [
                         { key: 'list', label: '证书列表' },
                         { key: 'defaults', label: '默认设置' },
@@ -752,7 +755,7 @@ async function saveDefault(name: 'cert_default_type' | 'dnsapi') {
                     @click="switchTab(tab.key)"
                 >
                     {{ tab.label }}
-                </button>
+                </Button>
             </div>
             <Alert v-if="errorMessage" variant="destructive" class="mb-4"
                 ><AlertCircle /><AlertTitle>请求失败</AlertTitle
@@ -1165,14 +1168,18 @@ async function saveDefault(name: 'cert_default_type' | 'dnsapi') {
                                         {{ option.name }}
                                     </SelectOption>
                                 </SelectField>
-                                <p>
+                                <p data-typography="body">
                                     设置后，在网站列表一键申请证书时将使用此DNS
                                     API申请证书。
                                 </p>
                             </div>
                         </div>
                     </fieldset>
-                    <p class="text-sm text-muted-foreground" role="status">
+                    <p
+                        data-typography="body"
+                        class="text-muted-foreground"
+                        role="status"
+                    >
                         {{ settingsSaving ? '保存中…' : settingsMessage }}
                     </p>
                 </div>
@@ -1217,7 +1224,9 @@ async function saveDefault(name: 'cert_default_type' | 'dnsapi') {
                             v-if="!editingCert"
                             class="flex rounded-lg border p-1"
                         >
-                            <button
+                            <Button
+                                variant="ghost"
+                                data-slot="console-tab"
                                 type="button"
                                 class="flex-1 rounded-md px-3 py-1.5 text-center text-sm font-medium transition-colors"
                                 :class="
@@ -1228,8 +1237,10 @@ async function saveDefault(name: 'cert_default_type' | 'dnsapi') {
                                 @click="switchCertMode('single')"
                             >
                                 单个上传
-                            </button>
-                            <button
+                            </Button>
+                            <Button
+                                variant="ghost"
+                                data-slot="console-tab"
                                 type="button"
                                 class="flex-1 rounded-md px-3 py-1.5 text-center text-sm font-medium transition-colors"
                                 :class="
@@ -1240,7 +1251,7 @@ async function saveDefault(name: 'cert_default_type' | 'dnsapi') {
                                 @click="switchCertMode('batch')"
                             >
                                 批量申请
-                            </button>
+                            </Button>
                         </div>
 
                         <div class="grid gap-2">
@@ -1455,7 +1466,7 @@ async function saveDefault(name: 'cert_default_type' | 'dnsapi') {
     margin-bottom: -1px;
     padding: 12px 20px;
     border-bottom: 2px solid transparent;
-    font-size: 16px;
+    font-size: var(--console-text-body);
     color: var(--muted-foreground);
 }
 .cert-tabs button[aria-selected='true'] {
@@ -1473,7 +1484,7 @@ async function saveDefault(name: 'cert_default_type' | 'dnsapi') {
 .cert-toolbar input,
 .cert-toolbar :deep([data-slot='select-trigger']) {
     height: 40px;
-    font-size: 16px;
+    font-size: var(--console-text-body);
 }
 .cert-search {
     display: flex;
@@ -1532,7 +1543,7 @@ async function saveDefault(name: 'cert_default_type' | 'dnsapi') {
     min-width: 1800px;
     table-layout: fixed;
     text-align: left;
-    font-size: 16px;
+    font-size: var(--console-text-body);
 }
 .cert-table th {
     height: 48px;
@@ -1565,7 +1576,7 @@ async function saveDefault(name: 'cert_default_type' | 'dnsapi') {
     padding: 0;
     text-align: left;
     line-height: 24px;
-    font-size: 16px;
+    font-size: var(--console-text-body);
     overflow-wrap: anywhere;
 }
 .cert-actions {
@@ -1577,13 +1588,13 @@ async function saveDefault(name: 'cert_default_type' | 'dnsapi') {
 .cert-actions button {
     padding: 0;
     height: auto;
-    font-size: 16px;
+    font-size: var(--console-text-body);
 }
 .cert-status {
     display: inline-flex;
     align-items: center;
     gap: 9px;
-    font-size: 14px;
+    font-size: var(--console-text-body);
 }
 .cert-status i {
     width: 14px;
@@ -1608,7 +1619,7 @@ async function saveDefault(name: 'cert_default_type' | 'dnsapi') {
 .cert-defaults {
     padding: 8px 4px 20px;
     min-height: 200px;
-    font-size: 16px;
+    font-size: var(--console-text-body);
 }
 .default-row {
     display: flex;
@@ -1653,7 +1664,7 @@ async function saveDefault(name: 'cert_default_type' | 'dnsapi') {
 }
 .default-dns p {
     margin-top: 16px;
-    font-size: 14px;
+    font-size: var(--console-text-body);
     line-height: 1.6;
     color: var(--muted-foreground);
 }
@@ -1666,7 +1677,7 @@ async function saveDefault(name: 'cert_default_type' | 'dnsapi') {
     }
     .cert-tabs button {
         padding: 10px 12px;
-        font-size: 14px;
+        font-size: var(--console-text-body);
     }
     .cert-search {
         width: 100%;

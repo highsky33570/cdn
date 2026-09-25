@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Monitor, Moon, Sun } from 'lucide-vue-next';
+import { Button } from '@/components/ui/button';
 import { useAppearance } from '@/composables/useAppearance';
 
 withDefaults(
@@ -24,7 +25,10 @@ const tabs = [
     <div
         class="inline-flex gap-1 rounded-lg bg-neutral-100 p-1 dark:bg-neutral-800"
     >
-        <button
+        <Button
+            variant="ghost"
+            size="inline"
+            data-slot="appearance-toggle"
             v-for="{ value, Icon, label } in tabs"
             :key="value"
             type="button"
@@ -48,6 +52,6 @@ const tabs = [
             <span :class="compact ? 'sr-only' : 'ml-1.5 text-sm'">{{
                 label
             }}</span>
-        </button>
+        </Button>
     </div>
 </template>

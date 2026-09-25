@@ -88,13 +88,16 @@ const code = ref<string>('');
                 >
                 <div class="text-center text-sm text-muted-foreground">
                     <span>or you can </span>
-                    <button
+                    <Button
+                        variant="link"
+                        size="inline"
+                        data-slot="console-link"
                         type="button"
                         class="text-foreground underline decoration-neutral-300 underline-offset-4 transition-colors duration-300 ease-out hover:decoration-current! dark:decoration-neutral-500"
                         @click="() => toggleRecoveryMode(clearErrors)"
                     >
                         {{ authConfigContent.buttonText }}
-                    </button>
+                    </Button>
                 </div>
             </Form>
         </template>
@@ -120,13 +123,16 @@ const code = ref<string>('');
 
                 <div class="text-center text-sm text-muted-foreground">
                     <span>or you can </span>
-                    <button
+                    <Button
+                        variant="link"
+                        size="inline"
+                        data-slot="console-link"
                         type="button"
                         class="text-foreground underline decoration-neutral-300 underline-offset-4 transition-colors duration-300 ease-out hover:decoration-current! dark:decoration-neutral-500"
                         @click="() => toggleRecoveryMode(clearErrors)"
                     >
                         {{ authConfigContent.buttonText }}
-                    </button>
+                    </Button>
                 </div>
             </Form>
         </template>

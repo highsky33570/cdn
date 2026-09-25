@@ -897,8 +897,13 @@ const displayedCcRows = computed(() => {
                         <Users class="size-5" />
                     </div>
                     <div>
-                        <CardTitle class="text-base">管理员账号</CardTitle>
-                        <div class="mt-1 text-3xl font-semibold">
+                        <CardTitle data-typography="label" class=""
+                            >管理员账号</CardTitle
+                        >
+                        <div
+                            data-typography="metric"
+                            class="mt-1 font-semibold"
+                        >
                             {{ stats.admins }}
                         </div>
                     </div>
@@ -912,8 +917,13 @@ const displayedCcRows = computed(() => {
                         <CheckCircle2 class="size-5" />
                     </div>
                     <div>
-                        <CardTitle class="text-base">邮箱已验证</CardTitle>
-                        <div class="mt-1 text-3xl font-semibold">
+                        <CardTitle data-typography="label" class=""
+                            >邮箱已验证</CardTitle
+                        >
+                        <div
+                            data-typography="metric"
+                            class="mt-1 font-semibold"
+                        >
                             {{ stats.verified }}
                         </div>
                     </div>
@@ -927,8 +937,13 @@ const displayedCcRows = computed(() => {
                         <KeyRound class="size-5" />
                     </div>
                     <div>
-                        <CardTitle class="text-base">API Key 已同步</CardTitle>
-                        <div class="mt-1 text-3xl font-semibold">
+                        <CardTitle data-typography="label" class=""
+                            >API Key 已同步</CardTitle
+                        >
+                        <div
+                            data-typography="metric"
+                            class="mt-1 font-semibold"
+                        >
                             {{ stats.apiKey }}
                         </div>
                     </div>
@@ -1035,7 +1050,10 @@ const displayedCcRows = computed(() => {
                 >
                     <div>
                         <CardTitle>CC 防护资源</CardTitle>
-                        <p class="mt-1 text-sm text-muted-foreground">
+                        <p
+                            data-typography="description"
+                            class="mt-1 text-muted-foreground"
+                        >
                             {{
                                 ccTotal === 0 ? '暂无资源' : `${ccTotal} 个资源`
                             }}
@@ -1522,8 +1540,9 @@ const displayedCcRows = computed(() => {
                             </Button>
                         </div>
                         <p
+                            data-typography="helper"
                             v-if="matcherConditions.length === 0"
-                            class="text-xs text-muted-foreground"
+                            class="text-muted-foreground"
                         >
                             不添加任何条件将匹配所有请求。
                         </p>
@@ -1802,8 +1821,9 @@ const displayedCcRows = computed(() => {
                             </SelectContent>
                         </Select>
                         <p
+                            data-typography="helper"
                             v-if="editingCc"
-                            class="text-xs text-muted-foreground"
+                            class="text-muted-foreground"
                         >
                             编辑时不可修改归属
                         </p>

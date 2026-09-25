@@ -850,14 +850,15 @@ async function confirmCertDelete(): Promise<void> {
                     </div>
                     <!-- 可选配置展开 -->
                     <div class="border-t pt-3">
-                        <button
+                        <Button
+                            variant="ghost"
                             type="button"
                             class="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
                             @click="showAdvancedCreate = !showAdvancedCreate"
                         >
                             <span>{{ showAdvancedCreate ? '▲' : '▼' }}</span>
                             可选配置
-                        </button>
+                        </Button>
                         <div v-if="showAdvancedCreate" class="mt-3 grid gap-4">
                             <div class="flex flex-col gap-2">
                                 <Label for="site-create-groups">所属分组</Label>
@@ -954,14 +955,15 @@ async function confirmCertDelete(): Promise<void> {
                     </div>
                     <!-- 可选配置展开 -->
                     <div class="border-t pt-3">
-                        <button
+                        <Button
+                            variant="ghost"
                             type="button"
                             class="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
                             @click="showAdvancedEdit = !showAdvancedEdit"
                         >
                             <span>{{ showAdvancedEdit ? '▲' : '▼' }}</span>
                             可选配置
-                        </button>
+                        </Button>
                         <div v-if="showAdvancedEdit" class="mt-3 grid gap-4">
                             <div class="flex flex-col gap-2">
                                 <Label for="site-edit-groups">所属分组</Label>

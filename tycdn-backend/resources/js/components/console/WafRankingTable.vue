@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ArrowDownUp } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
+import { Button } from '@/components/ui/button';
 import type { WafRank } from '@/lib/wafLogs';
 const props = defineProps<{
     label: string;
@@ -40,14 +41,17 @@ const sorted = computed(() =>
                                   : 'descending'
                         "
                     >
-                        <button
+                        <Button
+                            variant="ghost"
+                            size="inline"
+                            data-slot="console-sort"
                             type="button"
                             class="inline-flex items-center gap-1"
                             :aria-label="`按${label}次数排序`"
                             @click="direction = direction === -1 ? 1 : -1"
                         >
                             次数<ArrowDownUp class="size-3" />
-                        </button>
+                        </Button>
                     </th>
                 </tr>
             </thead>
@@ -58,7 +62,10 @@ const sorted = computed(() =>
                     class="border-t"
                 >
                     <td class="px-3 py-2">
-                        <button
+                        <Button
+                            variant="link"
+                            size="inline"
+                            type="button"
                             class="flex max-w-full items-center gap-2 text-left text-primary hover:underline"
                             :title="row.display"
                             @click="emit('filter', row.filter)"
@@ -68,7 +75,7 @@ const sorted = computed(() =>
                                 class="size-2 shrink-0 rounded-full"
                                 :style="{ background: row.color }"
                             /><span class="truncate">{{ row.display }}</span>
-                        </button>
+                        </Button>
                     </td>
                     <td v-if="share" class="px-3 py-2">
                         <div class="flex items-center gap-2">

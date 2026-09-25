@@ -29,7 +29,7 @@ defineProps<{ value: unknown; labels?: Record<string, string> }>();
             </dd>
         </div>
     </dl>
-    <p v-else class="text-sm break-words whitespace-pre-wrap">
+    <p data-typography="body" v-else class="break-words whitespace-pre-wrap">
         {{ value ?? '暂无数据' }}
     </p>
 </template>

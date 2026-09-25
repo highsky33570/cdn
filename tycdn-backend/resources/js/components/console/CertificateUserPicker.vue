@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onUnmounted, ref, watch } from 'vue';
+import { Button } from '@/components/ui/button';
 import Input from '@/components/ui/input/Input.vue';
 import { apiRequest } from '@/lib/apiRequest';
 import { extractCdnflyRows } from '@/lib/cdnflyResponse';
@@ -147,15 +148,28 @@ function key(event: KeyboardEvent) {
             aria-label="用户搜索结果"
             class="options"
         >
-            <p v-if="loading">加载中…</p>
-            <p v-else-if="error" role="alert">
+            <p data-typography="body" v-if="loading">加载中…</p>
+            <p data-typography="body" v-else-if="error" role="alert">
                 {{ error }}
-                <button type="button" @mousedown.prevent @click="search">
+                <Button
+                    variant="link"
+                    size="inline"
+                    data-slot="console-link"
+                    type="button"
+                    @mousedown.prevent
+                    @click="search"
+                >
                     重试
-                </button>
+                </Button>
             </p>
-            <p v-else-if="!options.length">暂无匹配用户</p>
-            <button
+            <p data-typography="body" v-else-if="!options.length">
+                暂无匹配用户
+            </p>
+            <Button
+                variant="ghost"
+                size="inline"
+                data-slot="console-option"
+                class="break-words whitespace-normal"
                 v-for="(row, i) in options"
                 :key="String(row.id)"
                 type="button"
@@ -167,7 +181,7 @@ function key(event: KeyboardEvent) {
                 {{ row.name ?? row.username }} (ID: {{ row.id }})<small>{{
                     row.email
                 }}</small>
-            </button>
+            </Button>
         </div>
     </div>
 </template>
@@ -185,7 +199,7 @@ input {
     border-radius: 4px;
     background: var(--card);
     padding: 5px 9px;
-    font-size: 12px;
+    font-size: var(--console-text-body);
 }
 .options {
     position: absolute;
@@ -200,7 +214,7 @@ input {
     box-shadow: 0 4px 14px #0002;
     border-radius: 4px;
     padding: 5px;
-    font-size: 12px;
+    font-size: var(--console-text-body);
 }
 .options > button {
     display: block;

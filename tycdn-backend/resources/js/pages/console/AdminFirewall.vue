@@ -503,7 +503,9 @@ async function removeOverrides() {
                     >重试</Button
                 >
             </div>
-            <p v-if="loading" class="fw-loading">加载中…</p>
+            <p data-typography="body" v-if="loading" class="fw-loading">
+                加载中…
+            </p>
             <div
                 v-if="tab !== 'overrides'"
                 :id="`fw-panel-${tab}`"
@@ -515,8 +517,8 @@ async function removeOverrides() {
                 <fieldset :disabled="!ready">
                     <template v-if="tab === 'cc'">
                         <header class="fw-section-title">
-                            <h2>CC 防护策略</h2>
-                            <p>
+                            <h2 data-typography="section-title">CC 防护策略</h2>
+                            <p data-typography="description">
                                 控制全局拦截方式、黑白名单时长和临时白名单阈值。
                             </p>
                         </header>
@@ -531,8 +533,10 @@ async function removeOverrides() {
                                 />
                             </article>
                             <article class="fw-card">
-                                <h3>名单有效期</h3>
-                                <p>设置黑名单拦截时长和临时白名单放行时长。</p>
+                                <h3 data-typography="label">名单有效期</h3>
+                                <p data-typography="description">
+                                    设置黑名单拦截时长和临时白名单放行时长。
+                                </p>
                                 <FirewallField
                                     v-for="field in [
                                         {
@@ -554,13 +558,13 @@ async function removeOverrides() {
                                     :value="value(field.key)"
                                     @change="change(field.key, $event)"
                                 />
-                                <p class="fw-hint">
+                                <p data-typography="helper" class="fw-hint">
                                     临时白名单时间不能小于 600 秒。
                                 </p>
                             </article>
                             <article class="fw-card fw-full">
-                                <h3>默认拉黑方式</h3>
-                                <p>
+                                <h3 data-typography="label">默认拉黑方式</h3>
+                                <p data-typography="description">
                                     选择默认拦截动作，并在非 ipset
                                     模式下配置高攻击量切换策略。
                                 </p>
@@ -573,7 +577,7 @@ async function removeOverrides() {
                                         change('default_block_way', $event)
                                     "
                                 />
-                                <p>
+                                <p data-typography="body">
                                     ipset 几乎不消耗带宽和
                                     CPU；断开连接、返回页面会有额外消耗。建议默认使用
                                     ipset，并在攻击量升高时自动切换为 ipset。
@@ -600,8 +604,8 @@ async function removeOverrides() {
                                 /></template>
                             </article>
                             <article class="fw-card fw-full">
-                                <h3>临时白名单阈值</h3>
-                                <p>
+                                <h3 data-typography="label">临时白名单阈值</h3>
+                                <p data-typography="description">
                                     达到阈值后进入临时白名单，降低误拦截概率。
                                 </p>
                                 <div class="fw-grid">
@@ -640,8 +644,12 @@ async function removeOverrides() {
                                 :key="field.key"
                                 class="fw-card"
                             >
-                                <h3>{{ field.label }}</h3>
-                                <p>一行一个，支持 # 作为注释。</p>
+                                <h3 data-typography="label">
+                                    {{ field.label }}
+                                </h3>
+                                <p data-typography="description">
+                                    一行一个，支持 # 作为注释。
+                                </p>
                                 <FirewallField
                                     :label="field.label"
                                     kind="textarea"
@@ -652,8 +660,10 @@ async function removeOverrides() {
                             </article>
                         </div>
                         <header class="fw-section-title">
-                            <h2>节点访问与默认页</h2>
-                            <p>
+                            <h2 data-typography="section-title">
+                                节点访问与默认页
+                            </h2>
+                            <p data-typography="description">
                                 保护节点入口、默认页和自动清理策略，减少误开放风险。
                             </p>
                         </header>
@@ -683,8 +693,8 @@ async function removeOverrides() {
                                 />
                             </article>
                             <article class="fw-card fw-full">
-                                <h3>默认页防护</h3>
-                                <p>
+                                <h3 data-typography="label">默认页防护</h3>
+                                <p data-typography="description">
                                     配置默认页触发 CC
                                     防护的方式，并选择命中的规则组。
                                 </p>
@@ -749,8 +759,10 @@ async function removeOverrides() {
                                 />
                             </article>
                             <article class="fw-card">
-                                <h3>密钥</h3>
-                                <p>节点侧 OpenResty 配置通信使用的共享密钥。</p>
+                                <h3 data-typography="label">密钥</h3>
+                                <p data-typography="description">
+                                    节点侧 OpenResty 配置通信使用的共享密钥。
+                                </p>
                                 <FirewallField
                                     label="共享密钥"
                                     kind="password"
@@ -759,8 +771,12 @@ async function removeOverrides() {
                                 />
                             </article>
                             <article class="fw-card fw-full">
-                                <h3>自动清理节点日志</h3>
-                                <p>节点磁盘不足时的访问日志和缓存清理策略。</p>
+                                <h3 data-typography="label">
+                                    自动清理节点日志
+                                </h3>
+                                <p data-typography="description">
+                                    节点磁盘不足时的访问日志和缓存清理策略。
+                                </p>
                                 <FirewallField
                                     label="清理策略"
                                     kind="choices"
@@ -773,8 +789,10 @@ async function removeOverrides() {
                             </article>
                         </div>
                         <header class="fw-section-title">
-                            <h2>自动切换与防 CC 图片</h2>
-                            <p>
+                            <h2 data-typography="section-title">
+                                自动切换与防 CC 图片
+                            </h2>
+                            <p data-typography="description">
                                 按 QPS 自动切换规则组，并管理防 CC
                                 图片资源更新。
                             </p>
@@ -835,8 +853,8 @@ async function removeOverrides() {
                                 /></template>
                             </article>
                             <article class="fw-card">
-                                <h3>防 CC 图片更新</h3>
-                                <p>
+                                <h3 data-typography="label">防 CC 图片更新</h3>
+                                <p data-typography="description">
                                     选择图片资源地址，并主动通知节点刷新资源。
                                 </p>
                                 <div class="fw-inline">
@@ -879,7 +897,7 @@ async function removeOverrides() {
                                         :value="value('at_hour')"
                                         @change="change('at_hour', $event)"
                                 /></template>
-                                <p>
+                                <p data-typography="body">
                                     可选择自定义图片下载地址。<a
                                         href="https://doc.cdnfly.cn/dajianshengchengfangcctupianfuwuqi.html"
                                         target="_blank"
@@ -890,8 +908,10 @@ async function removeOverrides() {
                             </article>
                         </div>
                         <header class="fw-section-title">
-                            <h2>防 CC 页面模板</h2>
-                            <p>
+                            <h2 data-typography="section-title">
+                                防 CC 页面模板
+                            </h2>
+                            <p data-typography="description">
                                 维护各类验证页
                                 HTML，当前选择切换时只展示对应模板。
                             </p>
@@ -916,8 +936,10 @@ async function removeOverrides() {
                             />
                         </div>
                         <header class="fw-section-title">
-                            <h2>调试与内置资源防护</h2>
-                            <p>
+                            <h2 data-typography="section-title">
+                                调试与内置资源防护
+                            </h2>
+                            <p data-typography="description">
                                 开启诊断日志，保护证书验证路径和防 CC
                                 页静态资源。
                             </p>
@@ -947,8 +969,10 @@ async function removeOverrides() {
                                 />
                             </article>
                             <article class="fw-card">
-                                <h3>.well-known 防护</h3>
-                                <p>
+                                <h3 data-typography="label">
+                                    .well-known 防护
+                                </h3>
+                                <p data-typography="description">
                                     保护证书验证路径，避免异常 404
                                     请求持续回源主控。
                                 </p>
@@ -967,14 +991,14 @@ async function removeOverrides() {
                                         )
                                     "
                                 />
-                                <p>
+                                <p data-typography="body">
                                     超过阈值后 300 秒内仅允许已验证通过的 IP
                                     回源，仍可正常申请证书。
                                 </p>
                             </article>
                             <article class="fw-card fw-full">
-                                <h3>内置资源防护</h3>
-                                <p>
+                                <h3 data-typography="label">内置资源防护</h3>
+                                <p data-typography="description">
                                     保护防 CC 页面中的图片、JS
                                     等静态资源，达到阈值后自动启用防护。
                                 </p>
@@ -1004,8 +1028,10 @@ async function removeOverrides() {
                                 </div>
                                 <div class="fw-rule-heading">
                                     <div>
-                                        <h3>资源规则</h3>
-                                        <p>
+                                        <h3 data-typography="label">
+                                            资源规则
+                                        </h3>
+                                        <p data-typography="description">
                                             每行配置一个统计窗口和最大请求次数，留空则不启用。
                                         </p>
                                     </div>
@@ -1068,8 +1094,10 @@ async function removeOverrides() {
                         <article class="fw-card fw-limits">
                             <div class="fw-rule-heading">
                                 <div>
-                                    <h3>单次请求处理上限</h3>
-                                    <p>
+                                    <h3 data-typography="label">
+                                        单次请求处理上限
+                                    </h3>
+                                    <p data-typography="description">
                                         控制 WAF
                                         检查单个请求的范围，避免复杂或恶意请求占用过多节点资源；修改后自动保存。
                                     </p>
@@ -1090,14 +1118,16 @@ async function removeOverrides() {
                                     恢复推荐值
                                 </Button>
                             </div>
-                            <p class="fw-warning">
+                            <p data-typography="body" class="fw-warning">
                                 数值越大，WAF 能处理的请求越复杂、内容越大，但
                                 CPU
                                 和内存消耗也越高。请求超过任一限制时会被直接拦截（返回
                                 403）。
                             </p>
                             <section v-for="group in limitGroups" :key="group">
-                                <h4>{{ group }}</h4>
+                                <h4 data-typography="section-title">
+                                    {{ group }}
+                                </h4>
                                 <div class="fw-grid">
                                     <FirewallField
                                         v-for="field in limitFields.filter(
@@ -1139,8 +1169,10 @@ async function removeOverrides() {
             >
                 <header class="fw-card fw-rule-heading">
                     <div>
-                        <h2>区域及节点配置</h2>
-                        <p>按区域或单节点覆盖全局 CC/WAF 运行参数。</p>
+                        <h2 data-typography="section-title">区域及节点配置</h2>
+                        <p data-typography="description">
+                            按区域或单节点覆盖全局 CC/WAF 运行参数。
+                        </p>
                         <span class="fw-count"
                             >共 {{ overrideTotal }} 条覆盖配置</span
                         >
@@ -1335,7 +1367,9 @@ async function removeOverrides() {
                         class="fw-card"
                     >
                         <div class="fw-rule-heading">
-                            <h3>{{ overrideNames[key] }}</h3>
+                            <h3 data-typography="label">
+                                {{ overrideNames[key] }}
+                            </h3>
                             <Button
                                 size="sm"
                                 variant="outline"
@@ -1504,7 +1538,7 @@ async function removeOverrides() {
     color: var(--fw-ink);
     border-radius: 8px;
     padding: 12px;
-    font-size: 14px;
+    font-size: var(--console-text-body);
     min-width: 0;
 }
 .fw-tabs {
@@ -1528,7 +1562,7 @@ async function removeOverrides() {
 .fw-save-state {
     color: var(--muted-foreground);
     margin-left: auto;
-    font-size: 11px;
+    font-size: var(--console-text-helper);
 }
 .fw-global {
     max-width: 814px;
@@ -1550,16 +1584,16 @@ async function removeOverrides() {
 .firewall-page h2,
 .firewall-page h3,
 .fw-modal h3 {
-    font-size: 12px;
+    font-size: var(--console-text-section-title);
     font-weight: 600;
     color: var(--foreground);
 }
 .firewall-page h2 {
-    font-size: 14px;
+    font-size: var(--console-text-section-title);
 }
 .firewall-page p,
 .fw-modal p {
-    font-size: 11px;
+    font-size: var(--console-text-body);
     color: var(--fw-muted, var(--muted-foreground));
     line-height: 1.7;
     margin: 4px 0 10px;
@@ -1600,7 +1634,7 @@ async function removeOverrides() {
 }
 .fw-label small {
     display: block;
-    font-size: 11px;
+    font-size: var(--console-text-helper);
     line-height: 1.4;
     color: var(--fw-muted, var(--muted-foreground));
     margin-top: 3px;
@@ -1627,7 +1661,7 @@ async function removeOverrides() {
     border-left: 0;
     border-radius: 0 3px 3px 0;
     white-space: nowrap;
-    font-size: 11px;
+    font-size: var(--console-text-body);
 }
 .fw-input:has(> span) > input {
     border-radius: 3px 0 0 3px;
@@ -1785,7 +1819,7 @@ async function removeOverrides() {
     padding: 10px;
     margin-bottom: 12px;
     border-radius: 4px;
-    font-size: 12px;
+    font-size: var(--console-text-body);
 }
 .fw-loading {
     padding: 15px;
@@ -1799,7 +1833,7 @@ async function removeOverrides() {
     border-radius: 12px;
     color: var(--primary);
     padding: 3px 9px;
-    font-size: 11px;
+    font-size: var(--console-text-body);
 }
 .fw-table-scroll {
     overflow: auto;
@@ -1841,7 +1875,7 @@ async function removeOverrides() {
 .fw-modal {
     --fw-line: var(--border);
     --fw-muted: var(--muted-foreground);
-    font-size: 12px;
+    font-size: var(--console-text-body);
 }
 .fw-modal form > .fw-grid label {
     display: grid;

@@ -2182,16 +2182,22 @@ onMounted(() => {
                                 getDisplayValue(row, ['name', 'title'])
                             }}</Button
                         >
-                        <p class="mt-1 text-xs text-muted-foreground">
+                        <p
+                            data-typography="helper"
+                            class="mt-1 text-muted-foreground"
+                        >
                             ID: {{ getPackageId(row) }} / 排序:
                             {{ row.sort ?? 100 }}
                         </p></template
                     >
                     <template #cell-line="{ row }"
-                        ><p>
+                        ><p data-typography="body">
                             {{ resourceOptionLabel('regions', row.region_id) }}
                         </p>
-                        <p class="mt-1 text-xs text-muted-foreground">
+                        <p
+                            data-typography="helper"
+                            class="mt-1 text-muted-foreground"
+                        >
                             {{
                                 resourceOptionLabel(
                                     'node_groups',
@@ -2210,17 +2216,17 @@ onMounted(() => {
                     >
                     <template #cell-limits="{ row }"
                         ><div class="space-y-1 text-xs text-muted-foreground">
-                            <p>
+                            <p data-typography="body">
                                 流量/带宽/连接:
                                 {{ rowLimitText(row.traffic, 'GB') }} /
                                 {{ rowLimitText(row.bandwidth) }} /
                                 {{ rowLimitText(row.connection) }}
                             </p>
-                            <p>
+                            <p data-typography="body">
                                 域名/主域名: {{ rowLimitText(row.domain) }} /
                                 {{ rowLimitText(row.main_domain) }}
                             </p>
-                            <p>
+                            <p data-typography="body">
                                 HTTP/转发端口:
                                 {{ rowLimitText(row.http_port) }} /
                                 {{ rowLimitText(row.stream_port) }}
@@ -2245,7 +2251,10 @@ onMounted(() => {
                                 />{{ cap.label }}</span
                             >
                         </div>
-                        <p class="mt-2 text-xs text-muted-foreground">
+                        <p
+                            data-typography="helper"
+                            class="mt-2 text-muted-foreground"
+                        >
                             CC: {{ row.cc_protect || '不支持' }} / DDOS:
                             {{ row.ddos_protect || '不支持' }}
                         </p></template
@@ -2530,7 +2539,10 @@ onMounted(() => {
                                 </SelectGroup>
                             </SelectContent>
                         </Select>
-                        <p class="text-xs text-muted-foreground">
+                        <p
+                            data-typography="helper"
+                            class="text-muted-foreground"
+                        >
                             仅显示已关联 CDNfly 账号的普通用户。
                         </p>
                     </div>
@@ -2608,6 +2620,7 @@ onMounted(() => {
                             class="package-section rounded-lg border bg-card p-4"
                         >
                             <h3
+                                data-typography="section-title"
                                 class="mb-5 border-l-3 border-primary pl-2 font-semibold"
                             >
                                 基础信息
@@ -2760,6 +2773,7 @@ onMounted(() => {
                             class="package-section rounded-lg border bg-card p-4"
                         >
                             <h3
+                                data-typography="section-title"
                                 class="mb-5 border-l-3 border-primary pl-2 font-semibold"
                             >
                                 资源限制
@@ -2845,6 +2859,7 @@ onMounted(() => {
                             class="package-section rounded-lg border bg-card p-4"
                         >
                             <h3
+                                data-typography="section-title"
                                 class="mb-5 border-l-3 border-primary pl-2 font-semibold"
                             >
                                 功能能力
@@ -2907,6 +2922,7 @@ onMounted(() => {
                             class="package-section rounded-lg border bg-card p-4"
                         >
                             <h3
+                                data-typography="section-title"
                                 class="mb-5 border-l-3 border-primary pl-2 font-semibold"
                             >
                                 定价
@@ -2975,7 +2991,12 @@ onMounted(() => {
                                     }" /></CollapsibleTrigger
                             ><CollapsibleContent class="mt-5 space-y-6"
                                 ><div>
-                                    <h4 class="mb-4 font-medium">CNAME设置</h4>
+                                    <h4
+                                        data-typography="section-title"
+                                        class="mb-4 font-medium"
+                                    >
+                                        CNAME设置
+                                    </h4>
                                     <div class="package-grid">
                                         <div class="package-field">
                                             <Label for="package-cname_hostname2"
@@ -3052,7 +3073,12 @@ onMounted(() => {
                                     </div>
                                 </div>
                                 <div>
-                                    <h4 class="mb-4 font-medium">购买限制</h4>
+                                    <h4
+                                        data-typography="section-title"
+                                        class="mb-4 font-medium"
+                                    >
+                                        购买限制
+                                    </h4>
                                     <div class="package-grid package-purchase">
                                         <div class="package-field">
                                             <Label for="package-buy_num_limit"
@@ -3176,7 +3202,12 @@ onMounted(() => {
                                     </div>
                                 </div>
                                 <div>
-                                    <h4 class="mb-4 font-medium">其它设置</h4>
+                                    <h4
+                                        data-typography="section-title"
+                                        class="mb-4 font-medium"
+                                    >
+                                        其它设置
+                                    </h4>
                                     <div class="package-grid">
                                         <div class="package-field">
                                             <Label for="package-owner"
@@ -3305,7 +3336,10 @@ onMounted(() => {
                                         </div>
                                     </div>
                                 </div>
-                                <p class="text-xs text-muted-foreground">
+                                <p
+                                    data-typography="helper"
+                                    class="text-muted-foreground"
+                                >
                                     上架时使用上方定价，季度付和年付留空分别按月付的3倍和12倍计算。
                                 </p>
                                 <Label for="portal-features"
@@ -3834,7 +3868,10 @@ onMounted(() => {
                         <div
                             class="mt-2 flex flex-wrap items-baseline gap-x-6 gap-y-1"
                         >
-                            <span class="text-2xl font-semibold">
+                            <span
+                                data-typography="metric"
+                                class="font-semibold"
+                            >
                                 {{ detailProduct.price_monthly }}
                                 {{ PORTAL_CURRENCY_LABEL }}
                                 <span

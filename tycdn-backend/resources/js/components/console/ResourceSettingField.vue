@@ -53,7 +53,11 @@ defineEmits<{ change: [value: string] }>();
                     >{{ field.unit }}</span
                 >
             </div>
-            <p v-if="field.help" class="mt-1 text-xs text-muted-foreground">
+            <p
+                data-typography="helper"
+                v-if="field.help"
+                class="mt-1 text-muted-foreground"
+            >
                 {{ field.help }}
             </p>
             <slot />

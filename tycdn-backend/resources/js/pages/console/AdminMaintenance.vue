@@ -254,7 +254,7 @@ onUnmounted(() => {
 <template>
     <div class="maintenance-workspace grid min-w-0 gap-5 p-4 md:p-6">
         <div class="flex flex-wrap items-center justify-between gap-3">
-            <h1 class="text-lg font-semibold">系统维护</h1>
+            <h1 data-typography="page-title" class="font-semibold">系统维护</h1>
             <div class="flex flex-wrap gap-2">
                 <Button variant="outline" :disabled="loading" @click="load"
                     >刷新</Button
@@ -269,7 +269,12 @@ onUnmounted(() => {
                 class="min-w-0 overflow-hidden rounded-xl border bg-card"
                 :class="section.key === 'agent-upgrades' ? 'xl:col-span-2' : ''"
             >
-                <h2 class="px-5 py-4 font-semibold">{{ section.title }}</h2>
+                <h2
+                    data-typography="section-title"
+                    class="px-5 py-4 font-semibold"
+                >
+                    {{ section.title }}
+                </h2>
                 <MaintenanceTable
                     :title="section.title"
                     :value="notices[section.key] ? null : values[section.key]"
@@ -385,10 +390,18 @@ onUnmounted(() => {
                                 }}
                             </dd>
                         </dl>
-                        <p v-if="upgradeRunning" role="status">
+                        <p
+                            data-typography="body"
+                            v-if="upgradeRunning"
+                            role="status"
+                        >
                             主控正在升级，可通过“查看日志”查看进度。
                         </p>
-                        <p v-else-if="!availableVersions.length" role="status">
+                        <p
+                            data-typography="body"
+                            v-else-if="!availableVersions.length"
+                            role="status"
+                        >
                             暂无可升级版本。
                         </p>
                         <div v-else class="space-y-2">
@@ -414,8 +427,9 @@ onUnmounted(() => {
                             >
                         </div>
                         <p
+                            data-typography="body"
                             v-if="master.release_notes || master.release_note"
-                            class="text-sm break-words whitespace-pre-wrap text-muted-foreground"
+                            class="break-words whitespace-pre-wrap text-muted-foreground"
                         >
                             {{ master.release_notes || master.release_note }}
                         </p></template

@@ -60,7 +60,12 @@ async function change(enable: number) {
         ><span v-if="ids.length" class="text-xs text-muted-foreground"
             >已选 {{ ids.length }} 条</span
         >
-        <p v-if="error" role="alert" class="w-full text-xs text-destructive">
+        <p
+            data-typography="helper"
+            v-if="error"
+            role="alert"
+            class="w-full text-destructive"
+        >
             {{ error }}
         </p>
     </div>

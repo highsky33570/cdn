@@ -4,6 +4,7 @@ import { computed, onMounted, onUnmounted, reactive, ref } from 'vue';
 import { toast } from 'vue-sonner';
 import ConfirmDeleteDialog from '@/components/console/ConfirmDeleteDialog.vue';
 import PackagePagination from '@/components/console/PackagePagination.vue';
+import { Button } from '@/components/ui/button';
 import CheckboxField from '@/components/ui/checkbox/CheckboxField.vue';
 import {
     DropdownMenu,
@@ -255,7 +256,9 @@ function createdAt(row: CdnflyRecord) {
             aria-label="CC 规则"
             @keydown="tabKey"
         >
-            <button
+            <Button
+                variant="ghost"
+                data-slot="console-tab"
                 v-for="item in ccKinds"
                 :id="`user-cc-tab-${item.key}`"
                 :key="item.key"
@@ -268,7 +271,7 @@ function createdAt(row: CdnflyRecord) {
                 @click="selectKind(item.key)"
             >
                 {{ item.label }}
-            </button>
+            </Button>
         </nav>
         <div
             id="user-cc-panel"
@@ -277,7 +280,8 @@ function createdAt(row: CdnflyRecord) {
             :aria-busy="loading || busy"
         >
             <div class="cc-actions">
-                <button
+                <Button
+                    variant="default"
                     data-slot="console-action"
                     type="button"
                     class="cc-button primary"
@@ -285,10 +289,11 @@ function createdAt(row: CdnflyRecord) {
                     @click="emit('create', kind)"
                 >
                     添加{{ label }}
-                </button>
+                </Button>
                 <DropdownMenu
                     ><DropdownMenuTrigger as-child
-                        ><button
+                        ><Button
+                            variant="outline"
                             data-slot="console-action"
                             type="button"
                             class="cc-button"
@@ -296,8 +301,7 @@ function createdAt(row: CdnflyRecord) {
                         >
                             更多操作
                             <ChevronDown
-                                :size="16"
-                            /></button></DropdownMenuTrigger
+                                :size="16" /></Button></DropdownMenuTrigger
                     ><DropdownMenuContent align="start"
                         ><DropdownMenuItem @select="batch('enable')"
                             >启用</DropdownMenuItem
@@ -348,7 +352,9 @@ function createdAt(row: CdnflyRecord) {
                         :disabled="busy"
                         @input="search"
                 /></label>
-                <button
+                <Button
+                    variant="link"
+                    size="inline"
                     data-slot="console-link"
                     type="button"
                     class="text-action"
@@ -356,19 +362,29 @@ function createdAt(row: CdnflyRecord) {
                     @click="clearFilters"
                 >
                     清除
-                </button>
-                <button
+                </Button>
+                <Button
+                    variant="ghost"
+                    size="inline"
+                    data-slot="console-submit-helper"
                     type="submit"
                     class="sr-only"
                     tabindex="-1"
                     :disabled="busy"
                 >
                     查询
-                </button>
+                </Button>
             </form>
-            <p v-if="error" class="cc-error" role="alert">
+            <p
+                data-typography="body"
+                v-if="error"
+                class="cc-error"
+                role="alert"
+            >
                 {{ error }}
-                <button
+                <Button
+                    variant="link"
+                    size="inline"
                     data-slot="console-link"
                     type="button"
                     class="text-action"
@@ -376,7 +392,7 @@ function createdAt(row: CdnflyRecord) {
                     @click="load()"
                 >
                     重试
-                </button>
+                </Button>
             </p>
             <div class="cc-table-scroll">
                 <table class="cc-table">
@@ -489,17 +505,21 @@ function createdAt(row: CdnflyRecord) {
                                 <td>{{ createdAt(row) }}</td>
                                 <td>
                                     <div class="row-actions">
-                                        <button
+                                        <Button
+                                            variant="link"
+                                            size="inline"
                                             data-slot="console-link"
                                             type="button"
                                             class="text-action"
                                             :disabled="busy || ccSystem(row)"
                                             @click="emit('manage', kind, row)"
                                         >
-                                            管理</button
+                                            管理</Button
                                         ><DropdownMenu
                                             ><DropdownMenuTrigger as-child
-                                                ><button
+                                                ><Button
+                                                    variant="link"
+                                                    size="inline"
                                                     data-slot="console-link"
                                                     type="button"
                                                     class="text-action row-more"
@@ -510,8 +530,9 @@ function createdAt(row: CdnflyRecord) {
                                                 >
                                                     更多
                                                     <ChevronDown
-                                                        :size="14"
-                                                    /></button></DropdownMenuTrigger
+                                                        :size="
+                                                            14
+                                                        " /></Button></DropdownMenuTrigger
                                             ><DropdownMenuContent align="end"
                                                 ><DropdownMenuItem
                                                     @select="
@@ -581,7 +602,7 @@ function createdAt(row: CdnflyRecord) {
     min-width: 0;
     background: var(--card);
     padding: 12px 14px 24px;
-    font-size: 16px;
+    font-size: var(--console-text-body);
     color: var(--muted-foreground);
 }
 .cc-tabs {
@@ -698,7 +719,7 @@ input:focus-visible,
     width: 100%;
     min-width: 1000px;
     table-layout: fixed;
-    font-size: 16px;
+    font-size: var(--console-text-body);
 }
 .cc-table th {
     height: 48px;
@@ -766,7 +787,7 @@ input:focus-visible,
 .cc-error {
     color: var(--destructive);
     margin: 12px 0;
-    font-size: 14px;
+    font-size: var(--console-text-body);
 }
 @media (max-width: 640px) {
     .user-cc-workspace {

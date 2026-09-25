@@ -315,7 +315,9 @@ onUnmounted(() => {
                 role="tablist"
                 aria-label="WAF日志分类"
             >
-                <button
+                <Button
+                    variant="ghost"
+                    data-slot="console-tab"
                     v-for="tab in [
                         { key: 'stats', label: '安全概览' },
                         { key: 'detail', label: '日志明细' },
@@ -335,7 +337,7 @@ onUnmounted(() => {
                     @click="switchTab(tab.key)"
                 >
                     {{ tab.label }}
-                </button>
+                </Button>
             </div>
             <form
                 class="mb-3 flex flex-wrap items-center gap-2"
@@ -493,10 +495,16 @@ onUnmounted(() => {
                             class="rounded-md border px-4 py-3"
                             :data-metric="item.key"
                         >
-                            <p class="text-xs text-muted-foreground">
+                            <p
+                                data-typography="helper"
+                                class="text-muted-foreground"
+                            >
                                 {{ item.label }}
                             </p>
-                            <p class="mt-2 text-xl font-semibold tabular-nums">
+                            <p
+                                data-typography="metric"
+                                class="mt-2 font-semibold tabular-nums"
+                            >
                                 {{
                                     loading
                                         ? '…'
@@ -516,7 +524,10 @@ onUnmounted(() => {
                     <template v-else-if="stats">
                         <WafTrendChart :points="stats.trend" />
                         <section class="mt-3" aria-label="攻击类型分布">
-                            <h3 class="mb-2 text-sm font-semibold">
+                            <h3
+                                data-typography="section-title"
+                                class="mb-2 font-semibold"
+                            >
                                 攻击类型分布
                             </h3>
                             <div
@@ -546,7 +557,8 @@ onUnmounted(() => {
                                                 class="text-xs text-muted-foreground"
                                                 >攻击类型</span
                                             ><span
-                                                class="mt-1 text-xl font-semibold"
+                                                data-typography="metric"
+                                                class="mt-1 font-semibold"
                                                 >{{
                                                     typeTotal.toLocaleString()
                                                 }}</span
@@ -554,8 +566,9 @@ onUnmounted(() => {
                                         </div>
                                     </div>
                                     <p
+                                        data-typography="body"
                                         v-else
-                                        class="text-sm text-muted-foreground"
+                                        class="text-muted-foreground"
                                     >
                                         暂无攻击类型数据
                                     </p>
@@ -575,7 +588,10 @@ onUnmounted(() => {
                                 class="min-w-0"
                                 :aria-label="ranking.title"
                             >
-                                <h3 class="mb-2 text-sm font-semibold">
+                                <h3
+                                    data-typography="section-title"
+                                    class="mb-2 font-semibold"
+                                >
                                     {{ ranking.title }}
                                 </h3>
                                 <WafRankingTable
@@ -731,9 +747,10 @@ onUnmounted(() => {
                     ></DialogHeader
                 ><Spinner v-if="detailLoading" />
                 <p
+                    data-typography="body"
                     v-else-if="detailError"
                     role="alert"
-                    class="text-sm text-destructive"
+                    class="text-destructive"
                 >
                     {{ detailError }}
                 </p>
@@ -742,7 +759,10 @@ onUnmounted(() => {
                         v-for="section in detailSections"
                         :key="section.title"
                     >
-                        <h3 class="mb-3 text-sm font-semibold">
+                        <h3
+                            data-typography="section-title"
+                            class="mb-3 font-semibold"
+                        >
                             {{ section.title }}
                         </h3>
                         <dl
@@ -807,9 +827,10 @@ onUnmounted(() => {
                     ></DialogHeader
                 >
                 <p
+                    data-typography="body"
                     v-if="actionError"
                     role="alert"
-                    class="text-sm text-destructive"
+                    class="text-destructive"
                 >
                     {{ actionError }}
                 </p>

@@ -1708,7 +1708,10 @@ async function exportSites() {
                 role="tablist"
                 aria-label="网站管理"
             >
-                <button
+                <Button
+                    variant="ghost"
+                    type="button"
+                    data-slot="console-tab"
                     v-for="tab in TABS"
                     :key="tab.key"
                     :id="`sites-tab-${tab.key}`"
@@ -1719,7 +1722,7 @@ async function exportSites() {
                     @click="activeTab = tab.key"
                 >
                     {{ tab.label }}
-                </button>
+                </Button>
             </div>
             <Alert v-if="errorMessage" variant="destructive" class="mb-4"
                 ><AlertCircle /><AlertTitle>请求失败</AlertTitle
@@ -2150,7 +2153,12 @@ async function exportSites() {
                     ></DialogHeader
                 >
                 <form class="grid gap-4" @submit.prevent="runBulk(bulkAction)">
-                    <p v-if="bulkError" role="alert" class="text-destructive">
+                    <p
+                        data-typography="body"
+                        v-if="bulkError"
+                        role="alert"
+                        class="text-destructive"
+                    >
                         {{ bulkError }}
                     </p>
                     <template v-if="bulkAction === 'edit'"
@@ -2172,7 +2180,7 @@ async function exportSites() {
                             v-model="bulkValue"
                             :required="bulkField !== 'groups'"
                     /></template>
-                    <p v-else>
+                    <p data-typography="body" v-else>
                         {{
                             bulkAction === 'delete'
                                 ? '确认删除所选记录？删除后不可恢复。网站需先禁用。'
@@ -2280,14 +2288,15 @@ async function exportSites() {
                             >
                         </div>
                         <div class="border-t pt-3">
-                            <button
+                            <Button
+                                variant="ghost"
                                 type="button"
                                 class="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
                                 @click="showAdvanced = !showAdvanced"
                             >
                                 <span>{{ showAdvanced ? '▲' : '▼' }}</span
                                 >可选配置
-                            </button>
+                            </Button>
                             <div v-if="showAdvanced" class="mt-3 grid gap-4">
                                 <div class="grid gap-2">
                                     <Label for="site-groups">所属分组</Label
@@ -2658,7 +2667,7 @@ async function exportSites() {
 }
 .sites-tabs button {
     padding: 12px 20px;
-    font-size: 16px;
+    font-size: var(--console-text-body);
     border-bottom: 2px solid transparent;
     margin-bottom: -1px;
     color: var(--muted-foreground);
@@ -2679,7 +2688,7 @@ async function exportSites() {
 .sites-toolbar input,
 .quick-search button {
     height: 40px;
-    font-size: 16px;
+    font-size: var(--console-text-body);
 }
 .sites-toolbar :deep([data-slot='select-trigger']),
 .advanced-search :deep([data-slot='select-trigger']) {
@@ -2757,7 +2766,7 @@ async function exportSites() {
     table-layout: fixed;
     min-width: 700px;
     text-align: left;
-    font-size: 16px;
+    font-size: var(--console-text-body);
 }
 .site-list-table {
     min-width: 1720px;
@@ -2816,7 +2825,7 @@ async function exportSites() {
 .domain-link {
     height: auto;
     padding: 0;
-    font-size: 16px;
+    font-size: var(--console-text-body);
 }
 .domain-link {
     display: block;
@@ -2833,7 +2842,7 @@ async function exportSites() {
     display: inline-flex;
     gap: 8px;
     align-items: center;
-    font-size: 14px;
+    font-size: var(--console-text-body);
     white-space: nowrap;
 }
 .site-status i {
@@ -2865,7 +2874,7 @@ async function exportSites() {
     }
     .sites-tabs button {
         padding: 10px 12px;
-        font-size: 14px;
+        font-size: var(--console-text-body);
     }
     .quick-search {
         width: 100%;

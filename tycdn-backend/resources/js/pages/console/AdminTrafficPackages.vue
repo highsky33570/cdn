@@ -618,54 +618,74 @@ async function assign() {
                         @click="edit(row)"
                         >{{ row.name }}</Button
                     >
-                    <p class="mt-1 text-xs text-muted-foreground">
+                    <p
+                        data-typography="helper"
+                        class="mt-1 text-muted-foreground"
+                    >
                         ID: {{ row.id
                         }}<template v-if="tab === 'sold'">
                             / 流量包 ID: {{ row.traffic_package_id }}</template
                         >
                     </p>
                     <p
+                        data-typography="helper"
                         v-if="tab === 'manage' && row.des"
-                        class="mt-1 max-w-64 truncate text-xs text-muted-foreground"
+                        class="mt-1 max-w-64 truncate text-muted-foreground"
                         :title="String(row.des)"
                     >
                         {{ row.des }}
                     </p>
                     <p
+                        data-typography="helper"
                         v-if="tab === 'sold'"
-                        class="mt-1 text-xs text-muted-foreground"
+                        class="mt-1 text-muted-foreground"
                     >
                         {{ row.amount }}
                     </p>
                 </template>
                 <template #cell-price="{ row }"
-                    ><p class="font-medium">{{ row.amount }}</p>
-                    <p class="mt-1 text-xs text-muted-foreground">
+                    ><p data-typography="body" class="font-medium">
+                        {{ row.amount }}
+                    </p>
+                    <p
+                        data-typography="helper"
+                        class="mt-1 text-muted-foreground"
+                    >
                         {{ formatMoney(row.price) }}
                     </p></template
                 >
                 <template #cell-scope="{ row }"
-                    ><p>{{ bindingLabel(row) }}</p>
+                    ><p data-typography="body">{{ bindingLabel(row) }}</p>
                     <p
+                        data-typography="helper"
                         v-if="tab === 'manage'"
-                        class="mt-1 text-xs text-muted-foreground"
+                        class="mt-1 text-muted-foreground"
                     >
                         有效期: {{ row.valid_days }} 天
                     </p>
                     <template v-else
-                        ><p class="mt-1 text-xs text-muted-foreground">
+                        ><p
+                            data-typography="helper"
+                            class="mt-1 text-muted-foreground"
+                        >
                             购买: {{ date(row.create_at) }}
                         </p>
-                        <p class="mt-1 text-xs text-muted-foreground">
+                        <p
+                            data-typography="helper"
+                            class="mt-1 text-muted-foreground"
+                        >
                             到期: {{ date(row.expire) }}
                         </p></template
                     ></template
                 >
                 <template #cell-user="{ row }"
-                    ><p class="font-medium">
+                    ><p data-typography="body" class="font-medium">
                         {{ row.user_name || row.username || `#${row.uid}` }}
                     </p>
-                    <p class="mt-1 text-xs text-muted-foreground">
+                    <p
+                        data-typography="helper"
+                        class="mt-1 text-muted-foreground"
+                    >
                         用户 ID: {{ row.uid }}
                     </p></template
                 >
@@ -679,12 +699,13 @@ async function assign() {
                         }}</Badge
                     >
                     <p
+                        data-typography="helper"
                         v-if="
                             tab === 'sold' &&
                             String(row.enable) !== '1' &&
                             row.reason
                         "
-                        class="mt-1 text-xs text-muted-foreground"
+                        class="mt-1 text-muted-foreground"
                     >
                         {{ row.reason }}
                     </p></template
@@ -748,6 +769,7 @@ async function assign() {
                     ></DialogHeader
                 >
                 <p
+                    data-typography="body"
                     v-if="editorLoading"
                     class="py-8 text-center text-muted-foreground"
                 >
@@ -865,8 +887,9 @@ async function assign() {
                                         }}</DropdownMenuCheckboxItem
                                     >
                                     <p
+                                        data-typography="body"
                                         v-if="!bindingOptions.length"
-                                        class="p-3 text-sm text-muted-foreground"
+                                        class="p-3 text-muted-foreground"
                                     >
                                         暂无套餐
                                     </p></DropdownMenuContent
@@ -1031,7 +1054,7 @@ async function assign() {
     border-radius: 0 var(--radius) var(--radius) 0;
     background: var(--muted);
     color: var(--muted-foreground);
-    font-size: 0.875rem;
+    font-size: var(--console-text-body);
 }
 @media (max-width: 480px) {
     .traffic-field {

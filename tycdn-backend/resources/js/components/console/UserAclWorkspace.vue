@@ -4,6 +4,7 @@ import { computed, onMounted, onUnmounted, reactive, ref } from 'vue';
 import { toast } from 'vue-sonner';
 import ConfirmDeleteDialog from '@/components/console/ConfirmDeleteDialog.vue';
 import PackagePagination from '@/components/console/PackagePagination.vue';
+import { Button } from '@/components/ui/button';
 import CheckboxField from '@/components/ui/checkbox/CheckboxField.vue';
 import {
     DropdownMenu,
@@ -180,7 +181,8 @@ async function batch(
         aria-label="ACL 规则"
     >
         <div class="acl-actions">
-            <button
+            <Button
+                variant="default"
                 data-slot="console-action"
                 type="button"
                 class="acl-button primary"
@@ -188,17 +190,18 @@ async function batch(
                 @click="emit('create')"
             >
                 添加ACL
-            </button>
+            </Button>
             <DropdownMenu
                 ><DropdownMenuTrigger as-child
-                    ><button
+                    ><Button
+                        variant="outline"
                         data-slot="console-action"
                         type="button"
                         class="acl-button"
                         :disabled="busy || loading"
                     >
                         更多操作
-                        <ChevronDown :size="16" /></button></DropdownMenuTrigger
+                        <ChevronDown :size="16" /></Button></DropdownMenuTrigger
                 ><DropdownMenuContent align="start"
                     ><DropdownMenuItem @select="batch('enable')"
                         >启用</DropdownMenuItem
@@ -238,7 +241,9 @@ async function batch(
                     :disabled="busy"
                     @input="search"
             /></label>
-            <button
+            <Button
+                variant="link"
+                size="inline"
                 data-slot="console-link"
                 type="button"
                 class="text-action"
@@ -246,19 +251,24 @@ async function batch(
                 @click="clearFilters"
             >
                 清除
-            </button>
-            <button
+            </Button>
+            <Button
+                variant="ghost"
+                size="inline"
+                data-slot="console-submit-helper"
                 type="submit"
                 class="sr-only"
                 tabindex="-1"
                 :disabled="busy"
             >
                 查询
-            </button>
+            </Button>
         </form>
-        <p v-if="error" class="acl-error" role="alert">
+        <p data-typography="body" v-if="error" class="acl-error" role="alert">
             {{ error }}
-            <button
+            <Button
+                variant="link"
+                size="inline"
                 data-slot="console-link"
                 type="button"
                 class="text-action"
@@ -266,7 +276,7 @@ async function batch(
                 @click="load()"
             >
                 重试
-            </button>
+            </Button>
         </p>
         <div class="acl-table-scroll">
             <table class="acl-table">
@@ -351,17 +361,21 @@ async function batch(
                             </td>
                             <td>
                                 <div class="row-actions">
-                                    <button
+                                    <Button
+                                        variant="link"
+                                        size="inline"
                                         data-slot="console-link"
                                         type="button"
                                         class="text-action"
                                         :disabled="busy || readOnly(row)"
                                         @click="emit('manage', row)"
                                     >
-                                        管理</button
+                                        管理</Button
                                     ><DropdownMenu
                                         ><DropdownMenuTrigger as-child
-                                            ><button
+                                            ><Button
+                                                variant="link"
+                                                size="inline"
                                                 data-slot="console-link"
                                                 type="button"
                                                 class="text-action row-more"
@@ -372,8 +386,9 @@ async function batch(
                                             >
                                                 更多
                                                 <ChevronDown
-                                                    :size="14"
-                                                /></button></DropdownMenuTrigger
+                                                    :size="
+                                                        14
+                                                    " /></Button></DropdownMenuTrigger
                                         ><DropdownMenuContent align="end"
                                             ><DropdownMenuItem
                                                 @select="
@@ -437,7 +452,7 @@ async function batch(
     min-width: 0;
     background: var(--card);
     padding: 12px 11px 20px;
-    font-size: 16px;
+    font-size: var(--console-text-body);
     color: var(--muted-foreground);
 }
 .acl-actions {
@@ -455,7 +470,7 @@ async function batch(
     border: 1px solid var(--border);
     border-radius: 4px;
     background: var(--card);
-    font-size: 16px;
+    font-size: var(--console-text-body);
     white-space: nowrap;
 }
 .acl-button.primary {
@@ -535,7 +550,7 @@ input:focus-visible,
     width: 100%;
     min-width: 900px;
     table-layout: fixed;
-    font-size: 16px;
+    font-size: var(--console-text-body);
 }
 .acl-table th {
     height: 48px;
@@ -601,7 +616,7 @@ input:focus-visible,
 .acl-error {
     color: var(--destructive);
     margin: 12px 0;
-    font-size: 14px;
+    font-size: var(--console-text-body);
 }
 @media (max-width: 640px) {
     .user-acl-workspace {

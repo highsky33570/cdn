@@ -400,7 +400,12 @@ async function remove() {
                     >重试</Button
                 >
             </div>
-            <p v-if="loading" role="status" class="py-8 text-muted-foreground">
+            <p
+                data-typography="body"
+                v-if="loading"
+                role="status"
+                class="py-8 text-muted-foreground"
+            >
                 正在加载配置…
             </p>
             <template v-else-if="ready">
@@ -433,10 +438,16 @@ async function remove() {
                             class="rounded-lg border bg-card p-4"
                         >
                             <header class="mb-4 border-l-2 border-primary pl-3">
-                                <h2 class="text-sm font-semibold">
+                                <h2
+                                    data-typography="section-title"
+                                    class="font-semibold"
+                                >
                                     {{ card.title }}
                                 </h2>
-                                <p class="mt-1 text-xs text-muted-foreground">
+                                <p
+                                    data-typography="description"
+                                    class="mt-1 text-muted-foreground"
+                                >
                                     {{ card.help }}
                                 </p>
                             </header>
@@ -609,8 +620,9 @@ async function remove() {
                                                     "
                                                 />
                                                 <p
+                                                    data-typography="helper"
                                                     v-if="field.help"
-                                                    class="mt-1 text-xs text-muted-foreground"
+                                                    class="mt-1 text-muted-foreground"
                                                 >
                                                     {{ field.help }}
                                                 </p>
@@ -865,9 +877,10 @@ async function remove() {
                         @change="editValue = $event"
                     />
                     <p
+                        data-typography="body"
                         v-if="editError"
                         role="alert"
-                        class="text-sm text-destructive"
+                        class="text-destructive"
                     >
                         {{ editError }}
                     </p>

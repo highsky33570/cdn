@@ -542,12 +542,13 @@ onUnmounted(() => {
                         ></template
                     >
                     <template #cell-start_at2="{ row }"
-                        ><p class="whitespace-nowrap">
+                        ><p data-typography="body" class="whitespace-nowrap">
                             {{ text(row.start_at2, '未开始') }}
                         </p>
                         <p
+                            data-typography="helper"
                             v-if="!empty(row.end_at2)"
-                            class="mt-1 text-xs whitespace-nowrap text-muted-foreground"
+                            class="mt-1 whitespace-nowrap text-muted-foreground"
                         >
                             结束 {{ row.end_at2 }}
                         </p></template
@@ -566,8 +567,9 @@ onUnmounted(() => {
                             }}</Badge
                         >
                         <p
+                            data-typography="helper"
                             v-if="!empty(row.progress)"
-                            class="mt-1 text-xs text-muted-foreground"
+                            class="mt-1 text-muted-foreground"
                         >
                             进度：{{ row.progress }}
                         </p></template
@@ -664,7 +666,11 @@ onUnmounted(() => {
                                 ></template
                             >
                             <template #cell-data="{ row }"
-                                ><button
+                                ><Button
+                                    variant="link"
+                                    size="inline"
+                                    type="button"
+                                    data-slot="console-link"
                                     v-if="!empty(row.data)"
                                     class="block max-w-32 truncate text-left hover:underline"
                                     :title="content(row.data)"
@@ -675,7 +681,7 @@ onUnmounted(() => {
                                         typeof row.data === 'string'
                                             ? row.data
                                             : content(row.data)
-                                    }}</button
+                                    }}</Button
                                 ><span v-else>—</span></template
                             >
                             <template #cell-start_at2="{ row }">{{

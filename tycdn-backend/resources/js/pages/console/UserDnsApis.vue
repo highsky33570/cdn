@@ -337,7 +337,10 @@ function nullableText(value: string): string | null {
             >
                 <div>
                     <CardTitle>DNS API 列表</CardTitle>
-                    <p class="mt-1 text-sm text-muted-foreground">
+                    <p
+                        data-typography="description"
+                        class="mt-1 text-muted-foreground"
+                    >
                         {{ paginationText }}
                     </p>
                 </div>

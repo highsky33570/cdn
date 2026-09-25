@@ -164,11 +164,16 @@ onUnmounted(() => {
         >
             <div class="mb-5 flex flex-wrap items-start justify-between gap-4">
                 <div>
-                    <h2 id="recharge-stats-title" class="text-lg font-semibold">
+                    <h2
+                        data-typography="page-title"
+                        id="recharge-stats-title"
+                        class="font-semibold"
+                    >
                         充值统计
                     </h2>
                     <p
-                        class="mt-1 text-sm text-muted-foreground"
+                        data-typography="description"
+                        class="mt-1 text-muted-foreground"
                         aria-live="polite"
                     >
                         共 {{ countLabel }} 条汇总记录

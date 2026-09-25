@@ -1,0 +1,123 @@
+/* Typography roles are shared by every console page and its portaled UI. */
+.console-theme {
+    --console-text-body: 14px;
+    --console-text-helper: 12px;
+    --console-text-page-title: 20px;
+    --console-text-section-title: 16px;
+    --console-text-dialog-title: 18px;
+    --console-text-metric: 24px;
+    /* Tailwind text utilities use the same scale, independent of the root rem. */
+    --text-xs: var(--console-text-helper);
+    --text-xs--line-height: 18px;
+    --text-sm: var(--console-text-body);
+    --text-sm--line-height: 20px;
+    --text-base: var(--console-text-body);
+    --text-base--line-height: 20px;
+    --text-lg: var(--console-text-section-title);
+    --text-lg--line-height: 24px;
+    --text-xl: var(--console-text-page-title);
+    --text-xl--line-height: 28px;
+    --text-2xl: var(--console-text-metric);
+    --text-2xl--line-height: 32px;
+    --text-3xl: var(--console-text-metric);
+    --text-3xl--line-height: 32px;
+}
+
+.console-theme body,
+.console-theme :is(table, th, td, p, [data-typography='body']) {
+    font-size: var(--console-text-body) !important;
+    line-height: 20px !important;
+}
+
+.console-theme :is(th, [data-slot='table-head']) {
+    font-weight: 600 !important;
+}
+
+.console-theme
+    :is([data-slot='card-title'], [data-typography='section-title']) {
+    font-size: var(--console-text-section-title) !important;
+    line-height: 24px !important;
+    font-weight: 600 !important;
+}
+
+.console-theme
+    :is(
+        [data-slot='dialog-title'],
+        [data-slot='alert-dialog-title'],
+        [data-typography='dialog-title']
+    ) {
+    font-size: var(--console-text-dialog-title) !important;
+    line-height: 26px !important;
+    font-weight: 600 !important;
+}
+
+.console-theme [data-typography='page-title'] {
+    font-size: var(--console-text-page-title) !important;
+    line-height: 28px !important;
+    font-weight: 600 !important;
+}
+
+.console-theme
+    :is(
+        [data-slot='card-description'],
+        [data-slot='dialog-description'],
+        [data-slot='alert-dialog-description'],
+        [data-slot='alert-description'],
+        [data-typography='description']
+    ) {
+    font-size: var(--console-text-body) !important;
+    line-height: 22px !important;
+    font-weight: 400 !important;
+}
+
+.console-theme
+    :is(
+        label,
+        [data-slot='label'],
+        [role='tab'],
+        [data-slot='console-tab'],
+        [data-typography='label']
+    ) {
+    font-size: var(--console-text-body) !important;
+    line-height: 20px !important;
+    font-weight: 500 !important;
+}
+
+.console-theme
+    :is(
+        [data-slot='sidebar-menu-button'],
+        [data-slot='sidebar-menu-sub-button'],
+        [data-slot='breadcrumb-list'],
+        [data-slot='dropdown-menu-item'],
+        [data-slot='dropdown-menu-sub-trigger'],
+        [data-slot='select-item']
+    ) {
+    font-size: var(--console-text-body) !important;
+    line-height: 20px !important;
+}
+
+.console-theme
+    :is(
+        small,
+        [data-slot='badge'],
+        [data-slot='form-message'],
+        [data-typography='helper']
+    ) {
+    font-size: var(--console-text-helper) !important;
+    line-height: 18px !important;
+}
+
+.console-theme :is(pre, code, [data-typography='code']) {
+    font-size: var(--console-text-helper) !important;
+    line-height: 18px !important;
+}
+
+.console-theme [data-typography='metric'] {
+    font-size: var(--console-text-metric) !important;
+    line-height: 32px !important;
+    font-weight: 600 !important;
+}
+
+.console-theme svg text {
+    font-size: var(--console-text-helper) !important;
+}

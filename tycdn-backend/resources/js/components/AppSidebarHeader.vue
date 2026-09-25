@@ -4,6 +4,7 @@ import { RefreshCw, ChevronDown } from 'lucide-vue-next';
 import { computed } from 'vue';
 import AppearanceTabs from '@/components/AppearanceTabs.vue';
 import Breadcrumbs from '@/components/Breadcrumbs.vue';
+import { Button } from '@/components/ui/button';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -198,14 +199,16 @@ function reloadPage(): void {
     >
         <div class="flex min-w-0 flex-1 items-center gap-2">
             <SidebarTrigger class="-ml-1" />
-            <button
+            <Button
+                variant="ghost"
+                size="icon-sm"
                 type="button"
                 class="flex size-8 items-center justify-center text-muted-foreground transition-colors hover:text-foreground"
                 title="刷新页面"
                 @click="reloadPage"
             >
                 <RefreshCw class="size-4" />
-            </button>
+            </Button>
             <template
                 v-if="effectiveBreadcrumbs && effectiveBreadcrumbs.length > 0"
             >
@@ -215,7 +218,8 @@ function reloadPage(): void {
         <AppearanceTabs compact />
         <DropdownMenu
             ><DropdownMenuTrigger as-child
-                ><button
+                ><Button
+                    variant="outline"
                     type="button"
                     aria-label="账户菜单"
                     class="flex h-9 items-center gap-2 rounded-lg border bg-card px-3 text-sm text-foreground hover:bg-accent"
@@ -224,8 +228,7 @@ function reloadPage(): void {
                         page.props.auth.user.name
                     }}</span
                     ><ChevronDown
-                        class="size-3.5"
-                    /></button></DropdownMenuTrigger
+                        class="size-3.5" /></Button></DropdownMenuTrigger
             ><DropdownMenuContent align="end" class="min-w-60"
                 ><UserMenuContent
                     :user="page.props.auth.user" /></DropdownMenuContent

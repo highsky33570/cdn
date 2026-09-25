@@ -221,14 +221,17 @@ function pay() {
                 placeholder="请选择时间范围"
                 trigger-class="order-date"
             />
-            <button
+            <Button
+                variant="link"
+                size="inline"
+                type="button"
                 data-slot="console-link"
                 v-if="hasFilters"
                 class="text-link"
                 @click="clear"
             >
                 清除
-            </button>
+            </Button>
         </div>
         <div v-if="error" class="order-error" role="alert">
             {{ error }}
@@ -301,7 +304,10 @@ function pay() {
                         <td>{{ original(order) }}</td>
                         <td>{{ actual(order) }}</td>
                         <td>
-                            <button
+                            <Button
+                                variant="link"
+                                size="inline"
+                                type="button"
                                 data-slot="console-link"
                                 class="text-link truncate-cell"
                                 :aria-label="`查看订单 ${order.order_no}`"
@@ -309,7 +315,7 @@ function pay() {
                                 @click="showDetails(order)"
                             >
                                 {{ more(order) }}
-                            </button>
+                            </Button>
                         </td>
                         <td>
                             {{ order.gateway_provider?.toUpperCase() || '—' }}
@@ -390,7 +396,12 @@ function pay() {
                     <dt>备注</dt>
                     <dd>{{ note(selected) || '—' }}</dd>
                 </dl>
-                <p v-if="actionError" role="alert" class="text-destructive">
+                <p
+                    data-typography="body"
+                    v-if="actionError"
+                    role="alert"
+                    class="text-destructive"
+                >
                     {{ actionError }}
                 </p>
                 <DialogFooter
@@ -428,7 +439,7 @@ function pay() {
     padding: 16px 14px 20px;
     color: var(--foreground);
     background: var(--card);
-    font-size: 14px;
+    font-size: var(--console-text-body);
 }
 .order-filters {
     display: flex;
@@ -452,7 +463,7 @@ function pay() {
     height: 40px;
     border-color: var(--input);
     border-radius: 4px;
-    font-size: 14px;
+    font-size: var(--console-text-body);
     background: transparent;
     box-shadow: none;
 }
@@ -468,7 +479,7 @@ function pay() {
     border-bottom: 1px solid var(--input);
 }
 table {
-    font-size: 14px;
+    font-size: var(--console-text-body);
     width: 100%;
     min-width: 1385px;
     table-layout: fixed;
@@ -482,7 +493,7 @@ th {
 }
 th,
 td {
-    font-size: 14px;
+    font-size: var(--console-text-body);
     padding: 0 22px;
     border-bottom: 1px solid var(--border);
 }
@@ -536,7 +547,7 @@ tbody tr:hover {
     display: grid;
     grid-template-columns: 90px 1fr;
     gap: 12px;
-    font-size: 14px;
+    font-size: var(--console-text-body);
 }
 .order-detail dt {
     color: var(--muted-foreground);

@@ -3,6 +3,7 @@ import { ChevronDown, Plus, RefreshCw } from 'lucide-vue-next';
 import { computed, onMounted, onUnmounted, reactive, ref } from 'vue';
 import { toast } from 'vue-sonner';
 import ConsolePagination from '@/components/console/ConsolePagination.vue';
+import { Button } from '@/components/ui/button';
 import CheckboxField from '@/components/ui/checkbox/CheckboxField.vue';
 import {
     DropdownMenu,
@@ -222,17 +223,19 @@ async function updateSubscriptions() {
     <section class="waf-workspace" :aria-busy="loading || busy">
         <header class="waf-heading">
             <div class="waf-title">
-                <h1>WAF 规则库</h1>
+                <h1 data-typography="page-title">WAF 规则库</h1>
                 <span class="pill primary">{{ total }} 个</span>
             </div>
-            <button
+            <Button
+                variant="default"
+                type="button"
                 data-slot="console-action"
                 class="primary-button"
                 :disabled="busy"
                 @click="emit('create')"
             >
                 <Plus />新增规则库
-            </button>
+            </Button>
         </header>
         <div class="waf-toolbar">
             <form class="waf-filters" @submit.prevent="load(1)">
@@ -242,13 +245,15 @@ async function updateSubscriptions() {
                         aria-label="规则库名称"
                         placeholder="规则库名称"
                         :disabled="busy"
-                    /><button
+                    /><Button
+                        variant="default"
+                        type="submit"
                         data-slot="console-action"
                         class="primary-button"
                         :disabled="busy"
                     >
                         查询
-                    </button>
+                    </Button>
                 </div>
                 <SelectField
                     v-model="filters.scope"
@@ -272,20 +277,24 @@ async function updateSubscriptions() {
                 </SelectField>
             </form>
             <div class="waf-actions">
-                <button
+                <Button
+                    variant="outline"
+                    type="button"
                     data-slot="console-action"
                     :disabled="!selected.length || busy || loading"
                     @click="updateSubscriptions"
                 >
                     <RefreshCw :class="{ spin: busy }" />立即更新订阅
-                </button>
+                </Button>
                 <DropdownMenu
                     ><DropdownMenuTrigger as-child
-                        ><button
+                        ><Button
+                            variant="outline"
+                            type="button"
                             data-slot="console-action"
                             :disabled="!selected.length || busy || loading"
                         >
-                            批量操作<ChevronDown /></button></DropdownMenuTrigger
+                            批量操作<ChevronDown /></Button></DropdownMenuTrigger
                     ><DropdownMenuContent align="end"
                         ><DropdownMenuItem @select="batch(1)"
                             >启用</DropdownMenuItem
@@ -294,13 +303,15 @@ async function updateSubscriptions() {
                         ></DropdownMenuContent
                     ></DropdownMenu
                 >
-                <button
+                <Button
+                    variant="outline"
+                    type="button"
                     data-slot="console-action"
                     :disabled="loading || busy"
                     @click="load()"
                 >
                     <RefreshCw :class="{ spin: loading }" />刷新
-                </button>
+                </Button>
             </div>
         </div>
         <div v-if="error" role="alert" class="waf-error">{{ error }}</div>
@@ -420,12 +431,19 @@ async function updateSubscriptions() {
                         </td>
                         <td>
                             <div class="row-actions">
-                                <button
+                                <Button
+                                    variant="link"
+                                    size="inline"
+                                    type="button"
+                                    data-slot="console-link"
                                     :disabled="busy || loading"
                                     @click="manage(row)"
                                 >
-                                    编辑</button
-                                ><button
+                                    编辑</Button
+                                ><Button
+                                    variant="link"
+                                    size="inline"
+                                    type="button"
                                     data-slot="console-link"
                                     v-if="!row.system_key"
                                     class="delete-link"
@@ -433,7 +451,7 @@ async function updateSubscriptions() {
                                     @click="emit('delete', row)"
                                 >
                                     删除
-                                </button>
+                                </Button>
                             </div>
                         </td>
                     </tr>
@@ -472,7 +490,7 @@ async function updateSubscriptions() {
     background: white;
     border-radius: 8px;
     padding: 10px;
-    font-size: 12px;
+    font-size: var(--console-text-body);
     min-width: 0;
 }
 .waf-heading {
@@ -481,7 +499,7 @@ async function updateSubscriptions() {
     border-bottom: 1px solid var(--line);
 }
 h1 {
-    font-size: 14px;
+    font-size: var(--console-text-page-title);
     font-weight: 600;
     color: #142b49;
 }
@@ -604,7 +622,7 @@ td.check {
     white-space: nowrap;
 }
 .description {
-    font-size: 11px;
+    font-size: var(--console-text-body);
     margin-top: 4px;
 }
 .muted {
@@ -616,7 +634,7 @@ td.check {
     padding: 2px 8px;
     border-radius: 12px;
     background: #f3f5f9;
-    font-size: 11px;
+    font-size: var(--console-text-helper);
     line-height: 16px;
     white-space: nowrap;
 }

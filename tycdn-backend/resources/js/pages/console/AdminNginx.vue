@@ -428,7 +428,9 @@ async function removeRows() {
                         >重试</Button
                     >
                 </div>
-                <p v-if="loading" class="ng-loading">加载中…</p>
+                <p data-typography="body" v-if="loading" class="ng-loading">
+                    加载中…
+                </p>
                 <div
                     :id="`ng-panel-${section}`"
                     class="ng-global"
@@ -436,8 +438,12 @@ async function removeRows() {
                     :aria-labelledby="`ng-tab-${section}`"
                 >
                     <header class="ng-section-title">
-                        <h2>{{ currentSection.title }}</h2>
-                        <p>{{ currentSection.help }}</p>
+                        <h2 data-typography="section-title">
+                            {{ currentSection.title }}
+                        </h2>
+                        <p data-typography="description">
+                            {{ currentSection.help }}
+                        </p>
                     </header>
                     <fieldset :disabled="!ready">
                         <div class="ng-cards">
@@ -447,8 +453,12 @@ async function removeRows() {
                                 class="ng-card"
                                 :class="{ 'ng-wide': card.wide }"
                             >
-                                <h3>{{ card.title }}</h3>
-                                <p>{{ card.help }}</p>
+                                <h3 data-typography="section-title">
+                                    {{ card.title }}
+                                </h3>
+                                <p data-typography="description">
+                                    {{ card.help }}
+                                </p>
                                 <div :class="{ 'ng-columns': card.columns }">
                                     <NginxField
                                         v-for="field in card.fields"
@@ -474,8 +484,8 @@ async function removeRows() {
             >
                 <header class="ng-list-heading">
                     <div>
-                        <h2>区域及节点配置</h2>
-                        <p>
+                        <h2 data-typography="section-title">区域及节点配置</h2>
+                        <p data-typography="description">
                             为指定区域或节点覆盖全局 Nginx
                             配置，只保存需要覆盖的配置项。
                         </p>
@@ -749,7 +759,7 @@ async function removeRows() {
 }
 .ng-save-state {
     color: var(--muted-foreground);
-    font-size: 12px;
+    font-size: var(--console-text-helper);
 }
 .ng-subtabs {
     display: flex;
@@ -766,13 +776,13 @@ async function removeRows() {
 }
 .nginx-page h2,
 .nginx-page h3 {
-    font-size: 14px;
+    font-size: var(--console-text-section-title);
     font-weight: 600;
 }
 .nginx-page p {
     margin: 4px 0 10px;
     color: var(--muted-foreground);
-    font-size: 12px;
+    font-size: var(--console-text-body);
     line-height: 1.6;
 }
 .ng-section-title {
@@ -816,7 +826,7 @@ async function removeRows() {
     align-items: center;
     gap: 8px;
     margin-top: 11px;
-    font-size: 12px;
+    font-size: var(--console-text-body);
 }
 .ng-field > label {
     overflow-wrap: anywhere;
@@ -838,7 +848,7 @@ async function removeRows() {
 }
 .nginx-page .ng-field-help,
 .ng-modal .ng-field-help {
-    font-size: 12px;
+    font-size: var(--console-text-helper);
     margin: 5px 0 0;
     color: var(--muted-foreground);
     line-height: 1.6;
@@ -847,7 +857,7 @@ async function removeRows() {
 .ng-modal .ng-field-error {
     color: var(--destructive);
     margin: 5px 0 0;
-    font-size: 12px;
+    font-size: var(--console-text-helper);
 }
 .ng-error {
     padding: 10px;
@@ -902,7 +912,7 @@ async function removeRows() {
     flex: 1;
 }
 .ng-context {
-    font-size: 12px;
+    font-size: var(--console-text-body);
     color: var(--muted-foreground);
 }
 .ng-modal-actions {

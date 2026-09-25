@@ -925,7 +925,9 @@ function omitEnable<TPayload extends { enable?: unknown }>(
         <div v-else class="space-y-4">
             <!-- 三个 Tab -->
             <div class="flex gap-1 border-b">
-                <button
+                <Button
+                    variant="ghost"
+                    data-slot="console-tab"
                     v-for="tab in [
                         { key: 'current', label: '当前拉黑' },
                         { key: 'stats', label: '拉黑统计' },
@@ -946,7 +948,7 @@ function omitEnable<TPayload extends { enable?: unknown }>(
                     "
                 >
                     {{ tab.label }}
-                </button>
+                </Button>
             </div>
 
             <!-- ── 历史拉黑 ── -->
@@ -989,7 +991,10 @@ function omitEnable<TPayload extends { enable?: unknown }>(
                         @update:start="historyBlackIpFilters.start = $event"
                         @update:end="historyBlackIpFilters.end = $event"
                     />
-                    <button
+                    <Button
+                        variant="link"
+                        size="inline"
+                        data-slot="console-link"
                         type="button"
                         class="text-sm text-muted-foreground hover:text-foreground"
                         @click="
@@ -1003,7 +1008,7 @@ function omitEnable<TPayload extends { enable?: unknown }>(
                         "
                     >
                         清除
-                    </button>
+                    </Button>
                     <Button
                         class="ml-auto h-9"
                         :disabled="historyBlackIpLoading"
@@ -1301,7 +1306,10 @@ function omitEnable<TPayload extends { enable?: unknown }>(
                             @keydown.enter="loadBlackIps(1)"
                         />
                     </div>
-                    <button
+                    <Button
+                        variant="link"
+                        size="inline"
+                        data-slot="console-link"
                         type="button"
                         class="text-sm text-muted-foreground hover:text-foreground"
                         @click="
@@ -1313,7 +1321,7 @@ function omitEnable<TPayload extends { enable?: unknown }>(
                         "
                     >
                         清除
-                    </button>
+                    </Button>
                     <Button
                         class="ml-auto h-9"
                         :disabled="loading"
@@ -1667,8 +1675,9 @@ function omitEnable<TPayload extends { enable?: unknown }>(
                             </Button>
                         </div>
                         <p
+                            data-typography="helper"
                             v-if="matcherConditions.length === 0"
-                            class="text-xs text-muted-foreground"
+                            class="text-muted-foreground"
                         >
                             不添加任何条件 = 匹配所有请求（data 为 {}）
                         </p>

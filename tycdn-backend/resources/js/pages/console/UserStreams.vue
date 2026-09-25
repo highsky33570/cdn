@@ -527,7 +527,9 @@ function formatInputDate(date: Date): string {
         <template v-if="props.view === 'analytics'">
             <!-- Tab 切换 -->
             <div class="flex w-fit gap-1 rounded-md border p-0.5">
-                <button
+                <Button
+                    variant="ghost"
+                    data-slot="console-tab"
                     type="button"
                     class="rounded px-4 py-1.5 text-sm font-medium transition-colors"
                     :class="
@@ -538,8 +540,10 @@ function formatInputDate(date: Date): string {
                     @click="analyticsTab = 'realtime'"
                 >
                     实时曲线
-                </button>
-                <button
+                </Button>
+                <Button
+                    variant="ghost"
+                    data-slot="console-tab"
                     type="button"
                     class="rounded px-4 py-1.5 text-sm font-medium transition-colors"
                     :class="
@@ -553,7 +557,7 @@ function formatInputDate(date: Date): string {
                     "
                 >
                     排行统计
-                </button>
+                </Button>
             </div>
 
             <!-- ═══ 实时曲线 ═══ -->
@@ -579,7 +583,8 @@ function formatInputDate(date: Date): string {
                             </SelectContent>
                         </Select>
                         <div class="flex gap-1 rounded-md border p-0.5">
-                            <button
+                            <Button
+                                variant="ghost"
                                 v-for="t in [
                                     { m: 10, label: '10m' },
                                     { m: 30, label: '30m' },
@@ -598,8 +603,9 @@ function formatInputDate(date: Date): string {
                                 @click="setRtMinutes(t.m)"
                             >
                                 {{ t.label }}
-                            </button>
-                            <button
+                            </Button>
+                            <Button
+                                variant="ghost"
                                 type="button"
                                 class="rounded px-3 py-1 text-xs font-medium transition-colors"
                                 :class="
@@ -610,7 +616,7 @@ function formatInputDate(date: Date): string {
                                 @click="setRtCustom()"
                             >
                                 自定义
-                            </button>
+                            </Button>
                         </div>
                         <template v-if="rtMode === 'custom'">
                             <DateRangePicker
@@ -694,7 +700,8 @@ function formatInputDate(date: Date): string {
                 <CardHeader class="pb-4">
                     <div class="flex flex-wrap items-center gap-3">
                         <div class="flex gap-1 rounded-md border p-0.5">
-                            <button
+                            <Button
+                                variant="ghost"
                                 v-for="t in [
                                     { v: '10m', label: '10m' },
                                     { v: '30m', label: '30m' },
@@ -711,7 +718,7 @@ function formatInputDate(date: Date): string {
                                 @click="setTopRecentTime(t.v)"
                             >
                                 {{ t.label }}
-                            </button>
+                            </Button>
                         </div>
                         <Button
                             variant="outline"
@@ -904,14 +911,15 @@ function formatInputDate(date: Date): string {
 
                     <!-- 可选配置展开 -->
                     <div class="border-t pt-3">
-                        <button
+                        <Button
+                            variant="ghost"
                             type="button"
                             class="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
                             @click="showAdvancedCreate = !showAdvancedCreate"
                         >
                             <span>{{ showAdvancedCreate ? '▲' : '▼' }}</span>
                             可选配置
-                        </button>
+                        </Button>
                         <div v-if="showAdvancedCreate" class="mt-3 grid gap-3">
                             <div class="grid gap-2">
                                 <Label>转发组</Label>
@@ -957,7 +965,7 @@ function formatInputDate(date: Date): string {
                         </div>
                     </div>
 
-                    <p class="text-xs text-muted-foreground">
+                    <p data-typography="helper" class="text-muted-foreground">
                         创建后将跳转详情页，可继续配置负载均衡、ACL 等高级选项。
                     </p>
 
