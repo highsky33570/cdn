@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import {
     ChevronDown,
-    ChevronLeft,
-    ChevronRight,
     Filter,
     MoreHorizontal,
     Pencil,
@@ -15,6 +13,7 @@ import { toast } from 'vue-sonner';
 import ConfirmDeleteDialog from '@/components/console/ConfirmDeleteDialog.vue';
 import ConsoleDataTable from '@/components/console/ConsoleDataTable.vue';
 import type { ColumnDef } from '@/components/console/ConsoleDataTable.vue';
+import ConsolePagination from '@/components/console/ConsolePagination.vue';
 import StreamBatchCreate from '@/components/console/StreamBatchCreate.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -135,12 +134,7 @@ const columns = computed<ColumnDef[]>(() => [
             ]),
 ]);
 const pages = computed(() => Math.max(1, Math.ceil(total.value / size.value)));
-const numbers = computed(() =>
-    Array.from(
-        { length: Math.min(5, pages.value) },
-        (_, i) => Math.max(1, Math.min(page.value - 2, pages.value - 4)) + i,
-    ),
-);
+
 function configValue(row: CdnflyRecord) {
     return (
         values[String(row.name)]?.find(
@@ -660,7 +654,7 @@ async function mutate(ids: number[], method: string, payload?: CdnflyRecord) {
                     class="actions search"
                     @submit.prevent="load(1)"
                 >
-                    <div class="search-box">
+                    <div data-slot="console-input-group" class="search-box">
                         <SelectField v-model="searchType" aria-label="搜索类型">
                             <SelectOption
                                 v-for="(label, key) in searchOptions"
@@ -928,46 +922,15 @@ async function mutate(ids: number[], method: string, payload?: CdnflyRecord) {
                 <span v-if="tab === 'groups'" class="group-note muted">{{
                     total ? `已选 ${selected.length} 个分组` : '暂无分组'
                 }}</span>
-                <nav aria-label="分页" class="pager">
-                    <span>共 {{ total }} 条</span
-                    ><Button
-                        size="sm"
-                        variant="outline"
-                        aria-label="上一页"
-                        :disabled="page <= 1 || loading || busy"
-                        @click="load(page - 1)"
-                    >
-                        <ChevronLeft /></Button
-                    ><Button
-                        size="sm"
-                        variant="outline"
-                        v-for="number in numbers"
-                        :key="number"
-                        :class="{ current: page === number }"
-                        :aria-current="page === number ? 'page' : undefined"
-                        :disabled="loading || busy"
-                        @click="load(number)"
-                    >
-                        {{ number }}</Button
-                    ><Button
-                        size="sm"
-                        variant="outline"
-                        aria-label="下一页"
-                        :disabled="page >= pages || loading || busy"
-                        @click="load(page + 1)"
-                    >
-                        <ChevronRight /></Button
-                    ><SelectField
-                        v-model.number="size"
-                        aria-label="每页条数"
-                        :disabled="loading || busy"
-                        @change="load(1)"
-                    >
-                        <SelectOption :value="10">10 条/页</SelectOption>
-                        <SelectOption :value="30">30 条/页</SelectOption>
-                        <SelectOption :value="100">100 条/页</SelectOption>
-                    </SelectField>
-                </nav>
+                <ConsolePagination
+                    aria-label="分页"
+                    :total="total"
+                    :page="page"
+                    :previous-disabled="page <= 1 || loading || busy"
+                    :next-disabled="page >= pages || loading || busy"
+                    @previous="load(page - 1)"
+                    @next="load(page + 1)"
+                />
             </footer>
         </div>
         <StreamBatchCreate
@@ -1195,16 +1158,6 @@ async function mutate(ids: number[], method: string, payload?: CdnflyRecord) {
 .stream-panel {
     padding: 15px;
 }
-.toolbar,
-.actions,
-.search-box,
-.default-heading,
-footer,
-.pager {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
 .toolbar {
     justify-content: space-between;
     flex-wrap: wrap;
@@ -1292,13 +1245,6 @@ footer.right {
 }
 .group-note {
     margin-right: auto;
-}
-.pager {
-    gap: 6px;
-}
-.pager .current {
-    color: var(--primary);
-    border-color: var(--primary);
 }
 .default-panel {
     max-width: 967px;
@@ -1397,13 +1343,24 @@ footer.right {
         flex: 1;
         width: 100px;
     }
-    .default-heading,
-    .pager,
-    footer {
-        flex-wrap: wrap;
-    }
     .default-panel {
         margin: 12px;
+    }
+}
+
+.toolbar,
+.actions,
+.search-box,
+.default-heading,
+footer {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+@media (max-width: 640px) {
+    .default-heading,
+    footer {
+        flex-wrap: wrap;
     }
 }
 </style>

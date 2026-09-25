@@ -147,7 +147,10 @@ async function submit() {
                         <Label for="recharge-amount" class="justify-end"
                             >金额：</Label
                         >
-                        <div class="flex min-w-0">
+                        <div
+                            data-slot="console-input-group"
+                            class="flex min-w-0"
+                        >
                             <Input
                                 id="recharge-amount"
                                 v-model="amount"

@@ -250,11 +250,13 @@ onUnmounted(() => {
                             @change="!userScope && loadCharts()"
                         />
                         <div
+                            data-slot="console-segment-group"
                             class="inline-flex max-w-full rounded-md border bg-card"
                             role="group"
                             aria-label="时间范围"
                         >
                             <button
+                                data-slot="console-segment"
                                 v-for="option in [
                                     { value: '1', label: '近1小时' },
                                     { value: '6', label: '近6小时' },
@@ -332,11 +334,13 @@ onUnmounted(() => {
                         class="stream-toolbar mb-4 flex flex-wrap items-center gap-2 rounded-md border bg-muted/20 p-3"
                     >
                         <div
+                            data-slot="console-segment-group"
                             class="inline-flex rounded-md border bg-card"
                             role="group"
                             aria-label="排行时间范围"
                         >
                             <button
+                                data-slot="console-segment"
                                 v-for="option in [
                                     { value: '10m', label: '10分钟实时' },
                                     { value: '30m', label: '近30分钟' },

@@ -4,8 +4,6 @@ import {
     ArrowUpCircle,
     BarChart3,
     ChevronDown,
-    ChevronLeft,
-    ChevronRight,
     CreditCard,
     Package,
     Save,
@@ -15,6 +13,7 @@ import {
 import { computed, onMounted, reactive, ref } from 'vue';
 import { toast } from 'vue-sonner';
 import ConsolePageHeader from '@/components/console/ConsolePageHeader.vue';
+import ConsolePagination from '@/components/console/ConsolePagination.vue';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -1454,82 +1453,27 @@ function trafficPackMetric(record: CdnflyRecord): string {
                     </table>
                 </div>
 
-                <div
+                <ConsolePagination
                     v-if="props.view === 'subscriptions'"
-                    class="ruiyi-pagination flex items-center gap-1 pt-5"
-                >
-                    <span class="mr-2 text-sm text-muted-foreground">
-                        Total {{ total }} {{ total === 1 ? 'item' : 'items' }}
-                    </span>
-                    <Button
-                        variant="outline"
-                        size="icon-sm"
-                        :disabled="!hasPreviousPage || loading"
-                        aria-label="上一页"
-                        @click="prevPage"
-                    >
-                        <ChevronLeft />
-                    </Button>
-                    <Button size="icon-sm" variant="outline" class="is-current">
-                        {{ page }}
-                    </Button>
-                    <Button
-                        variant="outline"
-                        size="icon-sm"
-                        :disabled="!hasNextPage || loading"
-                        aria-label="下一页"
-                        @click="nextPage"
-                    >
-                        <ChevronRight />
-                    </Button>
-                    <Select
-                        v-model="filters.per_page"
-                        @update:model-value="loadCurrent(1)"
-                    >
-                        <SelectTrigger class="ml-2 w-24">
-                            <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectGroup>
-                                <SelectItem value="10">10 /page</SelectItem>
-                                <SelectItem value="20">20 /page</SelectItem>
-                                <SelectItem value="50">50 /page</SelectItem>
-                            </SelectGroup>
-                        </SelectContent>
-                    </Select>
-                </div>
+                    :total="total"
+                    :page="page"
+                    :previous-disabled="!hasPreviousPage || loading"
+                    :next-disabled="!hasNextPage || loading"
+                    @previous="prevPage"
+                    @next="nextPage"
+                />
             </CardContent>
         </Card>
 
-        <div
-            v-if="props.view !== 'packages' && props.view !== 'subscriptions'"
-            class="flex items-center justify-between gap-4"
-        >
-            <span class="text-sm text-muted-foreground">
-                共 {{ total }} 条
-            </span>
-            <div class="flex items-center gap-2">
-                <Button
-                    variant="outline"
-                    size="sm"
-                    :disabled="!hasPreviousPage || loading"
-                    @click="prevPage"
-                >
-                    上一页
-                </Button>
-                <span class="text-sm text-muted-foreground"
-                    >第 {{ page }} 页</span
-                >
-                <Button
-                    variant="outline"
-                    size="sm"
-                    :disabled="!hasNextPage || loading"
-                    @click="nextPage"
-                >
-                    下一页
-                </Button>
-            </div>
-        </div>
+        <ConsolePagination
+            v-if="props.view !== 'packages' &amp;&amp; props.view !== 'subscriptions'"
+            :total="total"
+            :page="page"
+            :previous-disabled="!hasPreviousPage || loading"
+            :next-disabled="!hasNextPage || loading"
+            @previous="prevPage"
+            @next="nextPage"
+        />
 
         <Dialog v-model:open="purchaseDialogOpen">
             <DialogScrollContent class="sm:max-w-xl">

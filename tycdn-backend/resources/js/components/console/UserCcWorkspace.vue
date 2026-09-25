@@ -278,6 +278,7 @@ function createdAt(row: CdnflyRecord) {
         >
             <div class="cc-actions">
                 <button
+                    data-slot="console-action"
                     type="button"
                     class="cc-button primary"
                     :disabled="busy || loading"
@@ -288,6 +289,7 @@ function createdAt(row: CdnflyRecord) {
                 <DropdownMenu
                     ><DropdownMenuTrigger as-child
                         ><button
+                            data-slot="console-action"
                             type="button"
                             class="cc-button"
                             :disabled="busy || loading"
@@ -329,7 +331,7 @@ function createdAt(row: CdnflyRecord) {
                     <SelectOption value="1">启用</SelectOption>
                     <SelectOption value="0">禁用</SelectOption>
                 </SelectField>
-                <label class="cc-input"
+                <label data-slot="console-input-group" class="cc-input"
                     ><span>{{ label }}名称</span
                     ><Input
                         v-model="filters.name"
@@ -337,7 +339,7 @@ function createdAt(row: CdnflyRecord) {
                         :disabled="busy"
                         @input="search"
                 /></label>
-                <label class="cc-input"
+                <label data-slot="console-input-group" class="cc-input"
                     ><span>{{ label }}ID</span
                     ><Input
                         v-model="filters.id"
@@ -347,6 +349,7 @@ function createdAt(row: CdnflyRecord) {
                         @input="search"
                 /></label>
                 <button
+                    data-slot="console-link"
                     type="button"
                     class="text-action"
                     :disabled="busy"
@@ -366,6 +369,7 @@ function createdAt(row: CdnflyRecord) {
             <p v-if="error" class="cc-error" role="alert">
                 {{ error }}
                 <button
+                    data-slot="console-link"
                     type="button"
                     class="text-action"
                     :disabled="busy || loading"
@@ -486,6 +490,7 @@ function createdAt(row: CdnflyRecord) {
                                 <td>
                                     <div class="row-actions">
                                         <button
+                                            data-slot="console-link"
                                             type="button"
                                             class="text-action"
                                             :disabled="busy || ccSystem(row)"
@@ -495,6 +500,7 @@ function createdAt(row: CdnflyRecord) {
                                         ><DropdownMenu
                                             ><DropdownMenuTrigger as-child
                                                 ><button
+                                                    data-slot="console-link"
                                                     type="button"
                                                     class="text-action row-more"
                                                     :disabled="
@@ -761,22 +767,6 @@ input:focus-visible,
     color: var(--destructive);
     margin: 12px 0;
     font-size: 14px;
-}
-.cc-pagination {
-    justify-content: flex-start;
-    margin-top: 26px;
-    font-size: 16px;
-}
-.cc-pagination :deep(button),
-.cc-pagination :deep([data-slot='select-trigger']) {
-    height: 40px;
-    min-width: 40px;
-    font-size: 16px;
-}
-.cc-pagination :deep(button[aria-current='page']) {
-    background: var(--card);
-    color: var(--primary);
-    border: 1px solid var(--primary);
 }
 @media (max-width: 640px) {
     .user-cc-workspace {

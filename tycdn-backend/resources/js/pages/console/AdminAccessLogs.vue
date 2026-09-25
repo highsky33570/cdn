@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { usePage } from '@inertiajs/vue3';
-import { ChevronLeft, ChevronRight, RefreshCw, X } from 'lucide-vue-next';
+import { RefreshCw, X } from 'lucide-vue-next';
 import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue';
 import { toast } from 'vue-sonner';
+import ConsolePagination from '@/components/console/ConsolePagination.vue';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import DatePicker from '@/components/ui/date-picker/DatePicker.vue';
@@ -125,21 +126,7 @@ const pageSize = computed({
 const lastPage = computed(() =>
     Math.max(1, Math.ceil(total.value / pageSize.value)),
 );
-const pageButtons = computed(() => {
-    const pages = new Set([
-        1,
-        lastPage.value,
-        currentPage.value - 1,
-        currentPage.value,
-        currentPage.value + 1,
-        2,
-        3,
-    ]);
 
-    return [...pages]
-        .filter((page) => page >= 1 && page <= lastPage.value)
-        .sort((a, b) => a - b);
-});
 const tags = computed(() =>
     accessFilterFields
         .filter((field) => filters[field.key] !== '')
@@ -627,6 +614,7 @@ onUnmounted(() => {
                                     >
                                 </SelectField>
                                 <div
+                                    data-slot="console-input-group"
                                     v-else-if="field.key === 'req_uri'"
                                     class="flex min-w-0"
                                 >
@@ -673,6 +661,7 @@ onUnmounted(() => {
                         aria-label="已应用筛选"
                     >
                         <button
+                            data-slot="console-action"
                             type="button"
                             class="rounded border px-2 py-1 text-muted-foreground hover:text-primary"
                             @click="
@@ -918,70 +907,15 @@ onUnmounted(() => {
                         </tbody>
                     </table>
                 </div>
-                <nav
-                    class="mt-4 flex flex-wrap items-center justify-end gap-2 text-sm text-muted-foreground"
+                <ConsolePagination
                     aria-label="访问日志分页"
-                >
-                    <span class="mr-1" aria-live="polite"
-                        >共 {{ total }} 条</span
-                    ><Button
-                        size="icon"
-                        variant="outline"
-                        aria-label="上一页"
-                        :disabled="loading || currentPage <= 1"
-                        @click="load(currentPage - 1)"
-                        ><ChevronLeft class="size-4"
-                    /></Button>
-                    <template
-                        v-for="(number, index) in pageButtons"
-                        :key="number"
-                        ><span
-                            v-if="
-                                index > 0 && number - pageButtons[index - 1] > 1
-                            "
-                            aria-hidden="true"
-                            >…</span
-                        ><Button
-                            size="icon"
-                            variant="outline"
-                            :aria-label="`第 ${number} 页`"
-                            :aria-current="
-                                currentPage === number ? 'page' : undefined
-                            "
-                            :disabled="loading"
-                            :class="{
-                                'border-primary text-primary':
-                                    currentPage === number,
-                            }"
-                            @click="load(number)"
-                            >{{ number }}</Button
-                        ></template
-                    >
-                    <Button
-                        size="icon"
-                        variant="outline"
-                        aria-label="下一页"
-                        :disabled="loading || currentPage >= lastPage"
-                        @click="load(currentPage + 1)"
-                        ><ChevronRight class="size-4" /></Button
-                    ><SelectField
-                        v-model.number="pageSize"
-                        aria-label="每页条数"
-                        class="h-8 rounded-md border border-input bg-background px-2 text-foreground"
-                        :disabled="loading"
-                        @change="load(1)"
-                    >
-                        <SelectOption
-                            v-for="size in active === 'query'
-                                ? [10, 30, 100]
-                                : [10, 30, 100, 300]"
-                            :key="size"
-                            :value="size"
-                        >
-                            {{ size }} 条/页
-                        </SelectOption>
-                    </SelectField>
-                </nav>
+                    :total="total"
+                    :page="currentPage"
+                    :previous-disabled="loading || currentPage <= 1"
+                    :next-disabled="loading || currentPage >= lastPage"
+                    @previous="load(currentPage - 1)"
+                    @next="load(currentPage + 1)"
+                />
             </div>
         </section>
         <Dialog v-model:open="detailOpen"

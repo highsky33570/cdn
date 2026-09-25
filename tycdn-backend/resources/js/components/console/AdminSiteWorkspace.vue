@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import {
     ChevronDown,
-    ChevronLeft,
-    ChevronRight,
     Copy,
     Download,
     Filter,
@@ -13,6 +11,7 @@ import {
 } from 'lucide-vue-next';
 import { computed, onMounted, onUnmounted, reactive, ref } from 'vue';
 import { toast } from 'vue-sonner';
+import ConsolePagination from '@/components/console/ConsolePagination.vue';
 import CheckboxField from '@/components/ui/checkbox/CheckboxField.vue';
 import {
     Dialog,
@@ -685,7 +684,10 @@ defineExpose({ refresh: load });
             role="alert"
             class="mb-3 rounded border border-destructive/30 p-3 text-destructive"
         >
-            {{ error }} <button class="link" @click="load()">重试</button>
+            {{ error }}
+            <button data-slot="console-link" class="link" @click="load()">
+                重试
+            </button>
         </div>
         <div
             :class="{ 'defaults-panel': tab === 'defaults' }"
@@ -700,23 +702,31 @@ defineExpose({ refresh: load });
             </header>
             <div class="site-toolbar">
                 <template v-if="tab === 'sites'">
-                    <button class="primary" @click="emit('create')">
+                    <button
+                        data-slot="console-action"
+                        class="primary"
+                        @click="emit('create')"
+                    >
                         添加网站
                     </button>
                     <button
+                        data-slot="console-action"
                         :disabled="!selected.length || busy"
                         @click="openBatch"
                     >
                         批量修改
                     </button>
                     <button
+                        data-slot="console-action"
                         :disabled="!selected.length || busy"
                         @click="bulk('certificate')"
                     >
                         申请证书
                     </button>
                     <details class="menu">
-                        <summary>更多操作 <ChevronDown /></summary>
+                        <summary data-slot="console-action">
+                            更多操作 <ChevronDown />
+                        </summary>
                         <div class="menu-content">
                             <button
                                 :disabled="!selected.length || busy"
@@ -736,7 +746,11 @@ defineExpose({ refresh: load });
                             ><button @click="load()">刷新</button>
                         </div>
                     </details>
-                    <form class="search-box" @submit.prevent="searchSites">
+                    <form
+                        data-slot="console-input-group"
+                        class="search-box"
+                        @submit.prevent="searchSites"
+                    >
                         <SelectField v-model="searchKey" aria-label="搜索类型">
                             <SelectOption value="domain">域名</SelectOption>
                             <SelectOption value="id">ID</SelectOption>
@@ -751,22 +765,35 @@ defineExpose({ refresh: load });
                             v-model="search"
                             aria-label="搜索网站"
                             placeholder="输入域名,模糊搜索"
-                        /><button class="primary">查询</button>
+                        /><button data-slot="console-action" class="primary">
+                            查询
+                        </button>
                     </form>
                     <button
+                        data-slot="console-action"
                         :aria-expanded="showFilters"
                         @click="showFilters = !showFilters"
                     >
                         <Filter />筛选</button
-                    ><button :disabled="busy" @click="exportSites">
+                    ><button
+                        data-slot="console-action"
+                        :disabled="busy"
+                        @click="exportSites"
+                    >
                         <Download />导出
                     </button>
                 </template>
                 <template v-else-if="tab === 'groups'"
-                    ><button class="primary" @click="openEditor()">
-                        <Plus />新增分组</button
-                    ><button @click="load()"><RefreshCw />刷新</button
                     ><button
+                        data-slot="console-action"
+                        class="primary"
+                        @click="openEditor()"
+                    >
+                        <Plus />新增分组</button
+                    ><button data-slot="console-action" @click="load()">
+                        <RefreshCw />刷新</button
+                    ><button
+                        data-slot="console-action"
                         class="danger-outline"
                         :disabled="!selected.length || busy"
                         @click="confirmDelete()"
@@ -777,20 +804,27 @@ defineExpose({ refresh: load });
                     ></template
                 >
                 <template v-else-if="tab === 'defaults'"
-                    ><button class="primary" @click="openEditor()">
+                    ><button
+                        data-slot="console-action"
+                        class="primary"
+                        @click="openEditor()"
+                    >
                         <Plus />新增设置</button
                     ><button
+                        data-slot="console-action"
                         class="danger-outline"
                         :disabled="!selected.length || busy"
                         @click="confirmDelete()"
                     >
                         <Trash2 />删除</button
                     ><button
+                        data-slot="console-action"
                         :disabled="!selected.length || busy"
                         @click="bulk('enable')"
                     >
                         ◉ 启用</button
                     ><button
+                        data-slot="console-action"
                         :disabled="!selected.length || busy"
                         @click="bulk('disable')"
                     >
@@ -798,9 +832,14 @@ defineExpose({ refresh: load });
                     </button></template
                 >
                 <template v-else-if="tab === 'dnsapi'"
-                    ><button class="primary" @click="openEditor()">
+                    ><button
+                        data-slot="console-action"
+                        class="primary"
+                        @click="openEditor()"
+                    >
                         新增 DNS API</button
                     ><button
+                        data-slot="console-action"
                         :disabled="!selected.length || busy"
                         @click="confirmDelete()"
                     >
@@ -811,6 +850,7 @@ defineExpose({ refresh: load });
                 >
                 <template v-else>
                     <button
+                        data-slot="console-action"
                         class="primary"
                         :disabled="!selected.length || busy"
                         @click="syncDomains"
@@ -859,6 +899,7 @@ defineExpose({ refresh: load });
                                 placeholder="网站ID"
                                 @change="load(1)" /></label
                         ><button
+                            data-slot="console-link"
                             type="button"
                             class="link"
                             @click="clearResolve"
@@ -895,29 +936,43 @@ defineExpose({ refresh: load });
                         <SelectOption value="process">同步中</SelectOption>
                         <SelectOption value="failed">同步失败</SelectOption>
                     </SelectField></label
-                ><button class="primary">查询</button
-                ><button type="button" @click="clearFilters">清除</button>
+                ><button data-slot="console-action" class="primary">查询</button
+                ><button
+                    data-slot="console-action"
+                    type="button"
+                    @click="clearFilters"
+                >
+                    清除
+                </button>
             </form>
             <div v-if="tab === 'resolve'" class="resolve-summary">
                 <button
+                    data-slot="console-action"
                     :class="{ active: summary === 'all' }"
                     @click="summary = 'all'"
                 >
                     全部 {{ counts.all }}</button
                 ><button
+                    data-slot="console-action"
                     :class="{ active: summary === 'failed' }"
                     @click="summary = 'failed'"
                 >
                     解析失败
                     <b class="text-destructive">{{ counts.failed }}</b></button
                 ><button
+                    data-slot="console-action"
                     :class="{ active: summary === 'missing' }"
                     @click="summary = 'missing'"
                 >
                     未配置 DNS API {{ counts.missing }}</button
-                ><button class="link" @click="chooseTab('dnsapi')">
+                ><button
+                    data-slot="console-link"
+                    class="link"
+                    @click="chooseTab('dnsapi')"
+                >
                     去配置</button
                 ><button
+                    data-slot="console-action"
                     :class="{ active: summary === 'checking' }"
                     @click="summary = 'checking'"
                 >
@@ -1014,6 +1069,7 @@ defineExpose({ refresh: load });
                                 <td>
                                     <div class="copy-cell">
                                         <button
+                                            data-slot="console-link"
                                             class="link max-w-60 truncate"
                                             :title="String(row.domain)"
                                             @click="emit('manage', row)"
@@ -1116,6 +1172,7 @@ defineExpose({ refresh: load });
                                 <td>
                                     <div class="row-actions">
                                         <button
+                                            data-slot="console-link"
                                             class="link"
                                             @click="emit('manage', row)"
                                         >
@@ -1124,6 +1181,7 @@ defineExpose({ refresh: load });
                                         <DropdownMenu
                                             ><DropdownMenuTrigger as-child
                                                 ><button
+                                                    data-slot="console-link"
                                                     class="link"
                                                     :aria-label="`更多操作 ${row.id}`"
                                                 >
@@ -1268,11 +1326,13 @@ defineExpose({ refresh: load });
                                 <td>
                                     <div class="row-actions">
                                         <button
+                                            data-slot="console-link"
                                             class="link"
                                             @click="openEditor(row)"
                                         >
                                             编辑</button
                                         ><button
+                                            data-slot="console-link"
                                             class="link"
                                             :disabled="busy"
                                             @click="
@@ -1288,38 +1348,14 @@ defineExpose({ refresh: load });
                     </tbody>
                 </table>
             </div>
-            <footer
-                class="pagination"
-                :class="{ 'justify-end': tab === 'groups' || tab === 'dnsapi' }"
-            >
-                <span v-if="tab === 'groups'" class="muted mr-auto">{{
-                    total ? '' : '暂无分组'
-                }}</span
-                ><span>共 {{ total }} 条</span
-                ><button
-                    :disabled="loading || page <= 1"
-                    aria-label="上一页"
-                    @click="load(page - 1)"
-                >
-                    <ChevronLeft /></button
-                ><button class="current" aria-current="page">{{ page }}</button
-                ><button
-                    :disabled="loading || page >= pages"
-                    aria-label="下一页"
-                    @click="load(page + 1)"
-                >
-                    <ChevronRight /></button
-                ><SelectField
-                    v-model="size"
-                    aria-label="每页条数"
-                    @change="load(1)"
-                >
-                    <SelectOption :value="10">10 条/页</SelectOption>
-                    <SelectOption :value="20">20 条/页</SelectOption>
-                    <SelectOption :value="50">50 条/页</SelectOption>
-                    <SelectOption :value="100">100 条/页</SelectOption>
-                </SelectField>
-            </footer>
+            <ConsolePagination
+                :total="total"
+                :page="page"
+                :previous-disabled="loading || page <= 1"
+                :next-disabled="loading || page >= pages"
+                @previous="load(page - 1)"
+                @next="load(page + 1)"
+            />
         </div>
         <Dialog
             :open="dialog"
@@ -1477,13 +1513,18 @@ defineExpose({ refresh: load });
                 </form>
                 <DialogFooter
                     ><button
+                        data-slot="console-action"
                         class="primary"
                         type="submit"
                         form="site-resource-form"
                         :disabled="saving"
                     >
                         确定</button
-                    ><button :disabled="saving" @click="dialog = false">
+                    ><button
+                        data-slot="console-action"
+                        :disabled="saving"
+                        @click="dialog = false"
+                    >
                         取消
                     </button></DialogFooter
                 ></DialogScrollContent
@@ -1564,12 +1605,17 @@ defineExpose({ refresh: load });
                 </form>
                 <DialogFooter
                     ><button
+                        data-slot="console-action"
                         class="primary"
                         form="site-batch-form"
                         :disabled="saving"
                     >
                         确定</button
-                    ><button :disabled="saving" @click="batchOpen = false">
+                    ><button
+                        data-slot="console-action"
+                        :disabled="saving"
+                        @click="batchOpen = false"
+                    >
                         取消
                     </button></DialogFooter
                 ></DialogScrollContent
@@ -1805,23 +1851,6 @@ tbody tr:hover {
 }
 .outlined {
     border: 1px solid currentColor;
-}
-.pagination {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    padding-top: 16px;
-    flex-wrap: wrap;
-}
-.pagination button {
-    padding: 4px 7px;
-}
-.pagination :deep([data-slot='select-trigger']) {
-    margin-left: 8px;
-}
-.pagination .current {
-    color: #2d8cf0;
-    border-color: #2d8cf0;
 }
 .menu {
     position: relative;

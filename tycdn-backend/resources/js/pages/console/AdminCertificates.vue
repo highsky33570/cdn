@@ -1,17 +1,11 @@
 <script setup lang="ts">
-import {
-    ChevronDown,
-    ChevronLeft,
-    ChevronRight,
-    Copy,
-    Download,
-    Filter,
-} from 'lucide-vue-next';
+import { ChevronDown, Copy, Download, Filter } from 'lucide-vue-next';
 import { computed, onMounted, onUnmounted, reactive, ref } from 'vue';
 import { toast } from 'vue-sonner';
 import AdminSiteWorkspace from '@/components/console/AdminSiteWorkspace.vue';
 import CertificateUserPicker from '@/components/console/CertificateUserPicker.vue';
 import ConfirmDeleteDialog from '@/components/console/ConfirmDeleteDialog.vue';
+import ConsolePagination from '@/components/console/ConsolePagination.vue';
 import CheckboxField from '@/components/ui/checkbox/CheckboxField.vue';
 import {
     Dialog,
@@ -668,19 +662,30 @@ async function saveEditor() {
                     class="mb-3 rounded border border-destructive/30 p-3 text-destructive"
                 >
                     {{ error }}
-                    <button class="link" @click="load()">重试</button>
+                    <button
+                        data-slot="console-link"
+                        class="link"
+                        @click="load()"
+                    >
+                        重试
+                    </button>
                 </p>
                 <div class="toolbar">
-                    <button class="primary" @click="openEditor()">
+                    <button
+                        data-slot="console-action"
+                        class="primary"
+                        @click="openEditor()"
+                    >
                         添加证书</button
                     ><button
+                        data-slot="console-action"
                         :disabled="!selected.length || busy"
                         @click="batch('reissue')"
                     >
                         重新申请</button
                     ><DropdownMenu
                         ><DropdownMenuTrigger as-child
-                            ><button>
+                            ><button data-slot="console-action">
                                 更多操作
                                 <ChevronDown /></button></DropdownMenuTrigger
                         ><DropdownMenuContent align="start"
@@ -722,14 +727,21 @@ async function saveEditor() {
                             v-model="search"
                             aria-label="搜索证书"
                             placeholder="输入域名,模糊搜索"
-                        /><button class="primary">查询</button>
+                        /><button data-slot="console-action" class="primary">
+                            查询
+                        </button>
                     </form>
                     <button
+                        data-slot="console-action"
                         :aria-expanded="filterOpen"
                         @click="filterOpen = !filterOpen"
                     >
                         <Filter />筛选</button
-                    ><button :disabled="busy" @click="exportRows">
+                    ><button
+                        data-slot="console-action"
+                        :disabled="busy"
+                        @click="exportRows"
+                    >
                         <Download />导出
                     </button>
                 </div>
@@ -779,11 +791,19 @@ async function saveEditor() {
                             <SelectOption value="failed">同步失败</SelectOption>
                         </SelectField></label
                     ><label>DNS API ID<Input v-model="filters.dnsapi" /></label
-                    ><button class="primary">查询</button
-                    ><button type="button" @click="clearFilters">清除</button>
+                    ><button data-slot="console-action" class="primary">
+                        查询</button
+                    ><button
+                        data-slot="console-action"
+                        type="button"
+                        @click="clearFilters"
+                    >
+                        清除
+                    </button>
                 </form>
                 <div class="summary">
                     <button
+                        data-slot="console-action"
                         v-for="item in summaryItems"
                         :key="item.key"
                         :class="{ active: summaryFilter === item.key }"
@@ -861,6 +881,7 @@ async function saveEditor() {
                                 <td class="cert-info">
                                     <div class="copy-line">
                                         <button
+                                            data-slot="console-link"
                                             class="link cert-name"
                                             :title="String(row.name ?? '')"
                                             @click="openEditor(row)"
@@ -949,11 +970,13 @@ async function saveEditor() {
                                 <td>
                                     <div class="actions">
                                         <button
+                                            data-slot="console-link"
                                             class="link"
                                             @click="openEditor(row)"
                                         >
                                             管理</button
                                         ><button
+                                            data-slot="console-link"
                                             v-if="row.type !== 'custom'"
                                             class="link"
                                             :disabled="busy"
@@ -967,6 +990,7 @@ async function saveEditor() {
                                         ><DropdownMenu
                                             ><DropdownMenuTrigger as-child
                                                 ><button
+                                                    data-slot="console-link"
                                                     class="link"
                                                     :aria-label="`更多操作 ${row.id}`"
                                                 >
@@ -1026,33 +1050,14 @@ async function saveEditor() {
                         </tbody>
                     </table>
                 </div>
-                <footer class="pagination">
-                    <span>共 {{ total }} 条</span
-                    ><button
-                        :disabled="loading || page <= 1"
-                        aria-label="上一页"
-                        @click="load(page - 1)"
-                    >
-                        <ChevronLeft /></button
-                    ><button class="current" aria-current="page">
-                        {{ page }}</button
-                    ><button
-                        :disabled="loading || page >= pages"
-                        aria-label="下一页"
-                        @click="load(page + 1)"
-                    >
-                        <ChevronRight /></button
-                    ><SelectField
-                        v-model="size"
-                        aria-label="每页条数"
-                        @change="load(1)"
-                    >
-                        <SelectOption :value="10">10 条/页</SelectOption>
-                        <SelectOption :value="20">20 条/页</SelectOption>
-                        <SelectOption :value="50">50 条/页</SelectOption>
-                        <SelectOption :value="100">100 条/页</SelectOption>
-                    </SelectField>
-                </footer>
+                <ConsolePagination
+                    :total="total"
+                    :page="page"
+                    :previous-disabled="loading || page <= 1"
+                    :next-disabled="loading || page >= pages"
+                    @previous="load(page - 1)"
+                    @next="load(page + 1)"
+                />
             </div>
             <div
                 v-else-if="tab === 'defaults'"
@@ -1072,6 +1077,7 @@ async function saveEditor() {
                 <p v-if="defaultError" role="alert" class="text-destructive">
                     {{ defaultError }}
                     <button
+                        data-slot="console-link"
                         v-if="!defaultReady"
                         class="link"
                         @click="loadDefaults"
@@ -1301,13 +1307,18 @@ async function saveEditor() {
                     </form>
                     <DialogFooter
                         ><button
+                            data-slot="console-action"
                             class="primary"
                             type="submit"
                             form="certificate-form"
                             :disabled="saving || !editorReady || editorLoading"
                         >
                             确定</button
-                        ><button :disabled="saving" @click="closeEditor">
+                        ><button
+                            data-slot="console-action"
+                            :disabled="saving"
+                            @click="closeEditor"
+                        >
                             取消
                         </button></DialogFooter
                     ></DialogScrollContent
@@ -1572,22 +1583,6 @@ tbody tr:hover {
     vertical-align: middle;
     color: var(--muted-foreground);
 }
-.pagination {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    padding-top: 16px;
-}
-.pagination button {
-    padding: 4px 7px;
-}
-.pagination :deep([data-slot='select-trigger']) {
-    margin-left: 8px;
-}
-.pagination .current {
-    border-color: #2d8cf0;
-    color: #2d8cf0;
-}
 .default-settings {
     padding: 4px 20px 2px;
     display: grid;
@@ -1671,9 +1666,6 @@ tbody tr:hover {
     .certificate-form label {
         grid-template-columns: 1fr;
         gap: 6px;
-    }
-    .pagination {
-        flex-wrap: wrap;
     }
 }
 </style>

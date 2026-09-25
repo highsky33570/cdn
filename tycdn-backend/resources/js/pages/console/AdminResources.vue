@@ -4,6 +4,7 @@ import { computed, onMounted, reactive, ref, watch } from 'vue';
 import { toast } from 'vue-sonner';
 import ConfirmDeleteDialog from '@/components/console/ConfirmDeleteDialog.vue';
 import ConsoleDataTable from '@/components/console/ConsoleDataTable.vue';
+import ConsolePagination from '@/components/console/ConsolePagination.vue';
 import ConsoleTabs from '@/components/console/ConsoleTabs.vue';
 import ResourceSettingField from '@/components/console/ResourceSettingField.vue';
 import { Button } from '@/components/ui/button';
@@ -506,39 +507,14 @@ async function remove() {
                             ></template
                         >
                     </ConsoleDataTable>
-                    <div
-                        v-if="regionalRows.length"
-                        class="mt-4 flex flex-wrap items-center justify-end gap-2 text-sm"
-                    >
-                        <span class="text-muted-foreground"
-                            >共 {{ regionalRows.length }} 条</span
-                        >
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            :disabled="page <= 1"
-                            aria-label="上一页"
-                            @click="page--"
-                            >‹</Button
-                        ><span>{{ page }} / {{ pages }}</span
-                        ><Button
-                            variant="outline"
-                            size="sm"
-                            :disabled="page >= pages"
-                            aria-label="下一页"
-                            @click="page++"
-                            >›</Button
-                        >
-                        <SelectField
-                            v-model="size"
-                            aria-label="每页条数"
-                            class="h-8 rounded-md border border-input bg-background px-2"
-                        >
-                            <SelectOption :value="10">10 条/页</SelectOption>
-                            <SelectOption :value="30">30 条/页</SelectOption>
-                            <SelectOption :value="100">100 条/页</SelectOption>
-                        </SelectField>
-                    </div>
+                    <ConsolePagination
+                        :total="regionalRows.length"
+                        :page="page"
+                        :previous-disabled="page <= 1"
+                        :next-disabled="page >= pages"
+                        @previous="page--"
+                        @next="page++"
+                    />
                 </section>
             </template>
         </div>

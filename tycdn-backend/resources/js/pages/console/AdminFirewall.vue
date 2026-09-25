@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { Plus, RefreshCw, Save, Trash2, X } from 'lucide-vue-next';
+import { Plus, RefreshCw, Save, X } from 'lucide-vue-next';
 import { computed, onMounted, reactive, ref } from 'vue';
 import { toast } from 'vue-sonner';
 import ConfirmDeleteDialog from '@/components/console/ConfirmDeleteDialog.vue';
+import ConsolePagination from '@/components/console/ConsolePagination.vue';
 import FirewallField from '@/components/console/FirewallField.vue';
 import { Button } from '@/components/ui/button';
 import CheckboxField from '@/components/ui/checkbox/CheckboxField.vue';
@@ -1236,34 +1237,16 @@ async function removeOverrides() {
                         </tbody>
                     </table>
                 </div>
-                <div v-if="overrideTotal" class="fw-pager">
-                    <Button
-                        size="sm"
-                        variant="outline"
-                        v-if="selected.length"
-                        @click="askDelete([...selected])"
-                    >
-                        <Trash2 />删除选中</Button
-                    ><span>共 {{ overrideTotal }} 条</span
-                    ><Button
-                        size="sm"
-                        variant="outline"
-                        :disabled="page === 1 || overrideLoading"
-                        @click="loadOverrides(page - 1)"
-                    >
-                        上一页</Button
-                    ><span>{{ page }}</span
-                    ><Button
-                        size="sm"
-                        variant="outline"
-                        :disabled="
-                            page * 10 >= overrideTotal || overrideLoading
-                        "
-                        @click="loadOverrides(page + 1)"
-                    >
-                        下一页
-                    </Button>
-                </div>
+                <ConsolePagination
+                    :total="overrideTotal"
+                    :page="page"
+                    :previous-disabled="page === 1 || overrideLoading"
+                    :next-disabled="
+                        page * 10 >= overrideTotal || overrideLoading
+                    "
+                    @previous="loadOverrides(page - 1)"
+                    @next="loadOverrides(page + 1)"
+                />
             </div>
         </section>
         <Dialog v-model:open="editorOpen"
@@ -1854,13 +1837,6 @@ async function removeOverrides() {
     color: var(--primary);
     border: 0;
     padding: 0 6px;
-}
-.fw-pager {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    gap: 8px;
-    margin-top: 14px;
 }
 .fw-modal {
     --fw-line: var(--border);

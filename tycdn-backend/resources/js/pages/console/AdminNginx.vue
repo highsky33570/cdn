@@ -4,6 +4,7 @@ import { computed, onMounted, reactive, ref } from 'vue';
 import { toast } from 'vue-sonner';
 import ConfirmDeleteDialog from '@/components/console/ConfirmDeleteDialog.vue';
 import ConsoleDataTable from '@/components/console/ConsoleDataTable.vue';
+import ConsolePagination from '@/components/console/ConsolePagination.vue';
 import ConsoleTabs from '@/components/console/ConsoleTabs.vue';
 import NginxField from '@/components/console/NginxField.vue';
 import { Button } from '@/components/ui/button';
@@ -545,25 +546,14 @@ async function removeRows() {
                         >
                     </template>
                 </ConsoleDataTable>
-                <footer v-if="total" class="ng-pager">
-                    <span>共 {{ total }} 条</span
-                    ><Button
-                        size="sm"
-                        variant="outline"
-                        :disabled="page <= 1 || listLoading"
-                        @click="loadRows(page - 1)"
-                    >
-                        上一页</Button
-                    ><span class="ng-page-number">{{ page }}</span
-                    ><Button
-                        size="sm"
-                        variant="outline"
-                        :disabled="page * 10 >= total || listLoading"
-                        @click="loadRows(page + 1)"
-                    >
-                        下一页</Button
-                    ><span>10 条/页</span>
-                </footer>
+                <ConsolePagination
+                    :total="total"
+                    :page="page"
+                    :previous-disabled="page <= 1 || listLoading"
+                    :next-disabled="page * 10 >= total || listLoading"
+                    @previous="loadRows(page - 1)"
+                    @next="loadRows(page + 1)"
+                />
             </div>
         </section>
         <Dialog v-model:open="editorOpen"
@@ -886,14 +876,6 @@ async function removeRows() {
     display: flex;
     gap: 8px;
 }
-.ng-pager {
-    display: flex;
-    justify-content: flex-end;
-    align-items: center;
-    gap: 8px;
-    padding: 16px 0 0;
-    font-size: 14px;
-}
 .ng-modal .ng-targets label {
     display: grid;
     gap: 6px;
@@ -941,10 +923,6 @@ async function removeRows() {
     .ng-field {
         grid-template-columns: 135px minmax(0, 1fr);
     }
-    .ng-list-heading,
-    .ng-pager {
-        flex-wrap: wrap;
-    }
     .ng-modal .ng-field {
         grid-template-columns: 1fr;
     }
@@ -953,6 +931,12 @@ async function removeRows() {
     .ng-field {
         grid-template-columns: 1fr;
         gap: 5px;
+    }
+}
+
+@media (max-width: 760px) {
+    .ng-list-heading {
+        flex-wrap: wrap;
     }
 }
 </style>

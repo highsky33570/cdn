@@ -461,7 +461,10 @@ async function save() {
                                     v-model="config.cache"
                                     :placeholder="inherited.cache"
                                 /><label for="edit-node-size">缓存上限</label>
-                                <div class="input-group">
+                                <div
+                                    data-slot="console-input-group"
+                                    class="input-group"
+                                >
                                     <Input
                                         id="edit-node-size"
                                         v-model="config.size"
@@ -500,7 +503,10 @@ async function save() {
                             class="edit-fields auto-fields"
                         >
                             <label for="edit-node-bandwidth">带宽限制</label>
-                            <div class="input-group">
+                            <div
+                                data-slot="console-input-group"
+                                class="input-group"
+                            >
                                 <Input
                                     id="edit-node-bandwidth"
                                     v-model="bandwidth"
@@ -527,7 +533,10 @@ async function save() {
                             />
                             <label for="edit-node-day">统计周期:</label>
                             <div class="grid justify-start gap-2">
-                                <div class="input-group w-[125px]!">
+                                <div
+                                    data-slot="console-input-group"
+                                    class="input-group w-[125px]!"
+                                >
                                     <span>每月</span
                                     ><Input
                                         id="edit-node-day"
@@ -538,7 +547,10 @@ async function save() {
                                         required
                                     /><span>日,</span>
                                 </div>
-                                <div class="input-group">
+                                <div
+                                    data-slot="console-input-group"
+                                    class="input-group"
+                                >
                                     <Input
                                         v-model="traffic.from_hour"
                                         aria-label="统计起始时间"
@@ -549,7 +561,10 @@ async function save() {
                                 </div>
                             </div>
                             <label for="edit-node-total">流量限制:</label>
-                            <div class="input-group">
+                            <div
+                                data-slot="console-input-group"
+                                class="input-group"
+                            >
                                 <Input
                                     id="edit-node-total"
                                     v-model="traffic.traffic_total"
@@ -598,6 +613,7 @@ async function save() {
                         </div>
                         <div class="edit-actions mt-6 flex gap-2">
                             <button
+                                data-slot="console-action"
                                 type="submit"
                                 class="primary"
                                 :disabled="
@@ -608,6 +624,7 @@ async function save() {
                             >
                                 {{ saving ? '保存中…' : '确定' }}</button
                             ><button
+                                data-slot="console-action"
                                 type="button"
                                 class="cancel"
                                 @click="open = false"

@@ -320,6 +320,7 @@ const body = computed(() =>
                 </SelectOption>
             </SelectField>
             <label
+                data-slot="console-input-group"
                 v-for="[key, label] in fields"
                 :key="key"
                 class="message-input"
@@ -331,6 +332,7 @@ const body = computed(() =>
                     inputmode="numeric"
             /></label>
             <button
+                data-slot="console-link"
                 v-if="hasFilters"
                 type="button"
                 class="text-link"
@@ -424,6 +426,7 @@ const body = computed(() =>
                             <td>{{ time(row) }}</td>
                             <td>
                                 <button
+                                    data-slot="console-link"
                                     class="text-link"
                                     :aria-label="`查看消息 ${text(row.id)} 详情`"
                                     @click="openDetail(row)"
@@ -518,8 +521,8 @@ const body = computed(() =>
     min-width: 0;
     margin: 16px;
     padding: 12px 14px 20px;
-    background: #fff;
-    color: #526078;
+    background: var(--card);
+    color: var(--foreground);
     font-size: 14px;
 }
 .message-filters {
@@ -533,7 +536,7 @@ const body = computed(() =>
     width: 250px;
     height: 40px;
     padding: 0 10px;
-    border: 1px solid #dcdfe6;
+    border: 1px solid var(--input);
     border-radius: 4px;
     background: transparent;
 }
@@ -541,7 +544,7 @@ const body = computed(() =>
     display: flex;
     width: 250px;
     height: 40px;
-    border: 1px solid #dcdfe6;
+    border: 1px solid var(--input);
     border-radius: 4px;
     overflow: hidden;
 }
@@ -552,8 +555,8 @@ const body = computed(() =>
     display: flex;
     align-items: center;
     padding: 0 10px;
-    border-right: 1px solid #dcdfe6;
-    background: #f7f7f9;
+    border-right: 1px solid var(--input);
+    background: var(--muted);
     white-space: nowrap;
 }
 .message-input input {
@@ -565,21 +568,21 @@ const body = computed(() =>
     outline: none;
 }
 .message-input:focus-within {
-    border-color: #308cff;
+    border-color: var(--primary);
 }
 .message-input input::placeholder {
-    color: #bfc5ce;
+    color: var(--muted-foreground);
 }
 .text-link {
-    color: #308cff;
+    color: var(--primary);
     cursor: pointer;
 }
 .text-link:hover {
-    color: #66b1ff;
+    color: color-mix(in srgb, var(--primary) 75%, var(--foreground));
 }
 .message-scroll {
     overflow-x: auto;
-    border-bottom: 1px solid #dcdfe6;
+    border-bottom: 1px solid var(--input);
 }
 table {
     width: 100%;
@@ -590,13 +593,13 @@ table {
 th,
 td {
     padding: 0 22px;
-    border-bottom: 1px solid #e6e8ed;
+    border-bottom: 1px solid var(--border);
     font-size: 14px;
     text-align: left;
 }
 th {
     height: 48px;
-    background: #f7f7f9;
+    background: var(--muted);
     font-weight: 600;
 }
 td {
@@ -604,7 +607,7 @@ td {
     white-space: nowrap;
 }
 tbody tr:hover {
-    background: #fafcff;
+    background: var(--accent);
 }
 .truncate-cell {
     display: block;
@@ -622,51 +625,6 @@ tbody tr:hover {
     position: sticky;
     left: 0;
     width: min(100%, calc(100vw - 340px));
-}
-.message-pagination {
-    justify-content: flex-start;
-    margin-top: 26px;
-    gap: 6px;
-    font-size: 14px;
-}
-.message-pagination :deep(button),
-.message-pagination :deep([data-slot='select-trigger']) {
-    height: 40px;
-    min-width: 40px;
-    border: 1px solid #dcdfe6;
-    border-radius: 4px;
-    background: transparent;
-    color: inherit;
-    font-size: 14px;
-    font-weight: 400;
-    box-shadow: none;
-}
-.message-pagination :deep([aria-current='page']) {
-    color: #308cff;
-    border-color: #308cff;
-}
-.message-pagination :deep([data-slot='select-trigger']) {
-    margin-left: 14px;
-}
-:global(.dark) .user-message-query {
-    background: #18181b;
-    color: #cbd5e1;
-}
-:global(.dark) th,
-:global(.dark) .message-input span,
-:global(.dark) tbody tr:hover {
-    background: #27272a;
-}
-:global(.dark) th,
-:global(.dark) td,
-:global(.dark) .message-scroll,
-:global(.dark) .message-input,
-:global(.dark) .message-input span,
-:global(.dark) .message-filters :deep([data-slot='select-trigger']) {
-    border-color: #3f3f46;
-}
-:global(.dark) .message-filters :deep([data-slot='select-trigger']) option {
-    background: #18181b;
 }
 @media (max-width: 640px) {
     .user-message-query {

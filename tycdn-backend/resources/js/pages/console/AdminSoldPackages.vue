@@ -738,6 +738,7 @@ async function changePackage() {
             </div>
             <form class="mb-4 flex flex-wrap gap-2" @submit.prevent="search">
                 <label
+                    data-slot="console-input-group"
                     v-for="field in [
                         { key: 'uid', label: '用户ID' },
                         { key: 'user_package', label: '用户套餐' },

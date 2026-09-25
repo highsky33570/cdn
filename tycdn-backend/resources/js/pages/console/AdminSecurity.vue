@@ -19,6 +19,7 @@ import AdminWafWorkspace from '@/components/console/AdminWafWorkspace.vue';
 import ConsoleDataTable from '@/components/console/ConsoleDataTable.vue';
 import type { ColumnDef } from '@/components/console/ConsoleDataTable.vue';
 import ConsolePageHeader from '@/components/console/ConsolePageHeader.vue';
+import ConsolePagination from '@/components/console/ConsolePagination.vue';
 import ConsoleTabs from '@/components/console/ConsoleTabs.vue';
 import type { ConsoleTab } from '@/components/console/ConsoleTabs.vue';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -1241,25 +1242,14 @@ const displayedCcRows = computed(() => {
                         </tbody>
                     </table>
                 </div>
-                <div class="mt-4 flex items-center justify-end gap-2">
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        :disabled="!hasCcPrevPage || ccLoading"
-                        @click="loadCcRows(ccPage - 1)"
-                        >上一页</Button
-                    >
-                    <span class="text-sm text-muted-foreground"
-                        >第 {{ ccPage }} 页</span
-                    >
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        :disabled="!hasCcNextPage || ccLoading"
-                        @click="loadCcRows(ccPage + 1)"
-                        >下一页</Button
-                    >
-                </div>
+                <ConsolePagination
+                    :total="ccTotal"
+                    :page="ccPage"
+                    :previous-disabled="!hasCcPrevPage || ccLoading"
+                    :next-disabled="!hasCcNextPage || ccLoading"
+                    @previous="loadCcRows(ccPage - 1)"
+                    @next="loadCcRows(ccPage + 1)"
+                />
             </CardContent>
         </Card>
 

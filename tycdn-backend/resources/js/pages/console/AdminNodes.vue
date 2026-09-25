@@ -17,6 +17,7 @@ import { computed, onMounted, reactive, ref } from 'vue';
 import { toast } from 'vue-sonner';
 import ConfirmDeleteDialog from '@/components/console/ConfirmDeleteDialog.vue';
 import ConsolePageHeader from '@/components/console/ConsolePageHeader.vue';
+import ConsolePagination from '@/components/console/ConsolePagination.vue';
 import NodeEditDialog from '@/components/console/NodeEditDialog.vue';
 import NodeManagementPanel from '@/components/console/NodeManagementPanel.vue';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -1372,25 +1373,14 @@ function regionNameById(id: unknown): string {
                             </tbody>
                         </table>
                     </div>
-                    <div class="mt-3 flex items-center justify-end gap-2">
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            :disabled="!hasNgPrevPage || ngLoading"
-                            @click="loadNodeGroups(ngPage - 1)"
-                            >上一页</Button
-                        >
-                        <span class="text-sm text-muted-foreground"
-                            >第 {{ ngPage }} 页</span
-                        >
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            :disabled="!hasNgNextPage || ngLoading"
-                            @click="loadNodeGroups(ngPage + 1)"
-                            >下一页</Button
-                        >
-                    </div>
+                    <ConsolePagination
+                        :total="ngTotal"
+                        :page="ngPage"
+                        :previous-disabled="!hasNgPrevPage || ngLoading"
+                        :next-disabled="!hasNgNextPage || ngLoading"
+                        @previous="loadNodeGroups(ngPage - 1)"
+                        @next="loadNodeGroups(ngPage + 1)"
+                    />
                 </CardContent>
             </Card>
 
@@ -1534,25 +1524,14 @@ function regionNameById(id: unknown): string {
                             </tbody>
                         </table>
                     </div>
-                    <div class="mt-3 flex items-center justify-end gap-2">
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            :disabled="!hasRegionPrevPage || regionLoading"
-                            @click="loadRegions(regionPage - 1)"
-                            >上一页</Button
-                        >
-                        <span class="text-sm text-muted-foreground"
-                            >第 {{ regionPage }} 页</span
-                        >
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            :disabled="!hasRegionNextPage || regionLoading"
-                            @click="loadRegions(regionPage + 1)"
-                            >下一页</Button
-                        >
-                    </div>
+                    <ConsolePagination
+                        :total="regionTotal"
+                        :page="regionPage"
+                        :previous-disabled="!hasRegionPrevPage || regionLoading"
+                        :next-disabled="!hasRegionNextPage || regionLoading"
+                        @previous="loadRegions(regionPage - 1)"
+                        @next="loadRegions(regionPage + 1)"
+                    />
                 </CardContent>
             </Card>
 

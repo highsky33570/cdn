@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { AlertCircle, RefreshCw, Search } from 'lucide-vue-next';
 import { computed, onMounted, ref, watch } from 'vue';
+import ConsolePagination from '@/components/console/ConsolePagination.vue';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -598,28 +599,13 @@ defineExpose({
         </CardContent>
     </Card>
 
-    <div
-        v-if="!embedded && total > effectivePerPage"
-        class="flex items-center justify-end gap-2"
-    >
-        <Button
-            variant="outline"
-            size="sm"
-            :disabled="!hasPreviousPage || loading"
-            @click="prevPage"
-        >
-            上一页
-        </Button>
-        <span class="text-sm text-muted-foreground">
-            第 {{ currentPage }} 页
-        </span>
-        <Button
-            variant="outline"
-            size="sm"
-            :disabled="!hasNextPage || loading"
-            @click="nextPage"
-        >
-            下一页
-        </Button>
-    </div>
+    <ConsolePagination
+        v-if="!embedded"
+        :total="total"
+        :page="currentPage"
+        :previous-disabled="!hasPreviousPage || loading"
+        :next-disabled="!hasNextPage || loading"
+        @previous="prevPage"
+        @next="nextPage"
+    />
 </template>

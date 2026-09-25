@@ -811,6 +811,7 @@ async function saveDefault(name: 'cert_default_type' | 'dnsapi') {
                             ></DropdownMenu
                         >
                         <form
+                            data-slot="console-input-group"
                             class="cert-search"
                             @submit.prevent="submitSearch"
                         >
@@ -1603,22 +1604,6 @@ async function saveDefault(name: 'cert_default_type' | 'dnsapi') {
 .empty {
     text-align: center;
     color: var(--muted-foreground);
-}
-.cert-pagination {
-    justify-content: flex-start;
-    margin-top: 26px;
-    font-size: 16px;
-}
-.cert-pagination :deep(button),
-.cert-pagination :deep([data-slot='select-trigger']) {
-    height: 40px;
-    min-width: 40px;
-    font-size: 16px;
-}
-.cert-pagination :deep(button[aria-current='page']) {
-    background: var(--card);
-    color: var(--primary);
-    border: 1px solid var(--primary);
 }
 .cert-defaults {
     padding: 8px 4px 20px;

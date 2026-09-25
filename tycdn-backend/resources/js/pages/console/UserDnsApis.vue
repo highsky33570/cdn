@@ -13,6 +13,7 @@ import { computed, onMounted, reactive, ref } from 'vue';
 import { toast } from 'vue-sonner';
 import ConfirmDeleteDialog from '@/components/console/ConfirmDeleteDialog.vue';
 import ConsolePageHeader from '@/components/console/ConsolePageHeader.vue';
+import ConsolePagination from '@/components/console/ConsolePagination.vue';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -504,25 +505,14 @@ function nullableText(value: string): string | null {
             </CardContent>
         </Card>
 
-        <div class="flex items-center justify-end gap-2">
-            <Button
-                variant="outline"
-                size="sm"
-                :disabled="!hasPreviousPage || loading"
-                @click="prevPage"
-            >
-                上一页
-            </Button>
-            <span class="text-sm text-muted-foreground">第 {{ page }} 页</span>
-            <Button
-                variant="outline"
-                size="sm"
-                :disabled="!hasNextPage || loading"
-                @click="nextPage"
-            >
-                下一页
-            </Button>
-        </div>
+        <ConsolePagination
+            :total="total"
+            :page="page"
+            :previous-disabled="!hasPreviousPage || loading"
+            :next-disabled="!hasNextPage || loading"
+            @previous="prevPage"
+            @next="nextPage"
+        />
 
         <Dialog v-model:open="dialogOpen">
             <DialogScrollContent class="sm:max-w-2xl">

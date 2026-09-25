@@ -576,6 +576,7 @@ function tabKey(event: KeyboardEvent) {
         >
             <div v-if="tab === 'streams'" class="stream-toolbar">
                 <button
+                    data-slot="console-action"
                     class="stream-button primary"
                     type="button"
                     :disabled="busy || loading"
@@ -584,6 +585,7 @@ function tabKey(event: KeyboardEvent) {
                     添加转发
                 </button>
                 <button
+                    data-slot="console-action"
                     class="stream-button"
                     type="button"
                     :disabled="busy || loading"
@@ -594,6 +596,7 @@ function tabKey(event: KeyboardEvent) {
                 <DropdownMenu
                     ><DropdownMenuTrigger as-child
                         ><button
+                            data-slot="console-action"
                             class="stream-button"
                             type="button"
                             :disabled="busy || loading"
@@ -622,7 +625,11 @@ function tabKey(event: KeyboardEvent) {
                         ></DropdownMenuContent
                     ></DropdownMenu
                 >
-                <form class="stream-search" @submit.prevent="load(1)">
+                <form
+                    data-slot="console-input-group"
+                    class="stream-search"
+                    @submit.prevent="load(1)"
+                >
                     <SelectField
                         v-model="searchType"
                         aria-label="搜索类型"
@@ -641,6 +648,7 @@ function tabKey(event: KeyboardEvent) {
                         :placeholder="`输入${searchOptions[searchType as keyof typeof searchOptions]}`"
                         :disabled="busy"
                     /><button
+                        data-slot="console-action"
                         class="stream-button primary"
                         type="submit"
                         :disabled="busy || loading"
@@ -649,6 +657,7 @@ function tabKey(event: KeyboardEvent) {
                     </button>
                 </form>
                 <button
+                    data-slot="console-link"
                     type="button"
                     class="text-action"
                     :aria-expanded="advanced"
@@ -660,6 +669,7 @@ function tabKey(event: KeyboardEvent) {
             </div>
             <div v-else class="stream-toolbar">
                 <button
+                    data-slot="console-action"
                     type="button"
                     class="stream-button primary"
                     :disabled="busy || loading"
@@ -667,6 +677,7 @@ function tabKey(event: KeyboardEvent) {
                 >
                     {{ tab === 'groups' ? '新增分组' : '新增设置' }}</button
                 ><button
+                    data-slot="console-action"
                     type="button"
                     class="stream-button"
                     :disabled="busy || loading"
@@ -762,12 +773,14 @@ function tabKey(event: KeyboardEvent) {
                     </SelectField></label
                 >
                 <button
+                    data-slot="console-action"
                     type="submit"
                     class="stream-button primary"
                     :disabled="busy || loading"
                 >
                     查询</button
                 ><button
+                    data-slot="console-link"
                     type="button"
                     class="text-action"
                     :disabled="busy"
@@ -779,6 +792,7 @@ function tabKey(event: KeyboardEvent) {
             <p v-if="error" class="error" role="alert">
                 {{ error }}
                 <button
+                    data-slot="console-link"
                     class="text-action"
                     type="button"
                     :disabled="busy || loading"
@@ -930,6 +944,7 @@ function tabKey(event: KeyboardEvent) {
                                 <td>
                                     <div class="row-actions">
                                         <button
+                                            data-slot="console-link"
                                             type="button"
                                             class="text-action"
                                             :disabled="busy"
@@ -947,6 +962,7 @@ function tabKey(event: KeyboardEvent) {
                                         ><DropdownMenu v-if="tab === 'streams'"
                                             ><DropdownMenuTrigger as-child
                                                 ><button
+                                                    data-slot="console-link"
                                                     type="button"
                                                     class="text-action row-more"
                                                     :disabled="busy"
@@ -985,6 +1001,7 @@ function tabKey(event: KeyboardEvent) {
                                                 ></DropdownMenuContent
                                             ></DropdownMenu
                                         ><button
+                                            data-slot="console-link"
                                             v-else
                                             type="button"
                                             class="text-action"
@@ -1407,22 +1424,6 @@ function tabKey(event: KeyboardEvent) {
 .stream-status[data-state='已停用'] i,
 .stream-status[data-state='同步中'] i {
     background: #f59e0b;
-}
-.stream-pagination {
-    justify-content: flex-start;
-    margin-top: 26px;
-    font-size: 16px;
-}
-.stream-pagination :deep(button),
-.stream-pagination :deep([data-slot='select-trigger']) {
-    height: 40px;
-    min-width: 40px;
-    font-size: 16px;
-}
-.stream-pagination :deep(button[aria-current='page']) {
-    background: var(--card);
-    color: var(--primary);
-    border: 1px solid var(--primary);
 }
 button:not(:disabled) {
     cursor: pointer;

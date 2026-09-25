@@ -1,13 +1,8 @@
 <script setup lang="ts">
-import {
-    ChevronDown,
-    ChevronLeft,
-    ChevronRight,
-    Plus,
-    RefreshCw,
-} from 'lucide-vue-next';
+import { ChevronDown, Plus, RefreshCw } from 'lucide-vue-next';
 import { computed, onMounted, onUnmounted, reactive, ref } from 'vue';
 import { toast } from 'vue-sonner';
+import ConsolePagination from '@/components/console/ConsolePagination.vue';
 import CheckboxField from '@/components/ui/checkbox/CheckboxField.vue';
 import {
     DropdownMenu,
@@ -37,12 +32,7 @@ const rows = ref<CdnflyRecord[]>([]),
     selected = ref<number[]>([]);
 const filters = reactive({ name: '', scope: '', enable: '' });
 const pages = computed(() => Math.max(1, Math.ceil(total.value / 10)));
-const pageNumbers = computed(() =>
-    Array.from(
-        { length: Math.min(5, pages.value) },
-        (_, i) => Math.max(1, Math.min(page.value - 2, pages.value - 4)) + i,
-    ),
-);
+
 const allSelected = computed(
     () =>
         rows.value.length > 0 &&
@@ -236,6 +226,7 @@ async function updateSubscriptions() {
                 <span class="pill primary">{{ total }} 个</span>
             </div>
             <button
+                data-slot="console-action"
                 class="primary-button"
                 :disabled="busy"
                 @click="emit('create')"
@@ -245,13 +236,17 @@ async function updateSubscriptions() {
         </header>
         <div class="waf-toolbar">
             <form class="waf-filters" @submit.prevent="load(1)">
-                <div class="name-search">
+                <div data-slot="console-input-group" class="name-search">
                     <Input
                         v-model="filters.name"
                         aria-label="规则库名称"
                         placeholder="规则库名称"
                         :disabled="busy"
-                    /><button class="primary-button" :disabled="busy">
+                    /><button
+                        data-slot="console-action"
+                        class="primary-button"
+                        :disabled="busy"
+                    >
                         查询
                     </button>
                 </div>
@@ -278,6 +273,7 @@ async function updateSubscriptions() {
             </form>
             <div class="waf-actions">
                 <button
+                    data-slot="console-action"
                     :disabled="!selected.length || busy || loading"
                     @click="updateSubscriptions"
                 >
@@ -286,6 +282,7 @@ async function updateSubscriptions() {
                 <DropdownMenu
                     ><DropdownMenuTrigger as-child
                         ><button
+                            data-slot="console-action"
                             :disabled="!selected.length || busy || loading"
                         >
                             批量操作<ChevronDown /></button></DropdownMenuTrigger
@@ -297,7 +294,11 @@ async function updateSubscriptions() {
                         ></DropdownMenuContent
                     ></DropdownMenu
                 >
-                <button :disabled="loading || busy" @click="load()">
+                <button
+                    data-slot="console-action"
+                    :disabled="loading || busy"
+                    @click="load()"
+                >
                     <RefreshCw :class="{ spin: loading }" />刷新
                 </button>
             </div>
@@ -425,6 +426,7 @@ async function updateSubscriptions() {
                                 >
                                     编辑</button
                                 ><button
+                                    data-slot="console-link"
                                     v-if="!row.system_key"
                                     class="delete-link"
                                     :disabled="busy || loading"
@@ -449,31 +451,15 @@ async function updateSubscriptions() {
                 </tbody>
             </table>
         </div>
-        <nav aria-label="规则库分页" class="waf-pager">
-            <span>共 {{ total }} 条</span
-            ><button
-                aria-label="上一页"
-                :disabled="page <= 1 || loading || busy"
-                @click="load(page - 1)"
-            >
-                <ChevronLeft /></button
-            ><button
-                v-for="number in pageNumbers"
-                :key="number"
-                :class="{ current: page === number }"
-                :aria-current="page === number ? 'page' : undefined"
-                :disabled="loading || busy"
-                @click="load(number)"
-            >
-                {{ number }}</button
-            ><button
-                aria-label="下一页"
-                :disabled="page >= pages || loading || busy"
-                @click="load(page + 1)"
-            >
-                <ChevronRight />
-            </button>
-        </nav>
+        <ConsolePagination
+            aria-label="规则库分页"
+            :total="total"
+            :page="page"
+            :previous-disabled="page <= 1 || loading || busy"
+            :next-disabled="page >= pages || loading || busy"
+            @previous="load(page - 1)"
+            @next="load(page + 1)"
+        />
     </section>
 </template>
 
@@ -488,17 +474,6 @@ async function updateSubscriptions() {
     padding: 10px;
     font-size: 12px;
     min-width: 0;
-}
-.waf-heading,
-.waf-title,
-.waf-toolbar,
-.waf-filters,
-.waf-actions,
-.row-actions,
-.waf-pager {
-    display: flex;
-    align-items: center;
-    gap: 8px;
 }
 .waf-heading {
     justify-content: space-between;
@@ -677,22 +652,6 @@ td.check {
     height: 40px;
     color: var(--muted);
 }
-.waf-pager {
-    justify-content: flex-end;
-    padding-top: 13px;
-    gap: 4px;
-}
-.waf-pager span {
-    margin-right: 6px;
-}
-.waf-pager button {
-    padding: 0;
-    min-width: 28px;
-}
-.waf-pager .current {
-    border-color: #2d8cf0;
-    color: #2d8cf0;
-}
 .waf-error {
     padding: 10px;
     color: #d9363e;
@@ -760,8 +719,16 @@ td.check {
         justify-content: flex-end;
         width: 100%;
     }
-    .waf-pager {
-        flex-wrap: wrap;
-    }
+}
+
+.waf-heading,
+.waf-title,
+.waf-toolbar,
+.waf-filters,
+.waf-actions,
+.row-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 </style>

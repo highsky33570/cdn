@@ -183,7 +183,6 @@ onUnmounted(() => {
             <span id="key-status-label" class="key-label">密钥状态</span>
             <div class="key-value">
                 <Switch
-                    class="h-[26px] w-[54px] [&_[data-slot=switch-thumb]]:size-[22px] [&_[data-slot=switch-thumb][data-state=checked]]:translate-x-7"
                     aria-labelledby="key-status-label"
                     :checked="enabled"
                     :disabled="busy || !loaded || dirty"
@@ -265,8 +264,8 @@ onUnmounted(() => {
     min-width: 0;
     margin: 16px;
     padding: 0 14px 38px;
-    background: #fff;
-    color: #526078;
+    background: var(--card);
+    color: var(--foreground);
     font-size: 14px;
 }
 .key-row {
@@ -292,7 +291,7 @@ onUnmounted(() => {
 }
 .copy-key {
     flex-shrink: 0;
-    color: #308cff;
+    color: var(--primary);
     cursor: pointer;
     padding: 4px;
 }
@@ -301,7 +300,7 @@ onUnmounted(() => {
     cursor: wait;
 }
 .copy-key:focus-visible {
-    outline: 2px solid #308cff;
+    outline: 2px solid var(--primary);
     outline-offset: 3px;
 }
 .whitelist-control {
@@ -314,20 +313,20 @@ onUnmounted(() => {
     min-width: 0;
     width: 100%;
     height: 40px;
-    border: 1px solid #dcdfe6;
+    border: 1px solid var(--input);
     border-radius: 4px;
     padding: 0 10px;
     background: transparent;
     outline: none;
 }
 .whitelist-control input:focus {
-    border-color: #308cff;
+    border-color: var(--primary);
 }
 .whitelist-control input::placeholder {
-    color: #bfc5ce;
+    color: var(--muted-foreground);
 }
 .whitelist-control input:disabled {
-    background: #f7f7f9;
+    background: var(--muted);
     opacity: 0.7;
 }
 .key-actions {
@@ -338,8 +337,8 @@ onUnmounted(() => {
 .user-api-key :deep(.save-ip) {
     height: 40px;
     padding: 0 20px;
-    background: #308cf0;
-    color: white;
+    background: var(--primary);
+    color: var(--primary-foreground);
     border-radius: 4px;
     font-size: 14px;
     font-weight: 400;
@@ -347,16 +346,6 @@ onUnmounted(() => {
 }
 .key-error {
     margin-top: 14px;
-}
-:global(.dark) .user-api-key {
-    background: #18181b;
-    color: #cbd5e1;
-}
-:global(.dark) .whitelist-control input {
-    border-color: #3f3f46;
-}
-:global(.dark) .whitelist-control input:disabled {
-    background: #27272a;
 }
 @media (max-width: 640px) {
     .user-api-key {

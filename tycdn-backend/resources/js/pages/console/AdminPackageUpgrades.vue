@@ -815,7 +815,10 @@ async function assign() {
                         </div>
                         <div class="upgrade-field">
                             <Label for="upgrade-price">价格</Label>
-                            <div class="flex min-w-0 items-center">
+                            <div
+                                data-slot="console-input-group"
+                                class="flex min-w-0 items-center"
+                            >
                                 <Input
                                     id="upgrade-price"
                                     v-model="form.price"

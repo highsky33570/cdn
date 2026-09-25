@@ -336,6 +336,7 @@ function cellClass(cell: Cell): string {
     <DropdownMenu v-model:open="open">
         <DropdownMenuTrigger as-child>
             <button
+                data-slot="date-range-picker"
                 type="button"
                 :class="[
                     'inline-flex h-8 items-center gap-2 rounded-md border px-3 text-xs transition-colors',

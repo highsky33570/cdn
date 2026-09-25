@@ -256,7 +256,11 @@ function batch(event: Event) {
             {{ option.label }}
         </SelectOption>
     </SelectField>
-    <div v-else class="flex min-w-0 items-center">
+    <div
+        data-slot="console-input-group"
+        v-else
+        class="flex min-w-0 items-center"
+    >
         <Input
             :id="id"
             :aria-label="field.label"

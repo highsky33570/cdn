@@ -4,6 +4,7 @@ import { computed, onMounted, reactive, ref } from 'vue';
 import { toast } from 'vue-sonner';
 import ConfirmDeleteDialog from '@/components/console/ConfirmDeleteDialog.vue';
 import ConsoleDataTable from '@/components/console/ConsoleDataTable.vue';
+import ConsolePagination from '@/components/console/ConsolePagination.vue';
 import ConsoleTabs from '@/components/console/ConsoleTabs.vue';
 import { Button } from '@/components/ui/button';
 import {
@@ -500,38 +501,14 @@ onMounted(load);
                         ></template
                     >
                 </ConsoleDataTable>
-                <div
-                    v-if="total"
-                    class="mt-4 flex flex-wrap items-center justify-end gap-2 text-sm"
-                >
-                    <span>共 {{ total }} 条</span
-                    ><Button
-                        size="sm"
-                        variant="outline"
-                        aria-label="上一页"
-                        :disabled="page <= 1 || listLoading"
-                        @click="loadRows(page - 1)"
-                        >‹</Button
-                    ><span>{{ page }}</span
-                    ><Button
-                        size="sm"
-                        variant="outline"
-                        aria-label="下一页"
-                        :disabled="page * size >= total || listLoading"
-                        @click="loadRows(page + 1)"
-                        >›</Button
-                    ><SelectField
-                        v-model="size"
-                        aria-label="每页条数"
-                        class="h-8 rounded-md border border-input bg-background px-2"
-                        :disabled="listLoading"
-                        @change="loadRows(1)"
-                    >
-                        <SelectOption :value="10">10 条/页</SelectOption>
-                        <SelectOption :value="30">30 条/页</SelectOption>
-                        <SelectOption :value="100">100 条/页</SelectOption>
-                    </SelectField>
-                </div>
+                <ConsolePagination
+                    :total="total"
+                    :page="page"
+                    :previous-disabled="page <= 1 || listLoading"
+                    :next-disabled="page * size >= total || listLoading"
+                    @previous="loadRows(page - 1)"
+                    @next="loadRows(page + 1)"
+                />
             </section>
         </div>
         <Dialog

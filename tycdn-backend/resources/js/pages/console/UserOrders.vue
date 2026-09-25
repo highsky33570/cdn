@@ -221,7 +221,12 @@ function pay() {
                 placeholder="请选择时间范围"
                 trigger-class="order-date"
             />
-            <button v-if="hasFilters" class="text-link" @click="clear">
+            <button
+                data-slot="console-link"
+                v-if="hasFilters"
+                class="text-link"
+                @click="clear"
+            >
                 清除
             </button>
         </div>
@@ -297,6 +302,7 @@ function pay() {
                         <td>{{ actual(order) }}</td>
                         <td>
                             <button
+                                data-slot="console-link"
                                 class="text-link truncate-cell"
                                 :aria-label="`查看订单 ${order.order_no}`"
                                 :title="more(order)"
@@ -420,8 +426,8 @@ function pay() {
     min-width: 0;
     margin: 16px;
     padding: 16px 14px 20px;
-    color: #526078;
-    background: #fff;
+    color: var(--foreground);
+    background: var(--card);
     font-size: 14px;
 }
 .order-filters {
@@ -434,7 +440,7 @@ function pay() {
 .order-filters :deep([data-slot='select-trigger']) {
     width: 188px;
     height: 40px;
-    border: 1px solid #dcdfe6;
+    border: 1px solid var(--input);
     border-radius: 4px;
     padding: 0 10px;
     background: transparent;
@@ -444,22 +450,22 @@ function pay() {
     justify-content: space-between;
     min-width: 188px;
     height: 40px;
-    border-color: #dcdfe6;
+    border-color: var(--input);
     border-radius: 4px;
     font-size: 14px;
     background: transparent;
     box-shadow: none;
 }
 .text-link {
-    color: #308cff;
+    color: var(--primary);
     cursor: pointer;
 }
 .text-link:hover {
-    color: #66b1ff;
+    color: color-mix(in srgb, var(--primary) 75%, var(--foreground));
 }
 .order-scroll {
     overflow-x: auto;
-    border-bottom: 1px solid #dcdfe6;
+    border-bottom: 1px solid var(--input);
 }
 table {
     font-size: 14px;
@@ -470,7 +476,7 @@ table {
 }
 th {
     height: 48px;
-    background: #f7f7f9;
+    background: var(--muted);
     font-weight: 600;
     text-align: left;
 }
@@ -478,14 +484,14 @@ th,
 td {
     font-size: 14px;
     padding: 0 22px;
-    border-bottom: 1px solid #e6e8ed;
+    border-bottom: 1px solid var(--border);
 }
 td {
     height: 60px;
     white-space: nowrap;
 }
 tbody tr:hover {
-    background: #fafcff;
+    background: var(--accent);
 }
 .truncate-cell {
     display: block;
@@ -503,10 +509,10 @@ tbody tr:hover {
     height: 15px;
     border-radius: 50%;
     background: #12bf74;
-    color: white;
+    color: var(--primary-foreground);
 }
 .unpaid-icon {
-    color: #909399;
+    color: var(--muted-foreground);
 }
 .empty {
     padding: 0;
@@ -518,42 +524,13 @@ tbody tr:hover {
     left: 0;
     width: min(100%, calc(100vw - 340px));
 }
-.order-pagination {
-    font-size: 14px;
-    justify-content: flex-start;
-    margin-top: 26px;
-    gap: 6px;
-}
-.order-pagination :deep(button),
-.order-pagination :deep([data-slot='select-trigger']) {
-    height: 40px;
-    min-width: 40px;
-    border: 1px solid #dcdfe6;
-    border-radius: 4px;
-    background: transparent;
-    color: inherit;
-    font-weight: 400;
-    box-shadow: none;
-}
-.order-pagination :deep([aria-current='page']) {
-    color: #308cff;
-    border-color: #308cff;
-}
-.order-pagination :deep([data-slot='select-trigger']) {
-    margin-left: 14px;
-}
-.order-pagination :deep(button),
-.order-pagination :deep([data-slot='select-trigger']),
-.order-pagination :deep(span) {
-    font-size: 14px;
-}
 .order-error {
     display: flex;
     align-items: center;
     gap: 12px;
     padding: 12px;
     margin-bottom: 12px;
-    color: #d14343;
+    color: var(--destructive);
 }
 .order-detail {
     display: grid;
@@ -562,28 +539,11 @@ tbody tr:hover {
     font-size: 14px;
 }
 .order-detail dt {
-    color: #909399;
+    color: var(--muted-foreground);
 }
 .order-detail dd {
     overflow-wrap: anywhere;
     min-width: 0;
-}
-:global(.dark) .user-orders {
-    background: #18181b;
-    color: #cbd5e1;
-}
-:global(.dark) th,
-:global(.dark) tbody tr:hover {
-    background: #27272a;
-}
-:global(.dark) .order-scroll,
-:global(.dark) th,
-:global(.dark) td,
-:global(.dark) .order-filters :deep([data-slot='select-trigger']) {
-    border-color: #3f3f46;
-}
-:global(.dark) .order-filters :deep([data-slot='select-trigger']) option {
-    background: #18181b;
 }
 @media (max-width: 640px) {
     .user-orders {

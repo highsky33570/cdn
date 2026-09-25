@@ -88,7 +88,7 @@ function input(event: Event, number = false) {
                 {{ option.label }}
             </SelectOption>
         </SelectField>
-        <div v-else class="fw-input">
+        <div data-slot="console-input-group" v-else class="fw-input">
             <Input
                 :aria-label="label"
                 :type="

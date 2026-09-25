@@ -1,16 +1,10 @@
 <script setup lang="ts">
 import { usePage } from '@inertiajs/vue3';
-import {
-    Check,
-    ChevronLeft,
-    ChevronRight,
-    Plus,
-    Search,
-    Trash2,
-} from 'lucide-vue-next';
+import { Check, Plus, Search, Trash2 } from 'lucide-vue-next';
 import { computed, onMounted, reactive, ref } from 'vue';
 import { toast } from 'vue-sonner';
 import ConfirmDeleteDialog from '@/components/console/ConfirmDeleteDialog.vue';
+import ConsolePagination from '@/components/console/ConsolePagination.vue';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -65,19 +59,7 @@ const nodeId = ref(
 const lastPage = computed(() =>
     Math.max(1, Math.ceil(total.value / size.value)),
 );
-const pages = computed(() =>
-    [
-        ...new Set([
-            1,
-            page.value - 1,
-            page.value,
-            page.value + 1,
-            lastPage.value,
-        ]),
-    ]
-        .filter((p) => p > 0 && p <= lastPage.value)
-        .sort((a, b) => a - b),
-);
+
 const allSelected = computed(
     () =>
         rows.value.length > 0 &&
@@ -593,57 +575,15 @@ const resolving = ref<CdnflyRecord | null>(null);
                     </tbody>
                 </table>
             </div>
-            <div
-                class="mt-4 flex flex-wrap items-center gap-2 text-sm text-muted-foreground"
+            <ConsolePagination
                 aria-label="分组分页"
-            >
-                <span>共 {{ total }} 条</span
-                ><Button
-                    variant="outline"
-                    size="icon-sm"
-                    aria-label="上一页"
-                    :disabled="page <= 1 || loading"
-                    @click="load(page - 1)"
-                    ><ChevronLeft
-                /></Button>
-                <Button
-                    v-for="p in pages"
-                    :key="p"
-                    variant="outline"
-                    size="icon-sm"
-                    :aria-label="`第 ${p} 页`"
-                    :aria-current="p === page ? 'page' : undefined"
-                    :class="p === page ? 'border-primary text-primary' : ''"
-                    :disabled="loading"
-                    @click="load(p)"
-                    >{{ p }}</Button
-                >
-                <Button
-                    variant="outline"
-                    size="icon-sm"
-                    aria-label="下一页"
-                    :disabled="page >= lastPage || loading"
-                    @click="load(page + 1)"
-                    ><ChevronRight
-                /></Button>
-                <SelectField
-                    v-model.number="size"
-                    aria-label="每页条数"
-                    class="ml-2 h-8 rounded border bg-background px-2"
-                    @change="
-                        selected = [];
-                        load(1);
-                    "
-                >
-                    <SelectOption
-                        v-for="n in [10, 20, 50, 100]"
-                        :key="n"
-                        :value="n"
-                    >
-                        {{ n }} 条/页
-                    </SelectOption>
-                </SelectField>
-            </div>
+                :total="total"
+                :page="page"
+                :previous-disabled="page <= 1 || loading"
+                :next-disabled="page >= lastPage || loading"
+                @previous="load(page - 1)"
+                @next="load(page + 1)"
+            />
         </section>
 
         <Dialog
@@ -821,6 +761,7 @@ const resolving = ref<CdnflyRecord | null>(null);
                                 class="switch-options"
                             >
                                 <button
+                                    data-slot="console-segment"
                                     type="button"
                                     :aria-pressed="
                                         form.backup_switch_type ===
@@ -833,6 +774,7 @@ const resolving = ref<CdnflyRecord | null>(null);
                                     有主IP下线时
                                 </button>
                                 <button
+                                    data-slot="console-segment"
                                     type="button"
                                     :aria-pressed="
                                         form.backup_switch_type ===
@@ -845,6 +787,7 @@ const resolving = ref<CdnflyRecord | null>(null);
                                     在线IP数少于备用IP数时
                                 </button>
                                 <button
+                                    data-slot="console-segment"
                                     type="button"
                                     :aria-pressed="
                                         form.backup_switch_type === 'interval'

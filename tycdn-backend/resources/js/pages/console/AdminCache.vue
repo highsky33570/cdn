@@ -1,13 +1,8 @@
 <script setup lang="ts">
-import {
-    ChevronLeft,
-    ChevronRight,
-    Copy,
-    RefreshCw,
-    Search,
-} from 'lucide-vue-next';
+import { Copy, RefreshCw, Search } from 'lucide-vue-next';
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { toast } from 'vue-sonner';
+import ConsolePagination from '@/components/console/ConsolePagination.vue';
 import CheckboxField from '@/components/ui/checkbox/CheckboxField.vue';
 import {
     Dialog,
@@ -424,6 +419,7 @@ function showDetail(row: CdnflyRecord, kind: 'reason' | 'progress') {
                             >
                             <div>
                                 <button
+                                    data-slot="console-action"
                                     type="button"
                                     :disabled="!input || submitting"
                                     @click="
@@ -434,6 +430,7 @@ function showDetail(row: CdnflyRecord, kind: 'reason' | 'progress') {
                                 >
                                     清空</button
                                 ><button
+                                    data-slot="console-action"
                                     class="primary"
                                     :disabled="submitDisabled"
                                 >
@@ -484,7 +481,11 @@ function showDetail(row: CdnflyRecord, kind: 'reason' | 'progress') {
                         </div>
                         <p v-if="quotaError" role="alert" class="error-text">
                             {{ quotaError }}
-                            <button class="link" @click="loadQuota">
+                            <button
+                                data-slot="console-link"
+                                class="link"
+                                @click="loadQuota"
+                            >
                                 重试
                             </button>
                         </p>
@@ -516,6 +517,7 @@ function showDetail(row: CdnflyRecord, kind: 'reason' | 'progress') {
             >
                 <div class="history-toolbar">
                     <button
+                        data-slot="console-action"
                         :class="{ primary: selected.length > 0 }"
                         :disabled="!selected.length || submitting || loading"
                         @click="resubmit()"
@@ -540,13 +542,14 @@ function showDetail(row: CdnflyRecord, kind: 'reason' | 'progress') {
                                 {{ item.label }}
                             </SelectOption>
                         </SelectField>
-                        <div class="keyword">
+                        <div data-slot="console-input-group" class="keyword">
                             <Input
                                 v-model="keyword"
                                 aria-label="搜索 URL 或域名"
                                 placeholder="搜索 URL 或域名"
                                 :disabled="submitting"
                             /><button
+                                data-slot="console-action"
                                 type="submit"
                                 aria-label="搜索"
                                 :disabled="submitting"
@@ -555,6 +558,7 @@ function showDetail(row: CdnflyRecord, kind: 'reason' | 'progress') {
                             </button>
                         </div>
                         <button
+                            data-slot="console-link"
                             type="button"
                             class="link"
                             :disabled="submitting"
@@ -567,6 +571,7 @@ function showDetail(row: CdnflyRecord, kind: 'reason' | 'progress') {
                 <p v-if="listError" role="alert" class="error-text list-error">
                     {{ listError }}
                     <button
+                        data-slot="console-link"
                         class="link"
                         :disabled="submitting"
                         @click="loadJobs()"
@@ -675,6 +680,7 @@ function showDetail(row: CdnflyRecord, kind: 'reason' | 'progress') {
                                             cacheJobUrl(row) || '未记录 URL'
                                         }}</span
                                         ><button
+                                            data-slot="console-link"
                                             v-if="cacheJobUrl(row)"
                                             class="link copy"
                                             :aria-label="`复制 URL ${row.id}`"
@@ -702,6 +708,7 @@ function showDetail(row: CdnflyRecord, kind: 'reason' | 'progress') {
                                 <td>
                                     <div class="row-actions">
                                         <button
+                                            data-slot="console-link"
                                             v-if="
                                                 cacheJobStatus(row).group ===
                                                 'process'
@@ -712,12 +719,14 @@ function showDetail(row: CdnflyRecord, kind: 'reason' | 'progress') {
                                             查看进度</button
                                         ><template v-else
                                             ><button
+                                                data-slot="console-link"
                                                 class="link"
                                                 :disabled="submitting"
                                                 @click="resubmit([row])"
                                             >
                                                 重新提交</button
                                             ><button
+                                                data-slot="console-link"
                                                 v-if="
                                                     cacheJobStatus(row)
                                                         .group === 'failed'
@@ -736,39 +745,16 @@ function showDetail(row: CdnflyRecord, kind: 'reason' | 'progress') {
                         </tbody>
                     </table>
                 </div>
-                <footer class="pagination">
-                    <span>共 {{ total }} 条</span
-                    ><button
-                        aria-label="上一页"
-                        :disabled="loading || submitting || page <= 1"
-                        @click="loadJobs(page - 1)"
-                    >
-                        <ChevronLeft /></button
-                    ><button class="current" aria-current="page">
-                        {{ page }}</button
-                    ><button
-                        aria-label="下一页"
-                        :disabled="
-                            loading || submitting || page * pageSize >= total
-                        "
-                        @click="loadJobs(page + 1)"
-                    >
-                        <ChevronRight /></button
-                    ><SelectField
-                        v-model="pageSize"
-                        aria-label="每页条数"
-                        :disabled="submitting"
-                        @change="loadJobs(1)"
-                    >
-                        <SelectOption
-                            v-for="size in [10, 30, 100, 300]"
-                            :key="size"
-                            :value="size"
-                        >
-                            {{ size }} 条/页
-                        </SelectOption>
-                    </SelectField>
-                </footer>
+                <ConsolePagination
+                    :total="total"
+                    :page="page"
+                    :previous-disabled="loading || submitting || page <= 1"
+                    :next-disabled="
+                        loading || submitting || page * pageSize >= total
+                    "
+                    @previous="loadJobs(page - 1)"
+                    @next="loadJobs(page + 1)"
+                />
             </div>
             <Dialog
                 :open="!!detail"
@@ -791,12 +777,17 @@ function showDetail(row: CdnflyRecord, kind: 'reason' | 'progress') {
                     <pre class="detail-text">{{ detailText }}</pre>
                     <DialogFooter
                         ><button
+                            data-slot="console-action"
                             v-if="detailKind === 'progress'"
                             :disabled="loading"
                             @click="loadJobs()"
                         >
                             刷新</button
-                        ><button class="primary" @click="detail = null">
+                        ><button
+                            data-slot="console-action"
+                            class="primary"
+                            @click="detail = null"
+                        >
                             关闭
                         </button></DialogFooter
                     ></DialogScrollContent
@@ -1210,22 +1201,6 @@ th.selection {
     color: #8a61d7;
     background: #8a61d70a;
 }
-.pagination {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    gap: 5px;
-    margin-top: 14px;
-    font-size: 12px;
-}
-.pagination button {
-    padding: 4px 7px;
-}
-.pagination :deep([data-slot='select-trigger']) {
-    height: 28px;
-    margin-left: 8px;
-    padding: 4px 7px;
-}
 .current {
     color: #2d8cf0;
     border-color: #2d8cf0;
@@ -1276,9 +1251,6 @@ th.selection {
         flex-wrap: wrap;
     }
     .history-summary > div {
-        flex-wrap: wrap;
-    }
-    .pagination {
         flex-wrap: wrap;
     }
 }

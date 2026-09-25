@@ -1,13 +1,6 @@
 <script setup lang="ts">
 import { Link, usePage } from '@inertiajs/vue3';
-import {
-    CalendarDays,
-    ChevronLeft,
-    ChevronRight,
-    Download,
-    RefreshCw,
-    Unlock,
-} from 'lucide-vue-next';
+import { CalendarDays, Download, RefreshCw, Unlock } from 'lucide-vue-next';
 import {
     PopoverRoot,
     PopoverTrigger,
@@ -16,6 +9,7 @@ import {
 } from 'reka-ui';
 import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue';
 import { toast } from 'vue-sonner';
+import ConsolePagination from '@/components/console/ConsolePagination.vue';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import DatePicker from '@/components/ui/date-picker/DatePicker.vue';
@@ -29,8 +23,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import SelectField from '@/components/ui/select/SelectField.vue';
-import SelectOption from '@/components/ui/select/SelectOption.vue';
+
 import { Spinner } from '@/components/ui/spinner';
 import { apiRequest } from '@/lib/apiRequest';
 import {
@@ -113,14 +106,7 @@ const allSelected = computed(
 const lastPage = computed(() =>
     Math.max(1, Math.ceil(total.value / pageSize.value)),
 );
-const pageButtons = computed(() => {
-    const first = Math.max(1, Math.min(page.value - 2, lastPage.value - 4));
 
-    return Array.from(
-        { length: Math.min(5, lastPage.value) },
-        (_, i) => first + i,
-    );
-});
 const colSpan = computed(() =>
     active.value === 'current' ? 9 : active.value === 'stats' ? 3 : 7,
 );
@@ -829,59 +815,15 @@ function presetRange(days: number): void {
                         </tbody>
                     </table>
                 </div>
-                <nav
-                    class="mt-4 flex flex-wrap items-center justify-end gap-2 text-sm text-muted-foreground"
+                <ConsolePagination
                     aria-label="拉黑日志分页"
-                >
-                    <span class="mr-1" aria-live="polite"
-                        >共 {{ total }} 条</span
-                    >
-                    <Button
-                        size="icon"
-                        variant="outline"
-                        aria-label="上一页"
-                        :disabled="loading || page <= 1"
-                        @click="changePage(page - 1)"
-                        ><ChevronLeft class="size-4"
-                    /></Button>
-                    <Button
-                        v-for="number in pageButtons"
-                        :key="number"
-                        size="icon"
-                        variant="outline"
-                        :aria-label="`第 ${number} 页`"
-                        :aria-current="page === number ? 'page' : undefined"
-                        :disabled="loading"
-                        :class="{
-                            'border-primary text-primary': page === number,
-                        }"
-                        @click="changePage(number)"
-                        >{{ number }}</Button
-                    >
-                    <Button
-                        size="icon"
-                        variant="outline"
-                        aria-label="下一页"
-                        :disabled="loading || page >= lastPage"
-                        @click="changePage(page + 1)"
-                        ><ChevronRight class="size-4"
-                    /></Button>
-                    <SelectField
-                        v-model.number="pageSize"
-                        aria-label="每页条数"
-                        class="h-8 rounded-md border border-input bg-background px-2 text-foreground"
-                        :disabled="loading"
-                        @change="load(1)"
-                    >
-                        <SelectOption
-                            v-for="size in [10, 30, 100, 300]"
-                            :key="size"
-                            :value="size"
-                        >
-                            {{ size }} 条/页
-                        </SelectOption>
-                    </SelectField>
-                </nav>
+                    :total="total"
+                    :page="page"
+                    :previous-disabled="loading || page <= 1"
+                    :next-disabled="loading || page >= lastPage"
+                    @previous="changePage(page - 1)"
+                    @next="changePage(page + 1)"
+                />
             </div>
         </section>
         <Dialog v-model:open="siteDialog"

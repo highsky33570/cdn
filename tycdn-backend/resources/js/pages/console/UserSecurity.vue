@@ -11,6 +11,7 @@ import {
 import { computed, onMounted, reactive, ref } from 'vue';
 import { toast } from 'vue-sonner';
 import ConsolePageHeader from '@/components/console/ConsolePageHeader.vue';
+import ConsolePagination from '@/components/console/ConsolePagination.vue';
 import UserAclWorkspace from '@/components/console/UserAclWorkspace.vue';
 import UserCcWorkspace from '@/components/console/UserCcWorkspace.vue';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -953,6 +954,7 @@ function omitEnable<TPayload extends { enable?: unknown }>(
                 <!-- 筛选栏 -->
                 <div class="flex flex-wrap items-center gap-2">
                     <div
+                        data-slot="console-input-group"
                         class="flex h-9 items-center gap-1.5 rounded-md border px-3"
                     >
                         <span
@@ -967,6 +969,7 @@ function omitEnable<TPayload extends { enable?: unknown }>(
                         />
                     </div>
                     <div
+                        data-slot="console-input-group"
                         class="flex h-9 items-center gap-1.5 rounded-md border px-3"
                     >
                         <span
@@ -1152,34 +1155,20 @@ function omitEnable<TPayload extends { enable?: unknown }>(
                 </Card>
 
                 <!-- 分页 -->
-                <div
-                    class="flex items-center justify-between text-sm text-muted-foreground"
-                >
-                    <span>共 {{ historyBlackIpTotal }} 条</span>
-                    <div class="flex items-center gap-2">
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            :disabled="
-                                historyBlackIpPage <= 1 || historyBlackIpLoading
-                            "
-                            @click="loadHistoryBlackIps(historyBlackIpPage - 1)"
-                            >上一页</Button
-                        >
-                        <span>第 {{ historyBlackIpPage }} 页</span>
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            :disabled="
-                                historyBlackIpPage *
-                                    Number(historyBlackIpFilters.per_page) >=
-                                    historyBlackIpTotal || historyBlackIpLoading
-                            "
-                            @click="loadHistoryBlackIps(historyBlackIpPage + 1)"
-                            >下一页</Button
-                        >
-                    </div>
-                </div>
+                <ConsolePagination
+                    :total="historyBlackIpTotal"
+                    :page="historyBlackIpPage"
+                    :previous-disabled="
+                        historyBlackIpPage <= 1 || historyBlackIpLoading
+                    "
+                    :next-disabled="
+                        historyBlackIpPage *
+                            Number(historyBlackIpFilters.per_page) >=
+                            historyBlackIpTotal || historyBlackIpLoading
+                    "
+                    @previous="loadHistoryBlackIps(historyBlackIpPage - 1)"
+                    @next="loadHistoryBlackIps(historyBlackIpPage + 1)"
+                />
             </template>
 
             <!-- ── 拉黑统计 ── -->
@@ -1285,6 +1274,7 @@ function omitEnable<TPayload extends { enable?: unknown }>(
                 <!-- 筛选栏 -->
                 <div class="flex flex-wrap items-center gap-2">
                     <div
+                        data-slot="console-input-group"
                         class="flex h-9 items-center gap-1.5 rounded-md border px-3"
                     >
                         <span class="text-xs text-muted-foreground"
@@ -1298,6 +1288,7 @@ function omitEnable<TPayload extends { enable?: unknown }>(
                         />
                     </div>
                     <div
+                        data-slot="console-input-group"
                         class="flex h-9 items-center gap-1.5 rounded-md border px-3"
                     >
                         <span class="text-xs text-muted-foreground"
@@ -1482,28 +1473,14 @@ function omitEnable<TPayload extends { enable?: unknown }>(
                         </div>
                     </CardContent>
                 </Card>
-                <div
-                    class="flex items-center justify-between text-sm text-muted-foreground"
-                >
-                    <span>共 {{ blackIpTotal }} 条</span>
-                    <div class="flex items-center gap-2">
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            :disabled="!hasBlackIpPreviousPage || loading"
-                            @click="prevBlackIpPage"
-                            >上一页</Button
-                        >
-                        <span>第 {{ blackIpPage }} 页</span>
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            :disabled="!hasBlackIpNextPage || loading"
-                            @click="nextBlackIpPage"
-                            >下一页</Button
-                        >
-                    </div>
-                </div>
+                <ConsolePagination
+                    :total="blackIpTotal"
+                    :page="blackIpPage"
+                    :previous-disabled="!hasBlackIpPreviousPage || loading"
+                    :next-disabled="!hasBlackIpNextPage || loading"
+                    @previous="prevBlackIpPage"
+                    @next="nextBlackIpPage"
+                />
             </template>
         </div>
 

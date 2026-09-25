@@ -1771,7 +1771,11 @@ async function exportSites() {
                             >
                         </DropdownMenuContent></DropdownMenu
                     >
-                    <form class="quick-search" @submit.prevent="loadSites(1)">
+                    <form
+                        data-slot="console-input-group"
+                        class="quick-search"
+                        @submit.prevent="loadSites(1)"
+                    >
                         <SelectField v-model="quickField" aria-label="搜索类型">
                             <SelectOption value="domain">域名</SelectOption>
                             <SelectOption value="id">ID</SelectOption>
@@ -1890,13 +1894,15 @@ async function exportSites() {
                         <SelectOption value="process">任务同步中</SelectOption>
                         <SelectOption value="failed">任务同步失败</SelectOption>
                     </SelectField>
-                    <label class="input-group"
-                        >域名<Input
+                    <label data-slot="console-input-group" class="input-group"
+                        ><span>域名</span
+                        ><Input
                             v-model="resolveFilters.domain"
                             placeholder="请输入域名"
                             @change="loadResolve(1)" /></label
-                    ><label class="input-group"
-                        >网站ID<Input
+                    ><label data-slot="console-input-group" class="input-group"
+                        ><span>网站ID</span
+                        ><Input
                             v-model="resolveFilters.site_id"
                             placeholder="请输入网站ID"
                             @change="loadResolve(1)"
@@ -2849,22 +2855,6 @@ async function exportSites() {
 .empty-cell {
     text-align: center;
     color: var(--muted-foreground);
-}
-.sites-pagination {
-    justify-content: flex-start;
-    margin-top: 26px;
-    font-size: 16px;
-}
-.sites-pagination :deep(button),
-.sites-pagination :deep([data-slot='select-trigger']) {
-    height: 40px;
-    min-width: 40px;
-    font-size: 16px;
-}
-.sites-pagination :deep(button[aria-current='page']) {
-    background: var(--card);
-    color: var(--primary);
-    border: 1px solid var(--primary);
 }
 @media (max-width: 640px) {
     .sites-workspace {

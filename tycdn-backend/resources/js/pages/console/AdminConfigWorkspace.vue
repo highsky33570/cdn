@@ -335,6 +335,7 @@ onMounted(() => {
                     class="overflow-hidden rounded-lg border"
                 >
                     <button
+                        data-slot="console-action"
                         type="button"
                         class="flex w-full items-center justify-between gap-3 bg-muted/30 px-4 py-3 text-left"
                         :aria-expanded="!!expanded[key(row)]"

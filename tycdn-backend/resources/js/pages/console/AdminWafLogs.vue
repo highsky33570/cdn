@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { usePage } from '@inertiajs/vue3';
-import { ChevronLeft, ChevronRight } from 'lucide-vue-next';
+
 import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue';
 import { toast } from 'vue-sonner';
+import ConsolePagination from '@/components/console/ConsolePagination.vue';
 import WafRankingTable from '@/components/console/WafRankingTable.vue';
 import WafTrendChart from '@/components/console/WafTrendChart.vue';
 import { Button } from '@/components/ui/button';
@@ -89,21 +90,6 @@ const pie = computed(() => {
 });
 const lastPage = computed(() =>
     Math.max(1, Math.ceil(total.value / size.value)),
-);
-const pages = computed(() =>
-    [
-        ...new Set([
-            1,
-            2,
-            3,
-            page.value - 1,
-            page.value,
-            page.value + 1,
-            lastPage.value,
-        ]),
-    ]
-        .filter((p) => p > 0 && p <= lastPage.value)
-        .sort((a, b) => a - b),
 );
 
 async function load(target = page.value): Promise<void> {
@@ -441,6 +427,7 @@ onUnmounted(() => {
                             </SelectOption>
                         </SelectField>
                         <div
+                            data-slot="console-input-group"
                             v-else-if="field.key === 'request_uri'"
                             class="flex min-w-0"
                         >
@@ -723,64 +710,15 @@ onUnmounted(() => {
                             </tbody>
                         </table>
                     </div>
-                    <nav
-                        class="mt-4 flex flex-wrap items-center justify-end gap-2 text-sm text-muted-foreground"
+                    <ConsolePagination
                         aria-label="WAF日志分页"
-                    >
-                        <span aria-live="polite">共 {{ total }} 条</span
-                        ><Button
-                            variant="outline"
-                            size="icon"
-                            aria-label="上一页"
-                            :disabled="loading || page <= 1"
-                            @click="load(page - 1)"
-                            ><ChevronLeft class="size-4" /></Button
-                        ><template
-                            v-for="(number, index) in pages"
-                            :key="number"
-                            ><span
-                                v-if="
-                                    index > 0 && number - pages[index - 1] > 1
-                                "
-                                >…</span
-                            ><Button
-                                variant="outline"
-                                size="icon"
-                                :aria-label="`第 ${number} 页`"
-                                :aria-current="
-                                    page === number ? 'page' : undefined
-                                "
-                                :class="{
-                                    'border-primary text-primary':
-                                        page === number,
-                                }"
-                                :disabled="loading"
-                                @click="load(number)"
-                                >{{ number }}</Button
-                            ></template
-                        ><Button
-                            variant="outline"
-                            size="icon"
-                            aria-label="下一页"
-                            :disabled="loading || page >= lastPage"
-                            @click="load(page + 1)"
-                            ><ChevronRight class="size-4" /></Button
-                        ><SelectField
-                            v-model.number="size"
-                            aria-label="每页条数"
-                            class="h-8 rounded-md border bg-background px-2"
-                            :disabled="loading"
-                            @change="load(1)"
-                        >
-                            <SelectOption
-                                v-for="n in [10, 30, 100]"
-                                :key="n"
-                                :value="n"
-                            >
-                                {{ n }} 条/页
-                            </SelectOption>
-                        </SelectField>
-                    </nav>
+                        :total="total"
+                        :page="page"
+                        :previous-disabled="loading || page <= 1"
+                        :next-disabled="loading || page >= lastPage"
+                        @previous="load(page - 1)"
+                        @next="load(page + 1)"
+                    />
                 </template>
             </div>
         </section>

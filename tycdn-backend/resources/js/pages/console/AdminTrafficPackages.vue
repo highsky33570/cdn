@@ -876,7 +876,10 @@ async function assign() {
                         <template v-if="!editingSold">
                             <div class="traffic-field">
                                 <Label for="traffic-days">有效期</Label>
-                                <div class="flex">
+                                <div
+                                    data-slot="console-input-group"
+                                    class="flex"
+                                >
                                     <Input
                                         id="traffic-days"
                                         v-model="form.valid_days"
@@ -890,7 +893,10 @@ async function assign() {
                             </div>
                             <div class="traffic-field">
                                 <Label for="traffic-price">价格</Label>
-                                <div class="flex">
+                                <div
+                                    data-slot="console-input-group"
+                                    class="flex"
+                                >
                                     <Input
                                         id="traffic-price"
                                         v-model="form.price"

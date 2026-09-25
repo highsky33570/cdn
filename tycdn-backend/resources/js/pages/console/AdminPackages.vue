@@ -2936,7 +2936,10 @@ onMounted(() => {
                                     <Label :for="`package-${field.key}`">{{
                                         field.label
                                     }}</Label>
-                                    <div class="flex">
+                                    <div
+                                        data-slot="console-input-group"
+                                        class="flex"
+                                    >
                                         <Input
                                             :id="`package-${field.key}`"
                                             v-model="form[field.key]"

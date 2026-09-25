@@ -341,6 +341,7 @@ onMounted(async () => {
                     <span>指标</span>
                     <div class="segments" role="group" aria-label="指标">
                         <button
+                            data-slot="console-segment"
                             v-for="item in metrics"
                             :key="item.key"
                             :aria-pressed="metric === item.key"
@@ -370,6 +371,7 @@ onMounted(async () => {
                     <span>时间</span>
                     <div class="segments" role="group" aria-label="时间">
                         <button
+                            data-slot="console-segment"
                             v-for="[value, label] in periods"
                             :key="value"
                             :aria-pressed="current.period === value"

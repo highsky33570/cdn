@@ -54,7 +54,7 @@ const on = computed(() => String(props.value) === props.field.on);
                     {{ version }}
                 </Button>
             </div>
-            <div v-else class="ng-input">
+            <div data-slot="console-input-group" v-else class="ng-input">
                 <Input
                     :id="id"
                     :type="field.kind === 'number' ? 'number' : 'text'"

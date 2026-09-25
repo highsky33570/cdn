@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import {
     ChevronDown,
-    ChevronLeft,
-    ChevronRight,
     Filter,
     MoreHorizontal,
     Plus,
@@ -11,6 +9,7 @@ import {
 import { computed, onMounted, onUnmounted, reactive, ref } from 'vue';
 import { toast } from 'vue-sonner';
 import ConfirmDeleteDialog from '@/components/console/ConfirmDeleteDialog.vue';
+import ConsolePagination from '@/components/console/ConsolePagination.vue';
 import CheckboxField from '@/components/ui/checkbox/CheckboxField.vue';
 import {
     DropdownMenu,
@@ -79,12 +78,7 @@ const allSelected = computed(
 const pages = computed(() =>
     Math.max(1, Math.ceil(total.value / pageSize.value)),
 );
-const pageNumbers = computed(() =>
-    Array.from(
-        { length: Math.min(5, pages.value) },
-        (_, i) => Math.max(1, Math.min(page.value - 2, pages.value - 4)) + i,
-    ),
-);
+
 const selectedRows = computed(() =>
     rows.value.filter((row) => selected.value.includes(Number(row.id))),
 );
@@ -245,12 +239,14 @@ async function remove() {
         <div role="tabpanel" :aria-busy="loading">
             <div class="toolbar" :class="{ 'rule-toolbar': kind === 'rule' }">
                 <button
+                    data-slot="console-action"
                     class="primary"
                     :disabled="busy"
                     @click="emit('create', kind)"
                 >
                     <Plus />添加{{ label }}</button
                 ><button
+                    data-slot="console-action"
                     v-if="kind === 'rule'"
                     :disabled="loading || busy"
                     @click="load()"
@@ -259,6 +255,7 @@ async function remove() {
                 ><DropdownMenu
                     ><DropdownMenuTrigger as-child
                         ><button
+                            data-slot="console-action"
                             :class="{ 'ml-auto': kind === 'rule' }"
                             :disabled="busy"
                         >
@@ -317,7 +314,7 @@ async function remove() {
                     <SelectOption value="">所有状态</SelectOption>
                     <SelectOption value="1">正常</SelectOption>
                     <SelectOption value="0">禁用</SelectOption></SelectField
-                ><label class="input-group"
+                ><label data-slot="console-input-group" class="input-group"
                     ><span>{{ label }}名称</span
                     ><Input
                         v-model="filters.name"
@@ -329,7 +326,9 @@ async function remove() {
                         "
                         :disabled="busy"
                         @change="load(1)" /></label
-                ><label class="input-group id-input"
+                ><label
+                    data-slot="console-input-group"
+                    class="input-group id-input"
                     ><span>{{ label }}ID</span
                     ><Input
                         v-model="filters.id"
@@ -338,7 +337,10 @@ async function remove() {
                         :disabled="busy"
                         inputmode="numeric"
                         @change="load(1)" /></label
-                ><label v-if="kind === 'rule'" class="input-group id-input"
+                ><label
+                    data-slot="console-input-group"
+                    v-if="kind === 'rule'"
+                    class="input-group id-input"
                     ><span>用户ID</span
                     ><Input
                         v-model="filters.uid"
@@ -349,6 +351,7 @@ async function remove() {
                         @change="load(1)" /></label
                 ><template v-else
                     ><button
+                        data-slot="console-action"
                         type="button"
                         :aria-expanded="advanced"
                         @click="advanced = !advanced"
@@ -358,6 +361,7 @@ async function remove() {
                         >已筛选 <b>{{ activeFilters }}</b> 项</span
                     ></template
                 ><button
+                    data-slot="console-link"
                     v-if="kind === 'rule'"
                     type="button"
                     class="link ml-auto"
@@ -372,7 +376,7 @@ async function remove() {
                 class="advanced"
                 @submit.prevent="load(1)"
             >
-                <label class="input-group"
+                <label data-slot="console-input-group" class="input-group"
                     ><span>用户ID</span
                     ><Input
                         v-model="filters.uid"
@@ -380,8 +384,14 @@ async function remove() {
                         placeholder="请输入用户ID"
                         :disabled="busy"
                         inputmode="numeric" /></label
-                ><button class="primary" :disabled="busy">查询</button
                 ><button
+                    data-slot="console-action"
+                    class="primary"
+                    :disabled="busy"
+                >
+                    查询</button
+                ><button
+                    data-slot="console-link"
                     type="button"
                     class="link"
                     :disabled="busy"
@@ -392,7 +402,12 @@ async function remove() {
             </form>
             <p v-if="error" role="alert" class="error-message">
                 {{ error }}
-                <button class="link" :disabled="busy" @click="load()">
+                <button
+                    data-slot="console-link"
+                    class="link"
+                    :disabled="busy"
+                    @click="load()"
+                >
                     重试
                 </button>
             </p>
@@ -468,6 +483,7 @@ async function remove() {
                             <template v-if="kind === 'rule'"
                                 ><td class="rule-name">
                                     <button
+                                        data-slot="console-link"
                                         class="link"
                                         :disabled="busy"
                                         @click="emit('manage', kind, row)"
@@ -553,6 +569,7 @@ async function remove() {
                             <td>
                                 <div class="row-actions">
                                     <button
+                                        data-slot="console-link"
                                         class="link"
                                         :disabled="busy"
                                         @click="emit('manage', kind, row)"
@@ -561,6 +578,7 @@ async function remove() {
                                     ><DropdownMenu
                                         ><DropdownMenuTrigger as-child
                                             ><button
+                                                data-slot="console-link"
                                                 class="link row-more"
                                                 :aria-label="`更多操作 ${row.id}`"
                                                 :disabled="busy"
@@ -611,58 +629,14 @@ async function remove() {
                     </tbody>
                 </table>
             </div>
-            <footer class="pagination">
-                <span>共 {{ total }} 条</span
-                ><button
-                    aria-label="上一页"
-                    :disabled="loading || busy || page <= 1"
-                    @click="load(page - 1)"
-                >
-                    <ChevronLeft /></button
-                ><button
-                    v-if="pageNumbers[0] > 1"
-                    :disabled="loading || busy"
-                    @click="load(1)"
-                >
-                    1</button
-                ><span v-if="pageNumbers[0] > 2">…</span
-                ><button
-                    v-for="number in pageNumbers"
-                    :key="number"
-                    :class="{ current: page === number }"
-                    :aria-current="page === number ? 'page' : undefined"
-                    :disabled="loading || busy"
-                    @click="load(number)"
-                >
-                    {{ number }}</button
-                ><span v-if="pageNumbers.at(-1)! < pages - 1">…</span
-                ><button
-                    v-if="pageNumbers.at(-1)! < pages"
-                    :disabled="loading || busy"
-                    @click="load(pages)"
-                >
-                    {{ pages }}</button
-                ><button
-                    aria-label="下一页"
-                    :disabled="loading || busy || page >= pages"
-                    @click="load(page + 1)"
-                >
-                    <ChevronRight /></button
-                ><SelectField
-                    v-model="pageSize"
-                    aria-label="每页条数"
-                    :disabled="busy || loading"
-                    @change="load(1)"
-                >
-                    <SelectOption
-                        v-for="size in [10, 30, 100, 300]"
-                        :key="size"
-                        :value="size"
-                    >
-                        {{ size }} 条/页
-                    </SelectOption>
-                </SelectField>
-            </footer>
+            <ConsolePagination
+                :total="total"
+                :page="page"
+                :previous-disabled="loading || busy || page <= 1"
+                :next-disabled="loading || busy || page >= pages"
+                @previous="load(page - 1)"
+                @next="load(page + 1)"
+            />
         </div>
         <ConfirmDeleteDialog
             :open="deleteOpen"
@@ -961,25 +935,6 @@ th:nth-child(2) {
 }
 .matcher-table tr:last-child td {
     border-bottom: 0;
-}
-.pagination {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    margin-top: 16px;
-    flex-wrap: wrap;
-}
-.pagination button {
-    padding: 4px 7px;
-    min-width: 28px;
-}
-.pagination :deep([data-slot='select-trigger']) {
-    margin-left: 8px;
-    height: 28px;
-}
-.pagination .current {
-    border-color: #2d8cf0;
-    color: #2d8cf0;
 }
 .error-message {
     color: var(--destructive);

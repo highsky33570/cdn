@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { ChevronLeft, ChevronRight, Copy } from 'lucide-vue-next';
+import { Copy } from 'lucide-vue-next';
 import { onMounted, ref, computed, reactive } from 'vue';
 import { toast } from 'vue-sonner';
+import ConsolePagination from '@/components/console/ConsolePagination.vue';
 import MonitorChoices from '@/components/console/MonitorChoices.vue';
 import { Button } from '@/components/ui/button';
 import {
@@ -238,19 +239,7 @@ const logs = ref<CdnflyRecord[]>([]),
 const lastPage = computed(() =>
     Math.max(1, Math.ceil(total.value / size.value)),
 );
-const pages = computed(() =>
-    [
-        ...new Set([
-            1,
-            page.value - 1,
-            page.value,
-            page.value + 1,
-            lastPage.value,
-        ]),
-    ]
-        .filter((p) => p > 0 && p <= lastPage.value)
-        .sort((a, b) => a - b),
-);
+
 let logVersion = 0;
 async function loadLogs(target = page.value): Promise<void> {
     const version = ++logVersion;
@@ -479,7 +468,10 @@ onMounted(load);
                                     <Label :for="field.key">{{
                                         field.label
                                     }}</Label>
-                                    <div class="number-field">
+                                    <div
+                                        data-slot="console-input-group"
+                                        class="number-field"
+                                    >
                                         <Input
                                             :id="field.key"
                                             :model-value="
@@ -591,7 +583,10 @@ onMounted(load);
                                 <Label :for="field.key">{{
                                     field.label
                                 }}</Label>
-                                <div class="number-field">
+                                <div
+                                    data-slot="console-input-group"
+                                    class="number-field"
+                                >
                                     <Input
                                         :id="field.key"
                                         :model-value="
@@ -915,50 +910,14 @@ onMounted(load);
                         </tbody>
                     </table>
                 </div>
-                <div
-                    class="mt-4 flex flex-wrap items-center gap-2 text-sm text-muted-foreground"
-                >
-                    <span>共 {{ total }} 条</span
-                    ><Button
-                        variant="outline"
-                        size="icon-sm"
-                        aria-label="上一页"
-                        :disabled="logLoading || page <= 1"
-                        @click="loadLogs(page - 1)"
-                        ><ChevronLeft /></Button
-                    ><Button
-                        v-for="p in pages"
-                        :key="p"
-                        variant="outline"
-                        size="icon-sm"
-                        :aria-label="`第 ${p} 页`"
-                        :aria-current="page === p ? 'page' : undefined"
-                        :class="page === p ? 'border-primary text-primary' : ''"
-                        :disabled="logLoading"
-                        @click="loadLogs(p)"
-                        >{{ p }}</Button
-                    ><Button
-                        variant="outline"
-                        size="icon-sm"
-                        aria-label="下一页"
-                        :disabled="logLoading || page >= lastPage"
-                        @click="loadLogs(page + 1)"
-                        ><ChevronRight /></Button
-                    ><SelectField
-                        v-model.number="size"
-                        aria-label="每页条数"
-                        class="h-8 rounded border bg-background px-2"
-                        @change="loadLogs(1)"
-                    >
-                        <SelectOption
-                            v-for="n in [10, 20, 50, 100]"
-                            :key="n"
-                            :value="n"
-                        >
-                            {{ n }} 条/页
-                        </SelectOption>
-                    </SelectField>
-                </div>
+                <ConsolePagination
+                    :total="total"
+                    :page="page"
+                    :previous-disabled="logLoading || page <= 1"
+                    :next-disabled="logLoading || page >= lastPage"
+                    @previous="loadLogs(page - 1)"
+                    @next="loadLogs(page + 1)"
+                />
             </template>
         </section>
         <Dialog v-model:open="detailOpen"

@@ -271,6 +271,7 @@ async function loadDetail() {
                     ></Select
                 >
                 <label
+                    data-slot="console-input-group"
                     v-for="[key, label] in fields"
                     :key="key"
                     class="flex h-9 w-full min-w-0 items-center rounded-md border border-input bg-background sm:w-auto"

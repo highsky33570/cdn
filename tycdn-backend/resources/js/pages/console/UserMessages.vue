@@ -221,12 +221,12 @@ onUnmounted(() => {
     min-width: 0;
     margin: 16px;
     padding: 10px 8px 0;
-    background: white;
-    color: #526078;
+    background: var(--card);
+    color: var(--foreground);
     font-size: 14px;
 }
 .subscription-scroll {
-    border-bottom: 1px solid #dcdfe6;
+    border-bottom: 1px solid var(--input);
 }
 table {
     width: 100%;
@@ -236,13 +236,13 @@ table {
 th,
 td {
     padding: 0 22px;
-    border-bottom: 1px solid #e6e8ed;
+    border-bottom: 1px solid var(--border);
     font-size: 14px;
     text-align: left;
 }
 th {
     height: 48px;
-    background: #f7f7f9;
+    background: var(--muted);
     font-weight: 600;
 }
 td {
@@ -250,13 +250,13 @@ td {
     overflow-wrap: anywhere;
 }
 tbody tr:hover {
-    background: #fafcff;
+    background: var(--accent);
 }
 :deep([data-slot='checkbox']) {
     display: block;
     width: 20px;
     height: 20px;
-    accent-color: #308cff;
+    accent-color: var(--primary);
     cursor: pointer;
 }
 :deep([data-slot='checkbox']):disabled {
@@ -264,7 +264,7 @@ tbody tr:hover {
     opacity: 0.6;
 }
 :deep([data-slot='checkbox']):focus-visible {
-    outline: 2px solid #308cff;
+    outline: 2px solid var(--primary);
     outline-offset: 3px;
 }
 .empty {
@@ -275,25 +275,12 @@ tbody tr:hover {
     flex-wrap: wrap;
     gap: 8px;
     padding-block: 6px;
-    color: #d14343;
+    color: var(--destructive);
     font-size: 12px;
 }
 .save-error button {
-    color: #308cff;
+    color: var(--primary);
     cursor: pointer;
-}
-:global(.dark) .message-subscriptions {
-    background: #18181b;
-    color: #cbd5e1;
-}
-:global(.dark) th,
-:global(.dark) tbody tr:hover {
-    background: #27272a;
-}
-:global(.dark) th,
-:global(.dark) td,
-:global(.dark) .subscription-scroll {
-    border-color: #3f3f46;
 }
 @media (max-width: 640px) {
     .message-subscriptions {

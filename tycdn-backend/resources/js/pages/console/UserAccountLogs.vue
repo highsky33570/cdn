@@ -266,7 +266,7 @@ function showDiff(row: CdnflyRecord) {
                     placeholder="请选择时间范围"
                     trigger-class="log-date"
                 />
-                <label class="log-input ip"
+                <label data-slot="console-input-group" class="log-input ip"
                     ><span>IP地址</span
                     ><Input
                         v-model="active.ip"
@@ -274,21 +274,27 @@ function showDiff(row: CdnflyRecord) {
                         placeholder="请输入IP地址"
                 /></label>
                 <template v-if="tab === 'op'">
-                    <label class="log-input small"
+                    <label
+                        data-slot="console-input-group"
+                        class="log-input small"
                         ><span>类别</span
                         ><Input
                             v-model="filters.op.type"
                             aria-label="类别"
                             placeholder="请输入类别"
                     /></label>
-                    <label class="log-input small"
+                    <label
+                        data-slot="console-input-group"
+                        class="log-input small"
                         ><span>对象</span
                         ><Input
                             v-model="filters.op.content"
                             aria-label="对象"
                             placeholder="请输入对象"
                     /></label>
-                    <label class="log-input diff"
+                    <label
+                        data-slot="console-input-group"
+                        class="log-input diff"
                         ><span>变更</span
                         ><Input
                             v-model="filters.op.diff"
@@ -297,6 +303,7 @@ function showDiff(row: CdnflyRecord) {
                     /></label>
                 </template>
                 <button
+                    data-slot="console-link"
                     v-if="hasFilters"
                     type="button"
                     class="text-link"
@@ -429,6 +436,7 @@ function showDiff(row: CdnflyRecord) {
                                     <td>{{ text(row.action) }}</td>
                                     <td>
                                         <button
+                                            data-slot="console-link"
                                             v-if="hasDiff(row)"
                                             class="text-link truncate-cell"
                                             :title="text(row.diff)"
@@ -486,14 +494,14 @@ function showDiff(row: CdnflyRecord) {
     min-width: 0;
     margin: 16px;
     padding: 0 14px 20px;
-    background: white;
-    color: #526078;
+    background: var(--card);
+    color: var(--foreground);
     font-size: 14px;
 }
 .log-tabs {
     display: flex;
     gap: 20px;
-    border-bottom: 1px solid #dcdfe6;
+    border-bottom: 1px solid var(--input);
     margin-bottom: 20px;
 }
 .log-tabs button {
@@ -504,8 +512,8 @@ function showDiff(row: CdnflyRecord) {
     font-size: 14px;
 }
 .log-tabs button[aria-selected='true'] {
-    color: #308cff;
-    border-bottom-color: #308cff;
+    color: var(--primary);
+    border-bottom-color: var(--primary);
 }
 .log-filters {
     display: flex;
@@ -518,7 +526,7 @@ function showDiff(row: CdnflyRecord) {
     width: 188px;
     height: 40px;
     padding: 0 10px;
-    border: 1px solid #dcdfe6;
+    border: 1px solid var(--input);
     border-radius: 4px;
     background: transparent;
 }
@@ -529,14 +537,14 @@ function showDiff(row: CdnflyRecord) {
     flex-direction: row-reverse;
     justify-content: space-between;
     background: transparent;
-    border: 1px solid #dcdfe6;
+    border: 1px solid var(--input);
     border-radius: 4px;
     font-size: 14px;
 }
 .log-input {
     display: flex;
     height: 40px;
-    border: 1px solid #dcdfe6;
+    border: 1px solid var(--input);
     border-radius: 4px;
     overflow: hidden;
     width: 250px;
@@ -548,8 +556,8 @@ function showDiff(row: CdnflyRecord) {
     display: flex;
     align-items: center;
     padding: 0 10px;
-    background: #f7f7f9;
-    border-right: 1px solid #dcdfe6;
+    background: var(--muted);
+    border-right: 1px solid var(--input);
     white-space: nowrap;
 }
 .log-input input {
@@ -561,18 +569,18 @@ function showDiff(row: CdnflyRecord) {
     outline: none;
 }
 .log-input:focus-within {
-    border-color: #308cff;
+    border-color: var(--primary);
 }
 .log-input input::placeholder {
-    color: #bfc5ce;
+    color: var(--muted-foreground);
 }
 .text-link {
-    color: #308cff;
+    color: var(--primary);
     cursor: pointer;
 }
 .log-scroll {
     overflow-x: auto;
-    border-bottom: 1px solid #dcdfe6;
+    border-bottom: 1px solid var(--input);
 }
 table {
     width: 100%;
@@ -585,14 +593,14 @@ table {
 }
 th,
 td {
-    border-bottom: 1px solid #e6e8ed;
+    border-bottom: 1px solid var(--border);
     padding: 0 22px;
     text-align: left;
     font-size: 14px;
 }
 th {
     height: 48px;
-    background: #f7f7f9;
+    background: var(--muted);
     font-weight: 600;
 }
 td {
@@ -605,7 +613,7 @@ td.location {
     padding-block: 6px;
 }
 tbody tr:hover {
-    background: #fafcff;
+    background: var(--accent);
 }
 .truncate-cell {
     display: block;
@@ -622,7 +630,7 @@ tbody tr:hover {
     width: 15px;
     height: 15px;
     border-radius: 50%;
-    color: white;
+    color: var(--primary-foreground);
 }
 .success {
     background: #12bf74;
@@ -640,59 +648,13 @@ tbody tr:hover {
     display: block;
     width: min(100%, calc(100vw - 340px));
 }
-.log-pagination {
-    justify-content: flex-start;
-    margin-top: 26px;
-    gap: 6px;
-    font-size: 14px;
-}
-.log-pagination :deep(button),
-.log-pagination :deep([data-slot='select-trigger']) {
-    height: 40px;
-    min-width: 40px;
-    background: transparent;
-    border: 1px solid #dcdfe6;
-    border-radius: 4px;
-    color: inherit;
-    font-size: 14px;
-    font-weight: 400;
-    box-shadow: none;
-}
-.log-pagination :deep([aria-current='page']) {
-    border-color: #308cff;
-    color: #308cff;
-}
-.log-pagination :deep([data-slot='select-trigger']) {
-    margin-left: 14px;
-}
 .log-error {
     display: flex;
     align-items: center;
     gap: 12px;
     padding: 12px;
     margin-bottom: 12px;
-    color: #d14343;
-}
-:global(.dark) .account-logs {
-    background: #18181b;
-    color: #cbd5e1;
-}
-:global(.dark) th,
-:global(.dark) .log-input span,
-:global(.dark) tbody tr:hover {
-    background: #27272a;
-}
-:global(.dark) .log-tabs,
-:global(.dark) .log-scroll,
-:global(.dark) th,
-:global(.dark) td,
-:global(.dark) .log-input,
-:global(.dark) .log-input span,
-:global(.dark) .log-filters :deep([data-slot='select-trigger']) {
-    border-color: #3f3f46;
-}
-:global(.dark) .log-filters :deep([data-slot='select-trigger']) option {
-    background: #18181b;
+    color: var(--destructive);
 }
 @media (max-width: 640px) {
     .account-logs {

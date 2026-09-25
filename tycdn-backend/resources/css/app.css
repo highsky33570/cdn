@@ -1,6 +1,7 @@
 @import 'tailwindcss';
 
 @import 'tw-animate-css';
+@import './console-controls.css';
 
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
@@ -378,22 +379,6 @@
     padding-inline: 1.25rem;
 }
 
-.console-shell [data-slot='button'] {
-    min-height: 1.875rem;
-    border-radius: 0.5rem;
-    font-size: 0.8125rem;
-    box-shadow: none;
-}
-
-.console-shell [data-slot='input'],
-.console-shell [data-slot='select-trigger'] {
-    height: 2rem;
-    border-radius: 0.5rem;
-    background: var(--card);
-    font-size: 0.8125rem;
-    box-shadow: none;
-}
-
 .console-shell [data-slot='badge'] {
     border-radius: 0.5rem;
     font-weight: 500;
@@ -555,19 +540,6 @@
     height: 2.875rem;
 }
 
-.console-shell .ruiyi-subscriptions .ruiyi-pagination [data-slot='button'],
-.console-shell
-    .ruiyi-subscriptions
-    .ruiyi-pagination
-    [data-slot='select-trigger'] {
-    height: 2rem;
-}
-
-.console-shell .ruiyi-subscriptions .ruiyi-pagination .is-current {
-    border-color: var(--primary);
-    color: var(--primary);
-}
-
 .console-shell .ruiyi-cache-card {
     gap: 0;
     padding-block: 0;
@@ -595,11 +567,6 @@
 
 .console-shell .ruiyi-cache-card td {
     height: 2.875rem;
-}
-
-.console-shell .ruiyi-cache-card .ruiyi-pagination .is-current {
-    border-color: var(--primary);
-    color: var(--primary);
 }
 
 /* Portal content shares the same console palette and control geometry. */

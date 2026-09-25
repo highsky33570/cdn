@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { AlertCircle, RefreshCw } from 'lucide-vue-next';
 import { computed, onMounted, ref } from 'vue';
+import ConsolePagination from '@/components/console/ConsolePagination.vue';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -45,7 +46,8 @@ async function loadData(): Promise<void> {
         })) as Record<string, unknown>;
 
         rows.value = extractCdnflyRows(result);
-        total.value = extractCdnflyTotal(result, rows.value.length);
+        const count = extractCdnflyTotal(result, -1);
+        total.value = count >= 0 ? count : null;
     } catch (error) {
         errorMessage.value =
             error instanceof Error ? error.message : '请求失败';
@@ -164,28 +166,17 @@ defineExpose({ reload: loadData });
         </CardContent>
     </Card>
 
-    <div
-        v-if="total !== null && total > effectivePageSize"
-        class="flex items-center justify-end gap-2"
-    >
-        <Button
-            variant="outline"
-            size="sm"
-            :disabled="currentPage <= 1 || loading"
-            @click="prevPage"
-        >
-            上一页
-        </Button>
-        <span class="text-sm text-muted-foreground">
-            第 {{ currentPage }} 页
-        </span>
-        <Button
-            variant="outline"
-            size="sm"
-            :disabled="rows.length < effectivePageSize || loading"
-            @click="nextPage"
-        >
-            下一页
-        </Button>
-    </div>
+    <ConsolePagination
+        :total="total"
+        :page="currentPage"
+        :previous-disabled="currentPage <= 1 || loading"
+        :next-disabled="
+            loading ||
+            (total !== null
+                ? currentPage * effectivePageSize >= total
+                : rows.length < effectivePageSize)
+        "
+        @previous="prevPage"
+        @next="nextPage"
+    />
 </template>

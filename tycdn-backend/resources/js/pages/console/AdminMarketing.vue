@@ -867,7 +867,10 @@ const detailLabels = {
                                 <Label for="marketing-minimum"
                                     >原价不低于</Label
                                 >
-                                <div class="flex">
+                                <div
+                                    data-slot="console-input-group"
+                                    class="flex"
+                                >
                                     <Input
                                         id="marketing-minimum"
                                         v-model="form.minimum"
@@ -965,7 +968,10 @@ const detailLabels = {
                                             year: '年价',
                                         }[field]
                                     }}</Label>
-                                    <div class="flex">
+                                    <div
+                                        data-slot="console-input-group"
+                                        class="flex"
+                                    >
                                         <Input
                                             :id="`marketing-${field}`"
                                             v-model="form[field]"

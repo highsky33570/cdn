@@ -19,6 +19,7 @@ import {
     watch,
 } from 'vue';
 import ConsolePageHeader from '@/components/console/ConsolePageHeader.vue';
+import ConsolePagination from '@/components/console/ConsolePagination.vue';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -1388,9 +1389,11 @@ function formatInputDate(date: Date): string {
                             @keydown.enter="loadGroup"
                         />
                         <div
+                            data-slot="console-segment-group"
                             class="flex h-9 max-w-full overflow-x-auto rounded-md border"
                         >
                             <button
+                                data-slot="console-segment"
                                 v-for="range in [
                                     { minutes: 60, label: '近1小时' },
                                     { minutes: 360, label: '近6小时' },
@@ -1559,8 +1562,12 @@ function formatInputDate(date: Date): string {
                     class="flex flex-wrap items-center gap-2 border-b px-4 py-4"
                 >
                     <!-- 时间快捷 -->
-                    <div class="flex overflow-hidden rounded-sm border">
+                    <div
+                        data-slot="console-segment-group"
+                        class="flex overflow-hidden rounded-sm border"
+                    >
                         <button
+                            data-slot="console-segment"
                             v-for="t in [
                                 { v: '10m', label: '10分钟实时' },
                                 { v: '30m', label: '近30分钟' },
@@ -1592,7 +1599,10 @@ function formatInputDate(date: Date): string {
                     </template>
 
                     <!-- 域名筛选 -->
-                    <div class="flex min-w-0 items-center">
+                    <div
+                        data-slot="console-input-group"
+                        class="flex min-w-0 items-center"
+                    >
                         <SelectField
                             v-model="topSearchType"
                             aria-label="排行筛选类型"
@@ -1848,7 +1858,10 @@ function formatInputDate(date: Date): string {
                     <CardHeader class="pb-3">
                         <!-- 顶部工具栏 -->
                         <div class="flex flex-wrap items-center gap-2">
-                            <div class="flex min-w-0 flex-1 items-center gap-0">
+                            <div
+                                data-slot="console-input-group"
+                                class="flex min-w-0 flex-1 items-center gap-0"
+                            >
                                 <span
                                     class="inline-flex h-9 shrink-0 items-center rounded-l-md border border-r-0 bg-muted px-3 text-sm whitespace-nowrap text-muted-foreground"
                                 >
@@ -2359,25 +2372,14 @@ function formatInputDate(date: Date): string {
                 </Card>
 
                 <!-- 分页 -->
-                <div class="flex items-center justify-end gap-2">
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        :disabled="logsPage <= 1 || logsLoading"
-                        @click="loadLogs(logsPage - 1)"
-                        >上一页</Button
-                    >
-                    <span class="text-sm text-muted-foreground"
-                        >第 {{ logsPage }} 页</span
-                    >
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        :disabled="logsRows.length < 20 || logsLoading"
-                        @click="loadLogs(logsPage + 1)"
-                        >下一页</Button
-                    >
-                </div>
+                <ConsolePagination
+                    :total="logsTotal"
+                    :page="logsPage"
+                    :previous-disabled="logsPage <= 1 || logsLoading"
+                    :next-disabled="logsRows.length < 20 || logsLoading"
+                    @previous="loadLogs(logsPage - 1)"
+                    @next="loadLogs(logsPage + 1)"
+                />
             </template>
 
             <!-- ── 申请记录 Tab ── -->
@@ -2625,25 +2627,14 @@ function formatInputDate(date: Date): string {
                 </Card>
 
                 <!-- 分页 -->
-                <div class="flex items-center justify-end gap-2">
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        :disabled="jobsPage <= 1 || jobsLoading"
-                        @click="loadJobs(jobsPage - 1)"
-                        >上一页</Button
-                    >
-                    <span class="text-sm text-muted-foreground"
-                        >第 {{ jobsPage }} 页</span
-                    >
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        :disabled="jobsRows.length < 20 || jobsLoading"
-                        @click="loadJobs(jobsPage + 1)"
-                        >下一页</Button
-                    >
-                </div>
+                <ConsolePagination
+                    :total="jobsTotal"
+                    :page="jobsPage"
+                    :previous-disabled="jobsPage <= 1 || jobsLoading"
+                    :next-disabled="jobsRows.length < 20 || jobsLoading"
+                    @previous="loadJobs(jobsPage - 1)"
+                    @next="loadJobs(jobsPage + 1)"
+                />
             </template>
 
             <!-- ── 申请下载对话框（inline modal） ── -->
@@ -2834,25 +2825,14 @@ function formatInputDate(date: Date): string {
                     </div>
                 </CardContent>
             </Card>
-            <div class="flex items-center justify-end gap-2">
-                <Button
-                    variant="outline"
-                    size="sm"
-                    :disabled="!hasPreviousPage || loading"
-                    @click="prevPage"
-                    >上一页</Button
-                >
-                <span class="text-sm text-muted-foreground"
-                    >第 {{ page }} 页</span
-                >
-                <Button
-                    variant="outline"
-                    size="sm"
-                    :disabled="!hasNextPage || loading"
-                    @click="nextPage"
-                    >下一页</Button
-                >
-            </div>
+            <ConsolePagination
+                :total="total"
+                :page="page"
+                :previous-disabled="!hasPreviousPage || loading"
+                :next-disabled="!hasNextPage || loading"
+                @previous="prevPage"
+                @next="nextPage"
+            />
         </template>
     </div>
 </template>

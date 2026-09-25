@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import {
     Check,
-    ChevronLeft,
-    ChevronRight,
     Eye,
     EyeOff,
     Plus,
@@ -13,6 +11,7 @@ import {
 import { computed, onMounted, reactive, ref } from 'vue';
 import { toast } from 'vue-sonner';
 import ConfirmDeleteDialog from '@/components/console/ConfirmDeleteDialog.vue';
+import ConsolePagination from '@/components/console/ConsolePagination.vue';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -220,19 +219,7 @@ const rows = ref<CdnflyRecord[]>([]),
 const lastPage = computed(() =>
     Math.max(1, Math.ceil(total.value / size.value)),
 );
-const pages = computed(() =>
-    [
-        ...new Set([
-            1,
-            page.value - 1,
-            page.value,
-            page.value + 1,
-            lastPage.value,
-        ]),
-    ]
-        .filter((p) => p > 0 && p <= lastPage.value)
-        .sort((a, b) => a - b),
-);
+
 const allSelected = computed(
     () =>
         rows.value.length > 0 &&
@@ -511,7 +498,10 @@ onMounted(() => {
                         </div>
                         <div class="form-row">
                             <Label for="dns-ttl">TTL</Label>
-                            <div class="flex w-52">
+                            <div
+                                data-slot="console-input-group"
+                                class="flex w-52"
+                            >
                                 <Input
                                     id="dns-ttl"
                                     v-model="form.ttl"
@@ -728,53 +718,14 @@ onMounted(() => {
                         </tbody>
                     </table>
                 </div>
-                <div
-                    class="mt-4 flex flex-wrap items-center gap-2 text-sm text-muted-foreground"
-                >
-                    <span>共 {{ total }} 条</span
-                    ><Button
-                        variant="outline"
-                        size="icon-sm"
-                        aria-label="上一页"
-                        :disabled="loading || page <= 1"
-                        @click="loadDomains(page - 1)"
-                        ><ChevronLeft /></Button
-                    ><Button
-                        v-for="p in pages"
-                        :key="p"
-                        variant="outline"
-                        size="icon-sm"
-                        :aria-label="`第 ${p} 页`"
-                        :aria-current="p === page ? 'page' : undefined"
-                        :class="p === page ? 'border-primary text-primary' : ''"
-                        :disabled="loading"
-                        @click="loadDomains(p)"
-                        >{{ p }}</Button
-                    ><Button
-                        variant="outline"
-                        size="icon-sm"
-                        aria-label="下一页"
-                        :disabled="loading || page >= lastPage"
-                        @click="loadDomains(page + 1)"
-                        ><ChevronRight /></Button
-                    ><SelectField
-                        v-model.number="size"
-                        aria-label="每页条数"
-                        class="ml-2 h-8 rounded border bg-background px-2"
-                        @change="
-                            selected = [];
-                            loadDomains(1);
-                        "
-                    >
-                        <SelectOption
-                            v-for="n in [10, 20, 50, 100]"
-                            :key="n"
-                            :value="n"
-                        >
-                            {{ n }} 条/页
-                        </SelectOption>
-                    </SelectField>
-                </div>
+                <ConsolePagination
+                    :total="total"
+                    :page="page"
+                    :previous-disabled="loading || page <= 1"
+                    :next-disabled="loading || page >= lastPage"
+                    @previous="loadDomains(page - 1)"
+                    @next="loadDomains(page + 1)"
+                />
             </template>
         </section>
         <Dialog

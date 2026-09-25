@@ -1,17 +1,10 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
-import {
-    ChevronDown,
-    ChevronLeft,
-    ChevronRight,
-    Plus,
-    RefreshCw,
-    Search,
-    Trash2,
-} from 'lucide-vue-next';
+import { ChevronDown, Plus, RefreshCw, Search, Trash2 } from 'lucide-vue-next';
 import { computed, onMounted, reactive, ref } from 'vue';
 import { toast } from 'vue-sonner';
 import ConfirmDeleteDialog from '@/components/console/ConfirmDeleteDialog.vue';
+import ConsolePagination from '@/components/console/ConsolePagination.vue';
 import NodeIpLogsDialog from '@/components/console/NodeIpLogsDialog.vue';
 import { Button } from '@/components/ui/button';
 import CheckboxField from '@/components/ui/checkbox/CheckboxField.vue';
@@ -101,14 +94,7 @@ const allSelected = computed(
         selectable.value.every((id) => selected.value.includes(id)),
 );
 const pages = computed(() => Math.max(1, Math.ceil(total.value / limit.value)));
-const pageNumbers = computed(() => {
-    const start = Math.max(1, Math.min(page.value - 2, pages.value - 4));
 
-    return Array.from(
-        { length: Math.min(5, pages.value) },
-        (_, i) => start + i,
-    );
-});
 const columns = computed(() =>
     active.value === 'nodes'
         ? 12
@@ -863,57 +849,15 @@ async function confirmDelete() {
                     </tbody>
                 </table>
             </div>
-            <nav
-                class="mt-4 flex flex-wrap items-center gap-1 text-xs text-muted-foreground"
+            <ConsolePagination
                 aria-label="节点分页"
-            >
-                <span class="mr-2">共 {{ total }} 条</span>
-                <Button
-                    size="icon-sm"
-                    variant="outline"
-                    aria-label="上一页"
-                    :disabled="page <= 1 || loading || busy"
-                    @click="refresh(page - 1)"
-                    ><ChevronLeft
-                /></Button>
-                <Button
-                    v-for="number in pageNumbers"
-                    :key="number"
-                    size="icon-sm"
-                    variant="outline"
-                    :aria-label="`第 ${number} 页`"
-                    :aria-current="page === number ? 'page' : undefined"
-                    :class="
-                        page === number ? 'border-primary text-primary' : ''
-                    "
-                    :disabled="loading || busy"
-                    @click="refresh(number)"
-                    >{{ number }}</Button
-                >
-                <Button
-                    size="icon-sm"
-                    variant="outline"
-                    aria-label="下一页"
-                    :disabled="page >= pages || loading || busy"
-                    @click="refresh(page + 1)"
-                    ><ChevronRight
-                /></Button>
-                <SelectField
-                    v-model="limit"
-                    class="ml-2"
-                    aria-label="每页条数"
-                    :disabled="loading || busy"
-                    @change="refresh(1)"
-                >
-                    <SelectOption
-                        v-for="size in [10, 30, 100, 300]"
-                        :key="size"
-                        :value="size"
-                    >
-                        {{ size }} 条/页
-                    </SelectOption>
-                </SelectField>
-            </nav>
+                :total="total"
+                :page="page"
+                :previous-disabled="page <= 1 || loading || busy"
+                :next-disabled="page >= pages || loading || busy"
+                @previous="refresh(page - 1)"
+                @next="refresh(page + 1)"
+            />
         </div>
         <NodeIpLogsDialog
             :ip="logIp"

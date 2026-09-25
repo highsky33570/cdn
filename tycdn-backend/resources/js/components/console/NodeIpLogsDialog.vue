@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { CalendarDays, ChevronLeft, ChevronRight } from 'lucide-vue-next';
+import { CalendarDays } from 'lucide-vue-next';
 import {
     PopoverRoot,
     PopoverTrigger,
@@ -7,6 +7,7 @@ import {
     PopoverContent,
 } from 'reka-ui';
 import { computed, onUnmounted, ref, watch } from 'vue';
+import ConsolePagination from '@/components/console/ConsolePagination.vue';
 import DatePicker from '@/components/ui/date-picker/DatePicker.vue';
 import {
     Dialog,
@@ -22,8 +23,7 @@ import {
     SelectContent,
     SelectItem,
 } from '@/components/ui/select';
-import SelectField from '@/components/ui/select/SelectField.vue';
-import SelectOption from '@/components/ui/select/SelectOption.vue';
+
 import { apiRequest } from '@/lib/apiRequest';
 import { extractCdnflyRows, extractCdnflyTotal } from '@/lib/cdnflyResponse';
 import { monitorGroups } from '@/lib/nodeMonitor';
@@ -57,31 +57,7 @@ const isSwitch = computed(() => logType.value.endsWith('-switch'));
 const pageCount = computed(() =>
     Math.max(1, Math.ceil(total.value / Number(limit.value))),
 );
-const pages = computed(() => {
-    const last = pageCount.value;
-    const numbers = [
-        ...new Set([
-            1,
-            last,
-            ...Array.from({ length: 5 }, (_, i) => page.value + i - 2).filter(
-                (p) => p > 0 && p <= last,
-            ),
-        ]),
-    ].sort((a, b) => a - b);
-    const result: (number | string)[] = [];
 
-    for (const p of numbers) {
-        const prev = result.at(-1);
-
-        if (typeof prev === 'number' && p - prev > 1) {
-            result.push(`gap-${p}`);
-        }
-
-        result.push(p);
-    }
-
-    return result;
-});
 let requestId = 0;
 onUnmounted(() => requestId++);
 watch(
@@ -279,12 +255,14 @@ const time = (value: unknown) => String(value ?? '—').replace(/^\d{4}-/, '');
                                         </p>
                                         <div class="flex justify-end gap-2">
                                             <button
+                                                data-slot="console-segment"
                                                 type="button"
                                                 class="rounded border px-3 py-1"
                                                 @click="rangeOpen = false"
                                             >
                                                 取消</button
                                             ><button
+                                                data-slot="console-action"
                                                 type="submit"
                                                 class="rounded bg-[#2d8cf0] px-3 py-1 text-white"
                                             >
@@ -364,59 +342,15 @@ const time = (value: unknown) => String(value ?? '—').replace(/^\d{4}-/, '');
                         </tr>
                     </tbody>
                 </table>
-                <nav
+                <ConsolePagination
                     aria-label="监控日志分页"
-                    class="mt-3 flex flex-wrap items-center gap-1 text-xs"
-                >
-                    <button
-                        class="page-button"
-                        aria-label="上一页"
-                        :disabled="loading || page <= 1"
-                        @click="load(page - 1)"
-                    >
-                        <ChevronLeft class="size-3" />
-                    </button>
-                    <template v-for="p in pages" :key="p"
-                        ><span
-                            v-if="typeof p === 'string'"
-                            class="px-1 text-muted-foreground"
-                            >…</span
-                        ><button
-                            v-else
-                            class="page-button"
-                            :aria-label="`第 ${p} 页`"
-                            :aria-current="page === p ? 'page' : undefined"
-                            :disabled="loading"
-                            @click="load(p)"
-                        >
-                            {{ p }}
-                        </button></template
-                    >
-                    <button
-                        class="page-button"
-                        aria-label="下一页"
-                        :disabled="loading || page >= pageCount"
-                        @click="load(page + 1)"
-                    >
-                        <ChevronRight class="size-3" />
-                    </button>
-                    <SelectField
-                        v-model="limit"
-                        aria-label="每页条数"
-                        class="ml-2 h-7 rounded border bg-card px-2 text-xs"
-                        :disabled="loading"
-                        @change="load(1)"
-                    >
-                        <SelectOption
-                            v-for="n in [10, 20, 30, 50]"
-                            :key="n"
-                            :value="String(n)"
-                        >
-                            {{ n }} 条/页
-                        </SelectOption>
-                    </SelectField>
-                    <span class="sr-only">共 {{ total }} 条</span>
-                </nav>
+                    :total="total"
+                    :page="page"
+                    :previous-disabled="loading || page <= 1"
+                    :next-disabled="loading || page >= pageCount"
+                    @previous="load(page - 1)"
+                    @next="load(page + 1)"
+                />
             </div>
         </DialogScrollContent>
     </Dialog>
@@ -432,7 +366,7 @@ const time = (value: unknown) => String(value ?? '—').replace(/^\d{4}-/, '');
 .log-filters label {
     text-align: right;
 }
-.log-:deep([data-slot='select-trigger']) {
+:deep(.log-select) {
     height: 28px;
     min-height: 28px;
     width: 100%;

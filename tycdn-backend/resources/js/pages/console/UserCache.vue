@@ -372,6 +372,7 @@ function createdAt(row: CdnflyRecord) {
                                 <template v-else-if="quotaError"
                                     >额度暂不可用
                                     <button
+                                        data-slot="console-link"
                                         type="button"
                                         class="text-action"
                                         :title="quotaError"
@@ -400,6 +401,7 @@ function createdAt(row: CdnflyRecord) {
                                 {{ formError }}
                             </p>
                             <button
+                                data-slot="console-action"
                                 class="cache-button primary submit-button"
                                 type="submit"
                                 :disabled="submitting"
@@ -419,6 +421,7 @@ function createdAt(row: CdnflyRecord) {
             >
                 <form class="cache-toolbar" @submit.prevent="loadJobs(1)">
                     <button
+                        data-slot="console-action"
                         type="button"
                         class="cache-button primary"
                         :disabled="loading || submitting"
@@ -441,7 +444,7 @@ function createdAt(row: CdnflyRecord) {
                             {{ typeLabel(item.value) }}
                         </SelectOption>
                     </SelectField>
-                    <div class="cache-search">
+                    <div data-slot="console-input-group" class="cache-search">
                         <Input
                             v-model="keyword"
                             aria-label="URL或域名"
@@ -459,6 +462,7 @@ function createdAt(row: CdnflyRecord) {
                 <p v-if="listError" role="alert" class="error-message">
                     {{ listError }}
                     <button
+                        data-slot="console-link"
                         class="text-action"
                         type="button"
                         :disabled="loading || submitting"
@@ -556,6 +560,7 @@ function createdAt(row: CdnflyRecord) {
                                     <td>{{ createdAt(row) }}</td>
                                     <td>
                                         <button
+                                            data-slot="console-link"
                                             class="text-action"
                                             type="button"
                                             :disabled="submitting"
@@ -604,6 +609,7 @@ function createdAt(row: CdnflyRecord) {
                 }}</pre>
                 <DialogFooter
                     ><button
+                        data-slot="console-action"
                         class="cache-button"
                         type="button"
                         @click="detail = null"
@@ -843,22 +849,6 @@ tbody tr:hover {
 .error-message {
     margin: 12px 0;
     font-size: 14px;
-}
-.cache-pagination {
-    justify-content: flex-start;
-    margin-top: 26px;
-    font-size: 16px;
-}
-.cache-pagination :deep(button),
-.cache-pagination :deep([data-slot='select-trigger']) {
-    height: 40px;
-    min-width: 40px;
-    font-size: 16px;
-}
-.cache-pagination :deep(button[aria-current='page']) {
-    background: var(--card);
-    color: var(--primary);
-    border: 1px solid var(--primary);
 }
 @media (max-width: 640px) {
     .user-cache-workspace {

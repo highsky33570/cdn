@@ -289,6 +289,7 @@ onUnmounted(() => {
                     <h2><BarChart3 />运营数据</h2>
                     <div class="periods" role="group" aria-label="运营数据周期">
                         <button
+                            data-slot="console-segment"
                             v-for="period in operationPeriods"
                             :key="period.key"
                             :aria-pressed="operationPeriod === period.key"
@@ -324,6 +325,7 @@ onUnmounted(() => {
                     <h2><BarChart3 />网络概览</h2>
                     <div class="periods" role="group" aria-label="网络概览周期">
                         <button
+                            data-slot="console-segment"
                             v-for="period in periods"
                             :key="period.key"
                             :aria-pressed="usagePeriod === period.key"
@@ -376,6 +378,7 @@ onUnmounted(() => {
                             aria-label="监控趋势周期"
                         >
                             <button
+                                data-slot="console-segment"
                                 v-for="period in periods"
                                 :key="period.key"
                                 :aria-pressed="trendPeriod === period.key"

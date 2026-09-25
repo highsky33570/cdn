@@ -181,6 +181,7 @@ async function batch(
     >
         <div class="acl-actions">
             <button
+                data-slot="console-action"
                 type="button"
                 class="acl-button primary"
                 :disabled="busy || loading"
@@ -191,6 +192,7 @@ async function batch(
             <DropdownMenu
                 ><DropdownMenuTrigger as-child
                     ><button
+                        data-slot="console-action"
                         type="button"
                         class="acl-button"
                         :disabled="busy || loading"
@@ -219,7 +221,7 @@ async function batch(
                 <SelectOption value="1">启用</SelectOption>
                 <SelectOption value="0">禁用</SelectOption>
             </SelectField>
-            <label class="acl-input"
+            <label data-slot="console-input-group" class="acl-input"
                 ><span>ACL名称</span
                 ><Input
                     v-model="filters.name"
@@ -227,7 +229,7 @@ async function batch(
                     :disabled="busy"
                     @input="search"
             /></label>
-            <label class="acl-input"
+            <label data-slot="console-input-group" class="acl-input"
                 ><span>ACL ID</span
                 ><Input
                     v-model="filters.id"
@@ -237,6 +239,7 @@ async function batch(
                     @input="search"
             /></label>
             <button
+                data-slot="console-link"
                 type="button"
                 class="text-action"
                 :disabled="busy"
@@ -256,6 +259,7 @@ async function batch(
         <p v-if="error" class="acl-error" role="alert">
             {{ error }}
             <button
+                data-slot="console-link"
                 type="button"
                 class="text-action"
                 :disabled="busy || loading"
@@ -348,6 +352,7 @@ async function batch(
                             <td>
                                 <div class="row-actions">
                                     <button
+                                        data-slot="console-link"
                                         type="button"
                                         class="text-action"
                                         :disabled="busy || readOnly(row)"
@@ -357,6 +362,7 @@ async function batch(
                                     ><DropdownMenu
                                         ><DropdownMenuTrigger as-child
                                             ><button
+                                                data-slot="console-link"
                                                 type="button"
                                                 class="text-action row-more"
                                                 :disabled="
@@ -596,22 +602,6 @@ input:focus-visible,
     color: var(--destructive);
     margin: 12px 0;
     font-size: 14px;
-}
-.acl-pagination {
-    justify-content: flex-start;
-    margin-top: 26px;
-    font-size: 16px;
-}
-.acl-pagination :deep(button),
-.acl-pagination :deep([data-slot='select-trigger']) {
-    height: 40px;
-    min-width: 40px;
-    font-size: 16px;
-}
-.acl-pagination :deep(button[aria-current='page']) {
-    background: var(--card);
-    color: var(--primary);
-    border: 1px solid var(--primary);
 }
 @media (max-width: 640px) {
     .user-acl-workspace {

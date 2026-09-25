@@ -31,6 +31,7 @@ function select(
 <template>
     <div role="group" :aria-label="label" class="flex flex-wrap gap-2">
         <button
+            data-slot="console-action"
             v-for="option in options"
             :key="option.value"
             type="button"

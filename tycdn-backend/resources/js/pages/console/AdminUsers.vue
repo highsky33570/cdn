@@ -18,6 +18,7 @@ import {
 import { computed, onMounted, reactive, ref } from 'vue';
 import { toast } from 'vue-sonner';
 import ConsolePageHeader from '@/components/console/ConsolePageHeader.vue';
+import ConsolePagination from '@/components/console/ConsolePagination.vue';
 import ConsoleStatCards from '@/components/console/ConsoleStatCards.vue';
 import type { ConsoleStat } from '@/components/console/ConsoleStatCards.vue';
 import RecoveryReview from '@/components/console/RecoveryReview.vue';
@@ -1006,24 +1007,14 @@ function detailPaginationText<T>(payload: Paginated<T> | null): string {
             </CardContent>
         </Card>
 
-        <div class="flex flex-wrap items-center justify-end gap-2">
-            <Button
-                variant="outline"
-                size="sm"
-                :disabled="!hasPreviousPage || loading"
-                @click="loadUsers(page - 1)"
-            >
-                上一页
-            </Button>
-            <Button
-                variant="outline"
-                size="sm"
-                :disabled="!hasNextPage || loading"
-                @click="loadUsers(page + 1)"
-            >
-                下一页
-            </Button>
-        </div>
+        <ConsolePagination
+            :total="users?.total ?? 0"
+            :page="page"
+            :previous-disabled="!hasPreviousPage || loading"
+            :next-disabled="!hasNextPage || loading"
+            @previous="loadUsers(page - 1)"
+            @next="loadUsers(page + 1)"
+        />
 
         <Dialog v-model:open="detailDialogOpen">
             <DialogScrollContent class="max-w-6xl">
@@ -1173,32 +1164,20 @@ function detailPaginationText<T>(payload: Paginated<T> | null): string {
                             </tbody>
                         </table>
                     </div>
-                    <div
-                        v-if="detailOrders && detailOrders.last_page > 1"
-                        class="flex justify-end gap-2 border-t px-4 py-3"
-                    >
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            :disabled="
-                                detailOrderPage <= 1 || detailOrdersLoading
-                            "
-                            @click="loadUserOrders(detailOrderPage - 1)"
-                        >
-                            上一页
-                        </Button>
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            :disabled="
-                                detailOrderPage >= detailOrders.last_page ||
-                                detailOrdersLoading
-                            "
-                            @click="loadUserOrders(detailOrderPage + 1)"
-                        >
-                            下一页
-                        </Button>
-                    </div>
+                    <ConsolePagination
+                        v-if="detailOrders"
+                        :total="detailOrders?.total ?? 0"
+                        :page="detailOrderPage"
+                        :previous-disabled="
+                            detailOrderPage <= 1 || detailOrdersLoading
+                        "
+                        :next-disabled="
+                            detailOrderPage >= detailOrders.last_page ||
+                            detailOrdersLoading
+                        "
+                        @previous="loadUserOrders(detailOrderPage - 1)"
+                        @next="loadUserOrders(detailOrderPage + 1)"
+                    />
                 </section>
 
                 <section class="overflow-hidden rounded-md border">
@@ -1308,32 +1287,20 @@ function detailPaginationText<T>(payload: Paginated<T> | null): string {
                             </tbody>
                         </table>
                     </div>
-                    <div
-                        v-if="detailServices && detailServices.last_page > 1"
-                        class="flex justify-end gap-2 border-t px-4 py-3"
-                    >
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            :disabled="
-                                detailServicePage <= 1 || detailServicesLoading
-                            "
-                            @click="loadUserServices(detailServicePage - 1)"
-                        >
-                            上一页
-                        </Button>
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            :disabled="
-                                detailServicePage >= detailServices.last_page ||
-                                detailServicesLoading
-                            "
-                            @click="loadUserServices(detailServicePage + 1)"
-                        >
-                            下一页
-                        </Button>
-                    </div>
+                    <ConsolePagination
+                        v-if="detailServices"
+                        :total="detailServices?.total ?? 0"
+                        :page="detailServicePage"
+                        :previous-disabled="
+                            detailServicePage <= 1 || detailServicesLoading
+                        "
+                        :next-disabled="
+                            detailServicePage >= detailServices.last_page ||
+                            detailServicesLoading
+                        "
+                        @previous="loadUserServices(detailServicePage - 1)"
+                        @next="loadUserServices(detailServicePage + 1)"
+                    />
                 </section>
             </DialogScrollContent>
         </Dialog>
