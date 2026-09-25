@@ -12,6 +12,9 @@ import {
     DialogDescription,
     DialogFooter,
 } from '@/components/ui/dialog';
+import Input from '@/components/ui/input/Input.vue';
+import SelectField from '@/components/ui/select/SelectField.vue';
+import SelectOption from '@/components/ui/select/SelectOption.vue';
 import { Spinner } from '@/components/ui/spinner';
 import { inclusiveUsageEnd } from '@/lib/cdnflyResponse';
 import { formatDate, getErrorMessage } from '@/lib/cdnRecord';
@@ -237,25 +240,25 @@ function showDiff(row: CdnflyRecord) {
             :aria-labelledby="`account-log-tab-${tab}`"
         >
             <form class="log-filters" @submit.prevent="search">
-                <select
+                <SelectField
                     v-if="tab === 'login'"
                     v-model="filters.login.success"
                     aria-label="登录状态"
                 >
-                    <option value="all">所有状态</option>
-                    <option value="1">成功</option>
-                    <option value="0">失败</option>
-                </select>
-                <select
+                    <SelectOption value="all">所有状态</SelectOption>
+                    <SelectOption value="1">成功</SelectOption>
+                    <SelectOption value="0">失败</SelectOption>
+                </SelectField>
+                <SelectField
                     v-else
                     v-model="filters.op.action"
                     aria-label="操作动作"
                 >
-                    <option value="all">所有动作</option>
-                    <option>新增</option>
-                    <option>更新</option>
-                    <option>删除</option>
-                </select>
+                    <SelectOption value="all">所有动作</SelectOption>
+                    <SelectOption value="新增">新增</SelectOption>
+                    <SelectOption value="更新">更新</SelectOption>
+                    <SelectOption value="删除">删除</SelectOption>
+                </SelectField>
                 <DateRangePicker
                     :key="`${tab}-${dateKey}`"
                     v-model:start="active.start"
@@ -265,7 +268,7 @@ function showDiff(row: CdnflyRecord) {
                 />
                 <label class="log-input ip"
                     ><span>IP地址</span
-                    ><input
+                    ><Input
                         v-model="active.ip"
                         aria-label="IP地址"
                         placeholder="请输入IP地址"
@@ -273,21 +276,21 @@ function showDiff(row: CdnflyRecord) {
                 <template v-if="tab === 'op'">
                     <label class="log-input small"
                         ><span>类别</span
-                        ><input
+                        ><Input
                             v-model="filters.op.type"
                             aria-label="类别"
                             placeholder="请输入类别"
                     /></label>
                     <label class="log-input small"
                         ><span>对象</span
-                        ><input
+                        ><Input
                             v-model="filters.op.content"
                             aria-label="对象"
                             placeholder="请输入对象"
                     /></label>
                     <label class="log-input diff"
                         ><span>变更</span
-                        ><input
+                        ><Input
                             v-model="filters.op.diff"
                             aria-label="变更"
                             placeholder="请输入变更内容"
@@ -511,7 +514,7 @@ function showDiff(row: CdnflyRecord) {
     align-items: center;
     margin-bottom: 12px;
 }
-.log-filters select {
+.log-filters :deep([data-slot='select-trigger']) {
     width: 188px;
     height: 40px;
     padding: 0 10px;
@@ -644,7 +647,7 @@ tbody tr:hover {
     font-size: 14px;
 }
 .log-pagination :deep(button),
-.log-pagination :deep(select) {
+.log-pagination :deep([data-slot='select-trigger']) {
     height: 40px;
     min-width: 40px;
     background: transparent;
@@ -659,7 +662,7 @@ tbody tr:hover {
     border-color: #308cff;
     color: #308cff;
 }
-.log-pagination :deep(select) {
+.log-pagination :deep([data-slot='select-trigger']) {
     margin-left: 14px;
 }
 .log-error {
@@ -685,10 +688,10 @@ tbody tr:hover {
 :global(.dark) td,
 :global(.dark) .log-input,
 :global(.dark) .log-input span,
-:global(.dark) .log-filters select {
+:global(.dark) .log-filters :deep([data-slot='select-trigger']) {
     border-color: #3f3f46;
 }
-:global(.dark) .log-filters select option {
+:global(.dark) .log-filters :deep([data-slot='select-trigger']) option {
     background: #18181b;
 }
 @media (max-width: 640px) {
@@ -701,7 +704,7 @@ tbody tr:hover {
     }
     .log-input,
     .log-input.small,
-    .log-filters select {
+    .log-filters :deep([data-slot='select-trigger']) {
         flex: 1 1 160px;
     }
     .empty span {

@@ -3,6 +3,10 @@ import { computed } from 'vue';
 import DefaultCollectionEditor from '@/components/console/DefaultCollectionEditor.vue';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
+import RadioGroup from '@/components/ui/radio-group/RadioGroup.vue';
+import RadioGroupItem from '@/components/ui/radio-group/RadioGroupItem.vue';
+import SelectField from '@/components/ui/select/SelectField.vue';
+import SelectOption from '@/components/ui/select/SelectOption.vue';
 import Switch from '@/components/ui/switch/Switch.vue';
 import type { ConfigObject, ConfigValue } from '@/lib/configEditor';
 import { wafModules, wafModes } from '@/lib/defaultSettings';
@@ -69,21 +73,21 @@ function batch(event: Event) {
     />
     <div v-else-if="field.kind === 'waf'" class="grid gap-3">
         <div class="flex justify-end">
-            <select
+            <SelectField
                 aria-label="批量配置内置模块"
                 class="h-8 rounded-md border border-input bg-background px-2 text-sm"
                 :disabled="disabled"
                 @change="batch"
             >
-                <option value="">批量配置为</option>
-                <option
+                <SelectOption value="">批量配置为</SelectOption>
+                <SelectOption
                     v-for="mode in wafModes"
                     :key="mode.value"
                     :value="mode.value"
                 >
                     {{ mode.label }}
-                </option>
-            </select>
+                </SelectOption>
+            </SelectField>
         </div>
         <div class="grid gap-2 rounded-lg border p-3 sm:grid-cols-2">
             <label
@@ -91,7 +95,7 @@ function batch(event: Event) {
                 :key="key"
                 class="flex items-center justify-between gap-2 rounded-md border bg-card p-2 text-sm"
                 ><span>{{ label }}</span
-                ><select
+                ><SelectField
                     :aria-label="label"
                     :value="object[key] ?? 'off'"
                     :disabled="disabled"
@@ -103,14 +107,14 @@ function batch(event: Event) {
                         })
                     "
                 >
-                    <option
+                    <SelectOption
                         v-for="mode in wafModes"
                         :key="mode.value"
                         :value="mode.value"
                     >
                         {{ mode.label }}
-                    </option>
-                </select></label
+                    </SelectOption>
+                </SelectField></label
             >
         </div>
     </div>
@@ -185,14 +189,17 @@ function batch(event: Event) {
             />{{ name }}</label
         >
     </div>
-    <div
+    <RadioGroup
+        :model-value="String(value)"
+        :disabled="disabled"
+        @update:model-value="$emit('change', String($event))"
+        :name="id"
         v-else-if="field.kind === 'choices'"
         :class="
             choices.some((option) => option.help)
                 ? 'grid max-w-[600px] gap-2 sm:grid-cols-2'
                 : 'flex flex-wrap items-center gap-3 pt-2'
         "
-        role="radiogroup"
         :aria-label="field.label"
     >
         <label
@@ -208,14 +215,10 @@ function batch(event: Event) {
                       ]
                     : 'flex items-center gap-1 text-sm'
             "
-            ><input
-                type="radio"
-                :name="id"
+            ><RadioGroupItem
                 :value="option.value"
-                :checked="String(value) === option.value"
                 :disabled="disabled"
                 class="mt-0.5 accent-primary"
-                @change="$emit('change', option.value)"
             /><span
                 >{{ option.label
                 }}<small
@@ -225,8 +228,8 @@ function batch(event: Event) {
                 ></span
             ></label
         >
-    </div>
-    <select
+    </RadioGroup>
+    <SelectField
         v-else-if="field.kind === 'select'"
         :id="id"
         :aria-label="field.label"
@@ -235,8 +238,8 @@ function batch(event: Event) {
         class="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
         @change="$emit('change', ($event.target as HTMLSelectElement).value)"
     >
-        <option value="" disabled>请选择</option>
-        <option
+        <SelectOption value="" disabled>请选择</SelectOption>
+        <SelectOption
             v-if="
                 value !== '' &&
                 !choices.some((option) => option.value === String(value))
@@ -244,15 +247,15 @@ function batch(event: Event) {
             :value="String(value)"
         >
             {{ value }}
-        </option>
-        <option
+        </SelectOption>
+        <SelectOption
             v-for="option in choices"
             :key="option.value"
             :value="option.value"
         >
             {{ option.label }}
-        </option>
-    </select>
+        </SelectOption>
+    </SelectField>
     <div v-else class="flex min-w-0 items-center">
         <Input
             :id="id"

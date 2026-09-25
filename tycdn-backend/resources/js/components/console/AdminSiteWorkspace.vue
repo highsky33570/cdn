@@ -13,6 +13,7 @@ import {
 } from 'lucide-vue-next';
 import { computed, onMounted, onUnmounted, reactive, ref } from 'vue';
 import { toast } from 'vue-sonner';
+import CheckboxField from '@/components/ui/checkbox/CheckboxField.vue';
 import {
     Dialog,
     DialogScrollContent,
@@ -27,6 +28,10 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import Input from '@/components/ui/input/Input.vue';
+import SelectField from '@/components/ui/select/SelectField.vue';
+import SelectOption from '@/components/ui/select/SelectOption.vue';
+import Textarea from '@/components/ui/textarea/Textarea.vue';
 import {
     applyAdminSiteCertificate,
     deleteAdminSite,
@@ -732,15 +737,17 @@ defineExpose({ refresh: load });
                         </div>
                     </details>
                     <form class="search-box" @submit.prevent="searchSites">
-                        <select v-model="searchKey" aria-label="搜索类型">
-                            <option value="domain">域名</option>
-                            <option value="id">ID</option>
-                            <option value="uid">用户ID</option>
-                            <option value="backend_ip">源站IP</option>
-                            <option value="cname_hostname">
+                        <SelectField v-model="searchKey" aria-label="搜索类型">
+                            <SelectOption value="domain">域名</SelectOption>
+                            <SelectOption value="id">ID</SelectOption>
+                            <SelectOption value="uid">用户ID</SelectOption>
+                            <SelectOption value="backend_ip"
+                                >源站IP</SelectOption
+                            >
+                            <SelectOption value="cname_hostname">
                                 CNAME
-                            </option></select
-                        ><input
+                            </SelectOption></SelectField
+                        ><Input
                             v-model="search"
                             aria-label="搜索网站"
                             placeholder="输入域名,模糊搜索"
@@ -815,35 +822,39 @@ defineExpose({ refresh: load });
                             : '请选择要同步的域名'
                     }}</span>
                     <form class="resolve-filters" @submit.prevent="load(1)">
-                        <select
+                        <SelectField
                             v-model="resolveFilters.dnsapi_state"
                             aria-label="DNS API状态"
                             @change="load(1)"
                         >
-                            <option value="">全部</option>
-                            <option value="set">已配置 DNS API</option>
-                            <option value="not_set">
+                            <SelectOption value="">全部</SelectOption>
+                            <SelectOption value="set"
+                                >已配置 DNS API</SelectOption
+                            >
+                            <SelectOption value="not_set">
                                 未配置 DNS API
-                            </option></select
-                        ><select
+                            </SelectOption></SelectField
+                        ><SelectField
                             v-model="resolveFilters.task_state"
                             aria-label="任务状态"
                             @change="load(1)"
                         >
-                            <option value="">全部</option>
-                            <option value="done">已完成</option>
-                            <option value="pending">待同步</option>
-                            <option value="process">同步中</option>
-                            <option value="failed">同步失败</option></select
+                            <SelectOption value="">全部</SelectOption>
+                            <SelectOption value="done">已完成</SelectOption>
+                            <SelectOption value="pending">待同步</SelectOption>
+                            <SelectOption value="process">同步中</SelectOption>
+                            <SelectOption value="failed"
+                                >同步失败</SelectOption
+                            ></SelectField
                         ><label
                             >域名
-                            <input
+                            <Input
                                 v-model="resolveFilters.domain"
                                 placeholder="域名关键字"
                                 @change="load(1)" /></label
                         ><label
                             >网站ID
-                            <input
+                            <Input
                                 v-model="resolveFilters.site_id"
                                 placeholder="网站ID"
                                 @change="load(1)" /></label
@@ -862,28 +873,28 @@ defineExpose({ refresh: load });
                 class="filter-panel"
                 @submit.prevent="searchSites"
             >
-                <label>用户ID<input v-model="filters.uid" /></label
-                ><label>分组ID<input v-model="filters.group" /></label
-                ><label>区域ID<input v-model="filters.region" /></label>
+                <label>用户ID<Input v-model="filters.uid" /></label
+                ><label>分组ID<Input v-model="filters.group" /></label
+                ><label>区域ID<Input v-model="filters.region" /></label>
                 <label
-                    >状态<select v-model="filters.enable">
-                        <option value="">全部状态</option>
-                        <option value="1">正常</option>
-                        <option value="0">已禁用</option>
-                    </select></label
+                    >状态<SelectField v-model="filters.enable">
+                        <SelectOption value="">全部状态</SelectOption>
+                        <SelectOption value="1">正常</SelectOption>
+                        <SelectOption value="0">已禁用</SelectOption>
+                    </SelectField></label
                 ><label
-                    >HTTPS<select v-model="filters.https_enable">
-                        <option value="">全部</option>
-                        <option value="1">已开启</option>
-                        <option value="0">未开启</option>
-                    </select></label
+                    >HTTPS<SelectField v-model="filters.https_enable">
+                        <SelectOption value="">全部</SelectOption>
+                        <SelectOption value="1">已开启</SelectOption>
+                        <SelectOption value="0">未开启</SelectOption>
+                    </SelectField></label
                 ><label
-                    >同步<select v-model="filters.sync_state">
-                        <option value="">全部</option>
-                        <option value="done">已同步</option>
-                        <option value="process">同步中</option>
-                        <option value="failed">同步失败</option>
-                    </select></label
+                    >同步<SelectField v-model="filters.sync_state">
+                        <SelectOption value="">全部</SelectOption>
+                        <SelectOption value="done">已同步</SelectOption>
+                        <SelectOption value="process">同步中</SelectOption>
+                        <SelectOption value="failed">同步失败</SelectOption>
+                    </SelectField></label
                 ><button class="primary">查询</button
                 ><button type="button" @click="clearFilters">清除</button>
             </form>
@@ -918,8 +929,7 @@ defineExpose({ refresh: load });
                     <thead>
                         <tr>
                             <th class="selection">
-                                <input
-                                    type="checkbox"
+                                <CheckboxField
                                     aria-label="选择本页全部"
                                     :checked="allSelected"
                                     :disabled="
@@ -992,8 +1002,7 @@ defineExpose({ refresh: load });
                             :key="Number(row.id)"
                         >
                             <td class="selection">
-                                <input
-                                    type="checkbox"
+                                <CheckboxField
                                     :aria-label="`选择 ${row.id}`"
                                     :checked="selected.includes(Number(row.id))"
                                     :disabled="busy"
@@ -1300,12 +1309,16 @@ defineExpose({ refresh: load });
                     @click="load(page + 1)"
                 >
                     <ChevronRight /></button
-                ><select v-model="size" aria-label="每页条数" @change="load(1)">
-                    <option :value="10">10 条/页</option>
-                    <option :value="20">20 条/页</option>
-                    <option :value="50">50 条/页</option>
-                    <option :value="100">100 条/页</option>
-                </select>
+                ><SelectField
+                    v-model="size"
+                    aria-label="每页条数"
+                    @change="load(1)"
+                >
+                    <SelectOption :value="10">10 条/页</SelectOption>
+                    <SelectOption :value="20">20 条/页</SelectOption>
+                    <SelectOption :value="50">50 条/页</SelectOption>
+                    <SelectOption :value="100">100 条/页</SelectOption>
+                </SelectField>
             </footer>
         </div>
         <Dialog
@@ -1333,7 +1346,7 @@ defineExpose({ refresh: load });
                     </p>
                     <label
                         >用户 ID
-                        <input
+                        <Input
                             v-model="form.uid"
                             type="number"
                             min="1"
@@ -1342,7 +1355,7 @@ defineExpose({ refresh: load });
                     /></label>
                     <template v-if="editorTab === 'defaults'"
                         ><label
-                            >设置项<select
+                            >设置项<SelectField
                                 aria-label="设置项"
                                 v-model="form.name"
                                 required
@@ -1353,104 +1366,109 @@ defineExpose({ refresh: load });
                                             : ''
                                 "
                             >
-                                <option value="" disabled>请选择设置项</option>
-                                <option
+                                <SelectOption value="" disabled
+                                    >请选择设置项</SelectOption
+                                >
+                                <SelectOption
                                     v-if="form.name && !configMeta"
                                     :value="form.name"
                                 >
                                     {{ form.name }}
-                                </option>
-                                <option
+                                </SelectOption>
+                                <SelectOption
                                     v-for="item in SITE_CONFIG_NAMES"
                                     :key="item.value"
                                     :value="item.value"
                                 >
                                     {{ item.label }}
-                                </option>
-                            </select></label
+                                </SelectOption>
+                            </SelectField></label
                         ><label
-                            >设置值<select
+                            >设置值<SelectField
                                 v-if="configMeta?.valueType === 'boolean'"
                                 aria-label="设置值"
                                 v-model="form.value"
                             >
-                                <option value="1">是</option>
-                                <option value="0">否</option></select
-                            ><select
+                                <SelectOption value="1">是</SelectOption>
+                                <SelectOption value="0"
+                                    >否</SelectOption
+                                ></SelectField
+                            ><SelectField
                                 v-else-if="configMeta?.options"
                                 aria-label="设置值"
                                 v-model="form.value"
                             >
-                                <option
+                                <SelectOption
                                     v-for="value in configMeta.options"
                                     :key="value"
                                     :value="value"
                                 >
                                     {{ value }}
-                                </option></select
-                            ><textarea
+                                </SelectOption></SelectField
+                            ><Textarea
                                 v-else
                                 v-model="form.value"
-                                rows="3"
-                            /></label
+                                rows="3" /></label
                         ><label
-                            >生效范围<select
+                            >生效范围<SelectField
                                 aria-label="生效范围"
                                 v-model="form.scope_name"
                             >
-                                <option value="global">全局</option>
-                                <option value="group">网站分组</option>
-                            </select></label
+                                <SelectOption value="global">全局</SelectOption>
+                                <SelectOption value="group"
+                                    >网站分组</SelectOption
+                                >
+                            </SelectField></label
                         ><label v-if="form.scope_name === 'group'"
-                            >网站分组 ID<input
+                            >网站分组 ID<Input
                                 v-model="form.scope_id"
                                 type="number"
                                 min="1"
                                 required /></label
                         ><label
-                            >状态<select
+                            >状态<SelectField
                                 aria-label="状态"
                                 v-model="form.enable"
                             >
-                                <option value="1">启用</option>
-                                <option value="0">禁用</option>
-                            </select></label
+                                <SelectOption value="1">启用</SelectOption>
+                                <SelectOption value="0">禁用</SelectOption>
+                            </SelectField></label
                         ></template
                     >
                     <template v-else
                         ><label
-                            >名称<input
+                            >名称<Input
                                 v-model="form.name"
                                 placeholder="请输入名称"
                                 required /></label
                         ><label
-                            >备注<input
+                            >备注<Input
                                 v-model="form.des"
                                 placeholder="请输入备注" /></label
                     ></template>
                     <template v-if="editorTab === 'dnsapi'"
                         ><label
-                            >类型<select
+                            >类型<SelectField
                                 aria-label="类型"
                                 v-model="form.type"
                                 :disabled="!!editing && !replaceAuth"
                                 @change="authTemplate"
                             >
-                                <option
+                                <SelectOption
                                     v-for="type in DNS_TYPES"
                                     :key="type"
                                     :value="type"
                                 >
                                     {{ type }}
-                                </option>
-                            </select></label
+                                </SelectOption>
+                            </SelectField></label
                         ><label v-if="editing" class="auth-toggle"
-                            ><input v-model="replaceAuth" type="checkbox" />更新
-                            API 凭据</label
+                            ><CheckboxField v-model="replaceAuth" />更新 API
+                            凭据</label
                         ><template v-if="!editing || replaceAuth"
                             ><label v-for="(_, key) in auth" :key="key"
                                 >{{ key
-                                }}<input
+                                }}<Input
                                     v-model="auth[key]"
                                     type="password"
                                     autocomplete="new-password"
@@ -1496,21 +1514,27 @@ defineExpose({ refresh: load });
                         {{ batchError }}
                     </p>
                     <label
-                        >设置项<select
+                        >设置项<SelectField
                             aria-label="设置项"
                             v-model="batchField"
                             @change="batchValue = ''"
                         >
-                            <option value="groups">网站分组</option>
-                            <option value="backend_http_port">
+                            <SelectOption value="groups">网站分组</SelectOption>
+                            <SelectOption value="backend_http_port">
                                 回源 HTTP 端口
-                            </option>
-                            <option value="proxy_timeout">回源超时</option>
-                            <option value="gzip_enable">Gzip</option>
-                            <option value="websocket_enable">WebSocket</option>
-                        </select></label
+                            </SelectOption>
+                            <SelectOption value="proxy_timeout"
+                                >回源超时</SelectOption
+                            >
+                            <SelectOption value="gzip_enable"
+                                >Gzip</SelectOption
+                            >
+                            <SelectOption value="websocket_enable"
+                                >WebSocket</SelectOption
+                            >
+                        </SelectField></label
                     ><label
-                        >设置值<select
+                        >设置值<SelectField
                             v-if="
                                 ['gzip_enable', 'websocket_enable'].includes(
                                     batchField,
@@ -1520,10 +1544,14 @@ defineExpose({ refresh: load });
                             v-model="batchValue"
                             required
                         >
-                            <option value="" disabled>请选择</option>
-                            <option value="1">启用</option>
-                            <option value="0">禁用</option></select
-                        ><input
+                            <SelectOption value="" disabled
+                                >请选择</SelectOption
+                            >
+                            <SelectOption value="1">启用</SelectOption>
+                            <SelectOption value="0"
+                                >禁用</SelectOption
+                            ></SelectField
+                        ><Input
                             v-else
                             v-model="batchValue"
                             :required="batchField !== 'groups'"
@@ -1582,9 +1610,9 @@ defineExpose({ refresh: load });
     border-radius: 5px;
 }
 button,
-select,
+:deep([data-slot='select-trigger']),
 input:not([type='checkbox']),
-textarea,
+:deep([data-slot='textarea']),
 summary {
     border: 1px solid var(--border);
     border-radius: 3px;
@@ -1611,12 +1639,12 @@ summary svg {
     height: 13px;
 }
 input:not([type='checkbox']),
-select {
+:deep([data-slot='select-trigger']) {
     height: 29px;
     padding: 4px 8px;
     min-width: 0;
 }
-input[type='checkbox'] {
+:deep([data-slot='checkbox']) {
     accent-color: #2d8cf0;
     width: 14px;
     height: 14px;
@@ -1624,7 +1652,7 @@ input[type='checkbox'] {
 }
 button:focus-visible,
 input:focus-visible,
-select:focus-visible,
+:deep([data-slot='select-trigger']):focus-visible,
 summary:focus-visible {
     outline: 2px solid #2d8cf0;
     outline-offset: 2px;
@@ -1788,7 +1816,7 @@ tbody tr:hover {
 .pagination button {
     padding: 4px 7px;
 }
-.pagination select {
+.pagination :deep([data-slot='select-trigger']) {
     margin-left: 8px;
 }
 .pagination .current {
@@ -1857,7 +1885,7 @@ tbody tr:hover {
     align-items: center;
     gap: 8px;
 }
-.resolve-filters select {
+.resolve-filters :deep([data-slot='select-trigger']) {
     width: 125px;
 }
 .resolve-filters label {
@@ -1911,7 +1939,7 @@ tbody tr:hover {
     gap: 12px;
     font-size: 12px;
 }
-.resource-form textarea {
+.resource-form :deep([data-slot='textarea']) {
     padding: 6px;
 }
 .resource-form .auth-toggle {

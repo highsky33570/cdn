@@ -22,7 +22,10 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import SelectField from '@/components/ui/select/SelectField.vue';
+import SelectOption from '@/components/ui/select/SelectOption.vue';
 import { Spinner } from '@/components/ui/spinner';
+import Textarea from '@/components/ui/textarea/Textarea.vue';
 import { listAdminRegions } from '@/lib/adminModulesApi';
 import { apiRequest } from '@/lib/apiRequest';
 import {
@@ -447,7 +450,7 @@ async function remove(): Promise<void> {
                     @click="confirmDelete(selected)"
                     ><Trash2 />删除</Button
                 >
-                <select
+                <SelectField
                     v-if="isConfig"
                     v-model="region"
                     aria-label="区域筛选"
@@ -457,15 +460,15 @@ async function remove(): Promise<void> {
                         load(1);
                     "
                 >
-                    <option value="">所有区域</option>
-                    <option
+                    <SelectOption value="">所有区域</SelectOption>
+                    <SelectOption
                         v-for="r in regions"
                         :key="String(r.id)"
                         :value="String(r.id)"
                     >
                         {{ r.name }}
-                    </option>
-                </select>
+                    </SelectOption>
+                </SelectField>
                 <span v-if="isConfig && nodeId" class="text-sm"
                     >节点ID：{{ nodeId }}
                     <button
@@ -650,7 +653,7 @@ async function remove(): Promise<void> {
                     :disabled="loading || page >= lastPage"
                     @click="load(page + 1)"
                     ><ChevronRight /></Button
-                ><select
+                ><SelectField
                     v-model.number="size"
                     aria-label="每页条数"
                     class="ml-2 h-8 rounded border bg-background px-2"
@@ -659,10 +662,14 @@ async function remove(): Promise<void> {
                         load(1);
                     "
                 >
-                    <option v-for="n in [10, 20, 50, 100]" :key="n" :value="n">
+                    <SelectOption
+                        v-for="n in [10, 20, 50, 100]"
+                        :key="n"
+                        :value="n"
+                    >
                         {{ n }} 条/页
-                    </option>
-                </select>
+                    </SelectOption>
+                </SelectField>
             </div>
         </section>
 
@@ -725,20 +732,20 @@ async function remove(): Promise<void> {
                     </p>
                     <div v-if="editTab === 'l2-configs'" class="form-row">
                         <Label for="l2-region">区域：</Label
-                        ><select
+                        ><SelectField
                             id="l2-region"
                             v-model="form.region_id"
                             :disabled="!!editingId"
                             class="h-8 rounded border bg-background px-2 text-sm"
                         >
-                            <option
+                            <SelectOption
                                 v-for="r in regions"
                                 :key="String(r.id)"
                                 :value="String(r.id)"
                             >
                                 {{ r.name }}
-                            </option>
-                        </select>
+                            </SelectOption>
+                        </SelectField>
                     </div>
                     <div class="form-row">
                         <Label for="l2-name">名称：</Label
@@ -915,13 +922,15 @@ async function remove(): Promise<void> {
                             <div
                                 class="mt-5 grid gap-2 rounded border bg-muted/10 p-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,2fr)_auto]"
                             >
-                                <select
+                                <SelectField
                                     v-model="matcher.item"
                                     aria-label="匹配项"
                                     class="h-8 min-w-0 rounded border bg-background px-2 text-sm"
                                 >
-                                    <option value="">请选择匹配项</option>
-                                    <option
+                                    <SelectOption value=""
+                                        >请选择匹配项</SelectOption
+                                    >
+                                    <SelectOption
                                         v-if="
                                             matcher.item &&
                                             !l2MatchItems[matcher.item]
@@ -929,22 +938,24 @@ async function remove(): Promise<void> {
                                         :value="matcher.item"
                                     >
                                         {{ matcher.item }}
-                                    </option>
-                                    <option
+                                    </SelectOption>
+                                    <SelectOption
                                         v-for="(label, key) in l2MatchItems"
                                         :key="key"
                                         :value="key"
                                     >
                                         {{ label }}
-                                    </option>
-                                </select>
-                                <select
+                                    </SelectOption>
+                                </SelectField>
+                                <SelectField
                                     v-model="matcher.op"
                                     aria-label="操作符"
                                     class="h-8 min-w-0 rounded border bg-background px-2 text-sm"
                                 >
-                                    <option value="">请选择操作符</option>
-                                    <option
+                                    <SelectOption value=""
+                                        >请选择操作符</SelectOption
+                                    >
+                                    <SelectOption
                                         v-if="
                                             matcher.op &&
                                             !l2MatchOperators[matcher.op]
@@ -952,16 +963,16 @@ async function remove(): Promise<void> {
                                         :value="matcher.op"
                                     >
                                         {{ matcher.op }}
-                                    </option>
-                                    <option
+                                    </SelectOption>
+                                    <SelectOption
                                         v-for="(label, key) in l2MatchOperators"
                                         :key="key"
                                         :value="key"
                                     >
                                         {{ label }}
-                                    </option>
-                                </select>
-                                <textarea
+                                    </SelectOption>
+                                </SelectField>
+                                <Textarea
                                     ref="valueInput"
                                     v-model="matcher.value"
                                     aria-label="匹配值"

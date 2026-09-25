@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import SelectField from '@/components/ui/select/SelectField.vue';
+import SelectOption from '@/components/ui/select/SelectOption.vue';
 import Switch from '@/components/ui/switch/Switch.vue';
+import Textarea from '@/components/ui/textarea/Textarea.vue';
 import { flag } from '@/lib/firewallSettings';
 defineProps<{
     label: string;
@@ -60,7 +63,7 @@ function input(event: Event, number = false) {
                 <i />{{ option.label }}
             </Button>
         </div>
-        <textarea
+        <Textarea
             v-else-if="kind === 'textarea'"
             :aria-label="label"
             :value="String(value ?? '')"
@@ -69,22 +72,22 @@ function input(event: Event, number = false) {
             spellcheck="false"
             @change="input($event)"
         />
-        <select
+        <SelectField
             v-else-if="kind === 'select'"
             :aria-label="label"
             :value="String(value ?? '')"
             :disabled="disabled"
             @change="input($event)"
         >
-            <option value="" disabled>请选择</option>
-            <option
+            <SelectOption value="" disabled>请选择</SelectOption>
+            <SelectOption
                 v-for="option in options"
                 :key="option.value"
                 :value="option.value"
             >
                 {{ option.label }}
-            </option>
-        </select>
+            </SelectOption>
+        </SelectField>
         <div v-else class="fw-input">
             <Input
                 :aria-label="label"

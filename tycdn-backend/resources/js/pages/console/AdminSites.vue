@@ -42,6 +42,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
+import Textarea from '@/components/ui/textarea/Textarea.vue';
 import {
     createAdminCert,
     createAdminSite,
@@ -1084,7 +1085,7 @@ async function confirmCertDelete(): Promise<void> {
                     <template v-if="certForm.type === 'custom'">
                         <div class="grid gap-2">
                             <Label for="cert-key">私钥 (KEY)</Label>
-                            <textarea
+                            <Textarea
                                 id="cert-key"
                                 v-model="certForm.key"
                                 class="min-h-24 w-full rounded-md border border-input bg-background px-3 py-2 font-mono text-xs shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
@@ -1098,7 +1099,7 @@ async function confirmCertDelete(): Promise<void> {
                         </div>
                         <div class="grid gap-2">
                             <Label for="cert-cert">证书 (CERT)</Label>
-                            <textarea
+                            <Textarea
                                 id="cert-cert"
                                 v-model="certForm.cert"
                                 class="min-h-24 w-full rounded-md border border-input bg-background px-3 py-2 font-mono text-xs shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"

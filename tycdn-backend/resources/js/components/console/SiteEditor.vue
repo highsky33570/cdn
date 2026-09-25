@@ -5,6 +5,7 @@ import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import { toast } from 'vue-sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import Switch from '@/components/ui/switch/Switch.vue';
 import { apiRequest } from '@/lib/apiRequest';
 import { extractCdnflyRecord, extractCdnflyRows } from '@/lib/cdnflyResponse';
 import { configRecord, configPatch } from '@/lib/configEditor';
@@ -436,8 +437,7 @@ onBeforeUnmount(() => {
                         <span>{{
                             tab === 'basic' ? 'HTTP 访问' : 'HTTPS 访问'
                         }}</span
-                        ><input
-                            type="checkbox"
+                        ><Switch
                             role="switch"
                             :aria-label="
                                 tab === 'basic' ? '启用 HTTP' : '启用 HTTPS'
@@ -449,12 +449,12 @@ onBeforeUnmount(() => {
                                         : 'https_listen',
                                 )
                             "
-                            @change="
+                            @update:checked="
                                 toggleListener(
                                     tab === 'basic'
                                         ? 'http_listen'
                                         : 'https_listen',
-                                    ($event.target as HTMLInputElement).checked,
+                                    $event,
                                 )
                             "
                         />

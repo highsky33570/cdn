@@ -8,12 +8,16 @@ import {
 } from 'lucide-vue-next';
 import { computed, onMounted, onUnmounted, reactive, ref } from 'vue';
 import { toast } from 'vue-sonner';
+import CheckboxField from '@/components/ui/checkbox/CheckboxField.vue';
 import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import Input from '@/components/ui/input/Input.vue';
+import SelectField from '@/components/ui/select/SelectField.vue';
+import SelectOption from '@/components/ui/select/SelectOption.vue';
 import { updateAdminAcl } from '@/lib/adminModulesApi';
 import { apiRequest } from '@/lib/apiRequest';
 import { extractCdnflyRows, extractCdnflyTotal } from '@/lib/cdnflyResponse';
@@ -242,7 +246,7 @@ async function updateSubscriptions() {
         <div class="waf-toolbar">
             <form class="waf-filters" @submit.prevent="load(1)">
                 <div class="name-search">
-                    <input
+                    <Input
                         v-model="filters.name"
                         aria-label="规则库名称"
                         placeholder="规则库名称"
@@ -251,26 +255,26 @@ async function updateSubscriptions() {
                         查询
                     </button>
                 </div>
-                <select
+                <SelectField
                     v-model="filters.scope"
                     aria-label="规则范围"
                     :disabled="busy"
                     @change="load(1)"
                 >
-                    <option value="">规则范围</option>
-                    <option value="global">全局</option>
-                    <option value="user">用户</option>
-                </select>
-                <select
+                    <SelectOption value="">规则范围</SelectOption>
+                    <SelectOption value="global">全局</SelectOption>
+                    <SelectOption value="user">用户</SelectOption>
+                </SelectField>
+                <SelectField
                     v-model="filters.enable"
                     aria-label="启用状态"
                     :disabled="busy"
                     @change="load(1)"
                 >
-                    <option value="">启用状态</option>
-                    <option value="1">启用</option>
-                    <option value="0">停用</option>
-                </select>
+                    <SelectOption value="">启用状态</SelectOption>
+                    <SelectOption value="1">启用</SelectOption>
+                    <SelectOption value="0">停用</SelectOption>
+                </SelectField>
             </form>
             <div class="waf-actions">
                 <button
@@ -304,8 +308,7 @@ async function updateSubscriptions() {
                 <thead>
                     <tr>
                         <th class="check">
-                            <input
-                                type="checkbox"
+                            <CheckboxField
                                 aria-label="选择全部规则库"
                                 :checked="allSelected"
                                 :disabled="loading || busy || !rows.length"
@@ -330,8 +333,7 @@ async function updateSubscriptions() {
                 <tbody>
                     <tr v-for="row in rows" :key="String(row.id)">
                         <td class="check">
-                            <input
-                                type="checkbox"
+                            <CheckboxField
                                 :aria-label="`选择规则库 ${row.name}`"
                                 :checked="selected.includes(Number(row.id))"
                                 :disabled="loading || busy"
@@ -519,11 +521,11 @@ h1 {
 }
 button,
 input,
-select {
+:deep([data-slot='select-trigger']) {
     font: inherit;
 }
 button,
-select,
+:deep([data-slot='select-trigger']),
 input:not([type='checkbox']) {
     height: 28px;
     border: 1px solid #d7dce5;
@@ -567,7 +569,7 @@ input:not([type='checkbox']) {
 input::placeholder {
     color: #b7bfcc;
 }
-input[type='checkbox'] {
+:deep([data-slot='checkbox']) {
     accent-color: #2d8cf0;
     width: 14px;
     height: 14px;
@@ -584,12 +586,12 @@ input[type='checkbox'] {
 .name-search button {
     border-radius: 0 3px 3px 0;
 }
-select {
+:deep([data-slot='select-trigger']) {
     width: 117px;
     padding: 0 7px;
 }
 input:focus,
-select:focus {
+:deep([data-slot='select-trigger']):focus {
     outline: 1px solid #2d8cf0;
 }
 .waf-table-wrap {
@@ -721,7 +723,7 @@ td.check {
 :global(.dark .waf-workspace .pill) {
     background: #263449;
 }
-:global(.dark .waf-workspace select) {
+:global(.dark .waf-workspace :deep([data-slot='select-trigger'])) {
     background: #151e2b;
 }
 :global(.dark .waf-workspace .pill.success) {

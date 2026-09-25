@@ -3,6 +3,7 @@ import { Search } from 'lucide-vue-next';
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { toast } from 'vue-sonner';
 import PackagePagination from '@/components/console/PackagePagination.vue';
+import CheckboxField from '@/components/ui/checkbox/CheckboxField.vue';
 import {
     Dialog,
     DialogScrollContent,
@@ -11,6 +12,12 @@ import {
     DialogDescription,
     DialogFooter,
 } from '@/components/ui/dialog';
+import Input from '@/components/ui/input/Input.vue';
+import RadioGroup from '@/components/ui/radio-group/RadioGroup.vue';
+import RadioGroupItem from '@/components/ui/radio-group/RadioGroupItem.vue';
+import SelectField from '@/components/ui/select/SelectField.vue';
+import SelectOption from '@/components/ui/select/SelectOption.vue';
+import Textarea from '@/components/ui/textarea/Textarea.vue';
 import { apiRequest } from '@/lib/apiRequest';
 import {
     cacheModes,
@@ -323,24 +330,28 @@ function createdAt(row: CdnflyRecord) {
                         <span class="row-label" aria-hidden="true"
                             >操作类型:</span
                         >
-                        <div class="cache-radios">
+                        <RadioGroup
+                            :model-value="mode"
+                            aria-label="操作类型"
+                            @update:model-value="
+                                changeMode($event as CacheMode)
+                            "
+                            name="cache-mode"
+                            class="cache-radios"
+                        >
                             <label v-for="item in cacheModes" :key="item.value"
-                                ><input
-                                    type="radio"
-                                    name="cache-mode"
-                                    :value="item.value"
-                                    :checked="mode === item.value"
-                                    @change="changeMode(item.value)"
-                                />{{ typeLabel(item.value) }}</label
+                                ><RadioGroupItem :value="item.value" />{{
+                                    typeLabel(item.value)
+                                }}</label
                             >
-                        </div>
+                        </RadioGroup>
                     </fieldset>
                     <div class="cache-form-row">
                         <label class="row-label url-label" for="cache-urls"
                             >URL:</label
                         >
                         <div class="url-field">
-                            <textarea
+                            <Textarea
                                 id="cache-urls"
                                 v-model="input"
                                 placeholder="一行一条URL"
@@ -415,23 +426,23 @@ function createdAt(row: CdnflyRecord) {
                     >
                         {{ submitting ? '提交中…' : '重新提交' }}
                     </button>
-                    <select
+                    <SelectField
                         v-model="typeFilter"
                         aria-label="任务类型"
                         :disabled="submitting"
                         @change="loadJobs(1)"
                     >
-                        <option value="">所有类型</option>
-                        <option
+                        <SelectOption value="">所有类型</SelectOption>
+                        <SelectOption
                             v-for="item in cacheModes"
                             :key="item.value"
                             :value="item.value"
                         >
                             {{ typeLabel(item.value) }}
-                        </option>
-                    </select>
+                        </SelectOption>
+                    </SelectField>
                     <div class="cache-search">
-                        <input
+                        <Input
                             v-model="keyword"
                             aria-label="URL或域名"
                             placeholder="URL或域名"
@@ -470,8 +481,7 @@ function createdAt(row: CdnflyRecord) {
                         <thead>
                             <tr>
                                 <th>
-                                    <input
-                                        type="checkbox"
+                                    <CheckboxField
                                         aria-label="全选当前页"
                                         :checked="allSelected"
                                         :indeterminate="
@@ -509,9 +519,8 @@ function createdAt(row: CdnflyRecord) {
                                     :key="textValue(row.id)"
                                 >
                                     <td>
-                                        <input
+                                        <CheckboxField
                                             v-model="selected"
-                                            type="checkbox"
                                             :value="textValue(row.id)"
                                             :aria-label="`选择 ${row.id}`"
                                             :disabled="submitting"
@@ -658,8 +667,8 @@ function createdAt(row: CdnflyRecord) {
     gap: 6px;
     cursor: pointer;
 }
-input[type='radio'],
-input[type='checkbox'] {
+:deep([data-slot='radio-group-item']),
+:deep([data-slot='checkbox']) {
     width: 19px;
     height: 19px;
     accent-color: var(--primary);
@@ -673,7 +682,7 @@ input[type='checkbox'] {
     max-width: 100%;
     min-width: 0;
 }
-textarea {
+:deep([data-slot='textarea']) {
     width: 100%;
     height: 275px;
     display: block;
@@ -684,12 +693,12 @@ textarea {
     resize: vertical;
     outline: none;
 }
-textarea::placeholder,
+:deep([data-slot='textarea'])::placeholder,
 .cache-search input::placeholder {
     color: var(--muted-foreground);
     opacity: 0.55;
 }
-textarea:focus,
+:deep([data-slot='textarea']):focus,
 .cache-search:focus-within {
     border-color: var(--primary);
 }
@@ -720,14 +729,14 @@ button:not(:disabled) {
     cursor: pointer;
 }
 button:disabled,
-select:disabled,
+:deep([data-slot='select-trigger']):disabled,
 input:disabled {
     opacity: 0.5;
     cursor: not-allowed;
 }
 button:focus-visible,
 input:focus-visible,
-select:focus-visible {
+:deep([data-slot='select-trigger']):focus-visible {
     outline: 2px solid var(--primary);
     outline-offset: 2px;
 }
@@ -738,7 +747,7 @@ select:focus-visible {
     gap: 10px;
     margin-bottom: 18px;
 }
-.cache-toolbar select {
+.cache-toolbar :deep([data-slot='select-trigger']) {
     width: 187px;
     height: 40px;
     padding: 0 10px;
@@ -841,7 +850,7 @@ tbody tr:hover {
     font-size: 16px;
 }
 .cache-pagination :deep(button),
-.cache-pagination :deep(select) {
+.cache-pagination :deep([data-slot='select-trigger']) {
     height: 40px;
     min-width: 40px;
     font-size: 16px;

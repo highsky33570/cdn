@@ -10,6 +10,8 @@ import {
     DialogDescription,
     DialogFooter,
 } from '@/components/ui/dialog';
+import SelectField from '@/components/ui/select/SelectField.vue';
+import SelectOption from '@/components/ui/select/SelectOption.vue';
 import { siteDefaultFields } from '@/lib/configDefaults';
 import type { ConfigObject, ConfigValue } from '@/lib/configEditor';
 const props = defineProps<{
@@ -166,19 +168,19 @@ function quick(event: Event) {
                     :disabled="disabled"
                     @click="edit()"
                     >{{ isCache ? '新增规则' : '新增请求头' }}</Button
-                ><select
+                ><SelectField
                     v-if="isCache"
                     aria-label="快速设置缓存"
                     class="h-8 rounded-md border border-input bg-background px-2 text-sm"
                     :disabled="disabled"
                     @change="quick"
                 >
-                    <option value="">快速设置缓存</option>
-                    <option value="index">首页缓存</option>
-                    <option value="all">全站缓存</option>
-                    <option value="static">静态资源缓存</option>
-                    <option value="video">视频文件缓存</option>
-                </select>
+                    <SelectOption value="">快速设置缓存</SelectOption>
+                    <SelectOption value="index">首页缓存</SelectOption>
+                    <SelectOption value="all">全站缓存</SelectOption>
+                    <SelectOption value="static">静态资源缓存</SelectOption>
+                    <SelectOption value="video">视频文件缓存</SelectOption>
+                </SelectField>
             </div>
         </div>
         <div

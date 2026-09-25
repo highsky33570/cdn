@@ -5,6 +5,7 @@ import ConsoleDataTable from '@/components/console/ConsoleDataTable.vue';
 import ConsoleTabs from '@/components/console/ConsoleTabs.vue';
 import StreamMetricChart from '@/components/console/StreamMetricChart.vue';
 import { Button } from '@/components/ui/button';
+import DatePicker from '@/components/ui/date-picker/DatePicker.vue';
 import { Input } from '@/components/ui/input';
 import {
     Select,
@@ -335,13 +336,13 @@ onUnmounted(() => ++requestId);
                             <div
                                 class="flex min-w-0 flex-1 flex-wrap gap-2 pl-2"
                             >
-                                <Input
+                                <DatePicker
                                     v-model="customStart"
                                     type="date"
                                     aria-label="开始日期"
                                     class="w-40"
                                 />
-                                <Input
+                                <DatePicker
                                     v-model="customEnd"
                                     type="date"
                                     aria-label="结束日期"

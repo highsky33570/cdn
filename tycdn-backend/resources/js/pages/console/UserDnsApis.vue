@@ -10,7 +10,8 @@ import {
     Trash2,
 } from 'lucide-vue-next';
 import { computed, onMounted, reactive, ref } from 'vue';
-import { toast } from 'vue-sonner'
+import { toast } from 'vue-sonner';
+import ConfirmDeleteDialog from '@/components/console/ConfirmDeleteDialog.vue';
 import ConsolePageHeader from '@/components/console/ConsolePageHeader.vue';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
@@ -35,8 +36,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
-import Switch from '@/components/ui/switch/Switch.vue';
-import ConfirmDeleteDialog from '@/components/console/ConfirmDeleteDialog.vue';
+import Textarea from '@/components/ui/textarea/Textarea.vue';
 import {
     formatDate,
     getErrorMessage,
@@ -251,8 +251,13 @@ function openDeleteRecord(record: CdnflyRecord) {
 
 async function confirmDeleteRecord(): Promise<void> {
     const id = recordId(deleteTarget.value!);
-    if (!id) return;
+
+    if (!id) {
+        return;
+    }
+
     deleting.value = true;
+
     try {
         await deleteUserDnsApi(id);
         deleteOpen.value = false;
@@ -570,7 +575,7 @@ function nullableText(value: string): string | null {
 
                     <div class="grid gap-2">
                         <Label for="dns-auth">auth JSON</Label>
-                        <textarea
+                        <Textarea
                             id="dns-auth"
                             v-model="form.auth"
                             class="min-h-40 w-full rounded-md border border-input bg-background px-3 py-2 font-mono text-sm shadow-xs transition-[color,box-shadow] outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50"
@@ -579,7 +584,7 @@ function nullableText(value: string): string | null {
                     </div>
                     <div class="grid gap-2">
                         <Label for="dns-des">备注</Label>
-                        <textarea
+                        <Textarea
                             id="dns-des"
                             v-model="form.des"
                             class="min-h-20 w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-xs transition-[color,box-shadow] outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50"

@@ -8,6 +8,7 @@ import type { ColumnDef } from '@/components/console/ConsoleDataTable.vue';
 import PackagePagination from '@/components/console/PackagePagination.vue';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
+import DatePicker from '@/components/ui/date-picker/DatePicker.vue';
 import { DateRangePicker } from '@/components/ui/date-range-picker';
 import {
     Dialog,
@@ -17,8 +18,9 @@ import {
     DialogDescription,
     DialogFooter,
 } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import RadioGroup from '@/components/ui/radio-group/RadioGroup.vue';
+import RadioGroupItem from '@/components/ui/radio-group/RadioGroupItem.vue';
 import {
     Select,
     SelectTrigger,
@@ -641,8 +643,9 @@ onUnmounted(() => {
                                     class="text-sm sm:text-right"
                                     >订单类型：</span
                                 >
-                                <div
-                                    role="group"
+                                <RadioGroup
+                                    v-model="form.type"
+                                    name="order-type"
                                     aria-labelledby="order-type-label"
                                     class="flex flex-wrap gap-x-3 gap-y-2"
                                 >
@@ -650,15 +653,12 @@ onUnmounted(() => {
                                         v-for="item in typeOptions"
                                         :key="item"
                                         class="flex items-center gap-1 text-sm"
-                                        ><input
-                                            v-model="form.type"
-                                            type="radio"
-                                            name="order-type"
+                                        ><RadioGroupItem
                                             :value="item"
                                             class="accent-primary"
                                         />{{ item }}</label
                                     >
-                                </div>
+                                </RadioGroup>
                             </div>
                             <div
                                 v-for="field in textFields"
@@ -669,7 +669,7 @@ onUnmounted(() => {
                                     >{{ field.label }}：</Label
                                 >
                                 <div class="flex min-w-0">
-                                    <Input
+                                    <DatePicker
                                         :id="`order-${field.key}`"
                                         v-model="form[field.key]"
                                         :type="
@@ -718,8 +718,9 @@ onUnmounted(() => {
                                     class="text-sm sm:text-right"
                                     >状态：</span
                                 >
-                                <div
-                                    role="group"
+                                <RadioGroup
+                                    v-model="form.state"
+                                    name="order-state"
                                     aria-labelledby="order-state-label"
                                     class="flex gap-3"
                                 >
@@ -735,15 +736,12 @@ onUnmounted(() => {
                                         ]"
                                         :key="item"
                                         class="flex items-center gap-1 text-sm"
-                                        ><input
-                                            v-model="form.state"
-                                            type="radio"
-                                            name="order-state"
+                                        ><RadioGroupItem
                                             :value="item"
                                             class="accent-primary"
                                         />{{ item }}</label
                                     >
-                                </div>
+                                </RadioGroup>
                             </div>
                         </fieldset>
                         <Alert v-if="formError" variant="destructive"

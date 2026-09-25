@@ -4,6 +4,10 @@ import { computed } from 'vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import SelectField from '@/components/ui/select/SelectField.vue';
+import SelectOption from '@/components/ui/select/SelectOption.vue';
+import Switch from '@/components/ui/switch/Switch.vue';
+import Textarea from '@/components/ui/textarea/Textarea.vue';
 import { getField, setField, inferredFields } from '@/lib/configEditor';
 import type { ConfigObject, ConfigValue, Field } from '@/lib/configEditor';
 
@@ -187,22 +191,20 @@ function add(field: Field) {
                 class="flex cursor-pointer items-center justify-between gap-4 rounded-lg border p-3"
             >
                 <span class="text-sm font-medium">{{ field.label }}</span
-                ><input
-                    type="checkbox"
+                ><Switch
                     role="switch"
-                    class="size-4 accent-[var(--primary)]"
                     :checked="
                         [true, 1, '1', 'on'].includes(
                             read(field) as string | number | boolean,
                         )
                     "
                     :disabled="disabled"
-                    @change="
+                    @update:checked="
                         write(
                             field,
                             typeof read(field) === 'boolean'
-                                ? ($event.target as HTMLInputElement).checked
-                                : ($event.target as HTMLInputElement).checked
+                                ? $event
+                                : $event
                                   ? 1
                                   : 0,
                         )
@@ -216,7 +218,7 @@ function add(field: Field) {
                         >*</span
                     ></span
                 >
-                <select
+                <SelectField
                     v-if="field.type === 'select'"
                     :aria-label="field.label"
                     class="h-9 w-full rounded-md border bg-background px-3"
@@ -234,8 +236,8 @@ function add(field: Field) {
                         )
                     "
                 >
-                    <option value="" disabled>请选择</option>
-                    <option
+                    <SelectOption value="" disabled>请选择</SelectOption>
+                    <SelectOption
                         v-if="
                             read(field) !== null &&
                             !field.options?.some(
@@ -245,16 +247,16 @@ function add(field: Field) {
                         :value="String(read(field))"
                     >
                         {{ read(field) }}
-                    </option>
-                    <option
+                    </SelectOption>
+                    <SelectOption
                         v-for="option in field.options"
                         :key="option.value"
                         :value="option.value"
                     >
                         {{ option.label }}
-                    </option>
-                </select>
-                <textarea
+                    </SelectOption>
+                </SelectField>
+                <Textarea
                     v-else-if="field.type === 'textarea'"
                     class="min-h-24 w-full rounded-md border bg-background px-3 py-2"
                     :value="

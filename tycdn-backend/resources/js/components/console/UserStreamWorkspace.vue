@@ -6,6 +6,7 @@ import ConfirmDeleteDialog from '@/components/console/ConfirmDeleteDialog.vue';
 import PackagePagination from '@/components/console/PackagePagination.vue';
 import StreamBatchCreate from '@/components/console/StreamBatchCreate.vue';
 import { Button } from '@/components/ui/button';
+import CheckboxField from '@/components/ui/checkbox/CheckboxField.vue';
 import {
     Dialog,
     DialogScrollContent,
@@ -19,6 +20,9 @@ import {
     DropdownMenuContent,
     DropdownMenuItem,
 } from '@/components/ui/dropdown-menu';
+import Input from '@/components/ui/input/Input.vue';
+import SelectField from '@/components/ui/select/SelectField.vue';
+import SelectOption from '@/components/ui/select/SelectOption.vue';
 import { apiRequest } from '@/lib/apiRequest';
 import {
     extractCdnflyRows,
@@ -619,19 +623,19 @@ function tabKey(event: KeyboardEvent) {
                     ></DropdownMenu
                 >
                 <form class="stream-search" @submit.prevent="load(1)">
-                    <select
+                    <SelectField
                         v-model="searchType"
                         aria-label="搜索类型"
                         :disabled="busy"
                     >
-                        <option
+                        <SelectOption
                             v-for="(label, key) in searchOptions"
                             :key="key"
                             :value="key"
                         >
                             {{ label }}
-                        </option></select
-                    ><input
+                        </SelectOption></SelectField
+                    ><Input
                         v-model="search"
                         aria-label="转发搜索"
                         :placeholder="`输入${searchOptions[searchType as keyof typeof searchOptions]}`"
@@ -678,84 +682,84 @@ function tabKey(event: KeyboardEvent) {
                 @submit.prevent="load(1)"
             >
                 <label
-                    >监听协议<select
+                    >监听协议<SelectField
                         v-model="filters.listen_protocol"
                         aria-label="监听协议"
                         :disabled="busy"
                     >
-                        <option value="">所有协议</option>
-                        <option value="tcp">TCP</option>
-                        <option value="udp">UDP</option>
-                    </select></label
+                        <SelectOption value="">所有协议</SelectOption>
+                        <SelectOption value="tcp">TCP</SelectOption>
+                        <SelectOption value="udp">UDP</SelectOption>
+                    </SelectField></label
                 >
                 <label
-                    >状态<select
+                    >状态<SelectField
                         v-model="filters.enable"
                         aria-label="状态"
                         :disabled="busy"
                     >
-                        <option value="">所有状态</option>
-                        <option value="1">启用</option>
-                        <option value="0">禁用</option>
-                    </select></label
+                        <SelectOption value="">所有状态</SelectOption>
+                        <SelectOption value="1">启用</SelectOption>
+                        <SelectOption value="0">禁用</SelectOption>
+                    </SelectField></label
                 >
                 <label
-                    >任务状态<select
+                    >任务状态<SelectField
                         v-model="filters.state"
                         aria-label="任务状态"
                         :disabled="busy"
                     >
-                        <option value="">所有状态</option>
-                        <option value="done">已完成</option>
-                        <option value="pending">待执行</option>
-                        <option value="process">执行中</option>
-                        <option value="failed">失败</option>
-                    </select></label
+                        <SelectOption value="">所有状态</SelectOption>
+                        <SelectOption value="done">已完成</SelectOption>
+                        <SelectOption value="pending">待执行</SelectOption>
+                        <SelectOption value="process">执行中</SelectOption>
+                        <SelectOption value="failed">失败</SelectOption>
+                    </SelectField></label
                 >
                 <label
-                    >同步状态<select
+                    >同步状态<SelectField
                         v-model="filters.sync_state"
                         aria-label="同步状态"
                         :disabled="busy"
                     >
-                        <option value="">所有状态</option>
-                        <option value="done">已同步</option>
-                        <option value="pending">待同步</option>
-                        <option value="process">同步中</option>
-                        <option value="failed">同步失败</option>
-                    </select></label
+                        <SelectOption value="">所有状态</SelectOption>
+                        <SelectOption value="done">已同步</SelectOption>
+                        <SelectOption value="pending">待同步</SelectOption>
+                        <SelectOption value="process">同步中</SelectOption>
+                        <SelectOption value="failed">同步失败</SelectOption>
+                    </SelectField></label
                 >
                 <label
-                    >分组<select
+                    >分组<SelectField
                         v-model="filters.group"
                         aria-label="分组"
                         :disabled="busy"
                     >
-                        <option value="">所有分组</option>
-                        <option
+                        <SelectOption value="">所有分组</SelectOption>
+                        <SelectOption
                             v-for="group in groups"
                             :key="String(group.id)"
                             :value="String(group.id)"
                         >
                             {{ group.name }}
-                        </option>
-                    </select></label
+                        </SelectOption>
+                    </SelectField></label
                 >
                 <label
-                    >套餐<select
+                    >套餐<SelectField
                         v-model="filters.user_package"
                         aria-label="套餐"
                         :disabled="busy"
                     >
-                        <option value="">所有套餐</option>
-                        <option
+                        <SelectOption value="">所有套餐</SelectOption>
+                        <SelectOption
                             v-for="pack in packages"
                             :key="String(pack.id)"
                             :value="String(pack.id)"
                         >
                             {{ pack.name || pack.package_name || pack.id }}
-                        </option>
-                    </select></label
+                        </SelectOption>
+                    </SelectField></label
                 >
                 <button
                     type="submit"
@@ -812,8 +816,7 @@ function tabKey(event: KeyboardEvent) {
                     <thead>
                         <tr>
                             <th>
-                                <input
-                                    type="checkbox"
+                                <CheckboxField
                                     aria-label="全选当前页"
                                     :checked="allSelected"
                                     :indeterminate="
@@ -866,9 +869,8 @@ function tabKey(event: KeyboardEvent) {
                         <template v-else>
                             <tr v-for="row in rows" :key="Number(row.id)">
                                 <td>
-                                    <input
+                                    <CheckboxField
                                         v-model="selected"
-                                        type="checkbox"
                                         :value="Number(row.id)"
                                         :aria-label="`选择 ${row.id}`"
                                         :disabled="busy"
@@ -1055,74 +1057,76 @@ function tabKey(event: KeyboardEvent) {
                     </p>
                     <template v-if="editorTab === 'groups'"
                         ><label
-                            >名称<input
+                            >名称<Input
                                 v-model="form.name"
                                 required
                                 maxlength="255" /></label
                         ><label
-                            >备注<input
+                            >备注<Input
                                 v-model="form.des"
                                 maxlength="1000" /></label></template
                     ><template v-else
                         ><label
-                            >设置项<select
+                            >设置项<SelectField
                                 aria-label="设置项"
                                 v-model="form.name"
                                 @change="
                                     form.value = values[form.name][0].value
                                 "
                             >
-                                <option
+                                <SelectOption
                                     v-for="(label, key) in names"
                                     :key="key"
                                     :value="key"
                                 >
                                     {{ label }}
-                                </option>
-                            </select></label
+                                </SelectOption>
+                            </SelectField></label
                         ><label
-                            >设置值<select
+                            >设置值<SelectField
                                 v-model="form.value"
                                 aria-label="设置值"
                             >
-                                <option
+                                <SelectOption
                                     v-for="option in values[form.name]"
                                     :key="option.value"
                                     :value="option.value"
                                 >
                                     {{ option.label }}
-                                </option>
-                            </select></label
+                                </SelectOption>
+                            </SelectField></label
                         ><label
-                            >生效范围<select
+                            >生效范围<SelectField
                                 v-model="form.scope_name"
                                 aria-label="生效范围"
                             >
-                                <option value="global">全局</option>
-                                <option value="group">转发分组</option>
-                            </select></label
+                                <SelectOption value="global">全局</SelectOption>
+                                <SelectOption value="group"
+                                    >转发分组</SelectOption
+                                >
+                            </SelectField></label
                         ><label v-if="form.scope_name === 'group'"
-                            >转发分组<select
+                            >转发分组<SelectField
                                 aria-label="转发分组"
                                 v-model="form.scope_id"
                                 :disabled="groupsLoading"
                                 required
                             >
-                                <option value="">
+                                <SelectOption value="">
                                     {{
                                         groupsLoading
                                             ? '加载中…'
                                             : '请选择转发分组'
                                     }}
-                                </option>
-                                <option
+                                </SelectOption>
+                                <SelectOption
                                     v-for="group in groups"
                                     :key="String(group.id)"
                                     :value="String(group.id)"
                                 >
                                     {{ group.name }}
-                                </option>
-                            </select></label
+                                </SelectOption>
+                            </SelectField></label
                         ></template
                     >
                     <div class="modal-actions">
@@ -1169,30 +1173,29 @@ function tabKey(event: KeyboardEvent) {
                         class="batch-field"
                     >
                         <label
-                            ><input
-                                v-model="patchFields[key]"
-                                type="checkbox"
-                            />{{ label }}</label
-                        ><input
+                            ><CheckboxField v-model="patchFields[key]" />{{
+                                label
+                            }}</label
+                        ><Input
                             v-if="key === 'conn_limit'"
                             v-model="batchForm.conn_limit"
                             type="number"
                             min="0"
                             placeholder="留空则不限"
                             :disabled="!patchFields[key]"
-                        /><select
+                        /><SelectField
                             v-else
                             v-model="batchForm[key]"
                             :disabled="!patchFields[key]"
                         >
-                            <option
+                            <SelectOption
                                 v-for="option in values[key]"
                                 :key="option.value"
                                 :value="option.value"
                             >
                                 {{ option.label }}
-                            </option>
-                        </select>
+                            </SelectOption>
+                        </SelectField>
                     </div>
                     <div class="modal-actions">
                         <Button
@@ -1283,7 +1286,7 @@ function tabKey(event: KeyboardEvent) {
     display: flex;
     height: 40px;
 }
-.stream-search select {
+.stream-search :deep([data-slot='select-trigger']) {
     width: 110px;
     border: 1px solid var(--border);
     border-radius: 4px 0 0 4px;
@@ -1319,7 +1322,7 @@ function tabKey(event: KeyboardEvent) {
     gap: 6px;
     font-size: 14px;
 }
-.advanced-filters select {
+.advanced-filters :deep([data-slot='select-trigger']) {
     width: 170px;
     height: 40px;
     border: 1px solid var(--border);
@@ -1411,7 +1414,7 @@ function tabKey(event: KeyboardEvent) {
     font-size: 16px;
 }
 .stream-pagination :deep(button),
-.stream-pagination :deep(select) {
+.stream-pagination :deep([data-slot='select-trigger']) {
     height: 40px;
     min-width: 40px;
     font-size: 16px;
@@ -1426,13 +1429,13 @@ button:not(:disabled) {
 }
 button:disabled,
 input:disabled,
-select:disabled {
+:deep([data-slot='select-trigger']):disabled {
     opacity: 0.5;
     cursor: not-allowed;
 }
 button:focus-visible,
 input:focus-visible,
-select:focus-visible {
+:deep([data-slot='select-trigger']):focus-visible {
     outline: 2px solid var(--primary);
     outline-offset: 2px;
 }
@@ -1451,7 +1454,7 @@ select:focus-visible {
     font-size: 14px;
 }
 .resource-form input:not([type='checkbox']),
-.resource-form select {
+.resource-form :deep([data-slot='select-trigger']) {
     height: 38px;
     width: 100%;
     border: 1px solid var(--border);
@@ -1476,7 +1479,7 @@ select:focus-visible {
     align-items: center;
     gap: 8px;
 }
-.batch-field input[type='checkbox'] {
+.batch-field :deep([data-slot='checkbox']) {
     width: 18px;
     height: 18px;
     accent-color: var(--primary);
@@ -1502,7 +1505,7 @@ select:focus-visible {
     .advanced-filters label {
         flex: 1 1 140px;
     }
-    .advanced-filters select {
+    .advanced-filters :deep([data-slot='select-trigger']) {
         width: 100%;
     }
 }

@@ -21,6 +21,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
 import Switch from '@/components/ui/switch/Switch.vue';
+import Textarea from '@/components/ui/textarea/Textarea.vue';
 import { apiRequest } from '@/lib/apiRequest';
 import {
     extractCdnflyRecord,
@@ -526,7 +527,7 @@ async function mutate(ids: (string | number)[], visible?: boolean) {
                             >
                                 <Label for="anno-content" class="pt-2"
                                     >内容：</Label
-                                ><textarea
+                                ><Textarea
                                     id="anno-content"
                                     v-model="form.content"
                                     class="min-h-60 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"

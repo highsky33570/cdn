@@ -13,7 +13,10 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import SelectField from '@/components/ui/select/SelectField.vue';
+import SelectOption from '@/components/ui/select/SelectOption.vue';
 import { Spinner } from '@/components/ui/spinner';
+import Switch from '@/components/ui/switch/Switch.vue';
 import { apiRequest } from '@/lib/apiRequest';
 import { extractCdnflyRows, extractCdnflyTotal } from '@/lib/cdnflyResponse';
 import { getErrorMessage, textValue } from '@/lib/formatters';
@@ -436,33 +439,17 @@ onMounted(load);
                             </p>
                             <div class="form-row">
                                 <Label for="monitor-enabled">监控开关</Label
-                                ><button
+                                ><Switch
                                     id="monitor-enabled"
-                                    role="switch"
                                     aria-label="监控开关"
-                                    :aria-checked="config.global_check_on === 1"
-                                    class="relative h-5 w-10 rounded-full"
-                                    :class="
-                                        config.global_check_on
-                                            ? 'bg-primary'
-                                            : 'bg-muted-foreground/40'
-                                    "
-                                    @click="
+                                    :checked="config.global_check_on === 1"
+                                    @update:checked="
                                         choose(
                                             'global_check_on',
                                             config.global_check_on ? 0 : 1,
                                         )
                                     "
-                                >
-                                    <span
-                                        class="absolute top-0.5 left-0.5 size-4 rounded-full bg-white transition-transform"
-                                        :class="
-                                            config.global_check_on
-                                                ? 'translate-x-5'
-                                                : ''
-                                        "
-                                    />
-                                </button>
+                                />
                             </div>
                             <div class="form-row">
                                 <Label>默认监控协议</Label
@@ -807,30 +794,30 @@ onMounted(load);
                     class="mb-3 flex flex-wrap items-center gap-2 rounded border bg-muted/10 p-3"
                     @submit.prevent="loadLogs(1)"
                 >
-                    <select
+                    <SelectField
                         v-model="filters.type"
                         aria-label="日志类型"
                         class="h-8 w-44 rounded border bg-background px-2 text-sm"
                         @change="loadLogs(1)"
                     >
-                        <option value="">所有类型</option>
-                        <option
+                        <SelectOption value="">所有类型</SelectOption>
+                        <SelectOption
                             v-for="event in monitorEvents"
                             :key="event.value"
                             :value="event.value"
                         >
                             {{ event.value }}
-                        </option></select
-                    ><select
+                        </SelectOption></SelectField
+                    ><SelectField
                         v-model="filters.action"
                         aria-label="日志动作"
                         class="h-8 w-44 rounded border bg-background px-2 text-sm"
                         @change="loadLogs(1)"
                     >
-                        <option value="">所有动作</option>
-                        <option>启用</option>
-                        <option>禁用</option>
-                    </select>
+                        <SelectOption value="">所有动作</SelectOption>
+                        <SelectOption value="启用">启用</SelectOption>
+                        <SelectOption value="禁用">禁用</SelectOption>
+                    </SelectField>
                     <div
                         v-for="field in filterInputs"
                         :key="field.key"
@@ -957,20 +944,20 @@ onMounted(load);
                         :disabled="logLoading || page >= lastPage"
                         @click="loadLogs(page + 1)"
                         ><ChevronRight /></Button
-                    ><select
+                    ><SelectField
                         v-model.number="size"
                         aria-label="每页条数"
                         class="h-8 rounded border bg-background px-2"
                         @change="loadLogs(1)"
                     >
-                        <option
+                        <SelectOption
                             v-for="n in [10, 20, 50, 100]"
                             :key="n"
                             :value="n"
                         >
                             {{ n }} 条/页
-                        </option>
-                    </select>
+                        </SelectOption>
+                    </SelectField>
                 </div>
             </template>
         </section>

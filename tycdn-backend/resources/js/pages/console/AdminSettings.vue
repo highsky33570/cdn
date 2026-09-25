@@ -25,6 +25,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
+import Textarea from '@/components/ui/textarea/Textarea.vue';
 import {
     getAdminConfigs,
     getAdminRegisterInfo,
@@ -514,7 +515,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
                 <div class="grid gap-2">
                     <Label for="config-value">值</Label>
-                    <textarea
+                    <Textarea
                         id="config-value"
                         v-model="editValue"
                         class="min-h-40 w-full resize-y rounded-md border bg-background px-3 py-2 font-mono text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"

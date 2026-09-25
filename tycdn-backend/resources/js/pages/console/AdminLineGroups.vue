@@ -30,6 +30,8 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import SelectField from '@/components/ui/select/SelectField.vue';
+import SelectOption from '@/components/ui/select/SelectOption.vue';
 import { Spinner } from '@/components/ui/spinner';
 import {
     createAdminNodeGroup,
@@ -428,7 +430,7 @@ const resolving = ref<CdnflyRecord | null>(null);
                 class="mb-3 flex flex-wrap items-center gap-2"
                 @submit.prevent="load(1)"
             >
-                <select
+                <SelectField
                     v-model="region"
                     aria-label="区域筛选"
                     class="h-8 w-52 rounded border bg-background px-2 text-sm"
@@ -437,15 +439,15 @@ const resolving = ref<CdnflyRecord | null>(null);
                         load(1);
                     "
                 >
-                    <option value="">所有区域</option>
-                    <option
+                    <SelectOption value="">所有区域</SelectOption>
+                    <SelectOption
                         v-for="r in regions"
                         :key="String(r.id)"
                         :value="String(r.id)"
                     >
                         {{ r.name }}
-                    </option>
-                </select>
+                    </SelectOption>
+                </SelectField>
                 <div class="relative w-52">
                     <Input
                         v-model="search"
@@ -624,7 +626,7 @@ const resolving = ref<CdnflyRecord | null>(null);
                     @click="load(page + 1)"
                     ><ChevronRight
                 /></Button>
-                <select
+                <SelectField
                     v-model.number="size"
                     aria-label="每页条数"
                     class="ml-2 h-8 rounded border bg-background px-2"
@@ -633,10 +635,14 @@ const resolving = ref<CdnflyRecord | null>(null);
                         load(1);
                     "
                 >
-                    <option v-for="n in [10, 20, 50, 100]" :key="n" :value="n">
+                    <SelectOption
+                        v-for="n in [10, 20, 50, 100]"
+                        :key="n"
+                        :value="n"
+                    >
                         {{ n }} 条/页
-                    </option>
-                </select>
+                    </SelectOption>
+                </SelectField>
             </div>
         </section>
 
@@ -674,20 +680,20 @@ const resolving = ref<CdnflyRecord | null>(null);
                     </div>
                     <div v-if="!editing" class="form-row">
                         <Label for="group-region">区域：</Label
-                        ><select
+                        ><SelectField
                             id="group-region"
                             v-model="form.region_id"
                             :disabled="!!editing"
                             class="h-8 rounded border bg-background px-2 text-sm"
                         >
-                            <option
+                            <SelectOption
                                 v-for="r in regions"
                                 :key="String(r.id)"
                                 :value="String(r.id)"
                             >
                                 {{ r.name }}
-                            </option>
-                        </select>
+                            </SelectOption>
+                        </SelectField>
                     </div>
                     <div class="form-row">
                         <Label for="group-name">名称：</Label
@@ -872,14 +878,18 @@ const resolving = ref<CdnflyRecord | null>(null);
                             </div>
                             <div class="form-row">
                                 <Label for="group-order">切换次序：</Label
-                                ><select
+                                ><SelectField
                                     id="group-order"
                                     v-model="form.switch_order"
                                     class="h-8 rounded border bg-background px-2 text-sm"
                                 >
-                                    <option value="seq">顺序</option>
-                                    <option value="rand">随机</option>
-                                </select>
+                                    <SelectOption value="seq"
+                                        >顺序</SelectOption
+                                    >
+                                    <SelectOption value="rand"
+                                        >随机</SelectOption
+                                    >
+                                </SelectField>
                             </div>
                         </template>
                     </template>
@@ -988,7 +998,7 @@ const resolving = ref<CdnflyRecord | null>(null);
 }
 .line-group-editor .form-row :deep(input),
 .line-group-editor .form-row :deep([data-slot='select-trigger']),
-.line-group-editor .form-row select {
+.line-group-editor .form-row :deep([data-slot='select-trigger']) {
     height: 28px;
     min-height: 28px;
     border-radius: 3px;

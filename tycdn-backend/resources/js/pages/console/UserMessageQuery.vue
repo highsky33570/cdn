@@ -12,6 +12,9 @@ import {
     DialogDescription,
     DialogFooter,
 } from '@/components/ui/dialog';
+import Input from '@/components/ui/input/Input.vue';
+import SelectField from '@/components/ui/select/SelectField.vue';
+import SelectOption from '@/components/ui/select/SelectOption.vue';
 import { Spinner } from '@/components/ui/spinner';
 import { apiRequest } from '@/lib/apiRequest';
 import {
@@ -306,22 +309,22 @@ const body = computed(() =>
 <template>
     <section class="user-message-query" aria-label="消息查询">
         <form class="message-filters" @submit.prevent="applyFilters">
-            <select v-model="filters.type" aria-label="消息类型">
-                <option value="all">所有类型</option>
-                <option
+            <SelectField v-model="filters.type" aria-label="消息类型">
+                <SelectOption value="all">所有类型</SelectOption>
+                <SelectOption
                     v-for="[value, label] in typeOptions"
                     :key="value"
                     :value="value"
                 >
                     {{ label }}
-                </option>
-            </select>
+                </SelectOption>
+            </SelectField>
             <label
                 v-for="[key, label] in fields"
                 :key="key"
                 class="message-input"
                 ><span>{{ label }}</span
-                ><input
+                ><Input
                     v-model="filters[key]"
                     :aria-label="label"
                     :placeholder="`请输入${label}`"
@@ -526,7 +529,7 @@ const body = computed(() =>
     align-items: center;
     margin-bottom: 12px;
 }
-.message-filters select {
+.message-filters :deep([data-slot='select-trigger']) {
     width: 250px;
     height: 40px;
     padding: 0 10px;
@@ -627,7 +630,7 @@ tbody tr:hover {
     font-size: 14px;
 }
 .message-pagination :deep(button),
-.message-pagination :deep(select) {
+.message-pagination :deep([data-slot='select-trigger']) {
     height: 40px;
     min-width: 40px;
     border: 1px solid #dcdfe6;
@@ -642,7 +645,7 @@ tbody tr:hover {
     color: #308cff;
     border-color: #308cff;
 }
-.message-pagination :deep(select) {
+.message-pagination :deep([data-slot='select-trigger']) {
     margin-left: 14px;
 }
 :global(.dark) .user-message-query {
@@ -659,10 +662,10 @@ tbody tr:hover {
 :global(.dark) .message-scroll,
 :global(.dark) .message-input,
 :global(.dark) .message-input span,
-:global(.dark) .message-filters select {
+:global(.dark) .message-filters :deep([data-slot='select-trigger']) {
     border-color: #3f3f46;
 }
-:global(.dark) .message-filters select option {
+:global(.dark) .message-filters :deep([data-slot='select-trigger']) option {
     background: #18181b;
 }
 @media (max-width: 640px) {
@@ -672,7 +675,7 @@ tbody tr:hover {
     }
     .message-input,
     .message-input:nth-of-type(2),
-    .message-filters select {
+    .message-filters :deep([data-slot='select-trigger']) {
         flex: 1 1 250px;
         width: 100%;
     }

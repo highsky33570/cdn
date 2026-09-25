@@ -4,12 +4,16 @@ import { computed, onMounted, onUnmounted, reactive, ref } from 'vue';
 import { toast } from 'vue-sonner';
 import ConfirmDeleteDialog from '@/components/console/ConfirmDeleteDialog.vue';
 import PackagePagination from '@/components/console/PackagePagination.vue';
+import CheckboxField from '@/components/ui/checkbox/CheckboxField.vue';
 import {
     DropdownMenu,
     DropdownMenuTrigger,
     DropdownMenuContent,
     DropdownMenuItem,
 } from '@/components/ui/dropdown-menu';
+import Input from '@/components/ui/input/Input.vue';
+import SelectField from '@/components/ui/select/SelectField.vue';
+import SelectOption from '@/components/ui/select/SelectOption.vue';
 import {
     ccKinds,
     ccFilterLabels,
@@ -304,30 +308,30 @@ function createdAt(row: CdnflyRecord) {
                 >
             </div>
             <form class="cc-filters" @submit.prevent="load(1)">
-                <select
+                <SelectField
                     v-if="kind === 'rule'"
                     v-model="filters.is_show"
                     aria-label="显示状态"
                     :disabled="busy"
                     @change="load(1)"
                 >
-                    <option value="">所有显示</option>
-                    <option value="1">显示</option>
-                    <option value="0">隐藏</option>
-                </select>
-                <select
+                    <SelectOption value="">所有显示</SelectOption>
+                    <SelectOption value="1">显示</SelectOption>
+                    <SelectOption value="0">隐藏</SelectOption>
+                </SelectField>
+                <SelectField
                     v-model="filters.enable"
                     aria-label="状态"
                     :disabled="busy"
                     @change="load(1)"
                 >
-                    <option value="">所有状态</option>
-                    <option value="1">启用</option>
-                    <option value="0">禁用</option>
-                </select>
+                    <SelectOption value="">所有状态</SelectOption>
+                    <SelectOption value="1">启用</SelectOption>
+                    <SelectOption value="0">禁用</SelectOption>
+                </SelectField>
                 <label class="cc-input"
                     ><span>{{ label }}名称</span
-                    ><input
+                    ><Input
                         v-model="filters.name"
                         :placeholder="`请输入${label}名称,模糊搜索`"
                         :disabled="busy"
@@ -335,7 +339,7 @@ function createdAt(row: CdnflyRecord) {
                 /></label>
                 <label class="cc-input"
                     ><span>{{ label }}ID</span
-                    ><input
+                    ><Input
                         v-model="filters.id"
                         :placeholder="`请输入${label}ID`"
                         inputmode="numeric"
@@ -385,8 +389,7 @@ function createdAt(row: CdnflyRecord) {
                     <thead>
                         <tr>
                             <th>
-                                <input
-                                    type="checkbox"
+                                <CheckboxField
                                     aria-label="全选当前页"
                                     :checked="allSelected"
                                     :indeterminate="
@@ -435,9 +438,8 @@ function createdAt(row: CdnflyRecord) {
                         <template v-else>
                             <tr v-for="row in rows" :key="Number(row.id)">
                                 <td>
-                                    <input
+                                    <CheckboxField
                                         v-model="selected"
-                                        type="checkbox"
                                         :value="Number(row.id)"
                                         :aria-label="`选择 ${row.id}`"
                                         :disabled="busy || ccSystem(row)"
@@ -625,7 +627,7 @@ function createdAt(row: CdnflyRecord) {
     gap: 10px;
     margin-bottom: 18px;
 }
-.cc-filters select {
+.cc-filters :deep([data-slot='select-trigger']) {
     width: 188px;
     height: 40px;
     border: 1px solid var(--border);
@@ -673,13 +675,13 @@ button:not(:disabled) {
 }
 button:disabled,
 input:disabled,
-select:disabled {
+:deep([data-slot='select-trigger']):disabled {
     cursor: not-allowed;
     opacity: 0.5;
 }
 button:focus-visible,
 input:focus-visible,
-select:focus-visible {
+:deep([data-slot='select-trigger']):focus-visible {
     outline: 2px solid var(--primary);
     outline-offset: 2px;
 }
@@ -766,7 +768,7 @@ select:focus-visible {
     font-size: 16px;
 }
 .cc-pagination :deep(button),
-.cc-pagination :deep(select) {
+.cc-pagination :deep([data-slot='select-trigger']) {
     height: 40px;
     min-width: 40px;
     font-size: 16px;
@@ -783,7 +785,7 @@ select:focus-visible {
     .cc-tabs button {
         padding: 8px 16px;
     }
-    .cc-filters select {
+    .cc-filters :deep([data-slot='select-trigger']) {
         flex: 1;
         min-width: 125px;
     }

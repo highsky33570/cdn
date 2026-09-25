@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onUnmounted, ref, watch } from 'vue';
+import Input from '@/components/ui/input/Input.vue';
 import { apiRequest } from '@/lib/apiRequest';
 import { extractCdnflyRows } from '@/lib/cdnflyResponse';
 import type { CdnflyRecord } from '@/lib/sharedTypes';
@@ -123,7 +124,7 @@ function key(event: KeyboardEvent) {
 </script>
 <template>
     <div class="user-picker">
-        <input
+        <Input
             :id="inputId"
             v-model="text"
             role="combobox"

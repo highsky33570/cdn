@@ -37,6 +37,7 @@ import {
 } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
 import Switch from '@/components/ui/switch/Switch.vue';
+import Textarea from '@/components/ui/textarea/Textarea.vue';
 import { cdnflyJsonObject } from '@/lib/cdnflyResponse';
 import type { MatcherCondition } from '@/lib/cdnflySecurity';
 import { buildCcMatcher, parseCcMatcher } from '@/lib/cdnflySecurity';
@@ -958,7 +959,7 @@ function omitEnable<TPayload extends { enable?: unknown }>(
                             class="text-xs whitespace-nowrap text-muted-foreground"
                             >IP地址</span
                         >
-                        <input
+                        <Input
                             v-model="historyBlackIpFilters.ip"
                             class="w-36 bg-transparent text-sm outline-none placeholder:text-muted-foreground/60"
                             placeholder="请输入IP地址"
@@ -972,7 +973,7 @@ function omitEnable<TPayload extends { enable?: unknown }>(
                             class="text-xs whitespace-nowrap text-muted-foreground"
                             >网站ID</span
                         >
-                        <input
+                        <Input
                             v-model="historyBlackIpFilters.site_id"
                             class="w-28 bg-transparent text-sm outline-none placeholder:text-muted-foreground/60"
                             placeholder="请输入网站ID"
@@ -1289,7 +1290,7 @@ function omitEnable<TPayload extends { enable?: unknown }>(
                         <span class="text-xs text-muted-foreground"
                             >IP地址</span
                         >
-                        <input
+                        <Input
                             v-model="blackIpFilters.ip"
                             class="w-36 bg-transparent text-sm outline-none placeholder:text-muted-foreground/60"
                             placeholder="请输入IP地址"
@@ -1302,7 +1303,7 @@ function omitEnable<TPayload extends { enable?: unknown }>(
                         <span class="text-xs text-muted-foreground"
                             >网站ID</span
                         >
-                        <input
+                        <Input
                             v-model="blackIpFilters.site_id"
                             class="w-28 bg-transparent text-sm outline-none placeholder:text-muted-foreground/60"
                             placeholder="请输入网站ID"
@@ -1541,7 +1542,7 @@ function omitEnable<TPayload extends { enable?: unknown }>(
                     </div>
                     <div class="grid gap-2">
                         <Label for="waf-data">规则 (JSON 数组)</Label
-                        ><textarea
+                        ><Textarea
                             id="waf-data"
                             v-model="aclForm.data"
                             rows="16"
@@ -1950,7 +1951,7 @@ function omitEnable<TPayload extends { enable?: unknown }>(
                     </div>
                     <div class="grid gap-2">
                         <Label for="cc-des">备注</Label>
-                        <textarea
+                        <Textarea
                             id="cc-des"
                             v-model="ccForm.des"
                             class="min-h-20 w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"

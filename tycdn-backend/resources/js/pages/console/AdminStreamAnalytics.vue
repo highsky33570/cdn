@@ -4,6 +4,7 @@ import { ArrowDownUp, RefreshCw, Search } from 'lucide-vue-next';
 import { computed, onMounted, onUnmounted, reactive, ref } from 'vue';
 import StreamMetricChart from '@/components/console/StreamMetricChart.vue';
 import { Button } from '@/components/ui/button';
+import DatePicker from '@/components/ui/date-picker/DatePicker.vue';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
@@ -280,7 +281,7 @@ onUnmounted(() => {
                             >
                                 <Label for="stream-start" class="sr-only"
                                     >开始时间</Label
-                                ><Input
+                                ><DatePicker
                                     id="stream-start"
                                     v-model="custom.start"
                                     type="datetime-local"
@@ -289,7 +290,7 @@ onUnmounted(() => {
                                 /><span class="text-muted-foreground">—</span
                                 ><Label for="stream-end" class="sr-only"
                                     >结束时间</Label
-                                ><Input
+                                ><DatePicker
                                     id="stream-end"
                                     v-model="custom.end"
                                     type="datetime-local"

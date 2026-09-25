@@ -8,6 +8,7 @@ import {
 } from 'lucide-vue-next';
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { toast } from 'vue-sonner';
+import CheckboxField from '@/components/ui/checkbox/CheckboxField.vue';
 import {
     Dialog,
     DialogScrollContent,
@@ -16,6 +17,10 @@ import {
     DialogDescription,
     DialogFooter,
 } from '@/components/ui/dialog';
+import Input from '@/components/ui/input/Input.vue';
+import SelectField from '@/components/ui/select/SelectField.vue';
+import SelectOption from '@/components/ui/select/SelectOption.vue';
+import Textarea from '@/components/ui/textarea/Textarea.vue';
 import { apiRequest } from '@/lib/apiRequest';
 import {
     cacheModes,
@@ -391,7 +396,7 @@ function showDetail(row: CdnflyRecord, kind: 'reason' | 'progress') {
                             >
                         </div>
                         <p class="helper muted">{{ currentMode.helper }}</p>
-                        <textarea
+                        <Textarea
                             id="admin-cache-urls"
                             v-model="input"
                             :placeholder="currentMode.placeholder"
@@ -520,23 +525,23 @@ function showDetail(row: CdnflyRecord, kind: 'reason' | 'progress') {
                         }}
                     </button>
                     <form class="history-filters" @submit.prevent="loadJobs(1)">
-                        <select
+                        <SelectField
                             v-model="typeFilter"
                             aria-label="任务类型"
                             :disabled="submitting"
                             @change="loadJobs(1)"
                         >
-                            <option value="">所有类型</option>
-                            <option
+                            <SelectOption value="">所有类型</SelectOption>
+                            <SelectOption
                                 v-for="item in cacheModes"
                                 :key="item.value"
                                 :value="item.value"
                             >
                                 {{ item.label }}
-                            </option>
-                        </select>
+                            </SelectOption>
+                        </SelectField>
                         <div class="keyword">
-                            <input
+                            <Input
                                 v-model="keyword"
                                 aria-label="搜索 URL 或域名"
                                 placeholder="搜索 URL 或域名"
@@ -597,8 +602,7 @@ function showDetail(row: CdnflyRecord, kind: 'reason' | 'progress') {
                         <thead>
                             <tr>
                                 <th class="selection">
-                                    <input
-                                        type="checkbox"
+                                    <CheckboxField
                                         aria-label="选择本页全部"
                                         :checked="allSelected"
                                         :disabled="
@@ -634,8 +638,7 @@ function showDetail(row: CdnflyRecord, kind: 'reason' | 'progress') {
                                 :key="Number(row.id)"
                             >
                                 <td class="selection">
-                                    <input
-                                        type="checkbox"
+                                    <CheckboxField
                                         :aria-label="`选择 ${row.id}`"
                                         :checked="
                                             selected.includes(Number(row.id))
@@ -751,20 +754,20 @@ function showDetail(row: CdnflyRecord, kind: 'reason' | 'progress') {
                         @click="loadJobs(page + 1)"
                     >
                         <ChevronRight /></button
-                    ><select
+                    ><SelectField
                         v-model="pageSize"
                         aria-label="每页条数"
                         :disabled="submitting"
                         @change="loadJobs(1)"
                     >
-                        <option
+                        <SelectOption
                             v-for="size in [10, 30, 100, 300]"
                             :key="size"
                             :value="size"
                         >
                             {{ size }} 条/页
-                        </option>
-                    </select>
+                        </SelectOption>
+                    </SelectField>
                 </footer>
             </div>
             <Dialog
@@ -816,8 +819,8 @@ function showDetail(row: CdnflyRecord, kind: 'reason' | 'progress') {
 }
 button,
 input,
-select,
-textarea {
+:deep([data-slot='select-trigger']),
+:deep([data-slot='textarea']) {
     font-size: 12px;
     border: 1px solid var(--border);
     background: var(--card);
@@ -844,8 +847,8 @@ button svg {
 }
 button:focus-visible,
 input:focus-visible,
-select:focus-visible,
-textarea:focus-visible {
+:deep([data-slot='select-trigger']):focus-visible,
+:deep([data-slot='textarea']):focus-visible {
     outline: 2px solid #2d8cf0;
     outline-offset: 1px;
 }
@@ -942,7 +945,7 @@ h2 {
 .url-panel label {
     font-weight: 600;
 }
-.url-panel textarea {
+.url-panel :deep([data-slot='textarea']) {
     display: block;
     width: 100%;
     height: 178px;
@@ -1082,7 +1085,7 @@ b {
     align-items: center;
     gap: 7px;
 }
-.history-filters select {
+.history-filters :deep([data-slot='select-trigger']) {
     width: 127px;
     height: 28px;
     padding: 4px 7px;
@@ -1218,7 +1221,7 @@ th.selection {
 .pagination button {
     padding: 4px 7px;
 }
-.pagination select {
+.pagination :deep([data-slot='select-trigger']) {
     height: 28px;
     margin-left: 8px;
     padding: 4px 7px;

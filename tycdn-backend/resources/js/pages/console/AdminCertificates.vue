@@ -12,6 +12,7 @@ import { toast } from 'vue-sonner';
 import AdminSiteWorkspace from '@/components/console/AdminSiteWorkspace.vue';
 import CertificateUserPicker from '@/components/console/CertificateUserPicker.vue';
 import ConfirmDeleteDialog from '@/components/console/ConfirmDeleteDialog.vue';
+import CheckboxField from '@/components/ui/checkbox/CheckboxField.vue';
 import {
     Dialog,
     DialogScrollContent,
@@ -26,6 +27,10 @@ import {
     DropdownMenuContent,
     DropdownMenuItem,
 } from '@/components/ui/dropdown-menu';
+import Input from '@/components/ui/input/Input.vue';
+import SelectField from '@/components/ui/select/SelectField.vue';
+import SelectOption from '@/components/ui/select/SelectOption.vue';
+import Textarea from '@/components/ui/textarea/Textarea.vue';
 import {
     certificateTypes,
     certificateDays,
@@ -705,13 +710,15 @@ async function saveEditor() {
                         ></DropdownMenu
                     >
                     <form class="search" @submit.prevent="searchCerts">
-                        <select v-model="searchType" aria-label="搜索类型">
-                            <option value="domain">域名</option>
-                            <option value="name">名称</option>
-                            <option value="id">证书ID</option>
-                            <option value="uid">用户ID</option>
-                            <option value="des">备注</option></select
-                        ><input
+                        <SelectField v-model="searchType" aria-label="搜索类型">
+                            <SelectOption value="domain">域名</SelectOption>
+                            <SelectOption value="name">名称</SelectOption>
+                            <SelectOption value="id">证书ID</SelectOption>
+                            <SelectOption value="uid">用户ID</SelectOption>
+                            <SelectOption value="des"
+                                >备注</SelectOption
+                            ></SelectField
+                        ><Input
                             v-model="search"
                             aria-label="搜索证书"
                             placeholder="输入域名,模糊搜索"
@@ -731,47 +738,47 @@ async function saveEditor() {
                     class="filters"
                     @submit.prevent="searchCerts"
                 >
-                    <label>用户ID<input v-model="filters.uid" /></label
+                    <label>用户ID<Input v-model="filters.uid" /></label
                     ><label
-                        >类型<select v-model="filters.type">
-                            <option value="">全部</option>
-                            <option
+                        >类型<SelectField v-model="filters.type">
+                            <SelectOption value="">全部</SelectOption>
+                            <SelectOption
                                 v-for="(label, value) in certificateTypes"
                                 :key="value"
                                 :value="value"
                             >
                                 {{ label }}
-                            </option>
-                        </select></label
+                            </SelectOption>
+                        </SelectField></label
                     ><label
-                        >到期时间<select v-model="filters.expire">
-                            <option value="">全部</option>
-                            <option value="30">一个月内</option>
-                            <option value="0">已过期</option>
-                        </select></label
+                        >到期时间<SelectField v-model="filters.expire">
+                            <SelectOption value="">全部</SelectOption>
+                            <SelectOption value="30">一个月内</SelectOption>
+                            <SelectOption value="0">已过期</SelectOption>
+                        </SelectField></label
                     ><label
-                        >启用<select v-model="filters.enable">
-                            <option value="">全部</option>
-                            <option value="1">启用</option>
-                            <option value="0">禁用</option>
-                        </select></label
+                        >启用<SelectField v-model="filters.enable">
+                            <SelectOption value="">全部</SelectOption>
+                            <SelectOption value="1">启用</SelectOption>
+                            <SelectOption value="0">禁用</SelectOption>
+                        </SelectField></label
                     ><label
-                        >签发状态<select v-model="filters.issue_state">
-                            <option value="">全部</option>
-                            <option value="done">已签发</option>
-                            <option value="pending">待签发</option>
-                            <option value="process">签发中</option>
-                            <option value="failed">签发失败</option>
-                        </select></label
+                        >签发状态<SelectField v-model="filters.issue_state">
+                            <SelectOption value="">全部</SelectOption>
+                            <SelectOption value="done">已签发</SelectOption>
+                            <SelectOption value="pending">待签发</SelectOption>
+                            <SelectOption value="process">签发中</SelectOption>
+                            <SelectOption value="failed">签发失败</SelectOption>
+                        </SelectField></label
                     ><label
-                        >同步状态<select v-model="filters.sync_state">
-                            <option value="">全部</option>
-                            <option value="done">已同步</option>
-                            <option value="pending">待同步</option>
-                            <option value="process">同步中</option>
-                            <option value="failed">同步失败</option>
-                        </select></label
-                    ><label>DNS API ID<input v-model="filters.dnsapi" /></label
+                        >同步状态<SelectField v-model="filters.sync_state">
+                            <SelectOption value="">全部</SelectOption>
+                            <SelectOption value="done">已同步</SelectOption>
+                            <SelectOption value="pending">待同步</SelectOption>
+                            <SelectOption value="process">同步中</SelectOption>
+                            <SelectOption value="failed">同步失败</SelectOption>
+                        </SelectField></label
+                    ><label>DNS API ID<Input v-model="filters.dnsapi" /></label
                     ><button class="primary">查询</button
                     ><button type="button" @click="clearFilters">清除</button>
                 </form>
@@ -800,8 +807,7 @@ async function saveEditor() {
                         <thead>
                             <tr>
                                 <th class="selection">
-                                    <input
-                                        type="checkbox"
+                                    <CheckboxField
                                         aria-label="选择本页全部"
                                         :checked="allSelected"
                                         :disabled="
@@ -834,8 +840,7 @@ async function saveEditor() {
                                 :key="Number(row.id)"
                             >
                                 <td class="selection">
-                                    <input
-                                        type="checkbox"
+                                    <CheckboxField
                                         :aria-label="`选择 ${row.id}`"
                                         :checked="
                                             selected.includes(Number(row.id))
@@ -1037,16 +1042,16 @@ async function saveEditor() {
                         @click="load(page + 1)"
                     >
                         <ChevronRight /></button
-                    ><select
+                    ><SelectField
                         v-model="size"
                         aria-label="每页条数"
                         @change="load(1)"
                     >
-                        <option :value="10">10 条/页</option>
-                        <option :value="20">20 条/页</option>
-                        <option :value="50">50 条/页</option>
-                        <option :value="100">100 条/页</option>
-                    </select>
+                        <SelectOption :value="10">10 条/页</SelectOption>
+                        <SelectOption :value="20">20 条/页</SelectOption>
+                        <SelectOption :value="50">50 条/页</SelectOption>
+                        <SelectOption :value="100">100 条/页</SelectOption>
+                    </SelectField>
                 </footer>
             </div>
             <div
@@ -1080,17 +1085,17 @@ async function saveEditor() {
                         >请先选择用户。</span
                     ><span v-else-if="defaultLoading" class="placeholder-pill"
                         >加载中…</span
-                    ><select
+                    ><SelectField
                         v-else
                         :value="defaultType"
                         aria-label="默认证书类型"
                         :disabled="!defaultReady || defaultSaving"
                         @change="saveDefault('cert_default_type', $event)"
                     >
-                        <option value="system">跟随系统</option>
-                        <option value="lets">Let's Encrypt</option>
-                        <option value="zerossl">ZeroSSL</option>
-                    </select>
+                        <SelectOption value="system">跟随系统</SelectOption>
+                        <SelectOption value="lets">Let's Encrypt</SelectOption>
+                        <SelectOption value="zerossl">ZeroSSL</SelectOption>
+                    </SelectField>
                 </div>
                 <div class="setting-row">
                     <span>DNS API</span
@@ -1098,15 +1103,15 @@ async function saveEditor() {
                         >选择用户后加载可用 DNS API。</span
                     ><span v-else-if="defaultLoading" class="placeholder-pill"
                         >加载中…</span
-                    ><select
+                    ><SelectField
                         v-else
                         :value="defaultDns"
                         aria-label="默认DNS API"
                         :disabled="!defaultReady || defaultSaving"
                         @change="saveDefault('dnsapi', $event)"
                     >
-                        <option value="">不设置</option>
-                        <option
+                        <SelectOption value="">不设置</SelectOption>
+                        <SelectOption
                             v-if="
                                 defaultDns &&
                                 !defaultDnsOptions.some(
@@ -1116,15 +1121,15 @@ async function saveEditor() {
                             :value="defaultDns"
                         >
                             当前配置 (ID: {{ defaultDns }})
-                        </option>
-                        <option
+                        </SelectOption>
+                        <SelectOption
                             v-for="row in defaultDnsOptions"
                             :key="String(row.id)"
                             :value="String(row.id)"
                         >
                             {{ row.name }}
-                        </option>
-                    </select>
+                        </SelectOption>
+                    </SelectField>
                 </div>
             </div>
             <AdminSiteWorkspace v-else initial-tab="dnsapi" embedded />
@@ -1176,12 +1181,12 @@ async function saveEditor() {
                                     :disabled="saving"
                                     @select="chooseOwner" /></label
                             ><label
-                                >证书名称<input
+                                >证书名称<Input
                                     v-model="form.name"
                                     required /></label
-                            ><label>备注<input v-model="form.des" /></label
+                            ><label>备注<Input v-model="form.des" /></label
                             ><label
-                                >证书类型<select
+                                >证书类型<SelectField
                                     v-model="form.type"
                                     aria-label="证书类型"
                                     :disabled="!!editing"
@@ -1190,7 +1195,7 @@ async function saveEditor() {
                                         loadEditorDns()
                                     "
                                 >
-                                    <option
+                                    <SelectOption
                                         v-for="(
                                             label, value
                                         ) in certificateTypes"
@@ -1198,34 +1203,31 @@ async function saveEditor() {
                                         :value="value"
                                     >
                                         {{ label }}
-                                    </option>
-                                </select></label
+                                    </SelectOption>
+                                </SelectField></label
                             ><template v-if="form.type === 'custom'"
                                 ><label v-if="editing" class="replace-pem"
-                                    ><input
+                                    ><CheckboxField
                                         v-model="replacePem"
-                                        type="checkbox"
                                     />替换证书和私钥</label
                                 ><template v-if="!editing || replacePem"
                                     ><label
-                                        >证书<textarea
+                                        >证书<Textarea
                                             v-model="form.cert"
                                             rows="5"
                                             placeholder="-----BEGIN CERTIFICATE-----"
                                             required
-                                            spellcheck="false"
-                                        /></label
+                                            spellcheck="false" /></label
                                     ><label
-                                        >私钥<textarea
+                                        >私钥<Textarea
                                             v-model="form.key"
                                             rows="5"
                                             placeholder="-----BEGIN PRIVATE KEY-----"
                                             required
-                                            spellcheck="false"
-                                        /></label></template></template
+                                            spellcheck="false" /></label></template></template
                             ><template v-else
                                 ><label
-                                    >域名<textarea
+                                    >域名<Textarea
                                         v-model="form.domain"
                                         rows="3"
                                         placeholder="多个域名以空格分隔"
@@ -1246,15 +1248,17 @@ async function saveEditor() {
                                     </button>
                                 </p>
                                 <label
-                                    >DNS API<select
+                                    >DNS API<SelectField
                                         v-model="form.dnsapi"
                                         aria-label="证书DNS API"
                                         :disabled="
                                             editorDnsLoading || !!editorDnsError
                                         "
                                     >
-                                        <option value="">不设置</option>
-                                        <option
+                                        <SelectOption value=""
+                                            >不设置</SelectOption
+                                        >
+                                        <SelectOption
                                             v-if="
                                                 form.dnsapi &&
                                                 !editorDns.some(
@@ -1266,32 +1270,32 @@ async function saveEditor() {
                                             :value="form.dnsapi"
                                         >
                                             当前配置 (ID: {{ form.dnsapi }})
-                                        </option>
-                                        <option
+                                        </SelectOption>
+                                        <SelectOption
                                             v-for="row in editorDns"
                                             :key="String(row.id)"
                                             :value="String(row.id)"
                                         >
                                             {{ row.name }}
-                                        </option>
-                                    </select></label
+                                        </SelectOption>
+                                    </SelectField></label
                                 ></template
                             ><label
-                                >自动续签<select
+                                >自动续签<SelectField
                                     v-model="form.auto_renew"
                                     aria-label="自动续签"
                                 >
-                                    <option value="1">开启</option>
-                                    <option value="0">关闭</option>
-                                </select></label
+                                    <SelectOption value="1">开启</SelectOption>
+                                    <SelectOption value="0">关闭</SelectOption>
+                                </SelectField></label
                             ><label
-                                >状态<select
+                                >状态<SelectField
                                     v-model="form.enable"
                                     aria-label="证书状态"
                                 >
-                                    <option value="1">启用</option>
-                                    <option value="0">禁用</option>
-                                </select></label
+                                    <SelectOption value="1">启用</SelectOption>
+                                    <SelectOption value="0">禁用</SelectOption>
+                                </SelectField></label
                             ></template
                         >
                     </form>
@@ -1344,8 +1348,8 @@ async function saveEditor() {
 }
 button,
 input:not([type='checkbox']),
-select,
-textarea {
+:deep([data-slot='select-trigger']),
+:deep([data-slot='textarea']) {
     font-size: 12px;
     border: 1px solid var(--border);
     background: var(--card);
@@ -1369,12 +1373,12 @@ button svg {
     height: 13px;
 }
 input:not([type='checkbox']),
-select {
+:deep([data-slot='select-trigger']) {
     height: 29px;
     padding: 4px 8px;
     min-width: 0;
 }
-input[type='checkbox'] {
+:deep([data-slot='checkbox']) {
     accent-color: #2d8cf0;
     width: 14px;
     height: 14px;
@@ -1382,8 +1386,8 @@ input[type='checkbox'] {
 }
 button:focus-visible,
 input:focus-visible,
-select:focus-visible,
-textarea:focus-visible {
+:deep([data-slot='select-trigger']):focus-visible,
+:deep([data-slot='textarea']):focus-visible {
     outline: 2px solid #2d8cf0;
     outline-offset: 2px;
 }
@@ -1577,7 +1581,7 @@ tbody tr:hover {
 .pagination button {
     padding: 4px 7px;
 }
-.pagination select {
+.pagination :deep([data-slot='select-trigger']) {
     margin-left: 8px;
 }
 .pagination .current {
@@ -1606,7 +1610,7 @@ tbody tr:hover {
     color: var(--muted-foreground);
     background: color-mix(in srgb, var(--muted) 60%, var(--card));
 }
-.setting-row select {
+.setting-row :deep([data-slot='select-trigger']) {
     min-width: 220px;
 }
 .certificate-form {
@@ -1619,7 +1623,7 @@ tbody tr:hover {
     align-items: center;
     gap: 12px;
 }
-.certificate-form textarea {
+.certificate-form :deep([data-slot='textarea']) {
     padding: 6px;
     min-width: 0;
     resize: vertical;

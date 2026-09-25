@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
+import Textarea from '@/components/ui/textarea/Textarea.vue';
 import { apiRequest } from '@/lib/apiRequest';
 import { getErrorMessage } from '@/lib/formatters';
 
@@ -168,7 +169,7 @@ async function submit() {
                         <Label for="recharge-remark" class="justify-end pt-2"
                             >备注：</Label
                         >
-                        <textarea
+                        <Textarea
                             id="recharge-remark"
                             v-model="remark"
                             rows="3"

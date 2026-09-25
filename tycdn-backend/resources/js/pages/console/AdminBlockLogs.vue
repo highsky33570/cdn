@@ -18,6 +18,7 @@ import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue';
 import { toast } from 'vue-sonner';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
+import DatePicker from '@/components/ui/date-picker/DatePicker.vue';
 import {
     Dialog,
     DialogContent,
@@ -28,6 +29,8 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import SelectField from '@/components/ui/select/SelectField.vue';
+import SelectOption from '@/components/ui/select/SelectOption.vue';
 import { Spinner } from '@/components/ui/spinner';
 import { apiRequest } from '@/lib/apiRequest';
 import {
@@ -575,7 +578,7 @@ function presetRange(days: number): void {
                                         <div class="grid gap-1.5">
                                             <Label for="block-start"
                                                 >开始时间</Label
-                                            ><Input
+                                            ><DatePicker
                                                 id="block-start"
                                                 v-model="rangeStart"
                                                 type="datetime-local"
@@ -585,7 +588,7 @@ function presetRange(days: number): void {
                                         <div class="grid gap-1.5">
                                             <Label for="block-end"
                                                 >结束时间</Label
-                                            ><Input
+                                            ><DatePicker
                                                 id="block-end"
                                                 v-model="rangeEnd"
                                                 type="datetime-local"
@@ -863,21 +866,21 @@ function presetRange(days: number): void {
                         @click="changePage(page + 1)"
                         ><ChevronRight class="size-4"
                     /></Button>
-                    <select
+                    <SelectField
                         v-model.number="pageSize"
                         aria-label="每页条数"
                         class="h-8 rounded-md border border-input bg-background px-2 text-foreground"
                         :disabled="loading"
                         @change="load(1)"
                     >
-                        <option
+                        <SelectOption
                             v-for="size in [10, 30, 100, 300]"
                             :key="size"
                             :value="size"
                         >
                             {{ size }} 条/页
-                        </option>
-                    </select>
+                        </SelectOption>
+                    </SelectField>
                 </nav>
             </div>
         </section>

@@ -5,6 +5,7 @@ import { toast } from 'vue-sonner';
 import ConfirmDeleteDialog from '@/components/console/ConfirmDeleteDialog.vue';
 import FirewallField from '@/components/console/FirewallField.vue';
 import { Button } from '@/components/ui/button';
+import CheckboxField from '@/components/ui/checkbox/CheckboxField.vue';
 import {
     Dialog,
     DialogScrollContent,
@@ -12,6 +13,9 @@ import {
     DialogTitle,
     DialogDescription,
 } from '@/components/ui/dialog';
+import Input from '@/components/ui/input/Input.vue';
+import SelectField from '@/components/ui/select/SelectField.vue';
+import SelectOption from '@/components/ui/select/SelectOption.vue';
 import { apiRequest } from '@/lib/apiRequest';
 import { extractCdnflyRows, extractCdnflyTotal } from '@/lib/cdnflyResponse';
 import {
@@ -1027,7 +1031,7 @@ async function removeOverrides() {
                                             :key="i"
                                         >
                                             <td>
-                                                <input
+                                                <Input
                                                     v-model="row.period"
                                                     :aria-label="`统计时长 ${i + 1}`"
                                                     type="number"
@@ -1036,7 +1040,7 @@ async function removeOverrides() {
                                                 />
                                             </td>
                                             <td>
-                                                <input
+                                                <Input
                                                     v-model="row.reqs"
                                                     :aria-label="`最大次数 ${i + 1}`"
                                                     type="number"
@@ -1160,8 +1164,7 @@ async function removeOverrides() {
                         <thead>
                             <tr>
                                 <th>
-                                    <input
-                                        type="checkbox"
+                                    <CheckboxField
                                         aria-label="选择全部配置"
                                         :checked="
                                             overrides.length > 0 &&
@@ -1184,9 +1187,8 @@ async function removeOverrides() {
                         <tbody>
                             <tr v-for="row in overrides" :key="rowKey(row)">
                                 <td>
-                                    <input
+                                    <CheckboxField
                                         v-model="selected"
-                                        type="checkbox"
                                         :value="rowKey(row)"
                                         :aria-label="`选择配置 ${rowKey(row)}`"
                                     />
@@ -1280,7 +1282,7 @@ async function removeOverrides() {
                 <form @submit.prevent="saveOverride">
                     <div class="fw-grid">
                         <label
-                            >配置范围<select
+                            >配置范围<SelectField
                                 v-model="scope"
                                 aria-label="配置范围"
                                 :disabled="editing"
@@ -1289,20 +1291,20 @@ async function removeOverrides() {
                                     loadTargets();
                                 "
                             >
-                                <option value="node">节点</option>
-                                <option value="region">区域</option>
-                            </select></label
+                                <SelectOption value="node">节点</SelectOption>
+                                <SelectOption value="region">区域</SelectOption>
+                            </SelectField></label
                         ><label
-                            >选择目标<select
+                            >选择目标<SelectField
                                 v-model="scopeId"
                                 aria-label="选择目标"
                                 :disabled="editing || targetLoading"
                                 required
                             >
-                                <option value="">
+                                <SelectOption value="">
                                     {{ targetLoading ? '加载中…' : '请选择' }}
-                                </option>
-                                <option
+                                </SelectOption>
+                                <SelectOption
                                     v-if="
                                         editing &&
                                         !targets.some(
@@ -1312,28 +1314,28 @@ async function removeOverrides() {
                                     :value="scopeId"
                                 >
                                     {{ scopeId }}
-                                </option>
-                                <option
+                                </SelectOption>
+                                <SelectOption
                                     v-for="target in targets"
                                     :key="String(target.id)"
                                     :value="String(target.id)"
                                 >
                                     {{ target.name }} ({{ target.id }})
-                                </option>
-                            </select></label
+                                </SelectOption>
+                            </SelectField></label
                         >
                     </div>
                     <div class="fw-add-field">
-                        <select v-model="item" aria-label="配置项">
-                            <option value="">请选择配置项</option>
-                            <option
+                        <SelectField v-model="item" aria-label="配置项">
+                            <SelectOption value="">请选择配置项</SelectOption>
+                            <SelectOption
                                 v-for="(label, key) in overrideNames"
                                 :key="key"
                                 :value="key"
                                 :disabled="key in editConfig"
                             >
                                 {{ label }}
-                            </option></select
+                            </SelectOption></SelectField
                         ><Button
                             size="sm"
                             variant="outline"
@@ -1620,7 +1622,7 @@ async function removeOverrides() {
     color: var(--fw-muted, var(--muted-foreground));
     margin-top: 3px;
 }
-.fw-field > select,
+.fw-field > :deep([data-slot='select-trigger']),
 .fw-input {
     flex: 1;
     min-width: 0;
@@ -1648,9 +1650,9 @@ async function removeOverrides() {
     border-radius: 3px 0 0 3px;
 }
 .firewall-page input:not([type='checkbox']),
-.firewall-page select,
+.firewall-page :deep([data-slot='select-trigger']),
 .fw-modal input:not([type='checkbox']),
-.fw-modal select {
+.fw-modal :deep([data-slot='select-trigger']) {
     height: 28px;
     border: 1px solid var(--input);
     border-radius: 3px;
@@ -1659,8 +1661,8 @@ async function removeOverrides() {
     font: inherit;
     color: inherit;
 }
-.firewall-page textarea,
-.fw-modal textarea {
+.firewall-page :deep([data-slot='textarea']),
+.fw-modal :deep([data-slot='textarea']) {
     width: 100%;
     min-height: 122px;
     padding: 7px;
@@ -1672,7 +1674,7 @@ async function removeOverrides() {
     resize: vertical;
 }
 .firewall-page input::placeholder,
-.firewall-page textarea::placeholder {
+.firewall-page :deep([data-slot='textarea'])::placeholder {
     color: var(--muted-foreground);
 }
 .fw-toggle-field {
@@ -1707,10 +1709,10 @@ async function removeOverrides() {
     background: var(--primary);
     box-shadow: inset 0 0 0 2px var(--background);
 }
-.fw-wide-field:has(textarea) {
+.fw-wide-field:has(:deep([data-slot='textarea'])) {
     display: block;
 }
-.fw-wide-field:has(textarea) > .fw-label {
+.fw-wide-field:has(:deep([data-slot='textarea'])) > .fw-label {
     display: none;
 }
 .fw-inline {
@@ -1734,11 +1736,11 @@ async function removeOverrides() {
 .fw-templates {
     margin: 0 0 10px;
 }
-.fw-templates textarea {
+.fw-templates :deep([data-slot='textarea']) {
     height: 195px;
     font: 11px/1.6 monospace;
 }
-.fw-templates .fw-field:has(textarea) {
+.fw-templates .fw-field:has(:deep([data-slot='textarea'])) {
     margin-left: 96px;
 }
 .fw-rule-heading {
@@ -1877,7 +1879,7 @@ async function removeOverrides() {
     gap: 8px;
     margin: 16px 0;
 }
-.fw-add-field select {
+.fw-add-field :deep([data-slot='select-trigger']) {
     flex: 1;
 }
 .fw-modal-actions {
@@ -1886,7 +1888,7 @@ async function removeOverrides() {
     gap: 8px;
     margin-top: 18px;
 }
-.firewall-page input[type='checkbox'] {
+.firewall-page :deep([data-slot='checkbox']) {
     accent-color: var(--primary);
 }
 @media (max-width: 700px) {
@@ -1896,10 +1898,10 @@ async function removeOverrides() {
     .fw-full {
         grid-column: auto;
     }
-    .fw-templates .fw-field:has(textarea) {
+    .fw-templates .fw-field:has(:deep([data-slot='textarea'])) {
         margin-left: 0;
     }
-    .fw-field.fw-wide-field:not(:has(textarea)) {
+    .fw-field.fw-wide-field:not(:has(:deep([data-slot='textarea']))) {
         align-items: flex-start;
         flex-wrap: wrap;
     }

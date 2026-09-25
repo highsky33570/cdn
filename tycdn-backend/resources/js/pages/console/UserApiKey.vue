@@ -4,7 +4,9 @@ import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { toast } from 'vue-sonner';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
+import Input from '@/components/ui/input/Input.vue';
 import { Spinner } from '@/components/ui/spinner';
+import Switch from '@/components/ui/switch/Switch.vue';
 import { getErrorMessage, textValue } from '@/lib/cdnRecord';
 import {
     createUserApiKey,
@@ -180,17 +182,13 @@ onUnmounted(() => {
         <div class="key-row">
             <span id="key-status-label" class="key-label">密钥状态</span>
             <div class="key-value">
-                <button
-                    type="button"
-                    role="switch"
+                <Switch
+                    class="h-[26px] w-[54px] [&_[data-slot=switch-thumb]]:size-[22px] [&_[data-slot=switch-thumb][data-state=checked]]:translate-x-7"
                     aria-labelledby="key-status-label"
-                    :aria-checked="enabled"
+                    :checked="enabled"
                     :disabled="busy || !loaded || dirty"
-                    class="key-switch"
-                    @click="toggle"
-                >
-                    <span /></button
-                ><Spinner v-if="busy" class="size-4" />
+                    @update:checked="toggle"
+                /><Spinner v-if="busy" class="size-4" />
             </div>
         </div>
         <div class="key-row">
@@ -234,7 +232,7 @@ onUnmounted(() => {
         <form class="key-row whitelist-row" @submit.prevent="saveIp">
             <label class="key-label" for="key-whitelist">IP白名单</label>
             <div class="whitelist-control">
-                <input
+                <Input
                     id="key-whitelist"
                     v-model="ip"
                     maxlength="2000"
@@ -302,36 +300,6 @@ onUnmounted(() => {
     opacity: 0.5;
     cursor: wait;
 }
-.key-switch {
-    position: relative;
-    width: 54px;
-    height: 26px;
-    border-radius: 999px;
-    background: #c0c4cc;
-    transition: background 0.15s;
-    cursor: pointer;
-}
-.key-switch span {
-    position: absolute;
-    top: 2px;
-    left: 2px;
-    width: 22px;
-    height: 22px;
-    border-radius: 50%;
-    background: #fff;
-    transition: transform 0.15s;
-}
-.key-switch[aria-checked='true'] {
-    background: #308cff;
-}
-.key-switch[aria-checked='true'] span {
-    transform: translateX(28px);
-}
-.key-switch:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-}
-.key-switch:focus-visible,
 .copy-key:focus-visible {
     outline: 2px solid #308cff;
     outline-offset: 3px;

@@ -14,6 +14,8 @@ import {
     DialogTitle,
     DialogDescription,
 } from '@/components/ui/dialog';
+import SelectField from '@/components/ui/select/SelectField.vue';
+import SelectOption from '@/components/ui/select/SelectOption.vue';
 import { apiRequest } from '@/lib/apiRequest';
 import { extractCdnflyRows, extractCdnflyTotal } from '@/lib/cdnflyResponse';
 import {
@@ -588,7 +590,7 @@ async function removeRows() {
                     <fieldset :disabled="editorBusy">
                         <div class="ng-targets">
                             <label
-                                >配置范围<select
+                                >配置范围<SelectField
                                     class="h-9 min-w-0 rounded-md border border-input bg-background px-3 text-sm text-foreground outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
                                     v-model="scope"
                                     aria-label="配置范围"
@@ -598,23 +600,27 @@ async function removeRows() {
                                         loadTargets();
                                     "
                                 >
-                                    <option value="node">节点</option>
-                                    <option value="region">区域</option>
-                                </select></label
+                                    <SelectOption value="node"
+                                        >节点</SelectOption
+                                    >
+                                    <SelectOption value="region"
+                                        >区域</SelectOption
+                                    >
+                                </SelectField></label
                             ><label
-                                >选择目标<select
+                                >选择目标<SelectField
                                     class="h-9 min-w-0 rounded-md border border-input bg-background px-3 text-sm text-foreground outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
                                     v-model="scopeId"
                                     aria-label="选择目标"
                                     :disabled="editing || targetLoading"
                                     required
                                 >
-                                    <option value="">
+                                    <SelectOption value="">
                                         {{
                                             targetLoading ? '加载中…' : '请选择'
                                         }}
-                                    </option>
-                                    <option
+                                    </SelectOption>
+                                    <SelectOption
                                         v-if="
                                             editing &&
                                             !targets.some(
@@ -626,30 +632,32 @@ async function removeRows() {
                                         :value="scopeId"
                                     >
                                         {{ scopeId }}
-                                    </option>
-                                    <option
+                                    </SelectOption>
+                                    <SelectOption
                                         v-for="target in targets"
                                         :key="String(target.id)"
                                         :value="String(target.id)"
                                     >
                                         {{ target.name }} ({{ target.id }})
-                                    </option>
-                                </select></label
+                                    </SelectOption>
+                                </SelectField></label
                             >
                         </div>
                         <div class="ng-add-field">
-                            <select
+                            <SelectField
                                 class="h-9 min-w-0 rounded-md border border-input bg-background px-3 text-sm text-foreground outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
                                 v-model="item"
                                 aria-label="配置项"
                             >
-                                <option value="">请选择配置项</option>
+                                <SelectOption value=""
+                                    >请选择配置项</SelectOption
+                                >
                                 <optgroup
                                     v-for="(group, key) in nginxSections"
                                     :key="key"
                                     :label="group.label"
                                 >
-                                    <option
+                                    <SelectOption
                                         v-for="field in group.cards.flatMap(
                                             (card) => card.fields,
                                         )"
@@ -658,8 +666,8 @@ async function removeRows() {
                                         :disabled="field.path in editValues"
                                     >
                                         {{ field.label }}
-                                    </option>
-                                </optgroup></select
+                                    </SelectOption>
+                                </optgroup></SelectField
                             ><Button
                                 size="sm"
                                 variant="outline"
@@ -895,7 +903,7 @@ async function removeRows() {
     gap: 8px;
     margin: 16px 0;
 }
-.ng-add-field select {
+.ng-add-field :deep([data-slot='select-trigger']) {
     flex: 1;
 }
 .ng-edit-field {

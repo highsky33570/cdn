@@ -11,6 +11,7 @@ import RecordDetails from '@/components/console/RecordDetails.vue';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import DatePicker from '@/components/ui/date-picker/DatePicker.vue';
 import {
     Dialog,
     DialogScrollContent,
@@ -904,7 +905,7 @@ async function assign() {
                         </template>
                         <div v-else class="traffic-field">
                             <Label for="traffic-expire">到期时间</Label
-                            ><Input
+                            ><DatePicker
                                 id="traffic-expire"
                                 v-model="form.expire"
                                 type="datetime-local"

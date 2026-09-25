@@ -25,7 +25,10 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import SelectField from '@/components/ui/select/SelectField.vue';
+import SelectOption from '@/components/ui/select/SelectOption.vue';
 import { Spinner } from '@/components/ui/spinner';
+import Switch from '@/components/ui/switch/Switch.vue';
 import {
     createAdminCnameDomain,
     deleteAdminCnameDomain,
@@ -455,19 +458,19 @@ onMounted(() => {
                     >
                         <div class="form-row">
                             <Label for="dns-provider">DNS提供商</Label
-                            ><select
+                            ><SelectField
                                 id="dns-provider"
                                 v-model="form.dns"
                                 class="h-8 w-full max-w-[525px] rounded border bg-background px-2 text-sm"
                             >
-                                <option
+                                <SelectOption
                                     v-for="p in providers"
                                     :key="p.value"
                                     :value="p.value"
                                 >
                                     {{ p.label }}
-                                </option>
-                            </select>
+                                </SelectOption>
+                            </SelectField>
                         </div>
                         <div class="form-row">
                             <Label for="dns-id">{{ provider.id }}</Label
@@ -526,27 +529,14 @@ onMounted(() => {
                         </div>
                         <div class="form-row">
                             <Label for="dns-weight">开启IP权重</Label
-                            ><button
+                            ><Switch
                                 id="dns-weight"
-                                type="button"
-                                role="switch"
                                 aria-label="开启IP权重"
-                                :aria-checked="form.weight_on === 1"
-                                class="relative h-5 w-10 rounded-full transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-50"
-                                :class="
-                                    form.weight_on
-                                        ? 'bg-primary'
-                                        : 'bg-muted-foreground/40'
+                                :checked="form.weight_on === 1"
+                                @update:checked="
+                                    form.weight_on = form.weight_on ? 0 : 1
                                 "
-                                @click="form.weight_on = form.weight_on ? 0 : 1"
-                            >
-                                <span
-                                    class="absolute top-0.5 left-0.5 size-4 rounded-full bg-white transition-transform"
-                                    :class="
-                                        form.weight_on ? 'translate-x-5' : ''
-                                    "
-                                />
-                            </button>
+                            />
                         </div>
                     </fieldset>
                     <div class="form-row items-start">
@@ -767,7 +757,7 @@ onMounted(() => {
                         :disabled="loading || page >= lastPage"
                         @click="loadDomains(page + 1)"
                         ><ChevronRight /></Button
-                    ><select
+                    ><SelectField
                         v-model.number="size"
                         aria-label="每页条数"
                         class="ml-2 h-8 rounded border bg-background px-2"
@@ -776,14 +766,14 @@ onMounted(() => {
                             loadDomains(1);
                         "
                     >
-                        <option
+                        <SelectOption
                             v-for="n in [10, 20, 50, 100]"
                             :key="n"
                             :value="n"
                         >
                             {{ n }} 条/页
-                        </option>
-                    </select>
+                        </SelectOption>
+                    </SelectField>
                 </div>
             </template>
         </section>

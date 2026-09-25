@@ -13,6 +13,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import Input from '@/components/ui/input/Input.vue';
 import {
     InputOTP,
     InputOTPGroup,
@@ -214,7 +215,7 @@ watch(
                                     <Spinner />
                                 </div>
                                 <template v-else>
-                                    <input
+                                    <Input
                                         type="text"
                                         readonly
                                         :value="manualSetupKey"

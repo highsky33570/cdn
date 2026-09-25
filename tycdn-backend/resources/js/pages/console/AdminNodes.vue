@@ -43,6 +43,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
+import Textarea from '@/components/ui/textarea/Textarea.vue';
 import {
     addAdminNodeSubIps,
     assignAdminLines,
@@ -2075,7 +2076,7 @@ function regionNameById(id: unknown): string {
 
                     <div class="grid gap-2">
                         <Label for="init-node-des">备注</Label>
-                        <textarea
+                        <Textarea
                             id="init-node-des"
                             v-model="initForm.des"
                             class="min-h-24 w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-xs transition-[color,box-shadow] outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50"
@@ -2229,7 +2230,7 @@ function regionNameById(id: unknown): string {
 
                     <div class="grid gap-2">
                         <Label for="ng-des">备注</Label>
-                        <textarea
+                        <Textarea
                             id="ng-des"
                             v-model="ngForm.des"
                             class="min-h-20 w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-xs transition-[color,box-shadow] outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50"
@@ -2311,7 +2312,7 @@ function regionNameById(id: unknown): string {
 
                     <div class="grid gap-2">
                         <Label for="region-des">备注</Label>
-                        <textarea
+                        <Textarea
                             id="region-des"
                             v-model="regionForm.des"
                             class="min-h-20 w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-xs transition-[color,box-shadow] outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50"
@@ -2422,13 +2423,13 @@ function regionNameById(id: unknown): string {
                         <Label for="sub-ip-input" class="mb-2 block"
                             >添加子 IP（每行一个）</Label
                         >
-                        <textarea
+                        <Textarea
                             id="sub-ip-input"
                             v-model="subIpInput"
                             rows="5"
                             placeholder="156.234.124.163&#10;156.234.124.164&#10;156.234.124.165&#10;156.234.124.166"
                             class="flex w-full rounded-md border border-input bg-transparent px-3 py-2 font-mono text-sm shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                        ></textarea>
+                        ></Textarea>
                         <p class="mt-1 text-xs text-muted-foreground">
                             在节点上执行
                             <code>ip addr show</code> 可查看该机器的副 IP（标记

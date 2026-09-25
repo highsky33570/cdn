@@ -25,6 +25,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import CheckboxField from '@/components/ui/checkbox/CheckboxField.vue';
 import {
     Dialog,
     DialogDescription,
@@ -45,6 +46,7 @@ import {
 } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
 import Switch from '@/components/ui/switch/Switch.vue';
+import Textarea from '@/components/ui/textarea/Textarea.vue';
 import { ccFilterLabels } from '@/lib/adminCc';
 import { listAdminUsers } from '@/lib/adminConsoleApi';
 import type { AdminUserRecord, Paginated } from '@/lib/adminConsoleApi';
@@ -1336,7 +1338,7 @@ const displayedCcRows = computed(() => {
                     </div>
                     <div class="grid gap-2">
                         <Label for="acl-data">规则条目 data (JSON)</Label>
-                        <textarea
+                        <Textarea
                             id="acl-data"
                             v-model="form.data"
                             class="min-h-40 w-full rounded-md border border-input bg-background px-3 py-2 font-mono text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
@@ -1702,8 +1704,7 @@ const displayedCcRows = computed(() => {
                                 <div
                                     class="flex h-9 items-center justify-center"
                                 >
-                                    <input
-                                        type="checkbox"
+                                    <CheckboxField
                                         v-model="entry.state"
                                         class="size-4 rounded border-input"
                                     />
@@ -1820,7 +1821,7 @@ const displayedCcRows = computed(() => {
 
                     <div class="grid gap-2">
                         <Label for="cc-des">备注</Label>
-                        <textarea
+                        <Textarea
                             id="cc-des"
                             v-model="ccForm.des"
                             class="min-h-20 w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"

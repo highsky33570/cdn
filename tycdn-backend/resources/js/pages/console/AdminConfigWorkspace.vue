@@ -14,6 +14,8 @@ import {
     DialogFooter,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import SelectField from '@/components/ui/select/SelectField.vue';
+import SelectOption from '@/components/ui/select/SelectOption.vue';
 import { apiRequest } from '@/lib/apiRequest';
 import { extractCdnflyRows } from '@/lib/cdnflyResponse';
 import { siteDefaultFields, streamDefaultFields } from '@/lib/configDefaults';
@@ -386,22 +388,24 @@ onMounted(() => {
                 <form class="grid gap-4" @submit.prevent="create">
                     <label class="grid gap-2 text-sm"
                         >配置项
-                        <select
+                        <SelectField
                             v-if="templates.length"
                             aria-label="配置项"
                             v-model="newName"
                             class="h-9 rounded-md border bg-background px-3"
                             required
                         >
-                            <option value="" disabled>请选择配置项</option>
-                            <option
+                            <SelectOption value="" disabled
+                                >请选择配置项</SelectOption
+                            >
+                            <SelectOption
                                 v-for="field in templates"
                                 :key="field.key"
                                 :value="field.key"
                             >
                                 {{ field.label }}
-                            </option>
-                        </select>
+                            </SelectOption>
+                        </SelectField>
                         <Input
                             v-else
                             v-model="newName"
@@ -414,16 +418,21 @@ onMounted(() => {
                     /></label>
                     <div class="grid gap-4 sm:grid-cols-2">
                         <label class="grid gap-2 text-sm"
-                            >作用域<select
+                            >作用域<SelectField
                                 v-model="newScope"
                                 class="h-9 rounded-md border bg-background px-3"
                             >
-                                <option value="global">全局</option>
-                                <option v-if="scope === 'admin'" value="region">
+                                <SelectOption value="global">全局</SelectOption>
+                                <SelectOption
+                                    v-if="scope === 'admin'"
+                                    value="region"
+                                >
                                     区域
-                                </option>
-                                <option v-else value="group">分组</option>
-                            </select></label
+                                </SelectOption>
+                                <SelectOption v-else value="group"
+                                    >分组</SelectOption
+                                >
+                            </SelectField></label
                         >
                         <label
                             v-if="newScope !== 'global'"

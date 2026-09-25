@@ -10,6 +10,7 @@ import {
     DialogFooter,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import Textarea from '@/components/ui/textarea/Textarea.vue';
 import { apiRequest } from '@/lib/apiRequest';
 import { parseStreamBatch } from '@/lib/streamBatch';
 import type { StreamBatchRow } from '@/lib/streamBatch';
@@ -140,7 +141,7 @@ defineExpose({ show });
                     >已购套餐 ID<Input
                         v-model="userPackage"
                         type="number" /></label
-                ><textarea
+                ><Textarea
                     v-model="source"
                     aria-label="批量转发记录"
                     class="min-h-48 rounded-lg border bg-background p-3 font-mono text-sm"

@@ -6,6 +6,7 @@ import { toast } from 'vue-sonner';
 import WafRankingTable from '@/components/console/WafRankingTable.vue';
 import WafTrendChart from '@/components/console/WafTrendChart.vue';
 import { Button } from '@/components/ui/button';
+import DatePicker from '@/components/ui/date-picker/DatePicker.vue';
 import {
     Dialog,
     DialogContent,
@@ -16,6 +17,8 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import SelectField from '@/components/ui/select/SelectField.vue';
+import SelectOption from '@/components/ui/select/SelectOption.vue';
 import { Spinner } from '@/components/ui/spinner';
 import { apiRequest } from '@/lib/apiRequest';
 import {
@@ -387,7 +390,7 @@ onUnmounted(() => {
                 >
                     <div class="grid gap-1.5">
                         <Label for="waf-start">开始时间</Label
-                        ><Input
+                        ><DatePicker
                             id="waf-start"
                             v-model="filters.start"
                             type="datetime-local"
@@ -396,7 +399,7 @@ onUnmounted(() => {
                     </div>
                     <div class="grid gap-1.5">
                         <Label for="waf-end">结束时间</Label
-                        ><Input
+                        ><DatePicker
                             id="waf-end"
                             v-model="filters.end"
                             type="datetime-local"
@@ -422,32 +425,34 @@ onUnmounted(() => {
                         <Label :for="`waf-${field.key}`">{{
                             field.label
                         }}</Label
-                        ><select
+                        ><SelectField
                             v-if="field.options"
                             :id="`waf-${field.key}`"
                             v-model="filters[field.key]"
                             class="h-8 rounded-md border bg-background px-2 text-sm"
                         >
-                            <option value="">不限</option>
-                            <option
+                            <SelectOption value="">不限</SelectOption>
+                            <SelectOption
                                 v-for="(label, value) in field.options"
                                 :key="value"
                                 :value="value"
                             >
                                 {{ label }}
-                            </option>
-                        </select>
+                            </SelectOption>
+                        </SelectField>
                         <div
                             v-else-if="field.key === 'request_uri'"
                             class="flex min-w-0"
                         >
-                            <select
+                            <SelectField
                                 v-model="filters.uri_match_type"
                                 aria-label="URI匹配方式"
                                 class="w-20 shrink-0 rounded-l-md border border-r-0 bg-background px-2 text-sm"
                             >
-                                <option value="exact">精确</option>
-                                <option value="prefix">前缀</option></select
+                                <SelectOption value="exact">精确</SelectOption>
+                                <SelectOption value="prefix"
+                                    >前缀</SelectOption
+                                ></SelectField
                             ><Input
                                 :id="`waf-${field.key}`"
                                 v-model="filters[field.key]"
@@ -760,21 +765,21 @@ onUnmounted(() => {
                             :disabled="loading || page >= lastPage"
                             @click="load(page + 1)"
                             ><ChevronRight class="size-4" /></Button
-                        ><select
+                        ><SelectField
                             v-model.number="size"
                             aria-label="每页条数"
                             class="h-8 rounded-md border bg-background px-2"
                             :disabled="loading"
                             @change="load(1)"
                         >
-                            <option
+                            <SelectOption
                                 v-for="n in [10, 30, 100]"
                                 :key="n"
                                 :value="n"
                             >
                                 {{ n }} 条/页
-                            </option>
-                        </select>
+                            </SelectOption>
+                        </SelectField>
                     </nav>
                 </template>
             </div>

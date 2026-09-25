@@ -7,6 +7,7 @@ import {
     PopoverContent,
 } from 'reka-ui';
 import { computed, onUnmounted, ref, watch } from 'vue';
+import DatePicker from '@/components/ui/date-picker/DatePicker.vue';
 import {
     Dialog,
     DialogScrollContent,
@@ -21,6 +22,8 @@ import {
     SelectContent,
     SelectItem,
 } from '@/components/ui/select';
+import SelectField from '@/components/ui/select/SelectField.vue';
+import SelectOption from '@/components/ui/select/SelectOption.vue';
 import { apiRequest } from '@/lib/apiRequest';
 import { extractCdnflyRows, extractCdnflyTotal } from '@/lib/cdnflyResponse';
 import { monitorGroups } from '@/lib/nodeMonitor';
@@ -251,7 +254,7 @@ const time = (value: unknown) => String(value ?? '—').replace(/^\d{4}-/, '');
                                         @submit.prevent="applyRange"
                                     >
                                         <label class="grid gap-1"
-                                            >开始时间<input
+                                            >开始时间<DatePicker
                                                 v-model="draftStart"
                                                 type="datetime-local"
                                                 step="1"
@@ -259,7 +262,7 @@ const time = (value: unknown) => String(value ?? '—').replace(/^\d{4}-/, '');
                                                 class="w-full rounded border bg-card p-2"
                                                 required /></label
                                         ><label class="grid gap-1"
-                                            >结束时间<input
+                                            >结束时间<DatePicker
                                                 v-model="draftEnd"
                                                 type="datetime-local"
                                                 step="1"
@@ -397,21 +400,21 @@ const time = (value: unknown) => String(value ?? '—').replace(/^\d{4}-/, '');
                     >
                         <ChevronRight class="size-3" />
                     </button>
-                    <select
+                    <SelectField
                         v-model="limit"
                         aria-label="每页条数"
                         class="ml-2 h-7 rounded border bg-card px-2 text-xs"
                         :disabled="loading"
                         @change="load(1)"
                     >
-                        <option
+                        <SelectOption
                             v-for="n in [10, 20, 30, 50]"
                             :key="n"
                             :value="String(n)"
                         >
                             {{ n }} 条/页
-                        </option>
-                    </select>
+                        </SelectOption>
+                    </SelectField>
                     <span class="sr-only">共 {{ total }} 条</span>
                 </nav>
             </div>
@@ -429,7 +432,7 @@ const time = (value: unknown) => String(value ?? '—').replace(/^\d{4}-/, '');
 .log-filters label {
     text-align: right;
 }
-.log-select {
+.log-:deep([data-slot='select-trigger']) {
     height: 28px;
     min-height: 28px;
     width: 100%;

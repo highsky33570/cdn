@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { Button } from '@/components/ui/button';
+import SelectField from '@/components/ui/select/SelectField.vue';
+import SelectOption from '@/components/ui/select/SelectOption.vue';
 const page = defineModel<number>('page', { required: true });
 const pageSize = defineModel<number>('pageSize', { required: true });
 const props = defineProps<{
@@ -84,15 +86,15 @@ const visiblePages = computed(() => {
             @click="page++"
             >›</Button
         >
-        <select
+        <SelectField
             v-model="pageSize"
             aria-label="每页条数"
             :disabled="disabled"
             class="h-8 rounded-md border border-input bg-background px-2 text-foreground"
         >
-            <option :value="10">10 条/页</option>
-            <option :value="20">20 条/页</option>
-            <option :value="50">50 条/页</option>
-        </select>
+            <SelectOption :value="10">10 条/页</SelectOption>
+            <SelectOption :value="20">20 条/页</SelectOption>
+            <SelectOption :value="50">50 条/页</SelectOption>
+        </SelectField>
     </div>
 </template>

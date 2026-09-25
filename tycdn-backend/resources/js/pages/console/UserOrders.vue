@@ -13,6 +13,8 @@ import {
     DialogDescription,
     DialogFooter,
 } from '@/components/ui/dialog';
+import SelectField from '@/components/ui/select/SelectField.vue';
+import SelectOption from '@/components/ui/select/SelectOption.vue';
 import { Spinner } from '@/components/ui/spinner';
 import { formatDate, getErrorMessage } from '@/lib/cdnRecord';
 import {
@@ -192,26 +194,26 @@ function pay() {
 <template>
     <section class="user-orders" aria-label="消费记录">
         <div class="order-filters">
-            <select v-model="type" aria-label="订单类型">
-                <option value="all">所有类型</option>
-                <option
+            <SelectField v-model="type" aria-label="订单类型">
+                <SelectOption value="all">所有类型</SelectOption>
+                <SelectOption
                     v-for="(label, value) in types"
                     :key="value"
                     :value="value"
                 >
                     {{ label }}
-                </option>
-            </select>
-            <select v-model="status" aria-label="订单状态">
-                <option value="all">所有状态</option>
-                <option
+                </SelectOption>
+            </SelectField>
+            <SelectField v-model="status" aria-label="订单状态">
+                <SelectOption value="all">所有状态</SelectOption>
+                <SelectOption
                     v-for="(label, value) in statuses"
                     :key="value"
                     :value="value"
                 >
                     {{ label }}
-                </option>
-            </select>
+                </SelectOption>
+            </SelectField>
             <DateRangePicker
                 :key="`${!start && !end}`"
                 v-model:start="start"
@@ -429,7 +431,7 @@ function pay() {
     gap: 10px;
     margin: 0 10px 18px;
 }
-.order-filters select {
+.order-filters :deep([data-slot='select-trigger']) {
     width: 188px;
     height: 40px;
     border: 1px solid #dcdfe6;
@@ -523,7 +525,7 @@ tbody tr:hover {
     gap: 6px;
 }
 .order-pagination :deep(button),
-.order-pagination :deep(select) {
+.order-pagination :deep([data-slot='select-trigger']) {
     height: 40px;
     min-width: 40px;
     border: 1px solid #dcdfe6;
@@ -537,11 +539,11 @@ tbody tr:hover {
     color: #308cff;
     border-color: #308cff;
 }
-.order-pagination :deep(select) {
+.order-pagination :deep([data-slot='select-trigger']) {
     margin-left: 14px;
 }
 .order-pagination :deep(button),
-.order-pagination :deep(select),
+.order-pagination :deep([data-slot='select-trigger']),
 .order-pagination :deep(span) {
     font-size: 14px;
 }
@@ -577,10 +579,10 @@ tbody tr:hover {
 :global(.dark) .order-scroll,
 :global(.dark) th,
 :global(.dark) td,
-:global(.dark) .order-filters select {
+:global(.dark) .order-filters :deep([data-slot='select-trigger']) {
     border-color: #3f3f46;
 }
-:global(.dark) .order-filters select option {
+:global(.dark) .order-filters :deep([data-slot='select-trigger']) option {
     background: #18181b;
 }
 @media (max-width: 640px) {
@@ -591,7 +593,7 @@ tbody tr:hover {
     .order-filters {
         margin-inline: 0;
     }
-    .order-filters select {
+    .order-filters :deep([data-slot='select-trigger']) {
         flex: 1 1 140px;
     }
     .empty span {

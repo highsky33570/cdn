@@ -14,6 +14,8 @@ import {
     DialogDescription,
     DialogFooter,
 } from '@/components/ui/dialog';
+import SelectField from '@/components/ui/select/SelectField.vue';
+import SelectOption from '@/components/ui/select/SelectOption.vue';
 import { apiRequest } from '@/lib/apiRequest';
 import { extractCdnflyRecord } from '@/lib/cdnflyResponse';
 import { configRecord, configPatch } from '@/lib/configEditor';
@@ -242,16 +244,16 @@ async function cancelTask(row: CdnflyRecord) {
             :page-size-options="[10, 30, 100]"
         >
             <template #toolbar-actions>
-                <select
+                <SelectField
                     v-if="usesTimeRange"
                     v-model="recent"
                     class="h-9 rounded-md border bg-background px-3"
                     aria-label="时间范围"
                 >
-                    <option value="1h">近一小时</option>
-                    <option value="24h">近一天</option>
-                    <option value="7d">近七天</option>
-                </select>
+                    <SelectOption value="1h">近一小时</SelectOption>
+                    <SelectOption value="24h">近一天</SelectOption>
+                    <SelectOption value="7d">近七天</SelectOption>
+                </SelectField>
                 <Button v-if="!definition.readOnly" @click="edit()">{{
                     resource === 'user-traffic-packages' ? '分配流量包' : '新增'
                 }}</Button>

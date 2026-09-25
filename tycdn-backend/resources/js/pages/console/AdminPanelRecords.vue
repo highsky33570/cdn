@@ -4,6 +4,7 @@ import ConsoleDataTable from '@/components/console/ConsoleDataTable.vue';
 import type { ColumnDef } from '@/components/console/ConsoleDataTable.vue';
 import RecordDetails from '@/components/console/RecordDetails.vue';
 import { Button } from '@/components/ui/button';
+import DatePicker from '@/components/ui/date-picker/DatePicker.vue';
 import {
     Dialog,
     DialogContent,
@@ -12,6 +13,8 @@ import {
     DialogDescription,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import SelectField from '@/components/ui/select/SelectField.vue';
+import SelectOption from '@/components/ui/select/SelectOption.vue';
 import { apiRequest } from '@/lib/apiRequest';
 import { extractCdnflyRecord } from '@/lib/cdnflyResponse';
 import {
@@ -189,25 +192,27 @@ async function showDetail(row: CdnflyRecord): Promise<void> {
                 /></label>
             </template>
             <template v-else>
-                <label v-if="view === 'orders'" class="flex flex-col gap-1 text-sm"
-                    >状态<select
+                <label
+                    v-if="view === 'orders'"
+                    class="flex flex-col gap-1 text-sm"
+                    >状态<SelectField
                         v-model="filters.state"
                         aria-label="状态"
                         class="block h-9 rounded-md border bg-background px-3"
                     >
-                        <option value="">全部</option>
-                        <option>已付款</option>
-                        <option>未付款</option>
-                    </select></label
+                        <SelectOption value="">全部</SelectOption>
+                        <SelectOption value="已付款">已付款</SelectOption>
+                        <SelectOption value="未付款">未付款</SelectOption>
+                    </SelectField></label
                 >
                 <label class="flex flex-col gap-1 text-sm"
-                    >开始日期<Input
+                    >开始日期<DatePicker
                         v-model="filters.start"
                         type="date"
                         aria-label="开始日期"
                 /></label>
                 <label class="flex flex-col gap-1 text-sm"
-                    >结束日期<Input
+                    >结束日期<DatePicker
                         v-model="filters.end"
                         type="date"
                         aria-label="结束日期"
@@ -215,15 +220,15 @@ async function showDetail(row: CdnflyRecord): Promise<void> {
                 <label
                     v-if="view === 'recharge-count'"
                     class="flex flex-col gap-1 text-sm"
-                    >汇总方式<select
+                    >汇总方式<SelectField
                         v-model="filters.group_by"
                         aria-label="汇总方式"
                         class="block h-9 rounded-md border bg-background px-3"
                     >
-                        <option value="day">按天汇总</option>
-                        <option value="month">按月汇总</option>
-                        <option value="year">按年汇总</option>
-                    </select></label
+                        <SelectOption value="day">按天汇总</SelectOption>
+                        <SelectOption value="month">按月汇总</SelectOption>
+                        <SelectOption value="year">按年汇总</SelectOption>
+                    </SelectField></label
                 >
             </template>
             <Button type="submit">查询</Button>

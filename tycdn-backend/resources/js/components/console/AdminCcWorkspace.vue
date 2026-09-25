@@ -11,12 +11,16 @@ import {
 import { computed, onMounted, onUnmounted, reactive, ref } from 'vue';
 import { toast } from 'vue-sonner';
 import ConfirmDeleteDialog from '@/components/console/ConfirmDeleteDialog.vue';
+import CheckboxField from '@/components/ui/checkbox/CheckboxField.vue';
 import {
     DropdownMenu,
     DropdownMenuTrigger,
     DropdownMenuContent,
     DropdownMenuItem,
 } from '@/components/ui/dropdown-menu';
+import Input from '@/components/ui/input/Input.vue';
+import SelectField from '@/components/ui/select/SelectField.vue';
+import SelectOption from '@/components/ui/select/SelectOption.vue';
 import {
     ccKinds,
     ccFilterLabels,
@@ -283,37 +287,39 @@ async function remove() {
                 >
             </div>
             <form class="filter-bar" @submit.prevent="load(1)">
-                <select
+                <SelectField
                     v-model="filters.internal"
                     aria-label="规则类型"
                     :disabled="busy"
                     @change="load(1)"
                 >
-                    <option value="">所有类型</option>
-                    <option value="1">系统规则</option>
-                    <option value="0">自定义规则</option></select
-                ><select
+                    <SelectOption value="">所有类型</SelectOption>
+                    <SelectOption value="1">系统规则</SelectOption>
+                    <SelectOption value="0"
+                        >自定义规则</SelectOption
+                    ></SelectField
+                ><SelectField
                     v-if="kind === 'rule'"
                     v-model="filters.is_show"
                     aria-label="显示状态"
                     :disabled="busy"
                     @change="load(1)"
                 >
-                    <option value="">所有显示</option>
-                    <option value="1">显示</option>
-                    <option value="0">隐藏</option></select
-                ><select
+                    <SelectOption value="">所有显示</SelectOption>
+                    <SelectOption value="1">显示</SelectOption>
+                    <SelectOption value="0">隐藏</SelectOption></SelectField
+                ><SelectField
                     v-model="filters.enable"
                     aria-label="启用状态"
                     :disabled="busy"
                     @change="load(1)"
                 >
-                    <option value="">所有状态</option>
-                    <option value="1">正常</option>
-                    <option value="0">禁用</option></select
+                    <SelectOption value="">所有状态</SelectOption>
+                    <SelectOption value="1">正常</SelectOption>
+                    <SelectOption value="0">禁用</SelectOption></SelectField
                 ><label class="input-group"
                     ><span>{{ label }}名称</span
-                    ><input
+                    ><Input
                         v-model="filters.name"
                         :aria-label="`${label}名称`"
                         :placeholder="
@@ -325,7 +331,7 @@ async function remove() {
                         @change="load(1)" /></label
                 ><label class="input-group id-input"
                     ><span>{{ label }}ID</span
-                    ><input
+                    ><Input
                         v-model="filters.id"
                         :aria-label="`${label}ID`"
                         :placeholder="`请输入${label}ID`"
@@ -334,7 +340,7 @@ async function remove() {
                         @change="load(1)" /></label
                 ><label v-if="kind === 'rule'" class="input-group id-input"
                     ><span>用户ID</span
-                    ><input
+                    ><Input
                         v-model="filters.uid"
                         aria-label="用户ID"
                         placeholder="请输入用户ID"
@@ -368,7 +374,7 @@ async function remove() {
             >
                 <label class="input-group"
                     ><span>用户ID</span
-                    ><input
+                    ><Input
                         v-model="filters.uid"
                         aria-label="用户ID"
                         placeholder="请输入用户ID"
@@ -413,8 +419,7 @@ async function remove() {
                     <thead>
                         <tr>
                             <th class="selection">
-                                <input
-                                    type="checkbox"
+                                <CheckboxField
                                     aria-label="选择本页全部"
                                     :checked="allSelected"
                                     :disabled="loading || busy || !rows.length"
@@ -452,8 +457,7 @@ async function remove() {
                             :class="{ 'system-row': ccSystem(row) }"
                         >
                             <td class="selection">
-                                <input
-                                    type="checkbox"
+                                <CheckboxField
                                     :aria-label="`选择 ${row.id}`"
                                     :checked="selected.includes(Number(row.id))"
                                     :disabled="busy"
@@ -644,20 +648,20 @@ async function remove() {
                     @click="load(page + 1)"
                 >
                     <ChevronRight /></button
-                ><select
+                ><SelectField
                     v-model="pageSize"
                     aria-label="每页条数"
                     :disabled="busy || loading"
                     @change="load(1)"
                 >
-                    <option
+                    <SelectOption
                         v-for="size in [10, 30, 100, 300]"
                         :key="size"
                         :value="size"
                     >
                         {{ size }} 条/页
-                    </option>
-                </select>
+                    </SelectOption>
+                </SelectField>
             </footer>
         </div>
         <ConfirmDeleteDialog
@@ -693,7 +697,7 @@ async function remove() {
 }
 button,
 input,
-select {
+:deep([data-slot='select-trigger']) {
     font-size: 12px;
     border: 1px solid var(--border);
     background: var(--card);
@@ -717,12 +721,12 @@ button svg {
     height: 12px;
 }
 input,
-select {
+:deep([data-slot='select-trigger']) {
     height: 27px;
     min-width: 0;
     padding: 4px 7px;
 }
-input[type='checkbox'] {
+:deep([data-slot='checkbox']) {
     height: 14px;
     width: 14px;
     accent-color: #2d8cf0;
@@ -730,7 +734,7 @@ input[type='checkbox'] {
 }
 button:focus-visible,
 input:focus-visible,
-select:focus-visible {
+:deep([data-slot='select-trigger']):focus-visible {
     outline: 2px solid #2d8cf0;
     outline-offset: 1px;
 }
@@ -763,7 +767,7 @@ select:focus-visible {
     gap: 7px;
     margin-bottom: 10px;
 }
-.filter-bar select {
+.filter-bar :deep([data-slot='select-trigger']) {
     width: 132px;
 }
 .input-group {
@@ -969,7 +973,7 @@ th:nth-child(2) {
     padding: 4px 7px;
     min-width: 28px;
 }
-.pagination select {
+.pagination :deep([data-slot='select-trigger']) {
     margin-left: 8px;
     height: 28px;
 }
@@ -985,7 +989,7 @@ th:nth-child(2) {
     border-radius: 4px;
 }
 @media (max-width: 640px) {
-    .filter-bar select {
+    .filter-bar :deep([data-slot='select-trigger']) {
         flex: 1;
         min-width: 110px;
     }

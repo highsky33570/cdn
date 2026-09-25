@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { reactive, ref, watch } from 'vue';
 import { toast } from 'vue-sonner';
+import CheckboxField from '@/components/ui/checkbox/CheckboxField.vue';
 import {
     Dialog,
     DialogScrollContent,
@@ -8,6 +9,13 @@ import {
     DialogTitle,
     DialogDescription,
 } from '@/components/ui/dialog';
+import Input from '@/components/ui/input/Input.vue';
+import RadioGroup from '@/components/ui/radio-group/RadioGroup.vue';
+import RadioGroupItem from '@/components/ui/radio-group/RadioGroupItem.vue';
+import SelectField from '@/components/ui/select/SelectField.vue';
+import SelectOption from '@/components/ui/select/SelectOption.vue';
+import Switch from '@/components/ui/switch/Switch.vue';
+import Textarea from '@/components/ui/textarea/Textarea.vue';
 import {
     addAdminNodeSubIps,
     getAdminNode,
@@ -372,19 +380,19 @@ async function save() {
                     <fieldset :disabled="saving" class="min-w-0">
                         <div v-if="tab === 'basic'" class="edit-fields">
                             <label for="edit-node-name">名称</label
-                            ><input
+                            ><Input
                                 id="edit-node-name"
                                 v-model="basic.name"
                                 required
                             />
                             <label for="edit-node-des">备注</label
-                            ><input
+                            ><Input
                                 id="edit-node-des"
                                 v-model="basic.des"
                                 placeholder="请输入备注"
                             />
                             <label for="edit-node-sort">排序</label
-                            ><input
+                            ><Input
                                 id="edit-node-sort"
                                 v-model="basic.sort"
                                 type="number"
@@ -394,7 +402,7 @@ async function save() {
                             />
                             <label for="edit-node-ip">IP</label>
                             <div>
-                                <input
+                                <Input
                                     id="edit-node-ip"
                                     v-model="basic.ip"
                                     required
@@ -405,21 +413,21 @@ async function save() {
                             </div>
                             <span class="field-label">类型</span>
                             <div>
-                                <div class="flex flex-wrap gap-2">
+                                <RadioGroup
+                                    v-model="basic.type"
+                                    aria-label="节点类型"
+                                    class="flex flex-wrap gap-2"
+                                >
                                     <label class="radio-label"
-                                        ><input
-                                            v-model="basic.type"
-                                            type="radio"
+                                        ><RadioGroupItem
                                             value="L1"
                                         />L1边缘节点</label
                                     ><label class="radio-label"
-                                        ><input
-                                            v-model="basic.type"
-                                            type="radio"
+                                        ><RadioGroupItem
                                             value="L2"
                                         />L2中间节点</label
                                     >
-                                </div>
+                                </RadioGroup>
                                 <p class="help">
                                     L1边缘节点是用户实际访问的节点;<br />L2中间节点是L1与源服务器之间的节点，用于汇聚L1节点请求，提高缓存命中率，或者优化回源线路
                                 </p>
@@ -448,13 +456,13 @@ async function save() {
                             </p>
                             <div v-else-if="configReady" class="edit-fields">
                                 <label for="edit-node-cache">缓存目录</label
-                                ><input
+                                ><Input
                                     id="edit-node-cache"
                                     v-model="config.cache"
                                     :placeholder="inherited.cache"
                                 /><label for="edit-node-size">缓存上限</label>
                                 <div class="input-group">
-                                    <input
+                                    <Input
                                         id="edit-node-size"
                                         v-model="config.size"
                                         type="number"
@@ -464,7 +472,7 @@ async function save() {
                                     /><span>GB</span>
                                 </div>
                                 <label for="edit-node-logs">日志目录</label
-                                ><input
+                                ><Input
                                     id="edit-node-logs"
                                     v-model="config.logs"
                                     :placeholder="inherited.logs"
@@ -482,7 +490,7 @@ async function save() {
                                 ><label :for="`edit-node-${field.key}`">{{
                                     field.label
                                 }}</label
-                                ><input
+                                ><Input
                                     :id="`edit-node-${field.key}`"
                                     v-model="location[field.key]"
                             /></template>
@@ -493,35 +501,35 @@ async function save() {
                         >
                             <label for="edit-node-bandwidth">带宽限制</label>
                             <div class="input-group">
-                                <input
+                                <Input
                                     id="edit-node-bandwidth"
                                     v-model="bandwidth"
                                     placeholder="留空不限制"
-                                /><select
+                                /><SelectField
                                     v-model="bandwidthUnit"
                                     aria-label="带宽单位"
                                 >
-                                    <option>Mbps</option>
-                                    <option>Gbps</option>
-                                </select>
+                                    <SelectOption value="Mbps"
+                                        >Mbps</SelectOption
+                                    >
+                                    <SelectOption value="Gbps"
+                                        >Gbps</SelectOption
+                                    >
+                                </SelectField>
                             </div>
                             <span class="field-label">流量限制</span
-                            ><button
-                                type="button"
-                                role="switch"
-                                :aria-checked="traffic.enable"
+                            ><Switch
+                                :checked="traffic.enable"
                                 aria-label="流量限制"
-                                class="quota-switch"
-                                :class="{ enabled: traffic.enable }"
-                                @click="traffic.enable = !traffic.enable"
-                            >
-                                <span />{{ traffic.enable ? '开启' : '关闭' }}
-                            </button>
+                                @update:checked="
+                                    traffic.enable = !traffic.enable
+                                "
+                            />
                             <label for="edit-node-day">统计周期:</label>
                             <div class="grid justify-start gap-2">
                                 <div class="input-group w-[125px]!">
                                     <span>每月</span
-                                    ><input
+                                    ><Input
                                         id="edit-node-day"
                                         v-model="traffic.from_day"
                                         type="number"
@@ -531,7 +539,7 @@ async function save() {
                                     /><span>日,</span>
                                 </div>
                                 <div class="input-group">
-                                    <input
+                                    <Input
                                         v-model="traffic.from_hour"
                                         aria-label="统计起始时间"
                                         class="w-[80px]!"
@@ -542,7 +550,7 @@ async function save() {
                             </div>
                             <label for="edit-node-total">流量限制:</label>
                             <div class="input-group">
-                                <input
+                                <Input
                                     id="edit-node-total"
                                     v-model="traffic.traffic_total"
                                     type="number"
@@ -554,27 +562,25 @@ async function save() {
                             <span class="field-label">流量类型:</span>
                             <div class="flex flex-wrap items-center gap-2">
                                 <label class="radio-label"
-                                    ><input
+                                    ><CheckboxField
                                         v-model="traffic.type"
-                                        type="checkbox"
                                         value="outbound"
                                     />出站流量</label
                                 ><label class="radio-label"
-                                    ><input
+                                    ><CheckboxField
                                         v-model="traffic.type"
-                                        type="checkbox"
                                         value="inbound"
                                     />入站流量</label
                                 >
                             </div>
                             <label for="edit-node-nics">网卡过滤:</label
-                            ><input
+                            ><Input
                                 id="edit-node-nics"
                                 v-model="traffic.excl_nic"
                                 placeholder="如eth0，多个网卡空格分隔"
                             />
                             <label for="edit-node-disable">禁用时间段</label
-                            ><input
+                            ><Input
                                 id="edit-node-disable"
                                 v-model="disableTime"
                                 placeholder="格式为00:00:00-03:00:00 08:00:00-22:00:00，多个时间段空格分隔"
@@ -582,7 +588,7 @@ async function save() {
                         </div>
                         <div v-else class="edit-fields">
                             <label for="edit-node-subips">子IP</label
-                            ><textarea
+                            ><Textarea
                                 id="edit-node-subips"
                                 v-model="subips"
                                 rows="5"
@@ -647,8 +653,8 @@ async function save() {
     text-align: right;
 }
 .edit-fields input:not([type='radio']):not([type='checkbox']),
-.edit-fields textarea,
-.edit-fields select {
+.edit-fields :deep([data-slot='textarea']),
+.edit-fields :deep([data-slot='select-trigger']) {
     min-width: 0;
     width: 100%;
     height: 28px;
@@ -659,11 +665,11 @@ async function save() {
     outline-color: #2d8cf0;
 }
 .edit-fields input::placeholder,
-.edit-fields textarea::placeholder {
+.edit-fields :deep([data-slot='textarea'])::placeholder {
     color: var(--muted-foreground);
     opacity: 0.55;
 }
-.edit-fields textarea {
+.edit-fields :deep([data-slot='textarea']) {
     height: auto;
     resize: vertical;
 }
@@ -692,7 +698,7 @@ async function save() {
     border-radius: 3px 0 0 3px !important;
 }
 .input-group span,
-.input-group select {
+.input-group :deep([data-slot='select-trigger']) {
     display: flex;
     align-items: center;
     white-space: nowrap;
@@ -705,7 +711,7 @@ async function save() {
 .input-group > * + * {
     margin-left: -1px;
 }
-.input-group select {
+.input-group :deep([data-slot='select-trigger']) {
     width: 70px;
 }
 .edit-actions {
@@ -731,29 +737,6 @@ button:disabled {
 .auto-fields {
     grid-template-columns: 70px minmax(0, 1fr);
     gap: 20px 10px;
-}
-.quota-switch {
-    display: flex;
-    align-items: center;
-    gap: 3px;
-    width: 48px;
-    height: 19px;
-    border-radius: 12px;
-    background: #bfc1c5;
-    color: white;
-    font-size: 11px;
-    padding: 2px;
-    margin-top: 4px;
-}
-.quota-switch span {
-    width: 15px;
-    height: 15px;
-    border-radius: 50%;
-    background: white;
-}
-.quota-switch.enabled {
-    background: #2d8cf0;
-    flex-direction: row-reverse;
 }
 @media (max-width: 450px) {
     .edit-tabs button {

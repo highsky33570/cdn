@@ -3,6 +3,11 @@ import { RefreshCw } from 'lucide-vue-next';
 import { computed, onMounted, onUnmounted, reactive, ref } from 'vue';
 import NodeMetricChart from '@/components/console/NodeMetricChart.vue';
 import { Button } from '@/components/ui/button';
+import CheckboxField from '@/components/ui/checkbox/CheckboxField.vue';
+import DatePicker from '@/components/ui/date-picker/DatePicker.vue';
+import Input from '@/components/ui/input/Input.vue';
+import SelectField from '@/components/ui/select/SelectField.vue';
+import SelectOption from '@/components/ui/select/SelectOption.vue';
 import { apiRequest } from '@/lib/apiRequest';
 import { extractCdnflyRows } from '@/lib/cdnflyResponse';
 import { masterGet } from '@/lib/masterApi';
@@ -348,16 +353,14 @@ onMounted(async () => {
                 <div v-else class="flex items-center gap-3">
                     <span>类型</span
                     ><label class="flex items-center gap-1"
-                        ><input
+                        ><CheckboxField
                             v-model="outbound"
-                            type="checkbox"
                             class="accent-[#2d8cf0]"
                             @change="load"
                         />出站流量</label
                     ><label class="flex items-center gap-1"
-                        ><input
+                        ><CheckboxField
                             v-model="inbound"
-                            type="checkbox"
                             class="accent-[#2d8cf0]"
                             @change="load"
                         />入站流量</label
@@ -377,24 +380,26 @@ onMounted(async () => {
                     </div>
                 </div>
                 <label v-if="tab !== 'top'" class="flex items-center gap-3"
-                    >节点<select
+                    >节点<SelectField
                         v-model="node"
                         aria-label="节点"
                         class="h-8 w-[200px] max-w-full rounded border bg-card px-2"
                         @change="load"
                     >
-                        <option v-if="!nodes.length" value="">暂无节点</option>
-                        <option
+                        <SelectOption v-if="!nodes.length" value=""
+                            >暂无节点</SelectOption
+                        >
+                        <SelectOption
                             v-for="item in nodes"
                             :key="String(item.id)"
                             :value="String(item.id)"
                         >
                             {{ item.name ?? item.id }}
-                        </option>
-                    </select></label
+                        </SelectOption>
+                    </SelectField></label
                 >
                 <label v-if="tab === 'traffic'" class="flex items-center gap-3"
-                    >排除网卡<input
+                    >排除网卡<Input
                         v-model="exclude"
                         aria-label="排除网卡"
                         class="h-8 w-[190px] rounded border bg-card px-2"
@@ -417,7 +422,7 @@ onMounted(async () => {
                 >
                     <label
                         >开始时间
-                        <input
+                        <DatePicker
                             v-model="custom.start"
                             type="datetime-local"
                             aria-label="开始时间"
@@ -425,7 +430,7 @@ onMounted(async () => {
                             @change="load" /></label
                     ><label
                         >结束时间
-                        <input
+                        <DatePicker
                             v-model="custom.end"
                             type="datetime-local"
                             aria-label="结束时间"

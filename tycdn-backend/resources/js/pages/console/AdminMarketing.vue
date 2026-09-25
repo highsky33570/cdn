@@ -12,6 +12,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
+import DatePicker from '@/components/ui/date-picker/DatePicker.vue';
 import {
     Dialog,
     DialogScrollContent,
@@ -22,6 +23,8 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import RadioGroup from '@/components/ui/radio-group/RadioGroup.vue';
+import RadioGroupItem from '@/components/ui/radio-group/RadioGroupItem.vue';
 import {
     Select,
     SelectTrigger,
@@ -881,25 +884,20 @@ const detailLabels = {
                             <Label>{{
                                 couponEditor ? '类型' : '折扣类型'
                             }}</Label>
-                            <div
+                            <RadioGroup
+                                v-model="form.type"
+                                name="offer-type"
                                 class="flex flex-wrap items-center gap-4"
-                                role="radiogroup"
                                 :aria-label="couponEditor ? '类型' : '折扣类型'"
                             >
                                 <label class="flex items-center gap-2 text-sm"
-                                    ><input
-                                        v-model="form.type"
-                                        type="radio"
+                                    ><RadioGroupItem
                                         value="discount"
-                                        name="offer-type"
                                         class="accent-primary"
                                     />折扣</label
                                 ><label class="flex items-center gap-2 text-sm"
-                                    ><input
-                                        v-model="form.type"
-                                        type="radio"
+                                    ><RadioGroupItem
                                         value="price"
-                                        name="offer-type"
                                         class="accent-primary"
                                     />{{
                                         couponEditor ? '金额' : '价格'
@@ -930,7 +928,7 @@ const detailLabels = {
                                     "
                                     class="min-w-32 flex-1"
                                 />
-                            </div>
+                            </RadioGroup>
                         </div>
                         <template v-if="!couponEditor"
                             ><div
@@ -1084,7 +1082,7 @@ const detailLabels = {
                         <div class="marketing-field">
                             <Label for="marketing-start">开始时间</Label>
                             <div class="space-y-1">
-                                <Input
+                                <DatePicker
                                     id="marketing-start"
                                     v-model="form.start"
                                     type="datetime-local"
@@ -1098,7 +1096,7 @@ const detailLabels = {
                         <div class="marketing-field">
                             <Label for="marketing-end">结束时间</Label>
                             <div class="space-y-1">
-                                <Input
+                                <DatePicker
                                     id="marketing-end"
                                     v-model="form.end"
                                     type="datetime-local"

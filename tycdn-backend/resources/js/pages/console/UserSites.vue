@@ -14,6 +14,7 @@ import ConfirmDeleteDialog from '@/components/console/ConfirmDeleteDialog.vue';
 import PackagePagination from '@/components/console/PackagePagination.vue';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
+import CheckboxField from '@/components/ui/checkbox/CheckboxField.vue';
 import {
     Dialog,
     DialogDescription,
@@ -38,7 +39,10 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import SelectField from '@/components/ui/select/SelectField.vue';
+import SelectOption from '@/components/ui/select/SelectOption.vue';
 import { Spinner } from '@/components/ui/spinner';
+import Textarea from '@/components/ui/textarea/Textarea.vue';
 import {
     siteCname,
     sitePorts,
@@ -1768,10 +1772,12 @@ async function exportSites() {
                         </DropdownMenuContent></DropdownMenu
                     >
                     <form class="quick-search" @submit.prevent="loadSites(1)">
-                        <select v-model="quickField" aria-label="搜索类型">
-                            <option value="domain">域名</option>
-                            <option value="id">ID</option>
-                            <option value="cname">CNAME</option></select
+                        <SelectField v-model="quickField" aria-label="搜索类型">
+                            <SelectOption value="domain">域名</SelectOption>
+                            <SelectOption value="id">ID</SelectOption>
+                            <SelectOption value="cname"
+                                >CNAME</SelectOption
+                            ></SelectField
                         ><Input
                             v-model="siteFilters[quickField]"
                             aria-label="网站搜索"
@@ -1804,11 +1810,11 @@ async function exportSites() {
                     @submit.prevent="loadSites(1)"
                 >
                     <label
-                        >启用状态<select v-model="siteFilters.enable">
-                            <option value="all">全部状态</option>
-                            <option value="1">启用</option>
-                            <option value="0">禁用</option>
-                        </select></label
+                        >启用状态<SelectField v-model="siteFilters.enable">
+                            <SelectOption value="all">全部状态</SelectOption>
+                            <SelectOption value="1">启用</SelectOption>
+                            <SelectOption value="0">禁用</SelectOption>
+                        </SelectField></label
                     >
                     <label>网站ID<Input v-model="siteFilters.id" /></label
                     ><label>CNAME<Input v-model="siteFilters.cname" /></label
@@ -1862,26 +1868,28 @@ async function exportSites() {
                         @click="syncResolve"
                         >同步解析</Button
                     >
-                    <select
+                    <SelectField
                         v-model="resolveFilters.dnsapi_state"
                         aria-label="DNS API状态"
                         @change="loadResolve(1)"
                     >
-                        <option value="">请选择DNS API状态</option>
-                        <option value="set">DNS API已设置</option>
-                        <option value="not_set">DNS API未设置</option>
-                    </select>
-                    <select
+                        <SelectOption value="">请选择DNS API状态</SelectOption>
+                        <SelectOption value="set">DNS API已设置</SelectOption>
+                        <SelectOption value="not_set"
+                            >DNS API未设置</SelectOption
+                        >
+                    </SelectField>
+                    <SelectField
                         v-model="resolveFilters.task_state"
                         aria-label="任务状态"
                         @change="loadResolve(1)"
                     >
-                        <option value="">请选择任务状态</option>
-                        <option value="done">任务已完成</option>
-                        <option value="pending">任务待同步</option>
-                        <option value="process">任务同步中</option>
-                        <option value="failed">任务同步失败</option>
-                    </select>
+                        <SelectOption value="">请选择任务状态</SelectOption>
+                        <SelectOption value="done">任务已完成</SelectOption>
+                        <SelectOption value="pending">任务待同步</SelectOption>
+                        <SelectOption value="process">任务同步中</SelectOption>
+                        <SelectOption value="failed">任务同步失败</SelectOption>
+                    </SelectField>
                     <label class="input-group"
                         >域名<Input
                             v-model="resolveFilters.domain"
@@ -1923,8 +1931,7 @@ async function exportSites() {
                         <thead>
                             <tr>
                                 <th>
-                                    <input
-                                        type="checkbox"
+                                    <CheckboxField
                                         aria-label="选择当前页"
                                         :checked="allSelected"
                                         :disabled="
@@ -1958,8 +1965,7 @@ async function exportSites() {
                                     :key="textValue(row.id)"
                                 >
                                     <td>
-                                        <input
-                                            type="checkbox"
+                                        <CheckboxField
                                             :aria-label="`选择 ${row.id}`"
                                             :checked="
                                                 activeTab === 'resolve'
@@ -2143,15 +2149,17 @@ async function exportSites() {
                     </p>
                     <template v-if="bulkAction === 'edit'"
                         ><Label for="bulk-site-field">修改项</Label
-                        ><select
+                        ><SelectField
                             id="bulk-site-field"
                             v-model="bulkField"
                             class="h-10 rounded border bg-background px-3"
                         >
-                            <option value="groups">分组ID（逗号分隔）</option>
-                            <option value="user_package">
+                            <SelectOption value="groups"
+                                >分组ID（逗号分隔）</SelectOption
+                            >
+                            <SelectOption value="user_package">
                                 用户套餐ID
-                            </option></select
+                            </SelectOption></SelectField
                         ><Label for="bulk-site-value">设置值</Label
                         ><Input
                             id="bulk-site-value"
@@ -2458,7 +2466,7 @@ async function exportSites() {
                         <template
                             v-else-if="currentConfigMeta?.valueType === 'json'"
                         >
-                            <textarea
+                            <Textarea
                                 v-model="configForm.value"
                                 class="min-h-32 w-full rounded-md border border-input bg-background px-3 py-2 font-mono text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
                                 spellcheck="false"
@@ -2585,7 +2593,7 @@ async function exportSites() {
                     </div>
                     <div class="grid gap-2">
                         <Label>auth JSON</Label>
-                        <textarea
+                        <Textarea
                             v-model="dnsForm.auth"
                             class="min-h-40 w-full rounded-md border border-input bg-background px-3 py-2 font-mono text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
                             spellcheck="false"
@@ -2661,14 +2669,14 @@ async function exportSites() {
     margin-bottom: 18px;
 }
 .sites-toolbar > button,
-.sites-toolbar select,
+.sites-toolbar :deep([data-slot='select-trigger']),
 .sites-toolbar input,
 .quick-search button {
     height: 40px;
     font-size: 16px;
 }
-.sites-toolbar select,
-.advanced-search select {
+.sites-toolbar :deep([data-slot='select-trigger']),
+.advanced-search :deep([data-slot='select-trigger']) {
     border: 1px solid var(--border);
     background: var(--card);
     border-radius: 4px;
@@ -2679,7 +2687,7 @@ async function exportSites() {
     max-width: 100%;
     min-width: 0;
 }
-.quick-search select {
+.quick-search :deep([data-slot='select-trigger']) {
     width: 78px;
     flex-shrink: 0;
     border-right: 0;
@@ -2710,7 +2718,7 @@ async function exportSites() {
     border-left: 1px solid var(--border);
     border-radius: 0 4px 4px 0;
 }
-.resolve-toolbar select {
+.resolve-toolbar :deep([data-slot='select-trigger']) {
     width: 245px;
     max-width: 100%;
 }
@@ -2729,7 +2737,7 @@ async function exportSites() {
     gap: 6px;
     max-width: 210px;
 }
-.advanced-search select {
+.advanced-search :deep([data-slot='select-trigger']) {
     height: 36px;
 }
 .sites-table-scroll {
@@ -2766,7 +2774,7 @@ async function exportSites() {
 .sites-table tbody tr:hover {
     background: color-mix(in srgb, var(--muted) 40%, transparent);
 }
-.sites-table input[type='checkbox'] {
+.sites-table :deep([data-slot='checkbox']) {
     width: 19px;
     height: 19px;
     accent-color: var(--primary);
@@ -2848,7 +2856,7 @@ async function exportSites() {
     font-size: 16px;
 }
 .sites-pagination :deep(button),
-.sites-pagination :deep(select) {
+.sites-pagination :deep([data-slot='select-trigger']) {
     height: 40px;
     min-width: 40px;
     font-size: 16px;

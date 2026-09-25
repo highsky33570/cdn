@@ -33,6 +33,8 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import SelectField from '@/components/ui/select/SelectField.vue';
+import SelectOption from '@/components/ui/select/SelectOption.vue';
 import { Spinner } from '@/components/ui/spinner';
 import { siteRankingRows, inclusiveUsageEnd } from '@/lib/cdnflyResponse';
 import {
@@ -1591,14 +1593,16 @@ function formatInputDate(date: Date): string {
 
                     <!-- 域名筛选 -->
                     <div class="flex min-w-0 items-center">
-                        <select
+                        <SelectField
                             v-model="topSearchType"
                             aria-label="排行筛选类型"
                             class="h-8 rounded-l-sm border border-r-0 bg-card px-3 text-sm"
                         >
-                            <option value="domain">域名</option>
-                            <option value="server_port">监听端口</option>
-                        </select>
+                            <SelectOption value="domain">域名</SelectOption>
+                            <SelectOption value="server_port"
+                                >监听端口</SelectOption
+                            >
+                        </SelectField>
                         <Input
                             v-model="topFilters[topSearchType]"
                             class="h-8 w-60 min-w-0 rounded-l-none text-sm"

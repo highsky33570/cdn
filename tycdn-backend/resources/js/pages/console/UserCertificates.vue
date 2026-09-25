@@ -13,6 +13,7 @@ import ConfirmDeleteDialog from '@/components/console/ConfirmDeleteDialog.vue';
 import PackagePagination from '@/components/console/PackagePagination.vue';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
+import CheckboxField from '@/components/ui/checkbox/CheckboxField.vue';
 import {
     Dialog,
     DialogDescription,
@@ -29,6 +30,8 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import RadioGroup from '@/components/ui/radio-group/RadioGroup.vue';
+import RadioGroupItem from '@/components/ui/radio-group/RadioGroupItem.vue';
 import {
     Select,
     SelectContent,
@@ -37,7 +40,10 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import SelectField from '@/components/ui/select/SelectField.vue';
+import SelectOption from '@/components/ui/select/SelectOption.vue';
 import { Spinner } from '@/components/ui/spinner';
+import Textarea from '@/components/ui/textarea/Textarea.vue';
 import {
     createUserCert,
     deleteUserCert,
@@ -808,10 +814,15 @@ async function saveDefault(name: 'cert_default_type' | 'dnsapi') {
                             class="cert-search"
                             @submit.prevent="submitSearch"
                         >
-                            <select v-model="searchField" aria-label="搜索类型">
-                                <option value="domain">域名</option>
-                                <option value="name">名称</option>
-                                <option value="id">ID</option></select
+                            <SelectField
+                                v-model="searchField"
+                                aria-label="搜索类型"
+                            >
+                                <SelectOption value="domain">域名</SelectOption>
+                                <SelectOption value="name">名称</SelectOption>
+                                <SelectOption value="id"
+                                    >ID</SelectOption
+                                ></SelectField
                             ><Input
                                 v-model="filters.search"
                                 aria-label="证书搜索"
@@ -844,25 +855,35 @@ async function saveDefault(name: 'cert_default_type' | 'dnsapi') {
                         @submit.prevent="submitSearch"
                     >
                         <label
-                            >类型<select v-model="filters.type">
-                                <option value="">所有类型</option>
-                                <option value="custom">自己上传</option>
-                                <option value="lets">Let's Encrypt</option>
-                                <option value="zerossl">ZeroSSL</option>
-                                <option value="buypass">BuyPass</option>
-                            </select></label
+                            >类型<SelectField v-model="filters.type">
+                                <SelectOption value="">所有类型</SelectOption>
+                                <SelectOption value="custom"
+                                    >自己上传</SelectOption
+                                >
+                                <SelectOption value="lets"
+                                    >Let's Encrypt</SelectOption
+                                >
+                                <SelectOption value="zerossl"
+                                    >ZeroSSL</SelectOption
+                                >
+                                <SelectOption value="buypass"
+                                    >BuyPass</SelectOption
+                                >
+                            </SelectField></label
                         ><label
-                            >启用状态<select v-model="filters.status">
-                                <option value="all">全部状态</option>
-                                <option value="1">启用</option>
-                                <option value="0">禁用</option>
-                            </select></label
+                            >启用状态<SelectField v-model="filters.status">
+                                <SelectOption value="all"
+                                    >全部状态</SelectOption
+                                >
+                                <SelectOption value="1">启用</SelectOption>
+                                <SelectOption value="0">禁用</SelectOption>
+                            </SelectField></label
                         ><label
-                            >自动续签<select v-model="filters.auto_renew">
-                                <option value="">全部</option>
-                                <option value="1">已开启</option>
-                                <option value="0">已关闭</option>
-                            </select></label
+                            >自动续签<SelectField v-model="filters.auto_renew">
+                                <SelectOption value="">全部</SelectOption>
+                                <SelectOption value="1">已开启</SelectOption>
+                                <SelectOption value="0">已关闭</SelectOption>
+                            </SelectField></label
                         ><Button type="submit" :disabled="loading">查询</Button
                         ><Button
                             type="button"
@@ -896,8 +917,7 @@ async function saveDefault(name: 'cert_default_type' | 'dnsapi') {
                             <thead>
                                 <tr>
                                     <th>
-                                        <input
-                                            type="checkbox"
+                                        <CheckboxField
                                             aria-label="选择当前页"
                                             :checked="selectedAll"
                                             :disabled="
@@ -929,8 +949,7 @@ async function saveDefault(name: 'cert_default_type' | 'dnsapi') {
                                         :key="textValue(cert.id)"
                                     >
                                         <td>
-                                            <input
-                                                type="checkbox"
+                                            <CheckboxField
                                                 :aria-label="`选择 ${cert.id}`"
                                                 :checked="
                                                     selected.includes(
@@ -1096,7 +1115,15 @@ async function saveDefault(name: 'cert_default_type' | 'dnsapi') {
                         <legend class="sr-only">证书默认设置</legend>
                         <div class="default-row">
                             <span>证书类型</span>
-                            <div class="default-radios">
+                            <RadioGroup
+                                v-model="settings.cert_default_type"
+                                aria-label="证书类型"
+                                @update:model-value="
+                                    saveDefault('cert_default_type')
+                                "
+                                name="default-cert-type"
+                                class="default-radios"
+                            >
                                 <label
                                     v-for="option in [
                                         {
@@ -1114,35 +1141,29 @@ async function saveDefault(name: 'cert_default_type' | 'dnsapi') {
                                         { value: 'buypass', label: 'BuyPass' },
                                     ]"
                                     :key="option.value"
-                                    ><input
-                                        v-model="settings.cert_default_type"
-                                        type="radio"
-                                        name="default-cert-type"
-                                        :value="option.value"
-                                        @change="
-                                            saveDefault('cert_default_type')
-                                        "
-                                    />{{ option.label }}</label
+                                    ><RadioGroupItem :value="option.value" />{{
+                                        option.label
+                                    }}</label
                                 >
-                            </div>
+                            </RadioGroup>
                         </div>
                         <div class="default-row">
                             <label for="default-cert-dns">DNS API</label>
                             <div class="default-dns">
-                                <select
+                                <SelectField
                                     id="default-cert-dns"
                                     v-model="settings.dnsapi"
                                     @change="saveDefault('dnsapi')"
                                 >
-                                    <option value="">请选择</option>
-                                    <option
+                                    <SelectOption value="">请选择</SelectOption>
+                                    <SelectOption
                                         v-for="option in dnsApiOptions"
                                         :key="option.id"
                                         :value="String(option.id)"
                                     >
                                         {{ option.name }}
-                                    </option>
-                                </select>
+                                    </SelectOption>
+                                </SelectField>
                                 <p>
                                     设置后，在网站列表一键申请证书时将使用此DNS
                                     API申请证书。
@@ -1235,7 +1256,7 @@ async function saveDefault(name: 'cert_default_type' | 'dnsapi') {
                         <template v-if="certIsCustom">
                             <div class="grid gap-2">
                                 <Label for="cert-body">证书 (CERT)</Label>
-                                <textarea
+                                <Textarea
                                     id="cert-body"
                                     v-model="form.cert"
                                     class="min-h-32 w-full rounded-md border border-input bg-background px-3 py-2 font-mono text-sm shadow-xs outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
@@ -1245,7 +1266,7 @@ async function saveDefault(name: 'cert_default_type' | 'dnsapi') {
                             </div>
                             <div class="grid gap-2">
                                 <Label for="cert-key">私钥 (KEY)</Label>
-                                <textarea
+                                <Textarea
                                     id="cert-key"
                                     v-model="form.key"
                                     class="min-h-32 w-full rounded-md border border-input bg-background px-3 py-2 font-mono text-sm shadow-xs outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
@@ -1449,7 +1470,7 @@ async function saveDefault(name: 'cert_default_type' | 'dnsapi') {
 }
 .cert-toolbar button,
 .cert-toolbar input,
-.cert-toolbar select {
+.cert-toolbar :deep([data-slot='select-trigger']) {
     height: 40px;
     font-size: 16px;
 }
@@ -1460,7 +1481,7 @@ async function saveDefault(name: 'cert_default_type' | 'dnsapi') {
     border: 1px solid var(--border);
     border-radius: 4px;
 }
-.cert-search select {
+.cert-search :deep([data-slot='select-trigger']) {
     width: 75px;
     flex-shrink: 0;
     padding: 0 10px;
@@ -1492,7 +1513,7 @@ async function saveDefault(name: 'cert_default_type' | 'dnsapi') {
     display: grid;
     gap: 6px;
 }
-.advanced-cert select {
+.advanced-cert :deep([data-slot='select-trigger']) {
     height: 36px;
     padding: 0 12px;
     background: var(--card);
@@ -1527,7 +1548,7 @@ async function saveDefault(name: 'cert_default_type' | 'dnsapi') {
 .cert-table tbody tr:hover {
     background: color-mix(in srgb, var(--muted) 40%, transparent);
 }
-.cert-table input[type='checkbox'] {
+.cert-table :deep([data-slot='checkbox']) {
     width: 19px;
     height: 19px;
     accent-color: var(--primary);
@@ -1589,7 +1610,7 @@ async function saveDefault(name: 'cert_default_type' | 'dnsapi') {
     font-size: 16px;
 }
 .cert-pagination :deep(button),
-.cert-pagination :deep(select) {
+.cert-pagination :deep([data-slot='select-trigger']) {
     height: 40px;
     min-width: 40px;
     font-size: 16px;
@@ -1637,7 +1658,7 @@ async function saveDefault(name: 'cert_default_type' | 'dnsapi') {
     max-width: 100%;
     min-width: 0;
 }
-.default-dns select {
+.default-dns :deep([data-slot='select-trigger']) {
     height: 40px;
     width: 100%;
     background: var(--card);

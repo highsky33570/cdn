@@ -2,6 +2,7 @@
 import { computed, ref } from 'vue';
 import { toast } from 'vue-sonner';
 import { Button } from '@/components/ui/button';
+import CheckboxField from '@/components/ui/checkbox/CheckboxField.vue';
 import {
     Dialog,
     DialogContent,
@@ -184,9 +185,8 @@ async function execute() {
                         </table>
                     </div>
                     <label v-if="data.can_retry" class="flex gap-3 text-sm"
-                        ><input
+                        ><CheckboxField
                             v-model="acknowledged"
-                            type="checkbox"
                             class="mt-1"
                         />已核对主控套餐与充值记录，确认没有重复开通或未记账的入账。</label
                     >

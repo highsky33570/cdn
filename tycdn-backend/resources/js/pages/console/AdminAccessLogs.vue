@@ -5,6 +5,7 @@ import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue';
 import { toast } from 'vue-sonner';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
+import DatePicker from '@/components/ui/date-picker/DatePicker.vue';
 import {
     Dialog,
     DialogContent,
@@ -15,6 +16,8 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import SelectField from '@/components/ui/select/SelectField.vue';
+import SelectOption from '@/components/ui/select/SelectOption.vue';
 import { Spinner } from '@/components/ui/spinner';
 import {
     accessFilterFields,
@@ -473,24 +476,26 @@ onUnmounted(() => {
                             class="flex max-w-full items-stretch"
                             @submit.prevent="quickSearch"
                         >
-                            <select
+                            <SelectField
                                 v-model="quickType"
                                 aria-label="搜索类型"
                                 class="w-28 shrink-0 rounded-l-md border border-r-0 bg-muted px-2 text-sm text-muted-foreground"
                             >
-                                <option
+                                <SelectOption
                                     v-for="field in accessFilterFields"
                                     :key="field.key"
                                     :value="field.key"
                                 >
                                     {{ field.label }}
-                                </option>
-                                <option value="timeRange">时间范围</option>
-                                <option value="uri_match_type">
+                                </SelectOption>
+                                <SelectOption value="timeRange"
+                                    >时间范围</SelectOption
+                                >
+                                <SelectOption value="uri_match_type">
                                     URI搜索模式
-                                </option>
-                            </select>
-                            <select
+                                </SelectOption>
+                            </SelectField>
+                            <SelectField
                                 v-if="
                                     quickType === 'cache_status' ||
                                     quickType === 'uri_match_type'
@@ -500,18 +505,22 @@ onUnmounted(() => {
                                 class="h-8 w-44 min-w-0 border bg-background px-2 text-sm"
                             >
                                 <template v-if="quickType === 'cache_status'"
-                                    ><option value="">全部</option>
-                                    <option value="HIT">命中</option>
-                                    <option value="MISS">
+                                    ><SelectOption value="">全部</SelectOption>
+                                    <SelectOption value="HIT"
+                                        >命中</SelectOption
+                                    >
+                                    <SelectOption value="MISS">
                                         未命中
-                                    </option></template
+                                    </SelectOption></template
                                 ><template v-else
-                                    ><option value="exact">精确</option>
-                                    <option value="prefix">
+                                    ><SelectOption value="exact"
+                                        >精确</SelectOption
+                                    >
+                                    <SelectOption value="prefix">
                                         前缀
-                                    </option></template
+                                    </SelectOption></template
                                 >
-                            </select>
+                            </SelectField>
                             <Input
                                 v-else
                                 v-model="quickValue"
@@ -566,7 +575,7 @@ onUnmounted(() => {
                         >
                             <div class="grid gap-1.5">
                                 <Label for="access-start">开始时间</Label
-                                ><Input
+                                ><DatePicker
                                     id="access-start"
                                     v-model="draft.start"
                                     type="datetime-local"
@@ -575,7 +584,7 @@ onUnmounted(() => {
                             </div>
                             <div class="grid gap-1.5">
                                 <Label for="access-end">结束时间</Label
-                                ><Input
+                                ><DatePicker
                                     id="access-end"
                                     v-model="draft.end"
                                     type="datetime-local"
@@ -603,29 +612,35 @@ onUnmounted(() => {
                                 <Label :for="`access-${field.key}`">{{
                                     field.label
                                 }}</Label>
-                                <select
+                                <SelectField
                                     v-if="field.key === 'cache_status'"
                                     :id="`access-${field.key}`"
                                     v-model="draft.cache_status"
                                     class="h-8 rounded-md border bg-background px-2 text-sm"
                                 >
-                                    <option value="">全部</option>
-                                    <option value="HIT">命中</option>
-                                    <option value="MISS">未命中</option>
-                                </select>
+                                    <SelectOption value="">全部</SelectOption>
+                                    <SelectOption value="HIT"
+                                        >命中</SelectOption
+                                    >
+                                    <SelectOption value="MISS"
+                                        >未命中</SelectOption
+                                    >
+                                </SelectField>
                                 <div
                                     v-else-if="field.key === 'req_uri'"
                                     class="flex min-w-0"
                                 >
-                                    <select
+                                    <SelectField
                                         v-model="draft.uri_match_type"
                                         aria-label="URI匹配方式"
                                         class="w-20 shrink-0 rounded-l-md border border-r-0 bg-background px-2 text-sm"
                                     >
-                                        <option value="exact">精确</option>
-                                        <option value="prefix">
+                                        <SelectOption value="exact"
+                                            >精确</SelectOption
+                                        >
+                                        <SelectOption value="prefix">
                                             前缀
-                                        </option></select
+                                        </SelectOption></SelectField
                                     ><Input
                                         :id="`access-${field.key}`"
                                         v-model="draft.req_uri"
@@ -949,14 +964,14 @@ onUnmounted(() => {
                         :disabled="loading || currentPage >= lastPage"
                         @click="load(currentPage + 1)"
                         ><ChevronRight class="size-4" /></Button
-                    ><select
+                    ><SelectField
                         v-model.number="pageSize"
                         aria-label="每页条数"
                         class="h-8 rounded-md border border-input bg-background px-2 text-foreground"
                         :disabled="loading"
                         @change="load(1)"
                     >
-                        <option
+                        <SelectOption
                             v-for="size in active === 'query'
                                 ? [10, 30, 100]
                                 : [10, 30, 100, 300]"
@@ -964,8 +979,8 @@ onUnmounted(() => {
                             :value="size"
                         >
                             {{ size }} 条/页
-                        </option>
-                    </select>
+                        </SelectOption>
+                    </SelectField>
                 </nav>
             </div>
         </section>
@@ -1085,7 +1100,10 @@ onUnmounted(() => {
 .user-access-log nav {
     justify-content: flex-start;
 }
-.user-access-log .access-toolbar form select:first-child {
+.user-access-log
+    .access-toolbar
+    form
+    :deep([data-slot='select-trigger']):first-child {
     width: 5rem;
 }
 .user-access-log .access-toolbar form input {
@@ -1094,10 +1112,10 @@ onUnmounted(() => {
 }
 .user-access-log .access-toolbar input,
 .user-access-log .access-toolbar button,
-.user-access-log .access-toolbar select,
+.user-access-log .access-toolbar :deep([data-slot='select-trigger']),
 .user-access-log .access-refresh button,
 .user-access-log nav button,
-.user-access-log nav select {
+.user-access-log nav :deep([data-slot='select-trigger']) {
     height: 2.5rem;
     font-size: 1rem;
 }
@@ -1148,15 +1166,18 @@ onUnmounted(() => {
 }
 .user-access-log .access-toolbar input,
 .user-access-log .access-toolbar button,
-.user-access-log .access-toolbar select,
+.user-access-log .access-toolbar :deep([data-slot='select-trigger']),
 .user-access-log .access-refresh button,
 .user-access-log nav button,
-.user-access-log nav select {
+.user-access-log nav :deep([data-slot='select-trigger']) {
     height: 40px;
     font-size: 16px;
 }
 .user-access-log .access-toolbar form input,
-.user-access-log .access-toolbar form select:not(:first-child) {
+.user-access-log
+    .access-toolbar
+    form
+    :deep([data-slot='select-trigger']):not(:first-child) {
     border-radius: 0;
 }
 .user-access-log .access-toolbar form button {

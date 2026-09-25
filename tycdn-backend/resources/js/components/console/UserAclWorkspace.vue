@@ -4,12 +4,16 @@ import { computed, onMounted, onUnmounted, reactive, ref } from 'vue';
 import { toast } from 'vue-sonner';
 import ConfirmDeleteDialog from '@/components/console/ConfirmDeleteDialog.vue';
 import PackagePagination from '@/components/console/PackagePagination.vue';
+import CheckboxField from '@/components/ui/checkbox/CheckboxField.vue';
 import {
     DropdownMenu,
     DropdownMenuTrigger,
     DropdownMenuContent,
     DropdownMenuItem,
 } from '@/components/ui/dropdown-menu';
+import Input from '@/components/ui/input/Input.vue';
+import SelectField from '@/components/ui/select/SelectField.vue';
+import SelectOption from '@/components/ui/select/SelectOption.vue';
 import { getErrorMessage, textValue } from '@/lib/cdnRecord';
 import {
     listUserAcls,
@@ -205,19 +209,19 @@ async function batch(
             >
         </div>
         <form class="acl-filters" @submit.prevent="load(1)">
-            <select
+            <SelectField
                 v-model="filters.enable"
                 aria-label="状态"
                 :disabled="busy"
                 @change="load(1)"
             >
-                <option value="">所有状态</option>
-                <option value="1">启用</option>
-                <option value="0">禁用</option>
-            </select>
+                <SelectOption value="">所有状态</SelectOption>
+                <SelectOption value="1">启用</SelectOption>
+                <SelectOption value="0">禁用</SelectOption>
+            </SelectField>
             <label class="acl-input"
                 ><span>ACL名称</span
-                ><input
+                ><Input
                     v-model="filters.name"
                     placeholder="请输入ACL名称,模糊搜索"
                     :disabled="busy"
@@ -225,7 +229,7 @@ async function batch(
             /></label>
             <label class="acl-input"
                 ><span>ACL ID</span
-                ><input
+                ><Input
                     v-model="filters.id"
                     placeholder="请输入ACL ID"
                     inputmode="numeric"
@@ -273,8 +277,7 @@ async function batch(
                 <thead>
                     <tr>
                         <th>
-                            <input
-                                type="checkbox"
+                            <CheckboxField
                                 aria-label="全选当前页"
                                 :checked="allSelected"
                                 :indeterminate="
@@ -306,9 +309,8 @@ async function batch(
                     <template v-else>
                         <tr v-for="row in rows" :key="Number(row.id)">
                             <td>
-                                <input
+                                <CheckboxField
                                     v-model="selected"
-                                    type="checkbox"
                                     :value="Number(row.id)"
                                     :aria-label="`选择 ${row.id}`"
                                     :disabled="busy || readOnly(row)"
@@ -462,7 +464,7 @@ async function batch(
     gap: 10px;
     margin-bottom: 18px;
 }
-.acl-filters select {
+.acl-filters :deep([data-slot='select-trigger']) {
     width: 188px;
     height: 40px;
     border: 1px solid var(--border);
@@ -510,13 +512,13 @@ button:not(:disabled) {
 }
 button:disabled,
 input:disabled,
-select:disabled {
+:deep([data-slot='select-trigger']):disabled {
     cursor: not-allowed;
     opacity: 0.5;
 }
 button:focus-visible,
 input:focus-visible,
-select:focus-visible {
+:deep([data-slot='select-trigger']):focus-visible {
     outline: 2px solid var(--primary);
     outline-offset: 2px;
 }
@@ -601,7 +603,7 @@ select:focus-visible {
     font-size: 16px;
 }
 .acl-pagination :deep(button),
-.acl-pagination :deep(select) {
+.acl-pagination :deep([data-slot='select-trigger']) {
     height: 40px;
     min-width: 40px;
     font-size: 16px;
@@ -615,7 +617,7 @@ select:focus-visible {
     .user-acl-workspace {
         padding: 10px;
     }
-    .acl-filters select {
+    .acl-filters :deep([data-slot='select-trigger']) {
         width: 100%;
     }
     .acl-input {

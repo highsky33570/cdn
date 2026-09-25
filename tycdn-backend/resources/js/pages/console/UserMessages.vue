@@ -4,6 +4,7 @@ import { onMounted, onUnmounted, reactive, ref } from 'vue';
 import { toast } from 'vue-sonner';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
+import CheckboxField from '@/components/ui/checkbox/CheckboxField.vue';
 import { Spinner } from '@/components/ui/spinner';
 import { getErrorMessage } from '@/lib/cdnRecord';
 import {
@@ -192,8 +193,7 @@ onUnmounted(() => {
                                 </div>
                             </td>
                             <td>
-                                <input
-                                    type="checkbox"
+                                <CheckboxField
                                     :checked="row.phone"
                                     :disabled="saving[row.type]"
                                     :aria-label="`${labels[row.type] || row.type}手机提醒`"
@@ -201,8 +201,7 @@ onUnmounted(() => {
                                 />
                             </td>
                             <td>
-                                <input
-                                    type="checkbox"
+                                <CheckboxField
                                     :checked="row.email"
                                     :disabled="saving[row.type]"
                                     :aria-label="`${labels[row.type] || row.type}邮件提醒`"
@@ -253,18 +252,18 @@ td {
 tbody tr:hover {
     background: #fafcff;
 }
-input[type='checkbox'] {
+:deep([data-slot='checkbox']) {
     display: block;
     width: 20px;
     height: 20px;
     accent-color: #308cff;
     cursor: pointer;
 }
-input[type='checkbox']:disabled {
+:deep([data-slot='checkbox']):disabled {
     cursor: wait;
     opacity: 0.6;
 }
-input[type='checkbox']:focus-visible {
+:deep([data-slot='checkbox']):focus-visible {
     outline: 2px solid #308cff;
     outline-offset: 3px;
 }

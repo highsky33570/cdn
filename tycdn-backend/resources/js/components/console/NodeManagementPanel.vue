@@ -14,6 +14,7 @@ import { toast } from 'vue-sonner';
 import ConfirmDeleteDialog from '@/components/console/ConfirmDeleteDialog.vue';
 import NodeIpLogsDialog from '@/components/console/NodeIpLogsDialog.vue';
 import { Button } from '@/components/ui/button';
+import CheckboxField from '@/components/ui/checkbox/CheckboxField.vue';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -21,6 +22,8 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
+import SelectField from '@/components/ui/select/SelectField.vue';
+import SelectOption from '@/components/ui/select/SelectOption.vue';
 import {
     deleteAdminNode,
     deleteAdminPendingNode,
@@ -409,41 +412,41 @@ async function confirmDelete() {
                     class="flex flex-wrap items-center gap-2"
                     @submit.prevent="refresh(1)"
                 >
-                    <select
+                    <SelectField
                         v-model="filters.region"
                         aria-label="区域筛选"
                         :disabled="busy"
                         @change="refresh(1)"
                     >
-                        <option value="all">所有区域</option>
-                        <option
+                        <SelectOption value="all">所有区域</SelectOption>
+                        <SelectOption
                             v-for="region in regions"
                             :key="text(region.id)"
                             :value="text(region.id)"
                         >
                             {{ region.name }}
-                        </option>
-                    </select>
-                    <select
+                        </SelectOption>
+                    </SelectField>
+                    <SelectField
                         v-model="filters.status"
                         aria-label="状态筛选"
                         :disabled="busy"
                         @change="refresh(1)"
                     >
-                        <option value="all">所有状态</option>
-                        <option value="1">启用</option>
-                        <option value="0">禁用</option>
-                    </select>
-                    <select
+                        <SelectOption value="all">所有状态</SelectOption>
+                        <SelectOption value="1">启用</SelectOption>
+                        <SelectOption value="0">禁用</SelectOption>
+                    </SelectField>
+                    <SelectField
                         v-model="filters.type"
                         aria-label="类型筛选"
                         :disabled="busy"
                         @change="refresh(1)"
                     >
-                        <option value="all">所有类型</option>
-                        <option value="L1">L1节点</option>
-                        <option value="L2">L2节点</option>
-                    </select>
+                        <SelectOption value="all">所有类型</SelectOption>
+                        <SelectOption value="L1">L1节点</SelectOption>
+                        <SelectOption value="L2">L2节点</SelectOption>
+                    </SelectField>
                     <div class="relative">
                         <Input
                             v-model="filters.search"
@@ -545,8 +548,7 @@ async function confirmDelete() {
                     <thead class="bg-muted/25">
                         <tr>
                             <th class="w-12">
-                                <input
-                                    type="checkbox"
+                                <CheckboxField
                                     aria-label="选择本页全部"
                                     :checked="allSelected"
                                     :indeterminate="
@@ -609,9 +611,8 @@ async function confirmDelete() {
                             :class="Number(row.pid) > 0 ? 'bg-muted/15' : ''"
                         >
                             <td>
-                                <input
+                                <CheckboxField
                                     v-if="!Number(row.pid)"
-                                    type="checkbox"
                                     :aria-label="`选择 ${row.id}`"
                                     :checked="selected.includes(Number(row.id))"
                                     :disabled="busy || loading"
@@ -897,21 +898,21 @@ async function confirmDelete() {
                     @click="refresh(page + 1)"
                     ><ChevronRight
                 /></Button>
-                <select
+                <SelectField
                     v-model="limit"
                     class="ml-2"
                     aria-label="每页条数"
                     :disabled="loading || busy"
                     @change="refresh(1)"
                 >
-                    <option
+                    <SelectOption
                         v-for="size in [10, 30, 100, 300]"
                         :key="size"
                         :value="size"
                     >
                         {{ size }} 条/页
-                    </option>
-                </select>
+                    </SelectOption>
+                </SelectField>
             </nav>
         </div>
         <NodeIpLogsDialog
@@ -942,10 +943,10 @@ async function confirmDelete() {
 .node-panel tbody tr:hover {
     @apply bg-muted/25;
 }
-.node-panel select {
+.node-panel :deep([data-slot='select-trigger']) {
     @apply h-8 min-w-28 rounded border border-input bg-background px-2 text-xs text-foreground focus:border-primary focus:outline-none disabled:opacity-50;
 }
-.node-panel input[type='checkbox'] {
+.node-panel :deep([data-slot='checkbox']) {
     @apply size-3.5 accent-primary;
 }
 </style>

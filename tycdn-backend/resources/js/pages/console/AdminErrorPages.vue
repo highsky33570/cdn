@@ -14,6 +14,9 @@ import {
     DialogDescription,
     DialogFooter,
 } from '@/components/ui/dialog';
+import SelectField from '@/components/ui/select/SelectField.vue';
+import SelectOption from '@/components/ui/select/SelectOption.vue';
+import Textarea from '@/components/ui/textarea/Textarea.vue';
 import { apiRequest } from '@/lib/apiRequest';
 import { extractCdnflyRows, extractCdnflyTotal } from '@/lib/cdnflyResponse';
 import { errorPages, errorPageLabel, parseErrorPages } from '@/lib/errorPages';
@@ -385,7 +388,7 @@ onMounted(load);
                             >页面内容</label
                         >
                         <div class="min-w-0">
-                            <textarea
+                            <Textarea
                                 v-if="activePage"
                                 id="error-page-content"
                                 :key="activePage"
@@ -517,17 +520,17 @@ onMounted(load);
                         :disabled="page * size >= total || listLoading"
                         @click="loadRows(page + 1)"
                         >›</Button
-                    ><select
+                    ><SelectField
                         v-model="size"
                         aria-label="每页条数"
                         class="h-8 rounded-md border border-input bg-background px-2"
                         :disabled="listLoading"
                         @change="loadRows(1)"
                     >
-                        <option :value="10">10 条/页</option>
-                        <option :value="30">30 条/页</option>
-                        <option :value="100">100 条/页</option>
-                    </select>
+                        <SelectOption :value="10">10 条/页</SelectOption>
+                        <SelectOption :value="30">30 条/页</SelectOption>
+                        <SelectOption :value="100">100 条/页</SelectOption>
+                    </SelectField>
                 </div>
             </section>
         </div>
@@ -546,7 +549,7 @@ onMounted(load);
                 <form class="grid gap-4" @submit.prevent="saveOverride">
                     <div class="grid gap-3 sm:grid-cols-2">
                         <label class="grid gap-2 text-sm"
-                            >配置范围<select
+                            >配置范围<SelectField
                                 v-model="scope"
                                 aria-label="配置范围"
                                 :disabled="editing || editorBusy"
@@ -556,12 +559,12 @@ onMounted(load);
                                     loadTargets();
                                 "
                             >
-                                <option value="node">节点</option>
-                                <option value="region">区域</option>
-                            </select></label
+                                <SelectOption value="node">节点</SelectOption>
+                                <SelectOption value="region">区域</SelectOption>
+                            </SelectField></label
                         ><label class="grid gap-2 text-sm"
                             >{{ scope === 'node' ? '节点' : '区域'
-                            }}<select
+                            }}<SelectField
                                 v-model="scopeId"
                                 :aria-label="scope === 'node' ? '节点' : '区域'"
                                 required
@@ -570,10 +573,10 @@ onMounted(load);
                                 "
                                 class="h-9 rounded-md border border-input bg-background px-3"
                             >
-                                <option value="" disabled>
+                                <SelectOption value="" disabled>
                                     {{ targetLoading ? '加载中…' : '请选择' }}
-                                </option>
-                                <option
+                                </SelectOption>
+                                <SelectOption
                                     v-if="
                                         editing &&
                                         !targets.some(
@@ -583,16 +586,16 @@ onMounted(load);
                                     :value="scopeId"
                                 >
                                     #{{ scopeId }}
-                                </option>
-                                <option
+                                </SelectOption>
+                                <SelectOption
                                     v-for="row in targets"
                                     :key="String(row.id)"
                                     :value="String(row.id)"
                                 >
                                     {{ row.name ?? row.hostname ?? row.ip }}
                                     (#{{ row.id }})
-                                </option>
-                            </select></label
+                                </SelectOption>
+                            </SelectField></label
                         >
                     </div>
                     <div
@@ -609,14 +612,14 @@ onMounted(load);
                         >
                     </div>
                     <div class="flex gap-2">
-                        <select
+                        <SelectField
                             v-model="item"
                             aria-label="配置项"
                             :disabled="editorBusy"
                             class="h-9 min-w-0 flex-1 rounded-md border border-input bg-background px-3 text-sm"
                         >
-                            <option value="">请选择配置项</option>
-                            <option
+                            <SelectOption value="">请选择配置项</SelectOption>
+                            <SelectOption
                                 v-for="field in errorPages.filter(
                                     (field) =>
                                         field.regional &&
@@ -626,7 +629,7 @@ onMounted(load);
                                 :value="field.key"
                             >
                                 {{ field.label }}
-                            </option></select
+                            </SelectOption></SelectField
                         ><Button
                             type="button"
                             variant="outline"
@@ -655,7 +658,7 @@ onMounted(load);
                                 ><X class="size-4"
                             /></Button>
                         </div>
-                        <textarea
+                        <Textarea
                             :id="`override-${field.key}`"
                             v-model="editValues[field.key]"
                             :aria-label="field.label"

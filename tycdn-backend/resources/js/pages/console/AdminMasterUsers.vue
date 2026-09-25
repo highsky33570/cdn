@@ -9,6 +9,7 @@ import PackagePagination from '@/components/console/PackagePagination.vue';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import DatePicker from '@/components/ui/date-picker/DatePicker.vue';
 import {
     Dialog,
     DialogScrollContent,
@@ -34,6 +35,7 @@ import {
 } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
 import Switch from '@/components/ui/switch/Switch.vue';
+import Textarea from '@/components/ui/textarea/Textarea.vue';
 import { apiRequest } from '@/lib/apiRequest';
 import {
     extractCdnflyRecord,
@@ -926,7 +928,7 @@ onUnmounted(() => {
                                 >
                                     <Label :for="`user-${key}`"
                                         >{{ label }}：</Label
-                                    ><textarea
+                                    ><Textarea
                                         v-if="kind === 'textarea'"
                                         :id="`user-${key}`"
                                         v-model="form[key]"
@@ -1077,7 +1079,7 @@ onUnmounted(() => {
                                 <div class="user-field">
                                     <Label for="user-auth2-end"
                                         >截止时间：</Label
-                                    ><Input
+                                    ><DatePicker
                                         id="user-auth2-end"
                                         v-model="form.auth2_end_at"
                                         type="datetime-local"
@@ -1156,7 +1158,7 @@ onUnmounted(() => {
                                 <div class="user-field">
                                     <Label for="user-white-ip"
                                         >登录白名单：</Label
-                                    ><textarea
+                                    ><Textarea
                                         id="user-white-ip"
                                         v-model="form.white_ip"
                                         placeholder="多个IP空格分隔"
@@ -1218,7 +1220,7 @@ onUnmounted(() => {
                     </div>
                     <div class="user-field">
                         <Label for="user-group-des">备注：</Label
-                        ><textarea
+                        ><Textarea
                             id="user-group-des"
                             v-model="groupForm.des"
                             :disabled="busy"
@@ -1321,7 +1323,7 @@ onUnmounted(() => {
         text-align: left;
     }
 }
-textarea {
+:deep([data-slot='textarea']) {
     width: 100%;
     min-height: 72px;
     border: 1px solid var(--input);
@@ -1331,10 +1333,10 @@ textarea {
     font-size: 0.875rem;
     resize: vertical;
 }
-textarea:focus-visible {
+:deep([data-slot='textarea']):focus-visible {
     outline: 2px solid var(--ring);
 }
-textarea::placeholder {
+:deep([data-slot='textarea'])::placeholder {
     color: var(--muted-foreground);
 }
 </style>

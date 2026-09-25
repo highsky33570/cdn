@@ -15,6 +15,8 @@ import {
     DialogDescription,
     DialogFooter,
 } from '@/components/ui/dialog';
+import SelectField from '@/components/ui/select/SelectField.vue';
+import SelectOption from '@/components/ui/select/SelectOption.vue';
 import { apiRequest } from '@/lib/apiRequest';
 import { extractCdnflyRows } from '@/lib/cdnflyResponse';
 import {
@@ -527,15 +529,15 @@ async function remove() {
                             @click="page++"
                             >›</Button
                         >
-                        <select
+                        <SelectField
                             v-model="size"
                             aria-label="每页条数"
                             class="h-8 rounded-md border border-input bg-background px-2"
                         >
-                            <option :value="10">10 条/页</option>
-                            <option :value="30">30 条/页</option>
-                            <option :value="100">100 条/页</option>
-                        </select>
+                            <SelectOption :value="10">10 条/页</SelectOption>
+                            <SelectOption :value="30">30 条/页</SelectOption>
+                            <SelectOption :value="100">100 条/页</SelectOption>
+                        </SelectField>
                     </div>
                 </section>
             </template>
@@ -552,15 +554,17 @@ async function remove() {
                 >
                 <form class="grid gap-4" @submit.prevent="saveRegion">
                     <label class="grid gap-2 text-sm"
-                        >区域<select
+                        >区域<SelectField
                             v-model="editRegion"
                             aria-label="区域"
                             required
                             :disabled="editing || editSaving"
                             class="h-9 rounded-md border border-input bg-background px-3"
                         >
-                            <option value="" disabled>请选择区域</option>
-                            <option
+                            <SelectOption value="" disabled
+                                >请选择区域</SelectOption
+                            >
+                            <SelectOption
                                 v-if="
                                     editing &&
                                     !regions.some(
@@ -571,15 +575,15 @@ async function remove() {
                                 :value="editRegion"
                             >
                                 区域 #{{ editRegion }}
-                            </option>
-                            <option
+                            </SelectOption>
+                            <SelectOption
                                 v-for="region in regions"
                                 :key="String(region.id)"
                                 :value="String(region.id)"
                             >
                                 {{ region.name }}
-                            </option>
-                        </select></label
+                            </SelectOption>
+                        </SelectField></label
                     >
                     <div
                         v-if="regionError"
@@ -595,22 +599,24 @@ async function remove() {
                         >
                     </div>
                     <label class="grid gap-2 text-sm"
-                        >设置项<select
+                        >设置项<SelectField
                             v-model="editKey"
                             aria-label="设置项"
                             required
                             :disabled="editing || editSaving"
                             class="h-9 rounded-md border border-input bg-background px-3"
                         >
-                            <option value="" disabled>请选择设置项</option>
-                            <option
+                            <SelectOption value="" disabled
+                                >请选择设置项</SelectOption
+                            >
+                            <SelectOption
                                 v-for="field in regionalFields"
                                 :key="resourceFieldKey(field)"
                                 :value="resourceFieldKey(field)"
                             >
                                 {{ fieldLabel(field) }}
-                            </option>
-                        </select></label
+                            </SelectOption>
+                        </SelectField></label
                     >
                     <ResourceSettingField
                         v-if="editField"

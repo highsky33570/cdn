@@ -29,6 +29,7 @@ import {
     CollapsibleContent,
     CollapsibleTrigger,
 } from '@/components/ui/collapsible';
+import DatePicker from '@/components/ui/date-picker/DatePicker.vue';
 import {
     Dialog,
     DialogDescription,
@@ -57,6 +58,7 @@ import {
 } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
 import Switch from '@/components/ui/switch/Switch.vue';
+import Textarea from '@/components/ui/textarea/Textarea.vue';
 import { listAdminUsers } from '@/lib/adminConsoleApi';
 import type { AdminUserRecord } from '@/lib/adminConsoleApi';
 import {
@@ -3141,7 +3143,7 @@ onMounted(() => {
                                                 >有效期至</Label
                                             >
                                             <div class="min-w-0">
-                                                <Input
+                                                <DatePicker
                                                     id="package-expire"
                                                     v-model="packageExpiry"
                                                     type="datetime-local"
@@ -3222,7 +3224,7 @@ onMounted(() => {
                                                 >源IP限制</Label
                                             >
                                             <div class="min-w-0">
-                                                <textarea
+                                                <Textarea
                                                     id="package-backend_ip_limit"
                                                     v-model="
                                                         form.backend_ip_limit
@@ -3245,15 +3247,14 @@ onMounted(() => {
                                         ><Input
                                             id="package-sync-item"
                                             v-model="form.sync_item"
-                                            placeholder="仅修改时使用，字段名用逗号分隔"
-                                        /><Label for="package-extra"
+                                            placeholder="仅修改时使用，字段名用逗号分隔" /><Label
+                                            for="package-extra"
                                             >扩展字段 JSON</Label
-                                        ><textarea
+                                        ><Textarea
                                             id="package-extra"
                                             v-model="form.extra_json"
                                             class="min-h-24 rounded-md border border-input bg-background p-3 font-mono text-xs"
-                                            spellcheck="false"
-                                        /></CollapsibleContent></Collapsible></CollapsibleContent></Collapsible
+                                            spellcheck="false" /></CollapsibleContent></Collapsible></CollapsibleContent></Collapsible
                         ><Collapsible
                             v-model:open="salesOpen"
                             class="rounded-lg border bg-card p-4"
@@ -3306,7 +3307,7 @@ onMounted(() => {
                                 </p>
                                 <Label for="portal-features"
                                     >营销卖点（每行一条）</Label
-                                ><textarea
+                                ><Textarea
                                     id="portal-features"
                                     v-model="portalForm.features"
                                     rows="3"
@@ -3765,7 +3766,7 @@ onMounted(() => {
                     </Collapsible>
                     <div class="flex flex-col gap-2 md:col-span-3">
                         <Label for="batch-extra">扩展字段 JSON</Label>
-                        <textarea
+                        <Textarea
                             id="batch-extra"
                             v-model="batchForm.extra_json"
                             class="min-h-24 rounded-md border bg-transparent px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"

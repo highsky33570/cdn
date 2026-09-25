@@ -11,12 +11,13 @@
         "lint": "eslint . --fix",
         "lint:check": "eslint .",
         "types:check": "vue-tsc --noEmit",
+        "check:forms": "node scripts/check-form-controls.mjs",
         "test:contracts": "node --test tests/js/cdnfly-contracts.test.mjs"
     },
     "devDependencies": {
         "@eslint/js": "^9.19.0",
-        "@stylistic/eslint-plugin": "^5.10.0",
         "@laravel/vite-plugin-wayfinder": "^0.1.3",
+        "@stylistic/eslint-plugin": "^5.10.0",
         "@tailwindcss/vite": "^4.1.11",
         "@types/node": "^22.13.5",
         "@vitejs/plugin-vue": "^6.0.0",
@@ -37,6 +38,7 @@
     "dependencies": {
         "@inertiajs/vite": "^3.0.0",
         "@inertiajs/vue3": "^3.0.0",
+        "@internationalized/date": "3.12.1",
         "@vueuse/core": "^12.8.2",
         "class-variance-authority": "^0.7.1",
         "clsx": "^2.1.1",
@@ -47,8 +49,8 @@
         "tailwindcss": "^4.1.1",
         "tw-animate-css": "^1.2.5",
         "vue": "^3.5.13",
-        "vue-sonner": "^2.0.0",
-        "vue-input-otp": "^0.3.2"
+        "vue-input-otp": "^0.3.2",
+        "vue-sonner": "^2.0.0"
     },
     "optionalDependencies": {
         "@rollup/rollup-linux-x64-gnu": "4.9.5",
