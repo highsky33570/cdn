@@ -18,6 +18,7 @@ jobs:
   ci:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         # Symfony 8 (in composer.lock) requires PHP >= 8.4
         php-version: ['8.4', '8.5']
@@ -35,15 +36,7 @@ jobs:
         with:
           php-version: ${{ matrix.php-version }}
           tools: composer:v2
-          coverage: xdebug
-
-      - name: Setup Node
-        uses: actions/setup-node@v6
-        with:
-          node-version: '22'
-
-      - name: Install Node Dependencies
-        run: npm i
+          coverage: none
 
       - name: Install Dependencies
         run: composer install --no-interaction --prefer-dist --optimize-autoloader
@@ -54,8 +47,5 @@ jobs:
       - name: Generate Application Key
         run: php artisan key:generate
 
-      - name: Build Assets
-        run: npm run build
-
       - name: Tests
-        run: ./vendor/bin/phpunit
+        run: php artisan test
