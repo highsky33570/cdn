@@ -2916,6 +2916,14 @@ input:is(
 }
 
 /* components/console/WafTrendChart.vue */
+.console-waf-trend-chart .waf-trend-tooltip {
+    z-index: 1;
+    max-width: calc(100% - 16px);
+    max-height: calc(100% - 16px);
+    overflow: hidden;
+    overflow-wrap: anywhere;
+}
+
 .waf-trend:is(.console-waf-trend-chart, .console-waf-trend-chart *) {
     --waf-total: #2d8cf0;
     --waf-protect: #ed4014;

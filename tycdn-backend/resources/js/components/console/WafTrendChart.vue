@@ -1,9 +1,13 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref } from 'vue';
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import { Button } from '@/components/ui/button';
 import type { WafTrendPoint } from '@/lib/wafLogs';
 const props = defineProps<{ points: WafTrendPoint[] }>();
 const plot = ref<HTMLElement | null>(null);
+const chart = ref<HTMLElement | null>(null);
+const tooltip = ref<HTMLElement | null>(null);
+const cursor = ref({ x: 0, y: 0 });
+const tooltipPosition = ref({ left: '0px', top: '0px' });
 const width = ref(1200);
 let observer: ResizeObserver | undefined;
 onMounted(() => {
@@ -65,6 +69,47 @@ const levels = computed(() =>
 const selected = computed(() =>
     hover.value === null ? null : props.points[hover.value],
 );
+function showTooltip(event: PointerEvent, index: number): void {
+    if (!chart.value) {
+        return;
+    }
+
+    const bounds = chart.value.getBoundingClientRect();
+    cursor.value = {
+        x: event.clientX - bounds.left - chart.value.clientLeft,
+        y: event.clientY - bounds.top - chart.value.clientTop,
+    };
+    hover.value = index;
+}
+watch(
+    [selected, cursor, width, tooltip],
+    () => {
+        if (!chart.value || !tooltip.value || !selected.value) {
+            return;
+        }
+
+        const gap = 12;
+        const padding = 8;
+        const chartWidth = chart.value.clientWidth;
+        const chartHeight = chart.value.clientHeight;
+        const tipWidth = tooltip.value.offsetWidth;
+        const tipHeight = tooltip.value.offsetHeight;
+        const { x: pointerX, y: pointerY } = cursor.value;
+        const left =
+            pointerX + gap + tipWidth > chartWidth - padding
+                ? pointerX - tipWidth - gap
+                : pointerX + gap;
+        const top =
+            pointerY + gap + tipHeight > chartHeight - padding
+                ? pointerY - tipHeight - gap
+                : pointerY + gap;
+        tooltipPosition.value = {
+            left: `${Math.max(padding, Math.min(left, chartWidth - tipWidth - padding))}px`,
+            top: `${Math.max(padding, Math.min(top, chartHeight - tipHeight - padding))}px`,
+        };
+    },
+    { flush: 'post' },
+);
 function toggle(key: string): void {
     hidden.value = hidden.value.includes(key)
         ? hidden.value.filter((k) => k !== key)
@@ -73,6 +118,7 @@ function toggle(key: string): void {
 </script>
 <template>
     <div
+        ref="chart"
         class="console-waf-trend-chart waf-trend relative rounded-md border p-3"
         aria-label="攻击趋势"
     >
@@ -102,7 +148,8 @@ function toggle(key: string): void {
                 preserveAspectRatio="none"
                 role="img"
                 aria-label="攻击总数、拦截和观察的时间趋势"
-                @mouseleave="hover = null"
+                @pointerleave="hover = null"
+                @pointercancel="hover = null"
             >
                 <g v-for="level in levels" :key="level">
                     <line
@@ -177,8 +224,9 @@ function toggle(key: string): void {
                     :width="plotWidth / Math.max(1, points.length - 1)"
                     height="165"
                     fill="transparent"
-                    @mouseenter="hover = index"
-                    @touchstart.passive="hover = index"
+                    @pointerenter="showTooltip($event, index)"
+                    @pointermove="showTooltip($event, index)"
+                    @pointerdown="showTooltip($event, index)"
                 >
                     <title>
                         {{ point.time }} · 攻击总数 {{ point.total }} · 拦截
@@ -196,8 +244,10 @@ function toggle(key: string): void {
         </p>
         <div
             v-if="selected"
+            ref="tooltip"
             role="status"
-            class="pointer-events-none absolute top-12 right-5 rounded border bg-popover p-3 text-xs text-popover-foreground shadow-md"
+            :style="tooltipPosition"
+            class="waf-trend-tooltip pointer-events-none absolute rounded border bg-popover p-3 text-xs text-popover-foreground shadow-md"
         >
             <p data-typography="body" class="mb-2">{{ selected.time }}</p>
             <p
