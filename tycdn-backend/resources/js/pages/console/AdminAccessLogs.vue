@@ -663,7 +663,8 @@ onUnmounted(() => {
                         aria-label="已应用筛选"
                     >
                         <Button
-                            variant="default"
+                            variant="outline"
+                            size="sm"
                             data-slot="console-action"
                             type="button"
                             @click="

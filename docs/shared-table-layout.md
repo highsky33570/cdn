@@ -10,7 +10,7 @@ Both applications import `shared/table-layout.css` first in their global stylesh
 
 `scripts/check-tables.mjs` checks every Vue template in both applications. It rejects missing content wrappers and cell sizing utilities. Both builds run it through the existing global-style audit. Geometry remains in global CSS; no component style blocks were added.
 
-Date picker triggers, range picker triggers and selected days use the default Button primary/primary-foreground palette. The access-log applied-range button also uses the default variant without a muted text override.
+Date picker triggers, range picker triggers and the access-log applied-range button use the shared Button's `outline` variant, including its neutral background, normal foreground and light/dark hover states. Selected calendar days retain the primary/primary-foreground highlight.
 
 ## Validation
 

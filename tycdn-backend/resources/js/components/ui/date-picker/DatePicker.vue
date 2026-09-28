@@ -125,7 +125,8 @@ function numbers(count: number) {
                 ><Button
                     v-bind="$attrs"
                     type="button"
-                    variant="default"
+                    variant="outline"
+                    size="sm"
                     data-slot="date-picker"
                     :disabled="disabled || readonly"
                     class="min-w-0 justify-between font-normal"

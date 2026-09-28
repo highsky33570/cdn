@@ -337,13 +337,11 @@ function cellClass(cell: Cell): string {
     <DropdownMenu v-model:open="open">
         <DropdownMenuTrigger as-child>
             <Button
-                variant="default"
+                variant="outline"
+                size="sm"
                 data-slot="date-range-picker"
                 type="button"
-                :class="[
-                    'inline-flex h-8 items-center gap-2 rounded-md border px-3 text-xs transition-colors',
-                    triggerClass,
-                ]"
+                :class="triggerClass"
             >
                 <CalendarDays class="h-3.5 w-3.5 shrink-0" />
                 <span>
