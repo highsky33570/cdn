@@ -1372,11 +1372,14 @@ defineExpose({ refresh: load });
                                 </td>
                                 <td>
                                     <div data-slot="table-cell-content">
-                                        <Check
+                                        <span
                                             v-if="hasHttps(row)"
                                             class="https-check"
+                                            title="HTTPS 已开启"
                                             aria-label="HTTPS 已开启"
-                                        />
+                                        >
+                                            <Check />
+                                        </span>
                                         <span v-else class="muted">—</span>
                                     </div>
                                 </td>

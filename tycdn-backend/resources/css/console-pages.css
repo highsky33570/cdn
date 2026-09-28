@@ -672,9 +672,21 @@ tbody
     color: var(--foreground);
 }
 .https-check:is(.console-admin-site-workspace, .console-admin-site-workspace *) {
-    width: 16px;
-    height: 16px;
-    color: #13b96a;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border-radius: 999px;
+    color: #fff;
+    background: #19be6b;
+}
+.https-check svg:is(
+    .console-admin-site-workspace,
+    .console-admin-site-workspace *
+) {
+    width: 12px;
+    height: 12px;
 }
 .pill:is(.console-admin-site-workspace, .console-admin-site-workspace *) {
     display: inline-flex;
@@ -7481,6 +7493,20 @@ tbody tr:is(.console-user-orders, .console-user-orders *):hover {
 .status-icon:is(.console-user-sites, .console-user-sites *) {
     width: 16px;
     height: 16px;
+}
+.https-check:is(.console-user-sites, .console-user-sites *) {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border-radius: 999px;
+    color: #fff;
+    background: #19be6b;
+}
+.https-check svg:is(.console-user-sites, .console-user-sites *) {
+    width: 12px;
+    height: 12px;
 }
 .site-status:is(.console-user-sites, .console-user-sites *) {
     display: inline-flex;

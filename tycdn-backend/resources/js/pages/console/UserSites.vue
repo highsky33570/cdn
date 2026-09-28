@@ -2,6 +2,7 @@
 import { router } from '@inertiajs/vue3';
 import {
     AlertCircle,
+    Check,
     CheckCircle2,
     ChevronDown,
     LoaderCircle,
@@ -2087,14 +2088,19 @@ async function exportSites() {
                                                 v-else-if="
                                                     column.key === 'https'
                                                 "
-                                                ><CheckCircle2
+                                                ><span
                                                     v-if="hasHttps(row)"
-                                                    class="status-icon text-emerald-500"
-                                                    aria-label="HTTPS已启用" /><XCircle
+                                                    class="https-check"
+                                                    title="HTTPS已启用"
+                                                    aria-label="HTTPS已启用"
+                                                    ><Check /></span
+                                                ><span
                                                     v-else
-                                                    class="status-icon text-muted-foreground"
+                                                    class="text-muted-foreground"
                                                     aria-label="HTTPS未启用"
-                                            /></template>
+                                                    >—</span
+                                                ></template
+                                            >
                                             <span
                                                 v-else-if="
                                                     column.key === 'status'
