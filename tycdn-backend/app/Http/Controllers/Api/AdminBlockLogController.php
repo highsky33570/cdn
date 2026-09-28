@@ -46,6 +46,9 @@ class AdminBlockLogController extends Controller
             'start' => ['required_with:end', 'integer', 'min:0'],
             'end' => ['required_with:start', 'integer', 'gte:start'],
         ]);
+        if (! array_key_exists('site_id', $query) || $query['site_id'] === null) {
+            $query['site_id'] = 0;
+        }
 
         try {
             $upstream = $cdnfly->exportAdminBlackIps($resource, $query);

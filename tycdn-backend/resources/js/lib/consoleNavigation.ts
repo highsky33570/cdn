@@ -85,7 +85,7 @@ export const adminNavItems: NavItem[] = [
         children: [
             child('实时监控', 'analytics/realtime'),
             child('数据分析', 'analytics/top'),
-            child('拉黑日志', 'workspace/history-blackip'),
+            child('拉黑日志', 'workspace/blackip'),
             child('访问日志', 'analytics/logs'),
             child('WAF日志', 'workspace/attack-log'),
             child('四层实时监控', 'streams/analytics'),

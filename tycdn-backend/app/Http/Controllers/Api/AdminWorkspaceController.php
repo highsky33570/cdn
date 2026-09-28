@@ -158,6 +158,12 @@ class AdminWorkspaceController extends Controller
         if ($resource === 'master-account' || ($request->isMethod('POST') && in_array($resource, ['agent-check', 'license'], true))) {
             $payload = [];
         }
+        // Native admin "当前/历史拉黑" lists every site with site_id=0. Without it
+        // some master builds return an empty page even when blocks exist.
+        if ($request->isMethod('GET') && in_array($resource, ['blackip', 'history-blackip'], true)
+            && (! array_key_exists('site_id', $payload) || $payload['site_id'] === '' || $payload['site_id'] === null)) {
+            $payload['site_id'] = 0;
+        }
         try {
             $data = $cdnfly->proxyAdminRequest($request->method(), $path.($id === null ? '' : '/'.$id), $payload);
             if ($resource === 'master-account') {

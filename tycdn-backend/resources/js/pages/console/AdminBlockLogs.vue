@@ -45,21 +45,35 @@ import { getErrorMessage } from '@/lib/formatters';
 import { masterGet } from '@/lib/masterApi';
 import type { CdnflyRecord } from '@/lib/sharedTypes';
 
-const props = withDefaults(defineProps<{ scope?: 'admin' | 'user' }>(), {
-    scope: 'admin',
-});
+const props = withDefaults(
+    defineProps<{
+        scope?: 'admin' | 'user';
+        initialTab?: BlockLogTab;
+    }>(),
+    {
+        scope: 'admin',
+    },
+);
 const userScope = computed(() => props.scope === 'user');
+/** Native admin panel lists every site with site_id=0. */
+const allSitesId = computed(() => (userScope.value ? undefined : 0));
 
 const tabs: { key: BlockLogTab; label: string }[] = [
     { key: 'current', label: '当前拉黑' },
     { key: 'stats', label: '拉黑统计' },
     { key: 'history', label: '历史拉黑' },
 ];
-const initialTab = new URLSearchParams(usePage().url.split('?')[1] ?? '').get(
+const queryTab = new URLSearchParams(usePage().url.split('?')[1] ?? '').get(
     'tab',
 );
 const active = ref<BlockLogTab>(
-    initialTab === 'history' || initialTab === 'stats' ? initialTab : 'current',
+    queryTab === 'history' || queryTab === 'stats' || queryTab === 'current'
+        ? queryTab
+        : props.initialTab === 'history' ||
+            props.initialTab === 'stats' ||
+            props.initialTab === 'current'
+          ? props.initialTab
+          : 'current',
 );
 const emptyFilters = (): BlockLogFilters => ({
     ip: '',
@@ -122,7 +136,9 @@ async function load(target = page.value): Promise<void> {
     selection.value.clear();
 
     try {
-        const query = blockLogQuery(tab, filters.value);
+        const query = blockLogQuery(tab, filters.value, {
+            allSitesId: allSitesId.value,
+        });
         const params =
             tab === 'stats'
                 ? {}
@@ -316,9 +332,11 @@ async function exportIps(): Promise<void> {
 
     try {
         const query = new URLSearchParams(
-            Object.entries(blockLogQuery(tab, filters.value)).map(
-                ([key, value]) => [key, String(value)],
-            ),
+            Object.entries(
+                blockLogQuery(tab, filters.value, {
+                    allSitesId: allSitesId.value,
+                }),
+            ).map(([key, value]) => [key, String(value)]),
         );
         const response = await fetch(
             `${userScope.value ? '/api/cdn/block-logs' : '/api/admin/workspace'}/${exportResource}/export?${query}`,
@@ -367,11 +385,15 @@ watch(rangeOpen, (open) => {
 });
 function applyRange(): void {
     try {
-        blockLogQuery('history', {
-            ...historyFilters,
-            start: rangeStart.value,
-            end: rangeEnd.value,
-        });
+        blockLogQuery(
+            'history',
+            {
+                ...historyFilters,
+                start: rangeStart.value,
+                end: rangeEnd.value,
+            },
+            { allSitesId: allSitesId.value },
+        );
         historyFilters.start = rangeStart.value;
         historyFilters.end = rangeEnd.value;
         rangeOpen.value = false;

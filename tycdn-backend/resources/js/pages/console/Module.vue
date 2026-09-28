@@ -139,7 +139,10 @@ const MODULES: Record<
     },
     'admin-security': { component: AdminSecurity },
     'admin-workspace-blackip': { component: AdminBlockLogs },
-    'admin-workspace-history-blackip': { component: AdminBlockLogs },
+    'admin-workspace-history-blackip': {
+        component: AdminBlockLogs,
+        props: { initialTab: 'history' },
+    },
 
     sites: { component: UserSites },
     'site-groups': { component: UserSites, props: { initialTab: 'groups' } },

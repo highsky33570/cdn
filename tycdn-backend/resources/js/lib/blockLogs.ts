@@ -10,20 +10,31 @@ export type BlockLogFilters = {
     end: string;
 };
 
+/**
+ * Build list/export query params for blackip endpoints.
+ * Admin "all sites" must send site_id=0 (native panel + master contract);
+ * omitting it can yield an empty list even when blocks exist.
+ */
 export function blockLogQuery(
     tab: BlockLogTab,
     filters: BlockLogFilters,
+    options: { allSitesId?: number } = {},
 ): Record<string, string | number> {
     if (tab === 'stats') {
         return {};
     }
 
     const query: Record<string, string | number> = {};
+    const siteId = filters.site_id.trim();
 
-    for (const key of ['ip', 'site_id'] as const) {
-        if (filters[key].trim()) {
-            query[key] = filters[key].trim();
-        }
+    if (siteId !== '') {
+        query.site_id = siteId;
+    } else if (options.allSitesId !== undefined) {
+        query.site_id = options.allSitesId;
+    }
+
+    if (filters.ip.trim()) {
+        query.ip = filters.ip.trim();
     }
 
     if (tab === 'current' && filters.filter_name.trim()) {

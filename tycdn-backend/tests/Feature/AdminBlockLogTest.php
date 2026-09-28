@@ -51,6 +51,29 @@ class AdminBlockLogTest extends TestCase
         }
     }
 
+    public function test_listing_defaults_missing_site_id_to_all_sites(): void
+    {
+        Http::fake(['*/v1/monitor/site/blackip*' => Http::response([
+            'code' => 0,
+            'count' => 2,
+            'data' => [
+                ['site_id' => 12, 'ip' => '192.0.2.1', 'domain' => 'a.example', 'create_at' => 1790000000, 'exp' => 1790003600],
+                ['site_id' => 13, 'ip' => '192.0.2.2', 'domain' => 'b.example', 'create_at' => 1790000001, 'exp' => 1790003601],
+            ],
+        ])]);
+
+        $this->getJson('/api/admin/workspace/blackip?page=1&limit=10')
+            ->assertOk()
+            ->assertJsonPath('data.count', 2)
+            ->assertJsonPath('data.data.0.site_id', 12);
+
+        Http::assertSent(fn (Request $request) => $request->method() === 'GET'
+            && str_contains($request->url(), '/v1/monitor/site/blackip')
+            && (string) $request['site_id'] === '0'
+            && (string) $request['page'] === '1'
+            && (string) $request['limit'] === '10');
+    }
+
     public function test_selected_and_site_wide_unlocks_submit_the_exact_master_job_contract(): void
     {
         Http::fake(['*/v1/jobs' => Http::response(['code' => 0, 'data' => 101])]);
