@@ -2,7 +2,7 @@
 
 `/console/admin/sites` now follows the supplied panel website-list screenshots, with five tabs: 网站列表, 分组管理, 默认设置, DNS API and 解析检测.
 
-- The website table includes selection, ID, domain with owner, CNAME with copy, HTTPS status, origin/listeners, package/group, region, status, creation time and actions. The compact toolbar provides add, bulk edit, certificate requests, enable/disable/delete, search, filters and CSV export. Management and domain links open the existing site configuration route; the row menu retains the read-only details view.
+- The website table includes selection, ID, domain, listening ports, origin, CNAME with copy, HTTPS checkmark, package, group, status, creation time and actions. Owner, region and stacked origin/package cells were removed to match the reference panel. The compact toolbar provides add, bulk edit, certificate requests, enable/disable/delete, search, advanced search and CSV export. Management and domain links open the existing site configuration route; the row menu retains the read-only details view.
 - Group management includes owner/name/remark columns, add/edit, refresh, selection and deletion.
 - Defaults use the inset settings panel, owner/setting/value/scope columns, typed settings inputs, group/global scope and enable/disable actions.
 - DNS API includes owner/name/type/remark columns and provider credential forms. Existing credentials are not returned in list/detail responses; editing metadata leaves credentials unchanged unless replacement is explicitly selected.

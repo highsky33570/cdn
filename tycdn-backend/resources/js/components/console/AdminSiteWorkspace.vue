@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import {
+    Check,
     ChevronDown,
     Copy,
     Download,
@@ -364,6 +365,26 @@ async function copy(value: unknown) {
 const username = (row: CdnflyRecord) =>
     `${row.username ?? row.user_name ?? (tab.value === 'sites' ? row.name : '') ?? ''}${row.uid ? ` (${row.uid})` : ''}`.trim() ||
     '—';
+const packageLabel = (row: CdnflyRecord) => {
+    const name = String(row.package_name ?? row.user_package ?? '').trim();
+    const id = row.user_package ?? row.package_id;
+
+    if (!name && (id === undefined || id === null || id === '')) {
+        return '—';
+    }
+
+    if (!name) {
+        return `id: ${id}`;
+    }
+
+    if (id === undefined || id === null || id === '' || String(id) === name) {
+        return name;
+    }
+
+    return `${name} (id: ${id})`;
+};
+const hasHttps = (row: CdnflyRecord) =>
+    Boolean(siteObject(row.https_listen).port);
 const configLabel = (row: CdnflyRecord) =>
     SITE_CONFIG_NAMES.find((item) => item.value === row.name)?.label ??
     String(row.name ?? '—');
@@ -374,8 +395,6 @@ const configValue = (row: CdnflyRecord) =>
             ? '是'
             : '否'
         : String(row.value ?? '');
-const originRegion = (row: CdnflyRecord) =>
-    `${row.region_name ?? '—'}${row.node_group_name ? ` (${[row.node_group_name, row.backup_node_group_name].filter(Boolean).join(' / ')})` : ''}`;
 async function exportSites() {
     busy.value = true;
     error.value = '';
@@ -388,28 +407,24 @@ async function exportSites() {
             [
                 'ID',
                 '域名',
-                '用户',
+                '监听端口',
+                '源站',
                 'CNAME',
                 'HTTPS',
-                '源站',
-                '监听',
                 '套餐',
                 '分组',
-                '区域',
                 '状态',
                 '添加时间',
             ],
             ...data.map((r) => [
                 r.id,
                 r.domain,
-                username(r),
+                sitePorts(r).join(' '),
+                siteOrigins(r),
                 siteCname(r),
                 siteObject(r.https_listen).port ? '已开启' : '未开启',
-                siteOrigins(r),
-                sitePorts(r).join(' '),
-                r.package_name,
-                r.group_name,
-                originRegion(r),
+                packageLabel(r),
+                r.group_name || '',
                 siteStatus(r).text,
                 r.create_at2 ?? r.create_at,
             ]),
@@ -813,7 +828,7 @@ defineExpose({ refresh: load });
                         :aria-expanded="showFilters"
                         @click="showFilters = !showFilters"
                     >
-                        <Filter />筛选</Button
+                        <Filter />高级搜索</Button
                     ><Button
                         variant="outline"
                         type="button"
@@ -1091,6 +1106,16 @@ defineExpose({ refresh: load });
                                 </th>
                                 <th>
                                     <div data-slot="table-cell-content">
+                                        监听端口
+                                    </div>
+                                </th>
+                                <th>
+                                    <div data-slot="table-cell-content">
+                                        源站
+                                    </div>
+                                </th>
+                                <th>
+                                    <div data-slot="table-cell-content">
                                         CNAME
                                     </div>
                                 </th>
@@ -1101,17 +1126,12 @@ defineExpose({ refresh: load });
                                 </th>
                                 <th>
                                     <div data-slot="table-cell-content">
-                                        源站 / 监听
+                                        套餐
                                     </div>
                                 </th>
                                 <th>
                                     <div data-slot="table-cell-content">
-                                        套餐/分组
-                                    </div>
-                                </th>
-                                <th>
-                                    <div data-slot="table-cell-content">
-                                        区域
+                                        分组
                                     </div>
                                 </th>
                                 <th>
@@ -1245,7 +1265,7 @@ defineExpose({ refresh: load });
                             <td
                                 :colspan="
                                     tab === 'sites'
-                                        ? 11
+                                        ? 12
                                         : tab === 'resolve'
                                           ? 8
                                           : tab === 'groups'
@@ -1305,12 +1325,30 @@ defineExpose({ refresh: load });
                                                 <Copy />
                                             </Button>
                                         </div>
-                                        <div class="subline">
-                                            用户
-                                            <span class="link">{{
-                                                username(row)
-                                            }}</span>
-                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div data-slot="table-cell-content">
+                                        <span
+                                            v-for="port in sitePorts(row)"
+                                            :key="port"
+                                            class="port"
+                                            >{{ port }}</span
+                                        >
+                                        <span
+                                            v-if="!sitePorts(row).length"
+                                            class="muted"
+                                            >—</span
+                                        >
+                                    </div>
+                                </td>
+                                <td>
+                                    <div data-slot="table-cell-content">
+                                        <span
+                                            class="foreground"
+                                            :title="siteOrigins(row)"
+                                            >{{ siteOrigins(row) }}</span
+                                        >
                                     </div>
                                 </td>
                                 <td>
@@ -1334,68 +1372,22 @@ defineExpose({ refresh: load });
                                 </td>
                                 <td>
                                     <div data-slot="table-cell-content">
-                                        <span
-                                            class="pill"
-                                            :class="
-                                                siteObject(row.https_listen)
-                                                    .port
-                                                    ? 'success'
-                                                    : 'muted'
-                                            "
-                                            >{{
-                                                siteObject(row.https_listen)
-                                                    .port
-                                                    ? '已开启'
-                                                    : '未开启'
-                                            }}</span
-                                        >
+                                        <Check
+                                            v-if="hasHttps(row)"
+                                            class="https-check"
+                                            aria-label="HTTPS 已开启"
+                                        />
+                                        <span v-else class="muted">—</span>
                                     </div>
                                 </td>
                                 <td>
                                     <div data-slot="table-cell-content">
-                                        <div class="subline">
-                                            源站
-                                            <span
-                                                class="foreground"
-                                                :title="siteOrigins(row)"
-                                                >{{ siteOrigins(row) }}</span
-                                            >
-                                        </div>
-                                        <div class="subline">
-                                            监听
-                                            <span
-                                                v-for="port in sitePorts(row)"
-                                                :key="port"
-                                                class="port"
-                                                >{{ port }}</span
-                                            >
-                                        </div>
+                                        {{ packageLabel(row) }}
                                     </div>
                                 </td>
                                 <td>
                                     <div data-slot="table-cell-content">
-                                        <div class="subline">
-                                            套餐
-                                            <span class="foreground"
-                                                >{{
-                                                    row.package_name ??
-                                                    row.user_package ??
-                                                    '—'
-                                                }}
-                                                (id:
-                                                {{
-                                                    row.user_package ?? '—'
-                                                }})</span
-                                            >
-                                        </div>
-                                        <div class="subline">
-                                            分组 {{ row.group_name || '—' }}
-                                        </div>
-                                    </div>
-                                </td>
-                                <td>
-                                    <div data-slot="table-cell-content">
-                                        {{ originRegion(row) }}
+                                        {{ row.group_name || '—' }}
                                     </div>
                                 </td>
                                 <td>

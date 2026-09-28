@@ -77,9 +77,18 @@ class CdnflyApiService
             throw new \RuntimeException('CDNfly base URL must use HTTPS. Refusing to send credentials over plain HTTP.');
         }
 
+        $verify = true;
+        $cafile = config('services.cdnfly.ssl_cafile')
+            ?: ini_get('curl.cainfo')
+            ?: ini_get('openssl.cafile');
+
+        if (is_string($cafile) && $cafile !== '' && is_file($cafile)) {
+            $verify = $cafile;
+        }
+
         return Http::baseUrl($baseUrl)
             ->timeout((int) config('services.cdnfly.timeout', 15))
-            ->withOptions(['verify' => true])
+            ->withOptions(['verify' => $verify])
             ->acceptJson()
             ->asJson();
     }

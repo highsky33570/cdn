@@ -615,10 +615,31 @@ tbody
     padding: 2px;
     min-height: 0;
     color: var(--muted-foreground);
+    opacity: 0;
+    transition: opacity 0.18s ease;
 }
 .copy svg:is(.console-admin-site-workspace, .console-admin-site-workspace *) {
     width: 10px;
     height: 10px;
+}
+.copy-cell:is(
+        .console-admin-site-workspace,
+        .console-admin-site-workspace *
+    ):hover
+    .copy:is(.console-admin-site-workspace, .console-admin-site-workspace *),
+.copy-cell:is(
+        .console-admin-site-workspace,
+        .console-admin-site-workspace *
+    ):focus-within
+    .copy:is(.console-admin-site-workspace, .console-admin-site-workspace *),
+.copy:is(
+        .console-admin-site-workspace,
+        .console-admin-site-workspace *
+    ):focus-visible {
+    opacity: 1;
+}
+.console-admin-site-workspace.site-workspace tbody tr:hover {
+    background: transparent;
 }
 .copy-cell:is(.console-admin-site-workspace, .console-admin-site-workspace *),
 .row-actions:is(
@@ -649,6 +670,11 @@ tbody
     margin-right: 4px;
     border-radius: 2px;
     color: var(--foreground);
+}
+.https-check:is(.console-admin-site-workspace, .console-admin-site-workspace *) {
+    width: 16px;
+    height: 16px;
+    color: #13b96a;
 }
 .pill:is(.console-admin-site-workspace, .console-admin-site-workspace *) {
     display: inline-flex;

@@ -7,6 +7,7 @@ use App\Listeners\SyncCdnflyOnVerified;
 use App\Listeners\ThrottleOutboundMail;
 use App\Support\CdnflyEncrypter;
 use App\Support\EmailVerificationSignature;
+use App\Support\WindowsSafeFilesystem;
 use Carbon\CarbonImmutable;
 use Illuminate\Auth\Events\PasswordReset as PasswordResetEvent;
 use Illuminate\Auth\Events\Verified;
@@ -30,6 +31,12 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->singleton(CdnflyEncrypter::class);
+
+        // Override after Framework's FilesystemServiceProvider so Windows
+        // antivirus file locks don't break Blade/view compilation renames.
+        if (PHP_OS_FAMILY === 'Windows') {
+            $this->app->singleton('files', fn () => new WindowsSafeFilesystem);
+        }
     }
 
     /**

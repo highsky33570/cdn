@@ -88,6 +88,8 @@ return [
         // CDNfly 主控地址（必须使用 https://，服务层会拒绝 HTTP 连接）
         'base_url' => env('CDNFLY_BASE_URL', 'https://cdn.cdn666.com'),
         'timeout' => env('CDNFLY_TIMEOUT', 15),
+        // Optional absolute path to a CA bundle (needed on some Windows PHP builds).
+        'ssl_cafile' => env('CDNFLY_SSL_CAFILE'),
 
         // 管理员 API 密钥（用于创建用户、开通API、管理套餐等）
         'admin_api_key' => env('CDNFLY_ADMIN_API_KEY'),
