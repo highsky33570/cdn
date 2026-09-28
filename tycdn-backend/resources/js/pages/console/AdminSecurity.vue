@@ -973,7 +973,9 @@ const displayedCcRows = computed(() => {
                 <div class="text-xs text-muted-foreground">{{ row.email }}</div>
             </template>
             <template #actions-col><col style="width: 0" /></template>
-            <template #actions-header><th /></template>
+            <template #actions-header
+                ><th><div data-slot="table-cell-content"></div></th
+            ></template>
         </ConsoleDataTable>
 
         <ConsoleDataTable
@@ -1131,33 +1133,49 @@ const displayedCcRows = computed(() => {
                         </colgroup>
                         <thead class="border-b text-muted-foreground">
                             <tr>
-                                <th class="px-4 py-3 text-left font-medium">
-                                    名称
+                                <th class="text-left font-medium">
+                                    <div data-slot="table-cell-content">
+                                        名称
+                                    </div>
                                 </th>
-                                <th class="px-4 py-3 text-left font-medium">
-                                    类型 / 动作
+                                <th class="text-left font-medium">
+                                    <div data-slot="table-cell-content">
+                                        类型 / 动作
+                                    </div>
                                 </th>
-                                <th class="px-4 py-3 text-left font-medium">
-                                    归属
+                                <th class="text-left font-medium">
+                                    <div data-slot="table-cell-content">
+                                        归属
+                                    </div>
                                 </th>
-                                <th class="px-4 py-3 text-left font-medium">
-                                    规则数据
+                                <th class="text-left font-medium">
+                                    <div data-slot="table-cell-content">
+                                        规则数据
+                                    </div>
                                 </th>
-                                <th class="px-4 py-3 text-center font-medium">
-                                    状态
+                                <th class="text-center font-medium">
+                                    <div data-slot="table-cell-content">
+                                        状态
+                                    </div>
                                 </th>
-                                <th class="px-4 py-3 text-left font-medium">
-                                    更新时间
+                                <th class="text-left font-medium">
+                                    <div data-slot="table-cell-content">
+                                        更新时间
+                                    </div>
                                 </th>
-                                <th class="px-4 py-3 text-right font-medium">
-                                    操作
+                                <th class="text-right font-medium">
+                                    <div data-slot="table-cell-content">
+                                        操作
+                                    </div>
                                 </th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr v-if="ccLoading">
-                                <td class="px-4 py-12 text-center" colspan="7">
-                                    <Spinner class="mx-auto" />
+                                <td class="text-center" colspan="7">
+                                    <div data-slot="table-cell-content">
+                                        <Spinner class="mx-auto" />
+                                    </div>
                                 </td>
                             </tr>
                             <tr
@@ -1165,83 +1183,103 @@ const displayedCcRows = computed(() => {
                                 :key="textValue(record.id)"
                                 class="border-b"
                             >
-                                <td class="px-4 py-3">
-                                    <div class="font-medium">
+                                <td class="">
+                                    <div data-slot="table-cell-content">
+                                        <div class="font-medium">
+                                            {{
+                                                textValue(record.name) ||
+                                                `#${textValue(record.id)}`
+                                            }}
+                                        </div>
+                                        <div
+                                            class="text-xs text-muted-foreground"
+                                        >
+                                            #{{ textValue(record.id) || '-' }}
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="">
+                                    <div data-slot="table-cell-content">
                                         {{
-                                            textValue(record.name) ||
-                                            `#${textValue(record.id)}`
+                                            activeCcKind === 'filter'
+                                                ? textValue(record.type) || '-'
+                                                : activeCcKind === 'rule'
+                                                  ? dataCount(record.data)
+                                                  : '匹配条件'
                                         }}
                                     </div>
-                                    <div class="text-xs text-muted-foreground">
-                                        #{{ textValue(record.id) || '-' }}
+                                </td>
+                                <td class="">
+                                    <div data-slot="table-cell-content">
+                                        <Badge variant="outline">{{
+                                            record.uid
+                                                ? `用户 #${record.uid}`
+                                                : '系统'
+                                        }}</Badge>
                                     </div>
                                 </td>
-                                <td class="px-4 py-3">
-                                    {{
-                                        activeCcKind === 'filter'
-                                            ? textValue(record.type) || '-'
-                                            : activeCcKind === 'rule'
-                                              ? dataCount(record.data)
-                                              : '匹配条件'
-                                    }}
+                                <td class="">
+                                    <div data-slot="table-cell-content">
+                                        <span class="text-muted-foreground">{{
+                                            dataCount(record.data)
+                                        }}</span>
+                                    </div>
                                 </td>
-                                <td class="px-4 py-3">
-                                    <Badge variant="outline">{{
-                                        record.uid
-                                            ? `用户 #${record.uid}`
-                                            : '系统'
-                                    }}</Badge>
+                                <td class="text-center">
+                                    <div data-slot="table-cell-content">
+                                        <Badge variant="secondary">{{
+                                            yesNo(record.enable)
+                                        }}</Badge>
+                                    </div>
                                 </td>
-                                <td class="px-4 py-3">
-                                    <span class="text-muted-foreground">{{
-                                        dataCount(record.data)
-                                    }}</span>
+                                <td class="text-muted-foreground">
+                                    <div data-slot="table-cell-content">
+                                        {{
+                                            formatDate(
+                                                record.update_at2 ??
+                                                    record.create_at2,
+                                            )
+                                        }}
+                                    </div>
                                 </td>
-                                <td class="px-4 py-3 text-center">
-                                    <Badge variant="secondary">{{
-                                        yesNo(record.enable)
-                                    }}</Badge>
-                                </td>
-                                <td class="px-4 py-3 text-muted-foreground">
-                                    {{
-                                        formatDate(
-                                            record.update_at2 ??
-                                                record.create_at2,
-                                        )
-                                    }}
-                                </td>
-                                <td class="px-4 py-3">
-                                    <div class="flex justify-end gap-1.5">
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            @click="openCcEditDialog(record)"
-                                        >
-                                            <Pencil data-icon="inline-start" />
-                                            编辑
-                                        </Button>
-                                        <Button
-                                            variant="destructive"
-                                            size="sm"
-                                            :disabled="
-                                                ccDeletingId ===
-                                                recordId(record)
-                                            "
-                                            @click="removeCc(record)"
-                                        >
-                                            <Spinner
-                                                v-if="
+                                <td class="">
+                                    <div data-slot="table-cell-content">
+                                        <div class="flex justify-end gap-1.5">
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                @click="
+                                                    openCcEditDialog(record)
+                                                "
+                                            >
+                                                <Pencil
+                                                    data-icon="inline-start"
+                                                />
+                                                编辑
+                                            </Button>
+                                            <Button
+                                                variant="destructive"
+                                                size="sm"
+                                                :disabled="
                                                     ccDeletingId ===
                                                     recordId(record)
                                                 "
-                                                data-icon="inline-start"
-                                            />
-                                            <Trash2
-                                                v-else
-                                                data-icon="inline-start"
-                                            />
-                                            删除
-                                        </Button>
+                                                @click="removeCc(record)"
+                                            >
+                                                <Spinner
+                                                    v-if="
+                                                        ccDeletingId ===
+                                                        recordId(record)
+                                                    "
+                                                    data-icon="inline-start"
+                                                />
+                                                <Trash2
+                                                    v-else
+                                                    data-icon="inline-start"
+                                                />
+                                                删除
+                                            </Button>
+                                        </div>
                                     </div>
                                 </td>
                             </tr>
@@ -1251,10 +1289,12 @@ const displayedCcRows = computed(() => {
                                 "
                             >
                                 <td
-                                    class="px-6 py-16 text-center text-muted-foreground"
+                                    class="text-center text-muted-foreground"
                                     colspan="7"
                                 >
-                                    暂无{{ ccKindLabel(activeCcKind) }}
+                                    <div data-slot="table-cell-content">
+                                        暂无{{ ccKindLabel(activeCcKind) }}
+                                    </div>
                                 </td>
                             </tr>
                         </tbody>

@@ -495,18 +495,22 @@ function maskSensitive(key: string, value: unknown): string {
                         </colgroup>
                         <thead class="border-b text-muted-foreground">
                             <tr>
-                                <th class="px-4 py-3 text-left font-medium">
-                                    字段
+                                <th class="text-left font-medium">
+                                    <div data-slot="table-cell-content">
+                                        字段
+                                    </div>
                                 </th>
-                                <th class="px-4 py-3 text-left font-medium">
-                                    值
+                                <th class="text-left font-medium">
+                                    <div data-slot="table-cell-content">值</div>
                                 </th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr v-if="loading">
-                                <td class="px-6 py-16 text-center" colspan="2">
-                                    <Spinner class="mx-auto" />
+                                <td class="text-center" colspan="2">
+                                    <div data-slot="table-cell-content">
+                                        <Spinner class="mx-auto" />
+                                    </div>
                                 </td>
                             </tr>
                             <tr
@@ -515,19 +519,27 @@ function maskSensitive(key: string, value: unknown): string {
                                 :key="row.key"
                                 class="border-b"
                             >
-                                <td class="px-4 py-3 font-mono text-xs">
-                                    {{ row.key }}
+                                <td class="font-mono text-xs">
+                                    <div data-slot="table-cell-content">
+                                        {{ row.key }}
+                                    </div>
                                 </td>
-                                <td class="px-4 py-3">
-                                    <div class="truncate">{{ row.value }}</div>
+                                <td class="">
+                                    <div data-slot="table-cell-content">
+                                        <div class="truncate">
+                                            {{ row.value }}
+                                        </div>
+                                    </div>
                                 </td>
                             </tr>
                             <tr v-if="!loading && certifyRows.length === 0">
                                 <td
-                                    class="px-6 py-16 text-center text-muted-foreground"
+                                    class="text-center text-muted-foreground"
                                     colspan="2"
                                 >
-                                    暂无认证状态
+                                    <div data-slot="table-cell-content">
+                                        暂无认证状态
+                                    </div>
                                 </td>
                             </tr>
                         </tbody>

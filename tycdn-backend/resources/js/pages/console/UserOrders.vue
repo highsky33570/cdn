@@ -260,90 +260,141 @@ function pay() {
                 </colgroup>
                 <thead>
                     <tr>
-                        <th>ID</th>
-                        <th>类型</th>
-                        <th>备注</th>
-                        <th>原价</th>
-                        <th>实际支付</th>
-                        <th>更多</th>
-                        <th>支付方式</th>
-                        <th>订单号</th>
-                        <th>创建时间</th>
-                        <th>已付款</th>
+                        <th><div data-slot="table-cell-content">ID</div></th>
+                        <th><div data-slot="table-cell-content">类型</div></th>
+                        <th><div data-slot="table-cell-content">备注</div></th>
+                        <th><div data-slot="table-cell-content">原价</div></th>
+                        <th>
+                            <div data-slot="table-cell-content">实际支付</div>
+                        </th>
+                        <th><div data-slot="table-cell-content">更多</div></th>
+                        <th>
+                            <div data-slot="table-cell-content">支付方式</div>
+                        </th>
+                        <th>
+                            <div data-slot="table-cell-content">订单号</div>
+                        </th>
+                        <th>
+                            <div data-slot="table-cell-content">创建时间</div>
+                        </th>
+                        <th>
+                            <div data-slot="table-cell-content">已付款</div>
+                        </th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr v-if="loading">
                         <td colspan="10" class="empty">
-                            <span
-                                ><Spinner class="inline size-4" /> 加载中…</span
-                            >
+                            <div data-slot="table-cell-content">
+                                <span
+                                    ><Spinner class="inline size-4" />
+                                    加载中…</span
+                                >
+                            </div>
                         </td>
                     </tr>
                     <tr v-else-if="!rows.length">
                         <td colspan="10" class="empty">
-                            <span>{{
-                                error ? '加载失败，请重试' : '暂无数据'
-                            }}</span>
+                            <div data-slot="table-cell-content">
+                                <span>{{
+                                    error ? '加载失败，请重试' : '暂无数据'
+                                }}</span>
+                            </div>
                         </td>
                     </tr>
                     <tr v-for="order in rows" v-else :key="order.id">
-                        <td>{{ order.id }}</td>
                         <td>
-                            {{
-                                types[order.order_type || ''] ||
-                                order.order_type ||
-                                '—'
-                            }}
+                            <div data-slot="table-cell-content">
+                                {{ order.id }}
+                            </div>
                         </td>
                         <td>
-                            <span class="truncate-cell" :title="note(order)">{{
-                                note(order)
-                            }}</span>
-                        </td>
-                        <td>{{ original(order) }}</td>
-                        <td>{{ actual(order) }}</td>
-                        <td>
-                            <Button
-                                variant="link"
-                                size="inline"
-                                type="button"
-                                data-slot="console-link"
-                                class="text-link truncate-cell"
-                                :aria-label="`查看订单 ${order.order_no}`"
-                                :title="more(order)"
-                                @click="showDetails(order)"
-                            >
-                                {{ more(order) }}
-                            </Button>
+                            <div data-slot="table-cell-content">
+                                {{
+                                    types[order.order_type || ''] ||
+                                    order.order_type ||
+                                    '—'
+                                }}
+                            </div>
                         </td>
                         <td>
-                            {{ order.gateway_provider?.toUpperCase() || '—' }}
+                            <div data-slot="table-cell-content">
+                                <span
+                                    class="truncate-cell"
+                                    :title="note(order)"
+                                    >{{ note(order) }}</span
+                                >
+                            </div>
                         </td>
                         <td>
-                            <span
-                                class="truncate-cell"
-                                :title="order.order_no"
-                                >{{ order.order_no }}</span
-                            >
+                            <div data-slot="table-cell-content">
+                                {{ original(order) }}
+                            </div>
                         </td>
-                        <td>{{ formatDate(order.created_at) }}</td>
                         <td>
-                            <span
-                                v-if="paid(order)"
-                                class="paid-icon"
-                                role="img"
-                                aria-label="已付款"
-                                :title="statuses[order.status] || order.status"
-                                ><Check :size="11" /></span
-                            ><CircleX
-                                v-else
-                                :size="16"
-                                class="unpaid-icon"
-                                role="img"
-                                :aria-label="statuses[order.status] || '未付款'"
-                                :title="statuses[order.status] || '未付款'"
-                            />
+                            <div data-slot="table-cell-content">
+                                {{ actual(order) }}
+                            </div>
+                        </td>
+                        <td>
+                            <div data-slot="table-cell-content">
+                                <Button
+                                    variant="link"
+                                    size="inline"
+                                    type="button"
+                                    data-slot="console-link"
+                                    class="text-link truncate-cell"
+                                    :aria-label="`查看订单 ${order.order_no}`"
+                                    :title="more(order)"
+                                    @click="showDetails(order)"
+                                >
+                                    {{ more(order) }}
+                                </Button>
+                            </div>
+                        </td>
+                        <td>
+                            <div data-slot="table-cell-content">
+                                {{
+                                    order.gateway_provider?.toUpperCase() || '—'
+                                }}
+                            </div>
+                        </td>
+                        <td>
+                            <div data-slot="table-cell-content">
+                                <span
+                                    class="truncate-cell"
+                                    :title="order.order_no"
+                                    >{{ order.order_no }}</span
+                                >
+                            </div>
+                        </td>
+                        <td>
+                            <div data-slot="table-cell-content">
+                                {{ formatDate(order.created_at) }}
+                            </div>
+                        </td>
+                        <td>
+                            <div data-slot="table-cell-content">
+                                <span
+                                    v-if="paid(order)"
+                                    class="paid-icon"
+                                    role="img"
+                                    aria-label="已付款"
+                                    :title="
+                                        statuses[order.status] || order.status
+                                    "
+                                    ><Check :size="11" /></span
+                                ><CircleX
+                                    v-else
+                                    :size="16"
+                                    class="unpaid-icon"
+                                    role="img"
+                                    :aria-label="
+                                        statuses[order.status] || '未付款'
+                                    "
+                                    :title="statuses[order.status] || '未付款'"
+                                />
+                            </div>
                         </td>
                     </tr>
                 </tbody>

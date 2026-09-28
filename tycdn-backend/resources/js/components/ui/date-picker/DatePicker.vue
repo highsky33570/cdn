@@ -125,18 +125,16 @@ function numbers(count: number) {
                 ><Button
                     v-bind="$attrs"
                     type="button"
-                    variant="outline"
+                    variant="default"
                     data-slot="date-picker"
                     :disabled="disabled || readonly"
                     class="min-w-0 justify-between font-normal"
-                    :class="!current && 'text-muted-foreground'"
                     ><span class="truncate">{{
                         current.replace('T', ' ') ||
                         placeholder ||
                         (withTime ? '请选择日期和时间' : '请选择日期')
                     }}</span
-                    ><CalendarDays
-                        class="size-4 shrink-0 text-muted-foreground" /></Button
+                    ><CalendarDays class="size-4 shrink-0" /></Button
             ></PopoverTrigger>
             <PopoverPortal
                 ><PopoverContent

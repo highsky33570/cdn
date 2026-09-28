@@ -503,37 +503,68 @@ function createdAt(row: CdnflyRecord) {
                         <thead>
                             <tr>
                                 <th>
-                                    <CheckboxField
-                                        aria-label="全选当前页"
-                                        :checked="allSelected"
-                                        :indeterminate="
-                                            selected.length > 0 && !allSelected
-                                        "
-                                        :disabled="
-                                            loading ||
-                                            submitting ||
-                                            !rows.length
-                                        "
-                                        @change="
-                                            selected = allSelected
-                                                ? []
-                                                : rows.map((row) =>
-                                                      textValue(row.id),
-                                                  )
-                                        "
-                                    />
+                                    <div data-slot="table-cell-content">
+                                        <CheckboxField
+                                            aria-label="全选当前页"
+                                            :checked="allSelected"
+                                            :indeterminate="
+                                                selected.length > 0 &&
+                                                !allSelected
+                                            "
+                                            :disabled="
+                                                loading ||
+                                                submitting ||
+                                                !rows.length
+                                            "
+                                            @change="
+                                                selected = allSelected
+                                                    ? []
+                                                    : rows.map((row) =>
+                                                          textValue(row.id),
+                                                      )
+                                            "
+                                        />
+                                    </div>
                                 </th>
-                                <th>JobId / TaskId</th>
-                                <th>类型</th>
-                                <th>URL</th>
-                                <th>状态</th>
-                                <th>创建时间</th>
-                                <th>操作</th>
+                                <th>
+                                    <div data-slot="table-cell-content">
+                                        JobId / TaskId
+                                    </div>
+                                </th>
+                                <th>
+                                    <div data-slot="table-cell-content">
+                                        类型
+                                    </div>
+                                </th>
+                                <th>
+                                    <div data-slot="table-cell-content">
+                                        URL
+                                    </div>
+                                </th>
+                                <th>
+                                    <div data-slot="table-cell-content">
+                                        状态
+                                    </div>
+                                </th>
+                                <th>
+                                    <div data-slot="table-cell-content">
+                                        创建时间
+                                    </div>
+                                </th>
+                                <th>
+                                    <div data-slot="table-cell-content">
+                                        操作
+                                    </div>
+                                </th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr v-if="loading">
-                                <td colspan="7" class="empty">加载中…</td>
+                                <td colspan="7" class="empty">
+                                    <div data-slot="table-cell-content">
+                                        加载中…
+                                    </div>
+                                </td>
                             </tr>
                             <template v-else>
                                 <tr
@@ -541,65 +572,85 @@ function createdAt(row: CdnflyRecord) {
                                     :key="textValue(row.id)"
                                 >
                                     <td>
-                                        <CheckboxField
-                                            v-model="selected"
-                                            :value="textValue(row.id)"
-                                            :aria-label="`选择 ${row.id}`"
-                                            :disabled="submitting"
-                                        />
+                                        <div data-slot="table-cell-content">
+                                            <CheckboxField
+                                                v-model="selected"
+                                                :value="textValue(row.id)"
+                                                :aria-label="`选择 ${row.id}`"
+                                                :disabled="submitting"
+                                            />
+                                        </div>
                                     </td>
                                     <td>
-                                        {{ row.id
-                                        }}<span
-                                            v-if="row.task_id"
-                                            class="task-id"
-                                            >{{ row.task_id }}</span
-                                        >
+                                        <div data-slot="table-cell-content">
+                                            {{ row.id
+                                            }}<span
+                                                v-if="row.task_id"
+                                                class="task-id"
+                                                >{{ row.task_id }}</span
+                                            >
+                                        </div>
                                     </td>
-                                    <td>{{ typeLabel(row.type) }}</td>
+                                    <td>
+                                        <div data-slot="table-cell-content">
+                                            {{ typeLabel(row.type) }}
+                                        </div>
+                                    </td>
                                     <td
                                         class="url-cell"
                                         :title="cacheJobUrl(row)"
                                     >
-                                        {{ cacheJobUrl(row) || '-' }}
+                                        <div data-slot="table-cell-content">
+                                            {{ cacheJobUrl(row) || '-' }}
+                                        </div>
                                     </td>
                                     <td>
-                                        <Button
-                                            variant="link"
-                                            size="inline"
-                                            data-slot="console-link"
-                                            type="button"
-                                            class="job-status"
-                                            :data-tone="
-                                                cacheJobStatus(row).tone
-                                            "
-                                            @click="detail = row"
-                                        >
-                                            {{ cacheJobStatus(row).label }}
-                                        </Button>
+                                        <div data-slot="table-cell-content">
+                                            <Button
+                                                variant="link"
+                                                size="inline"
+                                                data-slot="console-link"
+                                                type="button"
+                                                class="job-status"
+                                                :data-tone="
+                                                    cacheJobStatus(row).tone
+                                                "
+                                                @click="detail = row"
+                                            >
+                                                {{ cacheJobStatus(row).label }}
+                                            </Button>
+                                        </div>
                                     </td>
-                                    <td>{{ createdAt(row) }}</td>
                                     <td>
-                                        <Button
-                                            variant="link"
-                                            size="inline"
-                                            data-slot="console-link"
-                                            class="text-action"
-                                            type="button"
-                                            :disabled="submitting"
-                                            @click="resubmit([row])"
-                                        >
-                                            重新提交
-                                        </Button>
+                                        <div data-slot="table-cell-content">
+                                            {{ createdAt(row) }}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div data-slot="table-cell-content">
+                                            <Button
+                                                variant="link"
+                                                size="inline"
+                                                data-slot="console-link"
+                                                class="text-action"
+                                                type="button"
+                                                :disabled="submitting"
+                                                @click="resubmit([row])"
+                                            >
+                                                重新提交
+                                            </Button>
+                                        </div>
                                     </td>
                                 </tr>
                                 <tr v-if="!rows.length">
                                     <td colspan="7" class="empty">
-                                        {{
-                                            listError
-                                                ? '加载失败，请重试'
-                                                : '暂无数据'
-                                        }}
+                                        <div data-slot="table-cell-content">
+                                            {{
+                                                listError
+                                                    ? '加载失败，请重试'
+                                                    : '暂无数据'
+                                            }}
+                                        </div>
                                     </td>
                                 </tr>
                             </template>

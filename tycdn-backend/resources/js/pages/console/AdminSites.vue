@@ -777,7 +777,9 @@ async function confirmCertDelete(): Promise<void> {
             search-placeholder="搜索 WAF"
         >
             <template #actions-col><col style="width: 0" /></template>
-            <template #actions-header><th /></template>
+            <template #actions-header
+                ><th><div data-slot="table-cell-content"></div></th
+            ></template>
         </ConsoleDataTable>
 
         <!-- Create site dialog -->

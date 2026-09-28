@@ -797,39 +797,59 @@ function detailPaginationText<T>(payload: Paginated<T> | null): string {
                             class="border-y bg-muted/50 text-muted-foreground"
                         >
                             <tr>
-                                <th class="px-4 py-2.5 text-left font-medium">
-                                    用户
+                                <th class="text-left font-medium">
+                                    <div data-slot="table-cell-content">
+                                        用户
+                                    </div>
                                 </th>
-                                <th class="px-2 py-2.5 text-center font-medium">
-                                    角色
+                                <th class="text-center font-medium">
+                                    <div data-slot="table-cell-content">
+                                        角色
+                                    </div>
                                 </th>
-                                <th class="px-3 py-2.5 text-left font-medium">
-                                    邮箱
+                                <th class="text-left font-medium">
+                                    <div data-slot="table-cell-content">
+                                        邮箱
+                                    </div>
                                 </th>
-                                <th class="px-2 py-2.5 text-center font-medium">
-                                    CDNfly ID
+                                <th class="text-center font-medium">
+                                    <div data-slot="table-cell-content">
+                                        CDNfly ID
+                                    </div>
                                 </th>
-                                <th class="px-2 py-2.5 text-center font-medium">
-                                    API Key
+                                <th class="text-center font-medium">
+                                    <div data-slot="table-cell-content">
+                                        API Key
+                                    </div>
                                 </th>
-                                <th class="px-2 py-2.5 text-center font-medium">
-                                    订单
+                                <th class="text-center font-medium">
+                                    <div data-slot="table-cell-content">
+                                        订单
+                                    </div>
                                 </th>
-                                <th class="px-2 py-2.5 text-center font-medium">
-                                    服务
+                                <th class="text-center font-medium">
+                                    <div data-slot="table-cell-content">
+                                        服务
+                                    </div>
                                 </th>
-                                <th class="px-3 py-2.5 text-left font-medium">
-                                    注册时间
+                                <th class="text-left font-medium">
+                                    <div data-slot="table-cell-content">
+                                        注册时间
+                                    </div>
                                 </th>
-                                <th class="px-4 py-2.5 text-right font-medium">
-                                    操作
+                                <th class="text-right font-medium">
+                                    <div data-slot="table-cell-content">
+                                        操作
+                                    </div>
                                 </th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr v-if="loading && rows.length === 0">
-                                <td class="px-6 py-16 text-center" colspan="9">
-                                    <Spinner />
+                                <td class="text-center" colspan="9">
+                                    <div data-slot="table-cell-content">
+                                        <Spinner />
+                                    </div>
                                 </td>
                             </tr>
                             <tr
@@ -837,168 +857,200 @@ function detailPaginationText<T>(payload: Paginated<T> | null): string {
                                 :key="user.id"
                                 class="border-b last:border-b-0"
                             >
-                                <td class="px-4 py-3 align-middle">
-                                    <div class="truncate font-medium">
-                                        {{ userDisplayName(user) }}
-                                    </div>
-                                    <div class="text-xs text-muted-foreground">
-                                        #{{ user.id }}
-                                    </div>
-                                </td>
-                                <td class="px-2 py-3 text-center align-middle">
-                                    <Badge
-                                        :variant="
-                                            user.role === 'admin'
-                                                ? 'default'
-                                                : 'secondary'
-                                        "
-                                    >
-                                        {{ roleLabel(user.role) }}
-                                    </Badge>
-                                </td>
-                                <td class="px-3 py-3 align-middle">
-                                    <div class="truncate">{{ user.email }}</div>
-                                    <Badge
-                                        class="mt-1"
-                                        :variant="
-                                            user.email_verified
-                                                ? 'secondary'
-                                                : 'outline'
-                                        "
-                                    >
-                                        {{
-                                            user.email_verified
-                                                ? '已验证'
-                                                : '未验证'
-                                        }}
-                                    </Badge>
-                                </td>
-                                <td
-                                    class="px-2 py-3 text-center align-middle text-muted-foreground"
-                                >
-                                    {{ user.cdnfly_user_id ?? '-' }}
-                                </td>
-                                <td class="px-2 py-3 text-center align-middle">
-                                    <Badge
-                                        :variant="
-                                            user.has_api_key
-                                                ? 'secondary'
-                                                : 'outline'
-                                        "
-                                    >
-                                        {{
-                                            user.has_api_key
-                                                ? '已就绪'
-                                                : '未就绪'
-                                        }}
-                                    </Badge>
-                                </td>
-                                <td class="px-2 py-3 text-center align-middle">
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        class="h-8 px-2"
-                                        :aria-label="`查看用户 #${user.id} 的订单`"
-                                        :title="`查看用户 #${user.id} 的订单`"
-                                        @click="openDetailDialog(user)"
-                                    >
-                                        <ReceiptText data-icon="inline-start" />
-                                        {{ user.orders_count }}
-                                    </Button>
-                                </td>
-                                <td class="px-2 py-3 text-center align-middle">
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        class="h-8 px-2"
-                                        :aria-label="`查看用户 #${user.id} 的已有套餐`"
-                                        :title="`查看用户 #${user.id} 的已有套餐`"
-                                        @click="openDetailDialog(user)"
-                                    >
-                                        <PackageCheck
-                                            data-icon="inline-start"
-                                        />
-                                        {{ user.service_instances_count }}
-                                    </Button>
-                                </td>
-                                <td
-                                    class="px-3 py-3 align-middle text-muted-foreground"
-                                >
-                                    {{ formatDate(user.created_at) }}
-                                </td>
-                                <td class="px-4 py-3">
-                                    <div class="flex justify-end gap-1.5">
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            @click="openEditDialog(user)"
+                                <td class="align-middle">
+                                    <div data-slot="table-cell-content">
+                                        <div class="truncate font-medium">
+                                            {{ userDisplayName(user) }}
+                                        </div>
+                                        <div
+                                            class="text-xs text-muted-foreground"
                                         >
-                                            <Pencil data-icon="inline-start" />
-                                            编辑
-                                        </Button>
-                                        <RecoveryReview
-                                            v-if="!user.cdnfly_user_id"
-                                            kind="mapping"
-                                            :id="user.id"
-                                            @updated="loadUsers()"
-                                        />
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            :disabled="
-                                                !user.cdnfly_user_id ||
-                                                syncingId === user.id
+                                            #{{ user.id }}
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="text-center align-middle">
+                                    <div data-slot="table-cell-content">
+                                        <Badge
+                                            :variant="
+                                                user.role === 'admin'
+                                                    ? 'default'
+                                                    : 'secondary'
                                             "
-                                            @click="syncApiKey(user)"
                                         >
-                                            <Spinner
-                                                v-if="syncingId === user.id"
+                                            {{ roleLabel(user.role) }}
+                                        </Badge>
+                                    </div>
+                                </td>
+                                <td class="align-middle">
+                                    <div data-slot="table-cell-content">
+                                        <div class="truncate">
+                                            {{ user.email }}
+                                        </div>
+                                        <Badge
+                                            class="mt-1"
+                                            :variant="
+                                                user.email_verified
+                                                    ? 'secondary'
+                                                    : 'outline'
+                                            "
+                                        >
+                                            {{
+                                                user.email_verified
+                                                    ? '已验证'
+                                                    : '未验证'
+                                            }}
+                                        </Badge>
+                                    </div>
+                                </td>
+                                <td
+                                    class="text-center align-middle text-muted-foreground"
+                                >
+                                    <div data-slot="table-cell-content">
+                                        {{ user.cdnfly_user_id ?? '-' }}
+                                    </div>
+                                </td>
+                                <td class="text-center align-middle">
+                                    <div data-slot="table-cell-content">
+                                        <Badge
+                                            :variant="
+                                                user.has_api_key
+                                                    ? 'secondary'
+                                                    : 'outline'
+                                            "
+                                        >
+                                            {{
+                                                user.has_api_key
+                                                    ? '已就绪'
+                                                    : '未就绪'
+                                            }}
+                                        </Badge>
+                                    </div>
+                                </td>
+                                <td class="text-center align-middle">
+                                    <div data-slot="table-cell-content">
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            class="h-8 px-2"
+                                            :aria-label="`查看用户 #${user.id} 的订单`"
+                                            :title="`查看用户 #${user.id} 的订单`"
+                                            @click="openDetailDialog(user)"
+                                        >
+                                            <ReceiptText
                                                 data-icon="inline-start"
                                             />
-                                            <KeyRound
-                                                v-else
+                                            {{ user.orders_count }}
+                                        </Button>
+                                    </div>
+                                </td>
+                                <td class="text-center align-middle">
+                                    <div data-slot="table-cell-content">
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            class="h-8 px-2"
+                                            :aria-label="`查看用户 #${user.id} 的已有套餐`"
+                                            :title="`查看用户 #${user.id} 的已有套餐`"
+                                            @click="openDetailDialog(user)"
+                                        >
+                                            <PackageCheck
                                                 data-icon="inline-start"
                                             />
-                                            同步
+                                            {{ user.service_instances_count }}
                                         </Button>
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            :disabled="!user.cdnfly_user_id"
-                                            @click="openPackageDialog(user)"
-                                        >
-                                            <PackagePlus
-                                                data-icon="inline-start"
+                                    </div>
+                                </td>
+                                <td class="align-middle text-muted-foreground">
+                                    <div data-slot="table-cell-content">
+                                        {{ formatDate(user.created_at) }}
+                                    </div>
+                                </td>
+                                <td class="">
+                                    <div data-slot="table-cell-content">
+                                        <div class="flex justify-end gap-1.5">
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                @click="openEditDialog(user)"
+                                            >
+                                                <Pencil
+                                                    data-icon="inline-start"
+                                                />
+                                                编辑
+                                            </Button>
+                                            <RecoveryReview
+                                                v-if="!user.cdnfly_user_id"
+                                                kind="mapping"
+                                                :id="user.id"
+                                                @updated="loadUsers()"
                                             />
-                                            开套餐
-                                        </Button>
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            :disabled="!user.cdnfly_user_id"
-                                            @click="openRechargeDialog(user)"
-                                        >
-                                            <Wallet data-icon="inline-start" />
-                                            充值
-                                        </Button>
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            :disabled="deleting"
-                                            @click="openDeleteConfirm(user)"
-                                        >
-                                            <Trash2 data-icon="inline-start" />
-                                            删除
-                                        </Button>
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                :disabled="
+                                                    !user.cdnfly_user_id ||
+                                                    syncingId === user.id
+                                                "
+                                                @click="syncApiKey(user)"
+                                            >
+                                                <Spinner
+                                                    v-if="syncingId === user.id"
+                                                    data-icon="inline-start"
+                                                />
+                                                <KeyRound
+                                                    v-else
+                                                    data-icon="inline-start"
+                                                />
+                                                同步
+                                            </Button>
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                :disabled="!user.cdnfly_user_id"
+                                                @click="openPackageDialog(user)"
+                                            >
+                                                <PackagePlus
+                                                    data-icon="inline-start"
+                                                />
+                                                开套餐
+                                            </Button>
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                :disabled="!user.cdnfly_user_id"
+                                                @click="
+                                                    openRechargeDialog(user)
+                                                "
+                                            >
+                                                <Wallet
+                                                    data-icon="inline-start"
+                                                />
+                                                充值
+                                            </Button>
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                :disabled="deleting"
+                                                @click="openDeleteConfirm(user)"
+                                            >
+                                                <Trash2
+                                                    data-icon="inline-start"
+                                                />
+                                                删除
+                                            </Button>
+                                        </div>
                                     </div>
                                 </td>
                             </tr>
                             <tr v-if="!loading && rows.length === 0">
                                 <td
-                                    class="px-6 py-16 text-center text-muted-foreground"
+                                    class="text-center text-muted-foreground"
                                     colspan="9"
                                 >
-                                    暂无用户
+                                    <div data-slot="table-cell-content">
+                                        暂无用户
+                                    </div>
                                 </td>
                             </tr>
                         </tbody>
@@ -1085,45 +1137,44 @@ function detailPaginationText<T>(payload: Paginated<T> | null): string {
                         <table class="w-full min-w-[860px] text-sm">
                             <thead class="border-b text-muted-foreground">
                                 <tr>
-                                    <th
-                                        class="px-4 py-2.5 text-left font-medium"
-                                    >
-                                        订单号
+                                    <th class="text-left font-medium">
+                                        <div data-slot="table-cell-content">
+                                            订单号
+                                        </div>
                                     </th>
-                                    <th
-                                        class="px-4 py-2.5 text-left font-medium"
-                                    >
-                                        产品
+                                    <th class="text-left font-medium">
+                                        <div data-slot="table-cell-content">
+                                            产品
+                                        </div>
                                     </th>
-                                    <th
-                                        class="px-4 py-2.5 text-left font-medium"
-                                    >
-                                        金额
+                                    <th class="text-left font-medium">
+                                        <div data-slot="table-cell-content">
+                                            金额
+                                        </div>
                                     </th>
-                                    <th
-                                        class="px-4 py-2.5 text-left font-medium"
-                                    >
-                                        状态
+                                    <th class="text-left font-medium">
+                                        <div data-slot="table-cell-content">
+                                            状态
+                                        </div>
                                     </th>
-                                    <th
-                                        class="px-4 py-2.5 text-left font-medium"
-                                    >
-                                        支付网关
+                                    <th class="text-left font-medium">
+                                        <div data-slot="table-cell-content">
+                                            支付网关
+                                        </div>
                                     </th>
-                                    <th
-                                        class="px-4 py-2.5 text-left font-medium"
-                                    >
-                                        创建时间
+                                    <th class="text-left font-medium">
+                                        <div data-slot="table-cell-content">
+                                            创建时间
+                                        </div>
                                     </th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <tr v-if="detailOrdersLoading">
-                                    <td
-                                        class="px-4 py-10 text-center"
-                                        colspan="6"
-                                    >
-                                        <Spinner />
+                                    <td class="text-center" colspan="6">
+                                        <div data-slot="table-cell-content">
+                                            <Spinner />
+                                        </div>
                                     </td>
                                 </tr>
                                 <tr
@@ -1131,30 +1182,48 @@ function detailPaginationText<T>(payload: Paginated<T> | null): string {
                                     :key="order.id"
                                     class="border-b last:border-b-0"
                                 >
-                                    <td class="px-4 py-3 font-medium">
-                                        {{ order.order_no || `#${order.id}` }}
-                                    </td>
-                                    <td class="px-4 py-3">
-                                        <div>{{ orderProductName(order) }}</div>
-                                        <div
-                                            class="text-xs text-muted-foreground"
-                                        >
-                                            {{ orderCycleText(order) || '-' }}
+                                    <td class="font-medium">
+                                        <div data-slot="table-cell-content">
+                                            {{
+                                                order.order_no || `#${order.id}`
+                                            }}
                                         </div>
                                     </td>
-                                    <td class="px-4 py-3">
-                                        {{ order.amount_usdt }} USDT
+                                    <td class="">
+                                        <div data-slot="table-cell-content">
+                                            <div>
+                                                {{ orderProductName(order) }}
+                                            </div>
+                                            <div
+                                                class="text-xs text-muted-foreground"
+                                            >
+                                                {{
+                                                    orderCycleText(order) || '-'
+                                                }}
+                                            </div>
+                                        </div>
                                     </td>
-                                    <td class="px-4 py-3">
-                                        <Badge variant="secondary">
-                                            {{ order.status }}
-                                        </Badge>
+                                    <td class="">
+                                        <div data-slot="table-cell-content">
+                                            {{ order.amount_usdt }} USDT
+                                        </div>
                                     </td>
-                                    <td class="px-4 py-3 text-muted-foreground">
-                                        {{ order.gateway_status ?? '-' }}
+                                    <td class="">
+                                        <div data-slot="table-cell-content">
+                                            <Badge variant="secondary">
+                                                {{ order.status }}
+                                            </Badge>
+                                        </div>
                                     </td>
-                                    <td class="px-4 py-3 text-muted-foreground">
-                                        {{ formatDate(order.created_at) }}
+                                    <td class="text-muted-foreground">
+                                        <div data-slot="table-cell-content">
+                                            {{ order.gateway_status ?? '-' }}
+                                        </div>
+                                    </td>
+                                    <td class="text-muted-foreground">
+                                        <div data-slot="table-cell-content">
+                                            {{ formatDate(order.created_at) }}
+                                        </div>
                                     </td>
                                 </tr>
                                 <tr
@@ -1164,10 +1233,12 @@ function detailPaginationText<T>(payload: Paginated<T> | null): string {
                                     "
                                 >
                                     <td
-                                        class="px-4 py-10 text-center text-muted-foreground"
+                                        class="text-center text-muted-foreground"
                                         colspan="6"
                                     >
-                                        暂无订单
+                                        <div data-slot="table-cell-content">
+                                            暂无订单
+                                        </div>
                                     </td>
                                 </tr>
                             </tbody>
@@ -1206,45 +1277,44 @@ function detailPaginationText<T>(payload: Paginated<T> | null): string {
                         <table class="w-full min-w-[920px] text-sm">
                             <thead class="border-b text-muted-foreground">
                                 <tr>
-                                    <th
-                                        class="px-4 py-2.5 text-left font-medium"
-                                    >
-                                        服务
+                                    <th class="text-left font-medium">
+                                        <div data-slot="table-cell-content">
+                                            服务
+                                        </div>
                                     </th>
-                                    <th
-                                        class="px-4 py-2.5 text-left font-medium"
-                                    >
-                                        来源订单
+                                    <th class="text-left font-medium">
+                                        <div data-slot="table-cell-content">
+                                            来源订单
+                                        </div>
                                     </th>
-                                    <th
-                                        class="px-4 py-2.5 text-left font-medium"
-                                    >
-                                        CDNfly 服务 ID
+                                    <th class="text-left font-medium">
+                                        <div data-slot="table-cell-content">
+                                            CDNfly 服务 ID
+                                        </div>
                                     </th>
-                                    <th
-                                        class="px-4 py-2.5 text-left font-medium"
-                                    >
-                                        状态
+                                    <th class="text-left font-medium">
+                                        <div data-slot="table-cell-content">
+                                            状态
+                                        </div>
                                     </th>
-                                    <th
-                                        class="px-4 py-2.5 text-left font-medium"
-                                    >
-                                        到期时间
+                                    <th class="text-left font-medium">
+                                        <div data-slot="table-cell-content">
+                                            到期时间
+                                        </div>
                                     </th>
-                                    <th
-                                        class="px-4 py-2.5 text-left font-medium"
-                                    >
-                                        错误
+                                    <th class="text-left font-medium">
+                                        <div data-slot="table-cell-content">
+                                            错误
+                                        </div>
                                     </th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <tr v-if="detailServicesLoading">
-                                    <td
-                                        class="px-4 py-10 text-center"
-                                        colspan="6"
-                                    >
-                                        <Spinner />
+                                    <td class="text-center" colspan="6">
+                                        <div data-slot="table-cell-content">
+                                            <Spinner />
+                                        </div>
                                     </td>
                                 </tr>
                                 <tr
@@ -1252,32 +1322,48 @@ function detailPaginationText<T>(payload: Paginated<T> | null): string {
                                     :key="`${service.cdnfly_service_id ?? 'local'}:${service.id}`"
                                     class="border-b last:border-b-0"
                                 >
-                                    <td class="px-4 py-3 font-medium">
-                                        <div>{{ serviceName(service) }}</div>
-                                        <div
-                                            class="text-xs text-muted-foreground"
-                                        >
-                                            #{{ service.id }}
+                                    <td class="font-medium">
+                                        <div data-slot="table-cell-content">
+                                            <div>
+                                                {{ serviceName(service) }}
+                                            </div>
+                                            <div
+                                                class="text-xs text-muted-foreground"
+                                            >
+                                                #{{ service.id }}
+                                            </div>
                                         </div>
                                     </td>
-                                    <td class="px-4 py-3 text-muted-foreground">
-                                        {{ service.order_no ?? '-' }}
+                                    <td class="text-muted-foreground">
+                                        <div data-slot="table-cell-content">
+                                            {{ service.order_no ?? '-' }}
+                                        </div>
                                     </td>
-                                    <td class="px-4 py-3 text-muted-foreground">
-                                        {{ service.cdnfly_service_id ?? '-' }}
+                                    <td class="text-muted-foreground">
+                                        <div data-slot="table-cell-content">
+                                            {{
+                                                service.cdnfly_service_id ?? '-'
+                                            }}
+                                        </div>
                                     </td>
-                                    <td class="px-4 py-3">
-                                        <Badge variant="secondary">
-                                            {{ service.status }}
-                                        </Badge>
+                                    <td class="">
+                                        <div data-slot="table-cell-content">
+                                            <Badge variant="secondary">
+                                                {{ service.status }}
+                                            </Badge>
+                                        </div>
                                     </td>
-                                    <td class="px-4 py-3 text-muted-foreground">
-                                        {{ formatDate(service.expired_at) }}
+                                    <td class="text-muted-foreground">
+                                        <div data-slot="table-cell-content">
+                                            {{ formatDate(service.expired_at) }}
+                                        </div>
                                     </td>
                                     <td
-                                        class="max-w-[220px] truncate px-4 py-3 text-muted-foreground"
+                                        class="max-w-[220px] truncate text-muted-foreground"
                                     >
-                                        {{ service.error_message ?? '-' }}
+                                        <div data-slot="table-cell-content">
+                                            {{ service.error_message ?? '-' }}
+                                        </div>
                                     </td>
                                 </tr>
                                 <tr
@@ -1287,10 +1373,12 @@ function detailPaginationText<T>(payload: Paginated<T> | null): string {
                                     "
                                 >
                                     <td
-                                        class="px-4 py-10 text-center text-muted-foreground"
+                                        class="text-center text-muted-foreground"
                                         colspan="6"
                                     >
-                                        暂无已开通服务
+                                        <div data-slot="table-cell-content">
+                                            暂无已开通服务
+                                        </div>
                                     </td>
                                 </tr>
                             </tbody>

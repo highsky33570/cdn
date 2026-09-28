@@ -411,41 +411,59 @@ function createdAt(row: CdnflyRecord) {
                     <thead>
                         <tr>
                             <th>
-                                <CheckboxField
-                                    aria-label="全选当前页"
-                                    :checked="allSelected"
-                                    :indeterminate="
-                                        selected.length > 0 && !allSelected
-                                    "
-                                    :disabled="
-                                        busy ||
-                                        loading ||
-                                        !selectableRows.length
-                                    "
-                                    @change="
-                                        selected = allSelected
-                                            ? []
-                                            : selectableRows.map((row) =>
-                                                  Number(row.id),
-                                              )
-                                    "
-                                />
+                                <div data-slot="table-cell-content">
+                                    <CheckboxField
+                                        aria-label="全选当前页"
+                                        :checked="allSelected"
+                                        :indeterminate="
+                                            selected.length > 0 && !allSelected
+                                        "
+                                        :disabled="
+                                            busy ||
+                                            loading ||
+                                            !selectableRows.length
+                                        "
+                                        @change="
+                                            selected = allSelected
+                                                ? []
+                                                : selectableRows.map((row) =>
+                                                      Number(row.id),
+                                                  )
+                                        "
+                                    />
+                                </div>
                             </th>
-                            <th>ID</th>
-                            <th>名称</th>
                             <th>
-                                {{
-                                    kind === 'rule'
-                                        ? '显示'
-                                        : kind === 'matcher'
-                                          ? '系统规则'
-                                          : '类型'
-                                }}
+                                <div data-slot="table-cell-content">ID</div>
                             </th>
-                            <th>状态</th>
-                            <th v-if="kind === 'rule'">排序</th>
-                            <th>创建时间</th>
-                            <th>操作</th>
+                            <th>
+                                <div data-slot="table-cell-content">名称</div>
+                            </th>
+                            <th>
+                                <div data-slot="table-cell-content">
+                                    {{
+                                        kind === 'rule'
+                                            ? '显示'
+                                            : kind === 'matcher'
+                                              ? '系统规则'
+                                              : '类型'
+                                    }}
+                                </div>
+                            </th>
+                            <th>
+                                <div data-slot="table-cell-content">状态</div>
+                            </th>
+                            <th v-if="kind === 'rule'">
+                                <div data-slot="table-cell-content">排序</div>
+                            </th>
+                            <th>
+                                <div data-slot="table-cell-content">
+                                    创建时间
+                                </div>
+                            </th>
+                            <th>
+                                <div data-slot="table-cell-content">操作</div>
+                            </th>
                         </tr>
                     </thead>
                     <tbody>
@@ -454,114 +472,151 @@ function createdAt(row: CdnflyRecord) {
                                 :colspan="kind === 'rule' ? 8 : 7"
                                 class="empty"
                             >
-                                加载中…
+                                <div data-slot="table-cell-content">
+                                    加载中…
+                                </div>
                             </td>
                         </tr>
                         <template v-else>
                             <tr v-for="row in rows" :key="Number(row.id)">
                                 <td>
-                                    <CheckboxField
-                                        v-model="selected"
-                                        :value="Number(row.id)"
-                                        :aria-label="`选择 ${row.id}`"
-                                        :disabled="busy || ccSystem(row)"
-                                        :title="
-                                            ccSystem(row)
-                                                ? '系统规则只读'
-                                                : undefined
-                                        "
-                                    />
+                                    <div data-slot="table-cell-content">
+                                        <CheckboxField
+                                            v-model="selected"
+                                            :value="Number(row.id)"
+                                            :aria-label="`选择 ${row.id}`"
+                                            :disabled="busy || ccSystem(row)"
+                                            :title="
+                                                ccSystem(row)
+                                                    ? '系统规则只读'
+                                                    : undefined
+                                            "
+                                        />
+                                    </div>
                                 </td>
-                                <td>{{ row.id }}</td>
+                                <td>
+                                    <div data-slot="table-cell-content">
+                                        {{ row.id }}
+                                    </div>
+                                </td>
                                 <td
                                     class="name-cell"
                                     :title="textValue(row.name)"
                                 >
-                                    {{ row.name || '-' }}
+                                    <div data-slot="table-cell-content">
+                                        {{ row.name || '-' }}
+                                    </div>
                                 </td>
                                 <td v-if="kind === 'rule'">
-                                    {{
-                                        ccEnabled(row.is_show) ? '显示' : '隐藏'
-                                    }}
+                                    <div data-slot="table-cell-content">
+                                        {{
+                                            ccEnabled(row.is_show)
+                                                ? '显示'
+                                                : '隐藏'
+                                        }}
+                                    </div>
                                 </td>
                                 <td v-else-if="kind === 'matcher'">
-                                    {{ ccSystem(row) ? '是' : '否' }}
+                                    <div data-slot="table-cell-content">
+                                        {{ ccSystem(row) ? '是' : '否' }}
+                                    </div>
                                 </td>
                                 <td v-else>
-                                    {{
-                                        ccFilterLabels[textValue(row.type)] ||
-                                        row.type ||
-                                        '-'
-                                    }}
+                                    <div data-slot="table-cell-content">
+                                        {{
+                                            ccFilterLabels[
+                                                textValue(row.type)
+                                            ] ||
+                                            row.type ||
+                                            '-'
+                                        }}
+                                    </div>
                                 </td>
                                 <td>
-                                    <span
-                                        class="cc-status"
-                                        :data-tone="ccStatus(row).tone"
-                                        ><i />{{ ccStatus(row).label }}</span
-                                    >
+                                    <div data-slot="table-cell-content">
+                                        <span
+                                            class="cc-status"
+                                            :data-tone="ccStatus(row).tone"
+                                            ><i />{{
+                                                ccStatus(row).label
+                                            }}</span
+                                        >
+                                    </div>
                                 </td>
                                 <td v-if="kind === 'rule'">
-                                    {{ row.sort ?? '-' }}
+                                    <div data-slot="table-cell-content">
+                                        {{ row.sort ?? '-' }}
+                                    </div>
                                 </td>
-                                <td>{{ createdAt(row) }}</td>
                                 <td>
-                                    <div class="row-actions">
-                                        <Button
-                                            variant="link"
-                                            size="inline"
-                                            data-slot="console-link"
-                                            type="button"
-                                            class="text-action"
-                                            :disabled="busy || ccSystem(row)"
-                                            @click="emit('manage', kind, row)"
-                                        >
-                                            管理</Button
-                                        ><DropdownMenu
-                                            ><DropdownMenuTrigger as-child
-                                                ><Button
-                                                    variant="link"
-                                                    size="inline"
-                                                    data-slot="console-link"
-                                                    type="button"
-                                                    class="text-action row-more"
-                                                    :disabled="
-                                                        busy || ccSystem(row)
-                                                    "
-                                                    :aria-label="`更多操作 ${row.id}`"
-                                                >
-                                                    更多
-                                                    <ChevronDown
-                                                        :size="
-                                                            14
-                                                        " /></Button></DropdownMenuTrigger
-                                            ><DropdownMenuContent
-                                                class="console-user-cc-workspace"
-                                                align="end"
-                                                ><DropdownMenuItem
-                                                    @select="
-                                                        batch('enable', [
-                                                            Number(row.id),
-                                                        ])
-                                                    "
-                                                    >启用</DropdownMenuItem
-                                                ><DropdownMenuItem
-                                                    @select="
-                                                        batch('disable', [
-                                                            Number(row.id),
-                                                        ])
-                                                    "
-                                                    >禁用</DropdownMenuItem
-                                                ><DropdownMenuItem
-                                                    @select="
-                                                        askDelete([
-                                                            Number(row.id),
-                                                        ])
-                                                    "
-                                                    >删除</DropdownMenuItem
-                                                ></DropdownMenuContent
-                                            ></DropdownMenu
-                                        >
+                                    <div data-slot="table-cell-content">
+                                        {{ createdAt(row) }}
+                                    </div>
+                                </td>
+                                <td>
+                                    <div data-slot="table-cell-content">
+                                        <div class="row-actions">
+                                            <Button
+                                                variant="link"
+                                                size="inline"
+                                                data-slot="console-link"
+                                                type="button"
+                                                class="text-action"
+                                                :disabled="
+                                                    busy || ccSystem(row)
+                                                "
+                                                @click="
+                                                    emit('manage', kind, row)
+                                                "
+                                            >
+                                                管理</Button
+                                            ><DropdownMenu
+                                                ><DropdownMenuTrigger as-child
+                                                    ><Button
+                                                        variant="link"
+                                                        size="inline"
+                                                        data-slot="console-link"
+                                                        type="button"
+                                                        class="text-action row-more"
+                                                        :disabled="
+                                                            busy ||
+                                                            ccSystem(row)
+                                                        "
+                                                        :aria-label="`更多操作 ${row.id}`"
+                                                    >
+                                                        更多
+                                                        <ChevronDown
+                                                            :size="
+                                                                14
+                                                            " /></Button></DropdownMenuTrigger
+                                                ><DropdownMenuContent
+                                                    class="console-user-cc-workspace"
+                                                    align="end"
+                                                    ><DropdownMenuItem
+                                                        @select="
+                                                            batch('enable', [
+                                                                Number(row.id),
+                                                            ])
+                                                        "
+                                                        >启用</DropdownMenuItem
+                                                    ><DropdownMenuItem
+                                                        @select="
+                                                            batch('disable', [
+                                                                Number(row.id),
+                                                            ])
+                                                        "
+                                                        >禁用</DropdownMenuItem
+                                                    ><DropdownMenuItem
+                                                        @select="
+                                                            askDelete([
+                                                                Number(row.id),
+                                                            ])
+                                                        "
+                                                        >删除</DropdownMenuItem
+                                                    ></DropdownMenuContent
+                                                ></DropdownMenu
+                                            >
+                                        </div>
                                     </div>
                                 </td>
                             </tr>
@@ -570,9 +625,13 @@ function createdAt(row: CdnflyRecord) {
                                     :colspan="kind === 'rule' ? 8 : 7"
                                     class="empty"
                                 >
-                                    {{
-                                        error ? '加载失败，请重试' : '暂无数据'
-                                    }}
+                                    <div data-slot="table-cell-content">
+                                        {{
+                                            error
+                                                ? '加载失败，请重试'
+                                                : '暂无数据'
+                                        }}
+                                    </div>
                                 </td>
                             </tr>
                         </template>

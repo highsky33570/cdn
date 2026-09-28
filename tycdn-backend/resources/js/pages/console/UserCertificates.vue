@@ -924,30 +924,72 @@ async function saveDefault(name: 'cert_default_type' | 'dnsapi') {
                             <thead>
                                 <tr>
                                     <th>
-                                        <CheckboxField
-                                            aria-label="选择当前页"
-                                            :checked="selectedAll"
-                                            :disabled="
-                                                loading || busy || !rows.length
-                                            "
-                                            @change="toggleAll"
-                                        />
+                                        <div data-slot="table-cell-content">
+                                            <CheckboxField
+                                                aria-label="选择当前页"
+                                                :checked="selectedAll"
+                                                :disabled="
+                                                    loading ||
+                                                    busy ||
+                                                    !rows.length
+                                                "
+                                                @change="toggleAll"
+                                            />
+                                        </div>
                                     </th>
-                                    <th>ID</th>
-                                    <th>名称</th>
-                                    <th>类型</th>
-                                    <th>域名</th>
-                                    <th>创建时间</th>
-                                    <th>到期时间</th>
-                                    <th>自动续签</th>
-                                    <th>状态</th>
-                                    <th>操作</th>
+                                    <th>
+                                        <div data-slot="table-cell-content">
+                                            ID
+                                        </div>
+                                    </th>
+                                    <th>
+                                        <div data-slot="table-cell-content">
+                                            名称
+                                        </div>
+                                    </th>
+                                    <th>
+                                        <div data-slot="table-cell-content">
+                                            类型
+                                        </div>
+                                    </th>
+                                    <th>
+                                        <div data-slot="table-cell-content">
+                                            域名
+                                        </div>
+                                    </th>
+                                    <th>
+                                        <div data-slot="table-cell-content">
+                                            创建时间
+                                        </div>
+                                    </th>
+                                    <th>
+                                        <div data-slot="table-cell-content">
+                                            到期时间
+                                        </div>
+                                    </th>
+                                    <th>
+                                        <div data-slot="table-cell-content">
+                                            自动续签
+                                        </div>
+                                    </th>
+                                    <th>
+                                        <div data-slot="table-cell-content">
+                                            状态
+                                        </div>
+                                    </th>
+                                    <th>
+                                        <div data-slot="table-cell-content">
+                                            操作
+                                        </div>
+                                    </th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <tr v-if="loading">
                                     <td colspan="10" class="empty">
-                                        <Spinner class="mx-auto" />
+                                        <div data-slot="table-cell-content">
+                                            <Spinner class="mx-auto" />
+                                        </div>
                                     </td>
                                 </tr>
                                 <template v-else
@@ -956,142 +998,174 @@ async function saveDefault(name: 'cert_default_type' | 'dnsapi') {
                                         :key="textValue(cert.id)"
                                     >
                                         <td>
-                                            <CheckboxField
-                                                :aria-label="`选择 ${cert.id}`"
-                                                :checked="
-                                                    selected.includes(
-                                                        Number(cert.id),
-                                                    )
-                                                "
-                                                :disabled="busy"
-                                                @change="
-                                                    toggleSelected(
-                                                        Number(cert.id),
-                                                    )
-                                                "
-                                            />
-                                        </td>
-                                        <td>{{ cert.id }}</td>
-                                        <td>
-                                            <Button
-                                                variant="link"
-                                                class="cert-name"
-                                                :title="certName(cert)"
-                                                @click="openEditDialog(cert)"
-                                                >{{ certName(cert) }}</Button
-                                            >
-                                        </td>
-                                        <td>{{ typeLabel(cert.type) }}</td>
-                                        <td>
-                                            <span
-                                                class="block truncate"
-                                                :title="domainText(cert)"
-                                                >{{ domainText(cert) }}</span
-                                            >
+                                            <div data-slot="table-cell-content">
+                                                <CheckboxField
+                                                    :aria-label="`选择 ${cert.id}`"
+                                                    :checked="
+                                                        selected.includes(
+                                                            Number(cert.id),
+                                                        )
+                                                    "
+                                                    :disabled="busy"
+                                                    @change="
+                                                        toggleSelected(
+                                                            Number(cert.id),
+                                                        )
+                                                    "
+                                                />
+                                            </div>
                                         </td>
                                         <td>
-                                            {{
-                                                formatDate(
-                                                    cert.create_at2 ??
-                                                        cert.create_at,
-                                                )
-                                            }}
+                                            <div data-slot="table-cell-content">
+                                                {{ cert.id }}
+                                            </div>
                                         </td>
                                         <td>
-                                            {{
-                                                formatDate(
-                                                    cert.expire_time2 ??
-                                                        cert.expire_time,
-                                                )
-                                            }}
-                                        </td>
-                                        <td>
-                                            <CheckCircle2
-                                                v-if="isOn(cert.auto_renew)"
-                                                class="size-4 text-emerald-500"
-                                                aria-label="续签已开启"
-                                            /><XCircle
-                                                v-else
-                                                class="size-4 text-muted-foreground"
-                                                aria-label="续签已关闭"
-                                            />
-                                        </td>
-                                        <td>
-                                            <span
-                                                class="cert-status"
-                                                :data-tone="
-                                                    certStatus(cert).tone
-                                                "
-                                                :title="
-                                                    textValue(cert.task_ret)
-                                                "
-                                                ><i />{{
-                                                    certStatus(cert).text
-                                                }}</span
-                                            >
-                                        </td>
-                                        <td>
-                                            <div class="cert-actions">
+                                            <div data-slot="table-cell-content">
                                                 <Button
                                                     variant="link"
+                                                    class="cert-name"
+                                                    :title="certName(cert)"
                                                     @click="
                                                         openEditDialog(cert)
                                                     "
-                                                    >管理</Button
-                                                ><DropdownMenu
-                                                    ><DropdownMenuTrigger
-                                                        as-child
-                                                        ><Button
-                                                            variant="link"
-                                                            :disabled="busy"
-                                                            >更多<ChevronDown
-                                                                class="size-4" /></Button></DropdownMenuTrigger
-                                                    ><DropdownMenuContent
-                                                        class="console-user-certificates"
-                                                        ><DropdownMenuItem
-                                                            @select="
-                                                                runAction(
-                                                                    'reissue',
-                                                                    [
-                                                                        Number(
-                                                                            cert.id,
-                                                                        ),
-                                                                    ],
-                                                                )
-                                                            "
-                                                            >重新申请</DropdownMenuItem
-                                                        ><DropdownMenuItem
-                                                            @select="
-                                                                toggleCertEnabled(
-                                                                    cert,
-                                                                    false,
-                                                                )
-                                                            "
-                                                            >禁用</DropdownMenuItem
-                                                        ><DropdownMenuItem
-                                                            @select="
-                                                                toggleCertEnabled(
-                                                                    cert,
-                                                                    true,
-                                                                )
-                                                            "
-                                                            >启用</DropdownMenuItem
-                                                        ><DropdownMenuItem
-                                                            @select="
-                                                                openDeleteCert(
-                                                                    cert,
-                                                                )
-                                                            "
-                                                            >删除</DropdownMenuItem
-                                                        ></DropdownMenuContent
-                                                    ></DropdownMenu
+                                                    >{{
+                                                        certName(cert)
+                                                    }}</Button
                                                 >
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div data-slot="table-cell-content">
+                                                {{ typeLabel(cert.type) }}
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div data-slot="table-cell-content">
+                                                <span
+                                                    class="block truncate"
+                                                    :title="domainText(cert)"
+                                                    >{{
+                                                        domainText(cert)
+                                                    }}</span
+                                                >
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div data-slot="table-cell-content">
+                                                {{
+                                                    formatDate(
+                                                        cert.create_at2 ??
+                                                            cert.create_at,
+                                                    )
+                                                }}
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div data-slot="table-cell-content">
+                                                {{
+                                                    formatDate(
+                                                        cert.expire_time2 ??
+                                                            cert.expire_time,
+                                                    )
+                                                }}
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div data-slot="table-cell-content">
+                                                <CheckCircle2
+                                                    v-if="isOn(cert.auto_renew)"
+                                                    class="size-4 text-emerald-500"
+                                                    aria-label="续签已开启"
+                                                /><XCircle
+                                                    v-else
+                                                    class="size-4 text-muted-foreground"
+                                                    aria-label="续签已关闭"
+                                                />
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div data-slot="table-cell-content">
+                                                <span
+                                                    class="cert-status"
+                                                    :data-tone="
+                                                        certStatus(cert).tone
+                                                    "
+                                                    :title="
+                                                        textValue(cert.task_ret)
+                                                    "
+                                                    ><i />{{
+                                                        certStatus(cert).text
+                                                    }}</span
+                                                >
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div data-slot="table-cell-content">
+                                                <div class="cert-actions">
+                                                    <Button
+                                                        variant="link"
+                                                        @click="
+                                                            openEditDialog(cert)
+                                                        "
+                                                        >管理</Button
+                                                    ><DropdownMenu
+                                                        ><DropdownMenuTrigger
+                                                            as-child
+                                                            ><Button
+                                                                variant="link"
+                                                                :disabled="busy"
+                                                                >更多<ChevronDown
+                                                                    class="size-4" /></Button></DropdownMenuTrigger
+                                                        ><DropdownMenuContent
+                                                            class="console-user-certificates"
+                                                            ><DropdownMenuItem
+                                                                @select="
+                                                                    runAction(
+                                                                        'reissue',
+                                                                        [
+                                                                            Number(
+                                                                                cert.id,
+                                                                            ),
+                                                                        ],
+                                                                    )
+                                                                "
+                                                                >重新申请</DropdownMenuItem
+                                                            ><DropdownMenuItem
+                                                                @select="
+                                                                    toggleCertEnabled(
+                                                                        cert,
+                                                                        false,
+                                                                    )
+                                                                "
+                                                                >禁用</DropdownMenuItem
+                                                            ><DropdownMenuItem
+                                                                @select="
+                                                                    toggleCertEnabled(
+                                                                        cert,
+                                                                        true,
+                                                                    )
+                                                                "
+                                                                >启用</DropdownMenuItem
+                                                            ><DropdownMenuItem
+                                                                @select="
+                                                                    openDeleteCert(
+                                                                        cert,
+                                                                    )
+                                                                "
+                                                                >删除</DropdownMenuItem
+                                                            ></DropdownMenuContent
+                                                        ></DropdownMenu
+                                                    >
+                                                </div>
                                             </div>
                                         </td>
                                     </tr>
                                     <tr v-if="!rows.length">
                                         <td colspan="10" class="empty">
-                                            暂无数据
+                                            <div data-slot="table-cell-content">
+                                                暂无数据
+                                            </div>
                                         </td>
                                     </tr></template
                                 >

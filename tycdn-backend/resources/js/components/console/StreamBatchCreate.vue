@@ -154,9 +154,21 @@ defineExpose({ show });
                     <table class="w-full text-sm">
                         <thead>
                             <tr>
-                                <th class="p-3 text-left">监听</th>
-                                <th class="p-3 text-left">源站</th>
-                                <th class="p-3 text-left">状态</th>
+                                <th class="text-left">
+                                    <div data-slot="table-cell-content">
+                                        监听
+                                    </div>
+                                </th>
+                                <th class="text-left">
+                                    <div data-slot="table-cell-content">
+                                        源站
+                                    </div>
+                                </th>
+                                <th class="text-left">
+                                    <div data-slot="table-cell-content">
+                                        状态
+                                    </div>
+                                </th>
                             </tr>
                         </thead>
                         <tbody>
@@ -165,24 +177,30 @@ defineExpose({ show });
                                 :key="index"
                                 class="border-t"
                             >
-                                <td class="p-3">
-                                    {{ row.protocol }}:{{ row.port }}
+                                <td class="">
+                                    <div data-slot="table-cell-content">
+                                        {{ row.protocol }}:{{ row.port }}
+                                    </div>
                                 </td>
-                                <td class="p-3">
-                                    {{ row.origin }}:{{ row.originPort }}
+                                <td class="">
+                                    <div data-slot="table-cell-content">
+                                        {{ row.origin }}:{{ row.originPort }}
+                                    </div>
                                 </td>
                                 <td
-                                    class="p-3"
+                                    class=""
                                     :class="row.error ? 'text-destructive' : ''"
                                 >
-                                    {{
-                                        row.error ??
-                                        {
-                                            pending: '待提交',
-                                            done: '已创建',
-                                            failed: '失败',
-                                        }[row.status]
-                                    }}
+                                    <div data-slot="table-cell-content">
+                                        {{
+                                            row.error ??
+                                            {
+                                                pending: '待提交',
+                                                done: '已创建',
+                                                failed: '失败',
+                                            }[row.status]
+                                        }}
+                                    </div>
                                 </td>
                             </tr>
                         </tbody>

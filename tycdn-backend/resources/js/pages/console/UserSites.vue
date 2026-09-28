@@ -1940,22 +1940,26 @@ async function exportSites() {
                         <thead>
                             <tr>
                                 <th>
-                                    <CheckboxField
-                                        aria-label="选择当前页"
-                                        :checked="allSelected"
-                                        :disabled="
-                                            loading ||
-                                            busy ||
-                                            !activeRows.length
-                                        "
-                                        @change="selectAll"
-                                    />
+                                    <div data-slot="table-cell-content">
+                                        <CheckboxField
+                                            aria-label="选择当前页"
+                                            :checked="allSelected"
+                                            :disabled="
+                                                loading ||
+                                                busy ||
+                                                !activeRows.length
+                                            "
+                                            @change="selectAll"
+                                        />
+                                    </div>
                                 </th>
                                 <th
                                     v-for="column in tableColumns"
                                     :key="column.key"
                                 >
-                                    {{ column.label }}
+                                    <div data-slot="table-cell-content">
+                                        {{ column.label }}
+                                    </div>
                                 </th>
                             </tr>
                         </thead>
@@ -1965,7 +1969,9 @@ async function exportSites() {
                                     :colspan="tableColumns.length + 1"
                                     class="empty-cell"
                                 >
-                                    <Spinner class="mx-auto" />
+                                    <div data-slot="table-cell-content">
+                                        <Spinner class="mx-auto" />
+                                    </div>
                                 </td>
                             </tr>
                             <template v-else
@@ -1974,150 +1980,173 @@ async function exportSites() {
                                     :key="textValue(row.id)"
                                 >
                                     <td>
-                                        <CheckboxField
-                                            :aria-label="`选择 ${row.id}`"
-                                            :checked="
-                                                activeTab === 'resolve'
-                                                    ? resolveSelected.has(
-                                                          Number(row.id),
-                                                      )
-                                                    : selected.includes(
-                                                          Number(row.id),
-                                                      )
-                                            "
-                                            :disabled="busy"
-                                            @change="selectRow(Number(row.id))"
-                                        />
+                                        <div data-slot="table-cell-content">
+                                            <CheckboxField
+                                                :aria-label="`选择 ${row.id}`"
+                                                :checked="
+                                                    activeTab === 'resolve'
+                                                        ? resolveSelected.has(
+                                                              Number(row.id),
+                                                          )
+                                                        : selected.includes(
+                                                              Number(row.id),
+                                                          )
+                                                "
+                                                :disabled="busy"
+                                                @change="
+                                                    selectRow(Number(row.id))
+                                                "
+                                            />
+                                        </div>
                                     </td>
                                     <td
                                         v-for="column in tableColumns"
                                         :key="column.key"
                                     >
-                                        <template
-                                            v-if="column.key === 'actions'"
-                                            ><div class="row-actions">
-                                                <Button
-                                                    variant="link"
-                                                    :disabled="busy"
-                                                    @click="editRow(row)"
-                                                    >{{
-                                                        activeTab === 'sites'
-                                                            ? '管理'
-                                                            : '编辑'
-                                                    }}</Button
-                                                >
-                                                <DropdownMenu
-                                                    v-if="activeTab === 'sites'"
-                                                    ><DropdownMenuTrigger
-                                                        as-child
-                                                        ><Button
-                                                            variant="link"
-                                                            :disabled="busy"
-                                                            >更多<ChevronDown
-                                                                class="size-4" /></Button></DropdownMenuTrigger
-                                                    ><DropdownMenuContent
-                                                        class="console-user-sites"
-                                                        ><DropdownMenuItem
-                                                            @select="
-                                                                toggleSiteEnabled(
-                                                                    row,
-                                                                    false,
-                                                                )
-                                                            "
-                                                            >禁用</DropdownMenuItem
-                                                        ><DropdownMenuItem
-                                                            @select="
-                                                                toggleSiteEnabled(
-                                                                    row,
-                                                                    true,
-                                                                )
-                                                            "
-                                                            >启用</DropdownMenuItem
-                                                        ><DropdownMenuItem
-                                                            @select="
-                                                                openDelete(
-                                                                    row,
-                                                                    `网站「${siteName(row)}」`,
-                                                                )
-                                                            "
-                                                            >删除</DropdownMenuItem
-                                                        ></DropdownMenuContent
-                                                    ></DropdownMenu
-                                                >
-                                                <Button
-                                                    v-else
-                                                    variant="link"
-                                                    :disabled="busy"
-                                                    @click="
-                                                        openDelete(
-                                                            row,
-                                                            recordName(row),
-                                                        )
-                                                    "
-                                                    >删除</Button
-                                                >
-                                            </div></template
-                                        >
-                                        <Button
-                                            v-else-if="
-                                                activeTab === 'sites' &&
-                                                column.key === 'domain'
-                                            "
-                                            variant="link"
-                                            class="domain-link"
-                                            @click="openSiteEdit(row)"
-                                            >{{ siteName(row) }}</Button
-                                        >
-                                        <template
-                                            v-else-if="column.key === 'https'"
-                                            ><CheckCircle2
-                                                v-if="hasHttps(row)"
-                                                class="status-icon text-emerald-500"
-                                                aria-label="HTTPS已启用" /><XCircle
-                                                v-else
-                                                class="status-icon text-muted-foreground"
-                                                aria-label="HTTPS未启用"
-                                        /></template>
-                                        <span
-                                            v-else-if="column.key === 'status'"
-                                            class="site-status"
-                                            :data-tone="siteStatus(row).tone"
-                                            ><i />{{
-                                                siteStatus(row).text
-                                            }}</span
-                                        >
-                                        <template
-                                            v-else-if="column.key === 'resolve'"
-                                            ><LoaderCircle
-                                                v-if="
-                                                    resolveCheckState(row) ===
-                                                    'checking'
-                                                "
-                                                class="status-icon animate-spin"
-                                                aria-label="检测中" /><CheckCircle2
+                                        <div data-slot="table-cell-content">
+                                            <template
+                                                v-if="column.key === 'actions'"
+                                                ><div class="row-actions">
+                                                    <Button
+                                                        variant="link"
+                                                        :disabled="busy"
+                                                        @click="editRow(row)"
+                                                        >{{
+                                                            activeTab ===
+                                                            'sites'
+                                                                ? '管理'
+                                                                : '编辑'
+                                                        }}</Button
+                                                    >
+                                                    <DropdownMenu
+                                                        v-if="
+                                                            activeTab ===
+                                                            'sites'
+                                                        "
+                                                        ><DropdownMenuTrigger
+                                                            as-child
+                                                            ><Button
+                                                                variant="link"
+                                                                :disabled="busy"
+                                                                >更多<ChevronDown
+                                                                    class="size-4" /></Button></DropdownMenuTrigger
+                                                        ><DropdownMenuContent
+                                                            class="console-user-sites"
+                                                            ><DropdownMenuItem
+                                                                @select="
+                                                                    toggleSiteEnabled(
+                                                                        row,
+                                                                        false,
+                                                                    )
+                                                                "
+                                                                >禁用</DropdownMenuItem
+                                                            ><DropdownMenuItem
+                                                                @select="
+                                                                    toggleSiteEnabled(
+                                                                        row,
+                                                                        true,
+                                                                    )
+                                                                "
+                                                                >启用</DropdownMenuItem
+                                                            ><DropdownMenuItem
+                                                                @select="
+                                                                    openDelete(
+                                                                        row,
+                                                                        `网站「${siteName(row)}」`,
+                                                                    )
+                                                                "
+                                                                >删除</DropdownMenuItem
+                                                            ></DropdownMenuContent
+                                                        ></DropdownMenu
+                                                    >
+                                                    <Button
+                                                        v-else
+                                                        variant="link"
+                                                        :disabled="busy"
+                                                        @click="
+                                                            openDelete(
+                                                                row,
+                                                                recordName(row),
+                                                            )
+                                                        "
+                                                        >删除</Button
+                                                    >
+                                                </div></template
+                                            >
+                                            <Button
                                                 v-else-if="
-                                                    resolveCheckState(row) ===
-                                                    'resolved'
+                                                    activeTab === 'sites' &&
+                                                    column.key === 'domain'
                                                 "
-                                                class="status-icon text-emerald-500"
-                                                aria-label="解析正确" /><XCircle
+                                                variant="link"
+                                                class="domain-link"
+                                                @click="openSiteEdit(row)"
+                                                >{{ siteName(row) }}</Button
+                                            >
+                                            <template
+                                                v-else-if="
+                                                    column.key === 'https'
+                                                "
+                                                ><CheckCircle2
+                                                    v-if="hasHttps(row)"
+                                                    class="status-icon text-emerald-500"
+                                                    aria-label="HTTPS已启用" /><XCircle
+                                                    v-else
+                                                    class="status-icon text-muted-foreground"
+                                                    aria-label="HTTPS未启用"
+                                            /></template>
+                                            <span
+                                                v-else-if="
+                                                    column.key === 'status'
+                                                "
+                                                class="site-status"
+                                                :data-tone="
+                                                    siteStatus(row).tone
+                                                "
+                                                ><i />{{
+                                                    siteStatus(row).text
+                                                }}</span
+                                            >
+                                            <template
+                                                v-else-if="
+                                                    column.key === 'resolve'
+                                                "
+                                                ><LoaderCircle
+                                                    v-if="
+                                                        resolveCheckState(
+                                                            row,
+                                                        ) === 'checking'
+                                                    "
+                                                    class="status-icon animate-spin"
+                                                    aria-label="检测中" /><CheckCircle2
+                                                    v-else-if="
+                                                        resolveCheckState(
+                                                            row,
+                                                        ) === 'resolved'
+                                                    "
+                                                    class="status-icon text-emerald-500"
+                                                    aria-label="解析正确" /><XCircle
+                                                    v-else
+                                                    class="status-icon text-red-500"
+                                                    :aria-label="
+                                                        resolveCheckState(
+                                                            row,
+                                                        ) === 'error'
+                                                            ? '检测失败'
+                                                            : '解析错误'
+                                                    "
+                                            /></template>
+                                            <span
                                                 v-else
-                                                class="status-icon text-red-500"
-                                                :aria-label="
-                                                    resolveCheckState(row) ===
-                                                    'error'
-                                                        ? '检测失败'
-                                                        : '解析错误'
+                                                class="cell-value"
+                                                :title="
+                                                    cellValue(row, column.key)
                                                 "
-                                        /></template>
-                                        <span
-                                            v-else
-                                            class="cell-value"
-                                            :title="cellValue(row, column.key)"
-                                            >{{
-                                                cellValue(row, column.key)
-                                            }}</span
-                                        >
+                                                >{{
+                                                    cellValue(row, column.key)
+                                                }}</span
+                                            >
+                                        </div>
                                     </td>
                                 </tr>
                                 <tr v-if="!activeRows.length">
@@ -2125,7 +2154,9 @@ async function exportSites() {
                                         class="empty-cell"
                                         :colspan="tableColumns.length + 1"
                                     >
-                                        暂无数据
+                                        <div data-slot="table-cell-content">
+                                            暂无数据
+                                        </div>
                                     </td>
                                 </tr></template
                             >

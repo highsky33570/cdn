@@ -862,32 +862,70 @@ async function saveEditor() {
                         <thead>
                             <tr>
                                 <th class="selection">
-                                    <CheckboxField
-                                        aria-label="选择本页全部"
-                                        :checked="allSelected"
-                                        :disabled="
-                                            loading ||
-                                            busy ||
-                                            !visibleRows.length
-                                        "
-                                        @change="toggleAll"
-                                    />
+                                    <div data-slot="table-cell-content">
+                                        <CheckboxField
+                                            aria-label="选择本页全部"
+                                            :checked="allSelected"
+                                            :disabled="
+                                                loading ||
+                                                busy ||
+                                                !visibleRows.length
+                                            "
+                                            @change="toggleAll"
+                                        />
+                                    </div>
                                 </th>
-                                <th>ID</th>
-                                <th>用户</th>
-                                <th>证书信息</th>
-                                <th>类型</th>
-                                <th>创建时间</th>
-                                <th>到期时间</th>
-                                <th>自动续签</th>
-                                <th>状态</th>
-                                <th>操作</th>
+                                <th>
+                                    <div data-slot="table-cell-content">ID</div>
+                                </th>
+                                <th>
+                                    <div data-slot="table-cell-content">
+                                        用户
+                                    </div>
+                                </th>
+                                <th>
+                                    <div data-slot="table-cell-content">
+                                        证书信息
+                                    </div>
+                                </th>
+                                <th>
+                                    <div data-slot="table-cell-content">
+                                        类型
+                                    </div>
+                                </th>
+                                <th>
+                                    <div data-slot="table-cell-content">
+                                        创建时间
+                                    </div>
+                                </th>
+                                <th>
+                                    <div data-slot="table-cell-content">
+                                        到期时间
+                                    </div>
+                                </th>
+                                <th>
+                                    <div data-slot="table-cell-content">
+                                        自动续签
+                                    </div>
+                                </th>
+                                <th>
+                                    <div data-slot="table-cell-content">
+                                        状态
+                                    </div>
+                                </th>
+                                <th>
+                                    <div data-slot="table-cell-content">
+                                        操作
+                                    </div>
+                                </th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr v-if="loading || !visibleRows.length">
                                 <td colspan="10" class="empty">
-                                    {{ loading ? '加载中…' : '暂无数据' }}
+                                    <div data-slot="table-cell-content">
+                                        {{ loading ? '加载中…' : '暂无数据' }}
+                                    </div>
                                 </td>
                             </tr>
                             <tr
@@ -895,210 +933,253 @@ async function saveEditor() {
                                 :key="Number(row.id)"
                             >
                                 <td class="selection">
-                                    <CheckboxField
-                                        :aria-label="`选择 ${row.id}`"
-                                        :checked="
-                                            selected.includes(Number(row.id))
-                                        "
-                                        :disabled="busy"
-                                        @change="toggle(Number(row.id))"
-                                    />
+                                    <div data-slot="table-cell-content">
+                                        <CheckboxField
+                                            :aria-label="`选择 ${row.id}`"
+                                            :checked="
+                                                selected.includes(
+                                                    Number(row.id),
+                                                )
+                                            "
+                                            :disabled="busy"
+                                            @change="toggle(Number(row.id))"
+                                        />
+                                    </div>
                                 </td>
-                                <td>{{ row.id }}</td>
                                 <td>
-                                    <strong>{{
-                                        row.username ?? row.user_name ?? '—'
-                                    }}</strong>
-                                    <div class="subline">
-                                        ID: {{ row.uid ?? '—' }}
+                                    <div data-slot="table-cell-content">
+                                        {{ row.id }}
+                                    </div>
+                                </td>
+                                <td>
+                                    <div data-slot="table-cell-content">
+                                        <strong>{{
+                                            row.username ?? row.user_name ?? '—'
+                                        }}</strong>
+                                        <div class="subline">
+                                            ID: {{ row.uid ?? '—' }}
+                                        </div>
                                     </div>
                                 </td>
                                 <td class="cert-info">
-                                    <div class="copy-line">
-                                        <Button
-                                            variant="link"
-                                            size="inline"
-                                            type="button"
-                                            data-slot="console-link"
-                                            class="link cert-name"
-                                            :title="String(row.name ?? '')"
-                                            @click="openEditor(row)"
-                                        >
-                                            {{ row.name || '—' }}</Button
-                                        ><Button
-                                            variant="ghost"
-                                            size="icon-sm"
-                                            type="button"
-                                            class="copy"
-                                            :aria-label="`复制证书名称 ${row.id}`"
-                                            @click="copy(row.name)"
-                                        >
-                                            <Copy />
-                                        </Button>
-                                    </div>
-                                    <div class="copy-line subline">
-                                        <span
-                                            class="truncate"
-                                            :title="String(row.domain ?? '')"
-                                            >域名: {{ row.domain || '—' }}</span
-                                        ><Button
-                                            variant="ghost"
-                                            size="icon-sm"
-                                            type="button"
-                                            class="copy"
-                                            :aria-label="`复制域名 ${row.id}`"
-                                            @click="copy(row.domain)"
-                                        >
-                                            <Copy />
-                                        </Button>
-                                    </div>
-                                </td>
-                                <td>
-                                    {{
-                                        certificateTypes[String(row.type)] ??
-                                        row.type
-                                    }}
-                                </td>
-                                <td>
-                                    {{
-                                        row.create_at2 ??
-                                        String(row.create_at ?? '')
-                                            .replace('T', ' ')
-                                            .slice(0, 19)
-                                    }}
-                                </td>
-                                <td>
-                                    {{
-                                        row.expire_time2 ??
-                                        row.expire_time ??
-                                        '—'
-                                    }}
-                                    <div
-                                        class="subline"
-                                        :class="
-                                            certificateDays(row, now) !==
-                                                null &&
-                                            Number(certificateDays(row, now)) <=
-                                                30
-                                                ? 'text-orange-500'
-                                                : ''
-                                        "
-                                    >
-                                        {{ certificateExpiryHint(row, now) }}
+                                    <div data-slot="table-cell-content">
+                                        <div class="copy-line">
+                                            <Button
+                                                variant="link"
+                                                size="inline"
+                                                type="button"
+                                                data-slot="console-link"
+                                                class="link cert-name"
+                                                :title="String(row.name ?? '')"
+                                                @click="openEditor(row)"
+                                            >
+                                                {{ row.name || '—' }}</Button
+                                            ><Button
+                                                variant="ghost"
+                                                size="icon-sm"
+                                                type="button"
+                                                class="copy"
+                                                :aria-label="`复制证书名称 ${row.id}`"
+                                                @click="copy(row.name)"
+                                            >
+                                                <Copy />
+                                            </Button>
+                                        </div>
+                                        <div class="copy-line subline">
+                                            <span
+                                                class="truncate"
+                                                :title="
+                                                    String(row.domain ?? '')
+                                                "
+                                                >域名:
+                                                {{ row.domain || '—' }}</span
+                                            ><Button
+                                                variant="ghost"
+                                                size="icon-sm"
+                                                type="button"
+                                                class="copy"
+                                                :aria-label="`复制域名 ${row.id}`"
+                                                @click="copy(row.domain)"
+                                            >
+                                                <Copy />
+                                            </Button>
+                                        </div>
                                     </div>
                                 </td>
                                 <td>
-                                    <span
-                                        class="pill"
-                                        :class="
-                                            Number(row.auto_renew) === 1
-                                                ? 'success'
-                                                : 'muted'
-                                        "
-                                        >{{
-                                            Number(row.auto_renew) === 1
-                                                ? '● 已开启'
-                                                : '未开启'
-                                        }}</span
-                                    >
+                                    <div data-slot="table-cell-content">
+                                        {{
+                                            certificateTypes[
+                                                String(row.type)
+                                            ] ?? row.type
+                                        }}
+                                    </div>
                                 </td>
                                 <td>
-                                    <span
-                                        class="pill"
-                                        :class="certificateStatus(row).tone"
-                                        :title="certificateStatus(row).tip"
-                                        >●
-                                        {{ certificateStatus(row).text }}</span
-                                    >
+                                    <div data-slot="table-cell-content">
+                                        {{
+                                            row.create_at2 ??
+                                            String(row.create_at ?? '')
+                                                .replace('T', ' ')
+                                                .slice(0, 19)
+                                        }}
+                                    </div>
                                 </td>
                                 <td>
-                                    <div class="actions">
-                                        <Button
-                                            variant="link"
-                                            size="inline"
-                                            type="button"
-                                            data-slot="console-link"
-                                            class="link"
-                                            @click="openEditor(row)"
-                                        >
-                                            管理</Button
-                                        ><Button
-                                            variant="link"
-                                            size="inline"
-                                            type="button"
-                                            data-slot="console-link"
-                                            v-if="row.type !== 'custom'"
-                                            class="link"
-                                            :disabled="busy"
-                                            @click="
-                                                batch('reissue', [
-                                                    Number(row.id),
-                                                ])
+                                    <div data-slot="table-cell-content">
+                                        {{
+                                            row.expire_time2 ??
+                                            row.expire_time ??
+                                            '—'
+                                        }}
+                                        <div
+                                            class="subline"
+                                            :class="
+                                                certificateDays(row, now) !==
+                                                    null &&
+                                                Number(
+                                                    certificateDays(row, now),
+                                                ) <= 30
+                                                    ? 'text-orange-500'
+                                                    : ''
                                             "
                                         >
-                                            重新申请</Button
-                                        ><DropdownMenu
-                                            ><DropdownMenuTrigger as-child
-                                                ><Button
-                                                    variant="link"
-                                                    size="inline"
-                                                    type="button"
-                                                    data-slot="console-link"
-                                                    class="link"
-                                                    :aria-label="`更多操作 ${row.id}`"
-                                                >
-                                                    更多
-                                                    <ChevronDown /></Button></DropdownMenuTrigger
-                                            ><DropdownMenuContent
-                                                class="console-admin-certificates"
-                                                align="end"
-                                                ><DropdownMenuItem
-                                                    :disabled="busy"
-                                                    @select="
-                                                        batch(
+                                            {{
+                                                certificateExpiryHint(row, now)
+                                            }}
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div data-slot="table-cell-content">
+                                        <span
+                                            class="pill"
+                                            :class="
+                                                Number(row.auto_renew) === 1
+                                                    ? 'success'
+                                                    : 'muted'
+                                            "
+                                            >{{
+                                                Number(row.auto_renew) === 1
+                                                    ? '● 已开启'
+                                                    : '未开启'
+                                            }}</span
+                                        >
+                                    </div>
+                                </td>
+                                <td>
+                                    <div data-slot="table-cell-content">
+                                        <span
+                                            class="pill"
+                                            :class="certificateStatus(row).tone"
+                                            :title="certificateStatus(row).tip"
+                                            >●
+                                            {{
+                                                certificateStatus(row).text
+                                            }}</span
+                                        >
+                                    </div>
+                                </td>
+                                <td>
+                                    <div data-slot="table-cell-content">
+                                        <div class="actions">
+                                            <Button
+                                                variant="link"
+                                                size="inline"
+                                                type="button"
+                                                data-slot="console-link"
+                                                class="link"
+                                                @click="openEditor(row)"
+                                            >
+                                                管理</Button
+                                            ><Button
+                                                variant="link"
+                                                size="inline"
+                                                type="button"
+                                                data-slot="console-link"
+                                                v-if="row.type !== 'custom'"
+                                                class="link"
+                                                :disabled="busy"
+                                                @click="
+                                                    batch('reissue', [
+                                                        Number(row.id),
+                                                    ])
+                                                "
+                                            >
+                                                重新申请</Button
+                                            ><DropdownMenu
+                                                ><DropdownMenuTrigger as-child
+                                                    ><Button
+                                                        variant="link"
+                                                        size="inline"
+                                                        type="button"
+                                                        data-slot="console-link"
+                                                        class="link"
+                                                        :aria-label="`更多操作 ${row.id}`"
+                                                    >
+                                                        更多
+                                                        <ChevronDown /></Button></DropdownMenuTrigger
+                                                ><DropdownMenuContent
+                                                    class="console-admin-certificates"
+                                                    align="end"
+                                                    ><DropdownMenuItem
+                                                        :disabled="busy"
+                                                        @select="
+                                                            batch(
+                                                                Number(
+                                                                    row.auto_renew,
+                                                                ) === 1
+                                                                    ? 'noRenew'
+                                                                    : 'renew',
+                                                                [
+                                                                    Number(
+                                                                        row.id,
+                                                                    ),
+                                                                ],
+                                                            )
+                                                        "
+                                                        >{{
                                                             Number(
                                                                 row.auto_renew,
                                                             ) === 1
-                                                                ? 'noRenew'
-                                                                : 'renew',
-                                                            [Number(row.id)],
-                                                        )
-                                                    "
-                                                    >{{
-                                                        Number(
-                                                            row.auto_renew,
-                                                        ) === 1
-                                                            ? '关闭自动续签'
-                                                            : '开启自动续签'
-                                                    }}</DropdownMenuItem
-                                                ><DropdownMenuItem
-                                                    :disabled="busy"
-                                                    @select="
-                                                        batch(
+                                                                ? '关闭自动续签'
+                                                                : '开启自动续签'
+                                                        }}</DropdownMenuItem
+                                                    ><DropdownMenuItem
+                                                        :disabled="busy"
+                                                        @select="
+                                                            batch(
+                                                                Number(
+                                                                    row.enable,
+                                                                ) === 1
+                                                                    ? 'disable'
+                                                                    : 'enable',
+                                                                [
+                                                                    Number(
+                                                                        row.id,
+                                                                    ),
+                                                                ],
+                                                            )
+                                                        "
+                                                        >{{
                                                             Number(
                                                                 row.enable,
                                                             ) === 1
-                                                                ? 'disable'
-                                                                : 'enable',
-                                                            [Number(row.id)],
-                                                        )
-                                                    "
-                                                    >{{
-                                                        Number(row.enable) === 1
-                                                            ? '禁用'
-                                                            : '启用'
-                                                    }}</DropdownMenuItem
-                                                ><DropdownMenuItem
-                                                    :disabled="busy"
-                                                    @select="
-                                                        askDelete([
-                                                            Number(row.id),
-                                                        ])
-                                                    "
-                                                    >删除</DropdownMenuItem
-                                                ></DropdownMenuContent
-                                            ></DropdownMenu
-                                        >
+                                                                ? '禁用'
+                                                                : '启用'
+                                                        }}</DropdownMenuItem
+                                                    ><DropdownMenuItem
+                                                        :disabled="busy"
+                                                        @select="
+                                                            askDelete([
+                                                                Number(row.id),
+                                                            ])
+                                                        "
+                                                        >删除</DropdownMenuItem
+                                                    ></DropdownMenuContent
+                                                ></DropdownMenu
+                                            >
+                                        </div>
                                     </div>
                                 </td>
                             </tr>

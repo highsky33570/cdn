@@ -403,23 +403,35 @@ function nullableText(value: string): string | null {
                         </colgroup>
                         <thead class="border-b text-muted-foreground">
                             <tr>
-                                <th class="px-4 py-3 text-left font-medium">
-                                    名称
+                                <th class="text-left font-medium">
+                                    <div data-slot="table-cell-content">
+                                        名称
+                                    </div>
                                 </th>
-                                <th class="px-4 py-3 text-left font-medium">
-                                    服务商
+                                <th class="text-left font-medium">
+                                    <div data-slot="table-cell-content">
+                                        服务商
+                                    </div>
                                 </th>
-                                <th class="px-4 py-3 text-left font-medium">
-                                    凭据字段
+                                <th class="text-left font-medium">
+                                    <div data-slot="table-cell-content">
+                                        凭据字段
+                                    </div>
                                 </th>
-                                <th class="px-4 py-3 text-center font-medium">
-                                    状态
+                                <th class="text-center font-medium">
+                                    <div data-slot="table-cell-content">
+                                        状态
+                                    </div>
                                 </th>
-                                <th class="px-4 py-3 text-left font-medium">
-                                    更新时间
+                                <th class="text-left font-medium">
+                                    <div data-slot="table-cell-content">
+                                        更新时间
+                                    </div>
                                 </th>
-                                <th class="px-4 py-3 text-right font-medium">
-                                    操作
+                                <th class="text-right font-medium">
+                                    <div data-slot="table-cell-content">
+                                        操作
+                                    </div>
                                 </th>
                             </tr>
                         </thead>
@@ -428,8 +440,10 @@ function nullableText(value: string): string | null {
                                 v-if="loading"
                                 class="border-b text-muted-foreground"
                             >
-                                <td class="px-4 py-12 text-center" colspan="6">
-                                    <Spinner class="mx-auto" />
+                                <td class="text-center" colspan="6">
+                                    <div data-slot="table-cell-content">
+                                        <Spinner class="mx-auto" />
+                                    </div>
                                 </td>
                             </tr>
                             <tr
@@ -437,58 +451,80 @@ function nullableText(value: string): string | null {
                                 :key="textValue(record.id)"
                                 class="border-b"
                             >
-                                <td class="px-4 py-3">
-                                    <div class="font-medium">
-                                        {{ recordName(record) }}
-                                    </div>
-                                    <div class="text-xs text-muted-foreground">
-                                        #{{ textValue(record.id) || '-' }}
-                                    </div>
-                                </td>
-                                <td class="px-4 py-3">
-                                    {{ textValue(record.type) || '-' }}
-                                </td>
-                                <td class="px-4 py-3">
-                                    <div class="truncate text-muted-foreground">
-                                        {{ maskedAuth(record) }}
+                                <td class="">
+                                    <div data-slot="table-cell-content">
+                                        <div class="font-medium">
+                                            {{ recordName(record) }}
+                                        </div>
+                                        <div
+                                            class="text-xs text-muted-foreground"
+                                        >
+                                            #{{ textValue(record.id) || '-' }}
+                                        </div>
                                     </div>
                                 </td>
-                                <td class="px-4 py-3 text-center">
-                                    <Badge variant="outline">
+                                <td class="">
+                                    <div data-slot="table-cell-content">
+                                        {{ textValue(record.type) || '-' }}
+                                    </div>
+                                </td>
+                                <td class="">
+                                    <div data-slot="table-cell-content">
+                                        <div
+                                            class="truncate text-muted-foreground"
+                                        >
+                                            {{ maskedAuth(record) }}
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="text-center">
+                                    <div data-slot="table-cell-content">
+                                        <Badge variant="outline">
+                                            {{
+                                                record.enable === 0 ||
+                                                record.enable === false
+                                                    ? '禁用'
+                                                    : '可用'
+                                            }}
+                                        </Badge>
+                                    </div>
+                                </td>
+                                <td class="text-muted-foreground">
+                                    <div data-slot="table-cell-content">
                                         {{
-                                            record.enable === 0 ||
-                                            record.enable === false
-                                                ? '禁用'
-                                                : '可用'
+                                            formatDate(
+                                                record.update_at2 ??
+                                                    record.created_at,
+                                            )
                                         }}
-                                    </Badge>
+                                    </div>
                                 </td>
-                                <td class="px-4 py-3 text-muted-foreground">
-                                    {{
-                                        formatDate(
-                                            record.update_at2 ??
-                                                record.created_at,
-                                        )
-                                    }}
-                                </td>
-                                <td class="px-4 py-3">
-                                    <div class="flex justify-end gap-1.5">
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            @click="openEditDialog(record)"
-                                        >
-                                            <Pencil data-icon="inline-start" />
-                                            编辑
-                                        </Button>
-                                        <Button
-                                            variant="destructive"
-                                            size="sm"
-                                            @click="openDeleteRecord(record)"
-                                        >
-                                            <Trash2 data-icon="inline-start" />
-                                            删除
-                                        </Button>
+                                <td class="">
+                                    <div data-slot="table-cell-content">
+                                        <div class="flex justify-end gap-1.5">
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                @click="openEditDialog(record)"
+                                            >
+                                                <Pencil
+                                                    data-icon="inline-start"
+                                                />
+                                                编辑
+                                            </Button>
+                                            <Button
+                                                variant="destructive"
+                                                size="sm"
+                                                @click="
+                                                    openDeleteRecord(record)
+                                                "
+                                            >
+                                                <Trash2
+                                                    data-icon="inline-start"
+                                                />
+                                                删除
+                                            </Button>
+                                        </div>
                                     </div>
                                 </td>
                             </tr>
@@ -496,10 +532,12 @@ function nullableText(value: string): string | null {
                                 v-if="!loading && displayedRecords.length === 0"
                             >
                                 <td
-                                    class="px-6 py-16 text-center text-muted-foreground"
+                                    class="text-center text-muted-foreground"
                                     colspan="6"
                                 >
-                                    暂无 DNS API
+                                    <div data-slot="table-cell-content">
+                                        暂无 DNS API
+                                    </div>
                                 </td>
                             </tr>
                         </tbody>

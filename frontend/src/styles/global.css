@@ -1,7 +1,8 @@
-@import './shell.css';
-@import './landing.css';
-@import './catalog.css';
-@import './auth.css';
+@import "../../../shared/table-layout.css";
+@import "./shell.css";
+@import "./landing.css";
+@import "./catalog.css";
+@import "./auth.css";
 
 /* Shared semantic palette. Every page follows the explicit theme selection. */
 :root {
@@ -52,7 +53,7 @@
   color-scheme: dark;
 }
 
-:root[data-theme='light'] {
+:root[data-theme="light"] {
   --bg: #f8fafc;
   --bg-grad-1: #f8fafc;
   --bg-grad-2: #f1f5f9;
@@ -110,7 +111,7 @@ html {
 body {
   background: var(--bg);
   color: var(--text);
-  font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
   font-size: 14px;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
@@ -178,7 +179,7 @@ a {
 
 /* Bridge Arco's custom theme to the same palette, including teleported UI. */
 html body,
-html body[arco-theme='dark'] {
+html body[arco-theme="dark"] {
   --color-bg-1: var(--bg);
   --color-bg-2: var(--panel);
   --color-bg-3: var(--panel);

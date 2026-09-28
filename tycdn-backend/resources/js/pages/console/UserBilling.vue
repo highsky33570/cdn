@@ -1091,94 +1091,132 @@ function trafficPackMetric(record: CdnflyRecord): string {
                         </colgroup>
                         <thead class="border-b text-muted-foreground">
                             <tr v-if="props.view === 'subscriptions'">
-                                <th class="px-4 py-3 text-left font-medium">
-                                    ID
+                                <th class="text-left font-medium">
+                                    <div data-slot="table-cell-content">ID</div>
                                 </th>
-                                <th class="px-4 py-3 text-left font-medium">
-                                    套餐名称
+                                <th class="text-left font-medium">
+                                    <div data-slot="table-cell-content">
+                                        套餐名称
+                                    </div>
                                 </th>
-                                <th class="px-4 py-3 text-left font-medium">
-                                    购买时间
+                                <th class="text-left font-medium">
+                                    <div data-slot="table-cell-content">
+                                        购买时间
+                                    </div>
                                 </th>
-                                <th class="px-4 py-3 text-left font-medium">
-                                    到期时间
+                                <th class="text-left font-medium">
+                                    <div data-slot="table-cell-content">
+                                        到期时间
+                                    </div>
                                 </th>
-                                <th class="px-4 py-3 text-left font-medium">
-                                    已用 / 总流量
+                                <th class="text-left font-medium">
+                                    <div data-slot="table-cell-content">
+                                        已用 / 总流量
+                                    </div>
                                 </th>
-                                <th class="px-4 py-3 text-left font-medium">
-                                    状态
+                                <th class="text-left font-medium">
+                                    <div data-slot="table-cell-content">
+                                        状态
+                                    </div>
                                 </th>
-                                <th class="px-4 py-3 text-right font-medium">
-                                    操作
+                                <th class="text-right font-medium">
+                                    <div data-slot="table-cell-content">
+                                        操作
+                                    </div>
                                 </th>
                             </tr>
                             <tr v-else-if="props.view === 'usage'">
-                                <th class="px-4 py-3 text-left font-medium">
-                                    套餐
+                                <th class="text-left font-medium">
+                                    <div data-slot="table-cell-content">
+                                        套餐
+                                    </div>
                                 </th>
-                                <th class="px-4 py-3 text-left font-medium">
-                                    流量
+                                <th class="text-left font-medium">
+                                    <div data-slot="table-cell-content">
+                                        流量
+                                    </div>
                                 </th>
-                                <th class="px-4 py-3 text-left font-medium">
-                                    带宽
+                                <th class="text-left font-medium">
+                                    <div data-slot="table-cell-content">
+                                        带宽
+                                    </div>
                                 </th>
-                                <th class="px-4 py-3 text-left font-medium">
-                                    到期时间
+                                <th class="text-left font-medium">
+                                    <div data-slot="table-cell-content">
+                                        到期时间
+                                    </div>
                                 </th>
-                                <th class="px-4 py-3 text-left font-medium">
-                                    状态
+                                <th class="text-left font-medium">
+                                    <div data-slot="table-cell-content">
+                                        状态
+                                    </div>
                                 </th>
-                                <th class="px-4 py-3 text-right font-medium">
-                                    操作
+                                <th class="text-right font-medium">
+                                    <div data-slot="table-cell-content">
+                                        操作
+                                    </div>
                                 </th>
                             </tr>
                             <tr v-else>
-                                <th class="px-4 py-3 text-left font-medium">
-                                    {{
-                                        props.view === 'traffic-packs'
-                                            ? '流量包'
-                                            : '商品'
-                                    }}
+                                <th class="text-left font-medium">
+                                    <div data-slot="table-cell-content">
+                                        {{
+                                            props.view === 'traffic-packs'
+                                                ? '流量包'
+                                                : '商品'
+                                        }}
+                                    </div>
                                 </th>
-                                <th class="px-4 py-3 text-left font-medium">
-                                    {{
-                                        props.view === 'traffic-packs'
-                                            ? '价格'
-                                            : '月付'
-                                    }}
+                                <th class="text-left font-medium">
+                                    <div data-slot="table-cell-content">
+                                        {{
+                                            props.view === 'traffic-packs'
+                                                ? '价格'
+                                                : '月付'
+                                        }}
+                                    </div>
                                 </th>
-                                <th class="px-4 py-3 text-left font-medium">
-                                    {{
-                                        props.view === 'traffic-packs'
-                                            ? '流量'
-                                            : '季付 / 年付'
-                                    }}
+                                <th class="text-left font-medium">
+                                    <div data-slot="table-cell-content">
+                                        {{
+                                            props.view === 'traffic-packs'
+                                                ? '流量'
+                                                : '季付 / 年付'
+                                        }}
+                                    </div>
                                 </th>
-                                <th class="px-4 py-3 text-left font-medium">
-                                    {{
-                                        props.view === 'traffic-packs'
-                                            ? '分组'
-                                            : '说明'
-                                    }}
+                                <th class="text-left font-medium">
+                                    <div data-slot="table-cell-content">
+                                        {{
+                                            props.view === 'traffic-packs'
+                                                ? '分组'
+                                                : '说明'
+                                        }}
+                                    </div>
                                 </th>
-                                <th class="px-4 py-3 text-left font-medium">
-                                    状态
+                                <th class="text-left font-medium">
+                                    <div data-slot="table-cell-content">
+                                        状态
+                                    </div>
                                 </th>
-                                <th class="px-4 py-3 text-right font-medium">
-                                    操作
+                                <th class="text-right font-medium">
+                                    <div data-slot="table-cell-content">
+                                        操作
+                                    </div>
                                 </th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr v-if="loading">
                                 <td
-                                    class="px-6 py-16 text-center"
+                                    class="text-center"
                                     :colspan="
                                         props.view === 'subscriptions' ? 7 : 6
                                     "
                                 >
-                                    <Spinner class="mx-auto" />
+                                    <div data-slot="table-cell-content">
+                                        <Spinner class="mx-auto" />
+                                    </div>
                                 </td>
                             </tr>
                             <template
@@ -1189,94 +1227,118 @@ function trafficPackMetric(record: CdnflyRecord): string {
                                     :key="service.id"
                                     class="border-b"
                                 >
-                                    <td class="px-4 py-3 text-muted-foreground">
-                                        {{
-                                            service.cdnfly_service_id ??
-                                            service.id
-                                        }}
-                                    </td>
-                                    <td class="px-4 py-3">
-                                        <div class="truncate font-medium">
+                                    <td class="text-muted-foreground">
+                                        <div data-slot="table-cell-content">
                                             {{
-                                                service.product_name ??
-                                                service.service_name ??
-                                                '-'
+                                                service.cdnfly_service_id ??
+                                                service.id
                                             }}
                                         </div>
                                     </td>
-                                    <td class="px-4 py-3 text-muted-foreground">
-                                        {{ formatDate(service.opened_at) }}
-                                    </td>
-                                    <td class="px-4 py-3 text-muted-foreground">
-                                        {{ formatDate(service.expired_at) }}
-                                    </td>
-                                    <td class="px-4 py-3 text-muted-foreground">
-                                        {{ subscriptionTrafficText(service) }}
-                                    </td>
-                                    <td class="px-4 py-3">
-                                        <div class="flex items-center gap-2">
-                                            <span
-                                                class="size-2 rounded-full"
-                                                :class="
-                                                    subscriptionIsActive(
-                                                        service,
-                                                    )
-                                                        ? 'bg-emerald-500'
-                                                        : 'bg-muted-foreground'
-                                                "
-                                            />
-                                            <span>{{
-                                                subscriptionStatusText(service)
-                                            }}</span>
+                                    <td class="">
+                                        <div data-slot="table-cell-content">
+                                            <div class="truncate font-medium">
+                                                {{
+                                                    service.product_name ??
+                                                    service.service_name ??
+                                                    '-'
+                                                }}
+                                            </div>
                                         </div>
                                     </td>
-                                    <td class="px-4 py-3">
-                                        <div
-                                            class="flex items-center justify-end gap-2 whitespace-nowrap"
-                                        >
-                                            <Button
-                                                v-if="service.source_package"
-                                                variant="ghost"
-                                                size="sm"
-                                                class="h-auto px-0 text-primary hover:bg-transparent hover:text-primary/80"
-                                                @click="
-                                                    openSubscriptionDetails(
-                                                        service,
-                                                    )
-                                                "
+                                    <td class="text-muted-foreground">
+                                        <div data-slot="table-cell-content">
+                                            {{ formatDate(service.opened_at) }}
+                                        </div>
+                                    </td>
+                                    <td class="text-muted-foreground">
+                                        <div data-slot="table-cell-content">
+                                            {{ formatDate(service.expired_at) }}
+                                        </div>
+                                    </td>
+                                    <td class="text-muted-foreground">
+                                        <div data-slot="table-cell-content">
+                                            {{
+                                                subscriptionTrafficText(service)
+                                            }}
+                                        </div>
+                                    </td>
+                                    <td class="">
+                                        <div data-slot="table-cell-content">
+                                            <div
+                                                class="flex items-center gap-2"
                                             >
-                                                详情
-                                            </Button>
-                                            <Button
-                                                v-if="service.product_id"
-                                                variant="ghost"
-                                                size="sm"
-                                                class="h-auto px-0 text-primary hover:bg-transparent hover:text-primary/80"
-                                                @click="
-                                                    openRenewDialog(service)
-                                                "
-                                            >
-                                                续费
-                                            </Button>
-                                            <Button
-                                                v-if="
-                                                    service.cdnfly_service_id &&
-                                                    subscriptionIsActive(
-                                                        service,
-                                                    )
-                                                "
-                                                variant="ghost"
-                                                size="sm"
-                                                class="h-auto px-0 text-primary hover:bg-transparent hover:text-primary/80"
-                                                @click="
-                                                    openUpgradeDialog(service)
-                                                "
-                                            >
-                                                更多
-                                                <ChevronDown
-                                                    data-icon="inline-end"
+                                                <span
+                                                    class="size-2 rounded-full"
+                                                    :class="
+                                                        subscriptionIsActive(
+                                                            service,
+                                                        )
+                                                            ? 'bg-emerald-500'
+                                                            : 'bg-muted-foreground'
+                                                    "
                                                 />
-                                            </Button>
+                                                <span>{{
+                                                    subscriptionStatusText(
+                                                        service,
+                                                    )
+                                                }}</span>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="">
+                                        <div data-slot="table-cell-content">
+                                            <div
+                                                class="flex items-center justify-end gap-2 whitespace-nowrap"
+                                            >
+                                                <Button
+                                                    v-if="
+                                                        service.source_package
+                                                    "
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    class="h-auto px-0 text-primary hover:bg-transparent hover:text-primary/80"
+                                                    @click="
+                                                        openSubscriptionDetails(
+                                                            service,
+                                                        )
+                                                    "
+                                                >
+                                                    详情
+                                                </Button>
+                                                <Button
+                                                    v-if="service.product_id"
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    class="h-auto px-0 text-primary hover:bg-transparent hover:text-primary/80"
+                                                    @click="
+                                                        openRenewDialog(service)
+                                                    "
+                                                >
+                                                    续费
+                                                </Button>
+                                                <Button
+                                                    v-if="
+                                                        service.cdnfly_service_id &&
+                                                        subscriptionIsActive(
+                                                            service,
+                                                        )
+                                                    "
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    class="h-auto px-0 text-primary hover:bg-transparent hover:text-primary/80"
+                                                    @click="
+                                                        openUpgradeDialog(
+                                                            service,
+                                                        )
+                                                    "
+                                                >
+                                                    更多
+                                                    <ChevronDown
+                                                        data-icon="inline-end"
+                                                    />
+                                                </Button>
+                                            </div>
                                         </div>
                                     </td>
                                 </tr>
@@ -1287,46 +1349,62 @@ function trafficPackMetric(record: CdnflyRecord): string {
                                     :key="product.id"
                                     class="border-b"
                                 >
-                                    <td class="px-4 py-3">
-                                        <div class="truncate font-medium">
-                                            {{ product.name }}
-                                        </div>
-                                        <div
-                                            class="text-xs text-muted-foreground"
-                                        >
-                                            #{{ product.id }} /
-                                            {{ product.slug ?? '-' }}
-                                        </div>
-                                    </td>
-                                    <td class="px-4 py-3">
-                                        {{ productMonthlyPrice(product) }}
-                                    </td>
-                                    <td class="px-4 py-3">
-                                        {{ productRenewalPrice(product) }}
-                                    </td>
-                                    <td class="px-4 py-3">
-                                        <div
-                                            class="line-clamp-2 text-muted-foreground"
-                                        >
-                                            {{ productDescription(product) }}
+                                    <td class="">
+                                        <div data-slot="table-cell-content">
+                                            <div class="truncate font-medium">
+                                                {{ product.name }}
+                                            </div>
+                                            <div
+                                                class="text-xs text-muted-foreground"
+                                            >
+                                                #{{ product.id }} /
+                                                {{ product.slug ?? '-' }}
+                                            </div>
                                         </div>
                                     </td>
-                                    <td class="px-4 py-3">
-                                        <Badge variant="secondary"
-                                            >可购买</Badge
-                                        >
+                                    <td class="">
+                                        <div data-slot="table-cell-content">
+                                            {{ productMonthlyPrice(product) }}
+                                        </div>
                                     </td>
-                                    <td class="px-4 py-3 text-right">
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            @click="openPurchaseDialog(product)"
-                                        >
-                                            <ShoppingCart
-                                                data-icon="inline-start"
-                                            />
-                                            购买
-                                        </Button>
+                                    <td class="">
+                                        <div data-slot="table-cell-content">
+                                            {{ productRenewalPrice(product) }}
+                                        </div>
+                                    </td>
+                                    <td class="">
+                                        <div data-slot="table-cell-content">
+                                            <div
+                                                class="line-clamp-2 text-muted-foreground"
+                                            >
+                                                {{
+                                                    productDescription(product)
+                                                }}
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="">
+                                        <div data-slot="table-cell-content">
+                                            <Badge variant="secondary"
+                                                >可购买</Badge
+                                            >
+                                        </div>
+                                    </td>
+                                    <td class="text-right">
+                                        <div data-slot="table-cell-content">
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                @click="
+                                                    openPurchaseDialog(product)
+                                                "
+                                            >
+                                                <ShoppingCart
+                                                    data-icon="inline-start"
+                                                />
+                                                购买
+                                            </Button>
+                                        </div>
                                     </td>
                                 </tr>
                             </template>
@@ -1336,59 +1414,75 @@ function trafficPackMetric(record: CdnflyRecord): string {
                                     :key="textValue(pkg.id)"
                                     class="border-b"
                                 >
-                                    <td class="px-4 py-3">
-                                        <div class="truncate font-medium">
+                                    <td class="">
+                                        <div data-slot="table-cell-content">
+                                            <div class="truncate font-medium">
+                                                {{
+                                                    textValue(
+                                                        pkg.package_name,
+                                                    ) ||
+                                                    textValue(pkg.name) ||
+                                                    '-'
+                                                }}
+                                            </div>
+                                            <div
+                                                class="text-xs text-muted-foreground"
+                                            >
+                                                #{{ textValue(pkg.id) }}
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="">
+                                        <div data-slot="table-cell-content">
+                                            {{ usageTrafficText(pkg) }}
+                                        </div>
+                                    </td>
+                                    <td class="text-muted-foreground">
+                                        <div data-slot="table-cell-content">
                                             {{
-                                                textValue(pkg.package_name) ||
-                                                textValue(pkg.name) ||
-                                                '-'
+                                                textValue(pkg.bandwidth) || '-'
                                             }}
                                         </div>
-                                        <div
-                                            class="text-xs text-muted-foreground"
-                                        >
-                                            #{{ textValue(pkg.id) }}
+                                    </td>
+                                    <td class="text-muted-foreground">
+                                        <div data-slot="table-cell-content">
+                                            {{
+                                                formatDate(
+                                                    pkg.end_at2 ?? pkg.end_at,
+                                                )
+                                            }}
                                         </div>
                                     </td>
-                                    <td class="px-4 py-3">
-                                        {{ usageTrafficText(pkg) }}
+                                    <td class="">
+                                        <div data-slot="table-cell-content">
+                                            <Badge
+                                                :variant="
+                                                    usageActive(pkg)
+                                                        ? 'secondary'
+                                                        : 'destructive'
+                                                "
+                                            >
+                                                {{
+                                                    usageActive(pkg)
+                                                        ? '生效中'
+                                                        : '已停用'
+                                                }}
+                                            </Badge>
+                                        </div>
                                     </td>
-                                    <td class="px-4 py-3 text-muted-foreground">
-                                        {{ textValue(pkg.bandwidth) || '-' }}
-                                    </td>
-                                    <td class="px-4 py-3 text-muted-foreground">
-                                        {{
-                                            formatDate(
-                                                pkg.end_at2 ?? pkg.end_at,
-                                            )
-                                        }}
-                                    </td>
-                                    <td class="px-4 py-3">
-                                        <Badge
-                                            :variant="
-                                                usageActive(pkg)
-                                                    ? 'secondary'
-                                                    : 'destructive'
-                                            "
-                                        >
-                                            {{
-                                                usageActive(pkg)
-                                                    ? '生效中'
-                                                    : '已停用'
-                                            }}
-                                        </Badge>
-                                    </td>
-                                    <td class="px-4 py-3 text-right">
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            @click="openUsageDialog(pkg)"
-                                        >
-                                            <BarChart3
-                                                data-icon="inline-start"
-                                            />
-                                            查看用量
-                                        </Button>
+                                    <td class="text-right">
+                                        <div data-slot="table-cell-content">
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                @click="openUsageDialog(pkg)"
+                                            >
+                                                <BarChart3
+                                                    data-icon="inline-start"
+                                                />
+                                                查看用量
+                                            </Button>
+                                        </div>
                                     </td>
                                 </tr>
                             </template>
@@ -1401,52 +1495,68 @@ function trafficPackMetric(record: CdnflyRecord): string {
                                     "
                                     class="border-b"
                                 >
-                                    <td class="px-4 py-3">
-                                        <div class="truncate font-medium">
-                                            {{ trafficPackName(item) }}
+                                    <td class="">
+                                        <div data-slot="table-cell-content">
+                                            <div class="truncate font-medium">
+                                                {{ trafficPackName(item) }}
+                                            </div>
+                                            <div
+                                                class="text-xs text-muted-foreground"
+                                            >
+                                                #{{ textValue(item.id) || '-' }}
+                                            </div>
                                         </div>
-                                        <div
-                                            class="text-xs text-muted-foreground"
-                                        >
-                                            #{{ textValue(item.id) || '-' }}
+                                    </td>
+                                    <td class="">
+                                        <div data-slot="table-cell-content">
+                                            {{ trafficPackPrice(item) }}
                                         </div>
                                     </td>
-                                    <td class="px-4 py-3">
-                                        {{ trafficPackPrice(item) }}
+                                    <td class="">
+                                        <div data-slot="table-cell-content">
+                                            {{ trafficPackMetric(item) }}
+                                        </div>
                                     </td>
-                                    <td class="px-4 py-3">
-                                        {{ trafficPackMetric(item) }}
-                                    </td>
-                                    <td class="px-4 py-3">
-                                        {{
-                                            textValue(
-                                                item.package_group ??
-                                                    item.group_id,
-                                            ) || '-'
-                                        }}
-                                    </td>
-                                    <td class="px-4 py-3">
-                                        <Badge variant="secondary">
+                                    <td class="">
+                                        <div data-slot="table-cell-content">
                                             {{
-                                                textValue(item.status) ||
-                                                textValue(item.enable) ||
-                                                '-'
+                                                textValue(
+                                                    item.package_group ??
+                                                        item.group_id,
+                                                ) || '-'
                                             }}
-                                        </Badge>
+                                        </div>
                                     </td>
-                                    <td class="px-4 py-3 text-right">
-                                        <Badge variant="outline">只读</Badge>
+                                    <td class="">
+                                        <div data-slot="table-cell-content">
+                                            <Badge variant="secondary">
+                                                {{
+                                                    textValue(item.status) ||
+                                                    textValue(item.enable) ||
+                                                    '-'
+                                                }}
+                                            </Badge>
+                                        </div>
+                                    </td>
+                                    <td class="text-right">
+                                        <div data-slot="table-cell-content">
+                                            <Badge variant="outline"
+                                                >只读</Badge
+                                            >
+                                        </div>
                                     </td>
                                 </tr>
                             </template>
                             <tr v-if="!loading && activeRows.length === 0">
                                 <td
-                                    class="px-6 py-16 text-center text-muted-foreground"
+                                    class="text-center text-muted-foreground"
                                     :colspan="
                                         props.view === 'subscriptions' ? 7 : 6
                                     "
                                 >
-                                    暂无记录
+                                    <div data-slot="table-cell-content">
+                                        暂无记录
+                                    </div>
                                 </td>
                             </tr>
                         </tbody>
@@ -1714,17 +1824,25 @@ function trafficPackMetric(record: CdnflyRecord): string {
                         <table class="w-full text-sm">
                             <thead class="bg-muted/60 text-muted-foreground">
                                 <tr>
-                                    <th
-                                        class="px-4 py-3 text-left font-medium"
-                                    ></th>
-                                    <th class="px-4 py-3 text-left font-medium">
-                                        总额度
+                                    <th class="text-left font-medium">
+                                        <div
+                                            data-slot="table-cell-content"
+                                        ></div>
                                     </th>
-                                    <th class="px-4 py-3 text-left font-medium">
-                                        已使用
+                                    <th class="text-left font-medium">
+                                        <div data-slot="table-cell-content">
+                                            总额度
+                                        </div>
                                     </th>
-                                    <th class="px-4 py-3 text-left font-medium">
-                                        剩余
+                                    <th class="text-left font-medium">
+                                        <div data-slot="table-cell-content">
+                                            已使用
+                                        </div>
+                                    </th>
+                                    <th class="text-left font-medium">
+                                        <div data-slot="table-cell-content">
+                                            剩余
+                                        </div>
                                     </th>
                                 </tr>
                             </thead>
@@ -1734,17 +1852,25 @@ function trafficPackMetric(record: CdnflyRecord): string {
                                     :key="metric.label"
                                     class="border-b last:border-b-0"
                                 >
-                                    <td class="px-4 py-3 text-muted-foreground">
-                                        {{ metric.label }}
+                                    <td class="text-muted-foreground">
+                                        <div data-slot="table-cell-content">
+                                            {{ metric.label }}
+                                        </div>
                                     </td>
-                                    <td class="px-4 py-3">
-                                        {{ metric.total }}
+                                    <td class="">
+                                        <div data-slot="table-cell-content">
+                                            {{ metric.total }}
+                                        </div>
                                     </td>
-                                    <td class="px-4 py-3">
-                                        {{ metric.used }}
+                                    <td class="">
+                                        <div data-slot="table-cell-content">
+                                            {{ metric.used }}
+                                        </div>
                                     </td>
-                                    <td class="px-4 py-3">
-                                        {{ metric.remaining }}
+                                    <td class="">
+                                        <div data-slot="table-cell-content">
+                                            {{ metric.remaining }}
+                                        </div>
                                     </td>
                                 </tr>
                             </tbody>
@@ -1783,20 +1909,26 @@ function trafficPackMetric(record: CdnflyRecord): string {
                                         class="bg-muted/60 text-muted-foreground"
                                     >
                                         <tr>
-                                            <th
-                                                class="px-4 py-3 text-left font-medium"
-                                            >
-                                                名称
+                                            <th class="text-left font-medium">
+                                                <div
+                                                    data-slot="table-cell-content"
+                                                >
+                                                    名称
+                                                </div>
                                             </th>
-                                            <th
-                                                class="px-4 py-3 text-left font-medium"
-                                            >
-                                                升级内容
+                                            <th class="text-left font-medium">
+                                                <div
+                                                    data-slot="table-cell-content"
+                                                >
+                                                    升级内容
+                                                </div>
                                             </th>
-                                            <th
-                                                class="px-4 py-3 text-left font-medium"
-                                            >
-                                                总数
+                                            <th class="text-left font-medium">
+                                                <div
+                                                    data-slot="table-cell-content"
+                                                >
+                                                    总数
+                                                </div>
                                             </th>
                                         </tr>
                                     </thead>
@@ -1811,39 +1943,55 @@ function trafficPackMetric(record: CdnflyRecord): string {
                                             "
                                             class="border-b last:border-b-0"
                                         >
-                                            <td class="px-4 py-3">
-                                                {{
-                                                    textValue(
-                                                        upgrade.name ??
-                                                            upgrade.package_up_name,
-                                                    ) || '-'
-                                                }}
+                                            <td class="">
+                                                <div
+                                                    data-slot="table-cell-content"
+                                                >
+                                                    {{
+                                                        textValue(
+                                                            upgrade.name ??
+                                                                upgrade.package_up_name,
+                                                        ) || '-'
+                                                    }}
+                                                </div>
                                             </td>
-                                            <td class="px-4 py-3">
-                                                {{
-                                                    textValue(
-                                                        upgrade.des ??
-                                                            upgrade.description ??
-                                                            upgrade.type,
-                                                    ) || '-'
-                                                }}
+                                            <td class="">
+                                                <div
+                                                    data-slot="table-cell-content"
+                                                >
+                                                    {{
+                                                        textValue(
+                                                            upgrade.des ??
+                                                                upgrade.description ??
+                                                                upgrade.type,
+                                                        ) || '-'
+                                                    }}
+                                                </div>
                                             </td>
-                                            <td class="px-4 py-3">
-                                                {{
-                                                    textValue(
-                                                        upgrade.num ??
-                                                            upgrade.count ??
-                                                            upgrade.quantity,
-                                                    ) || '1'
-                                                }}
+                                            <td class="">
+                                                <div
+                                                    data-slot="table-cell-content"
+                                                >
+                                                    {{
+                                                        textValue(
+                                                            upgrade.num ??
+                                                                upgrade.count ??
+                                                                upgrade.quantity,
+                                                        ) || '1'
+                                                    }}
+                                                </div>
                                             </td>
                                         </tr>
                                         <tr v-if="usageUpgrades.length === 0">
                                             <td
                                                 colspan="3"
-                                                class="px-4 py-6 text-center text-muted-foreground"
+                                                class="text-center text-muted-foreground"
                                             >
-                                                暂无已购升级包
+                                                <div
+                                                    data-slot="table-cell-content"
+                                                >
+                                                    暂无已购升级包
+                                                </div>
                                             </td>
                                         </tr>
                                     </tbody>

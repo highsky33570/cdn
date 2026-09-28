@@ -325,32 +325,62 @@ const time = (value: unknown) => String(value ?? '—').replace(/^\d{4}-/, '');
                 >
                     <thead class="bg-muted/20">
                         <tr>
-                            <th>{{ isSwitch ? '切换时间' : '检测时间' }}</th>
-                            <th>{{ isSwitch ? '动作' : '失败个数' }}</th>
-                            <th v-if="!isSwitch">总检测点</th>
+                            <th>
+                                <div data-slot="table-cell-content">
+                                    {{ isSwitch ? '切换时间' : '检测时间' }}
+                                </div>
+                            </th>
+                            <th>
+                                <div data-slot="table-cell-content">
+                                    {{ isSwitch ? '动作' : '失败个数' }}
+                                </div>
+                            </th>
+                            <th v-if="!isSwitch">
+                                <div data-slot="table-cell-content">
+                                    总检测点
+                                </div>
+                            </th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr v-for="(row, index) in rows" :key="index">
-                            <td>{{ time(row.create_at) }}</td>
+                            <td>
+                                <div data-slot="table-cell-content">
+                                    {{ time(row.create_at) }}
+                                </div>
+                            </td>
                             <template v-if="!isSwitch"
-                                ><td>{{ row.failed ?? '—' }}</td>
-                                <td>{{ row.total ?? '—' }}</td></template
+                                ><td>
+                                    <div data-slot="table-cell-content">
+                                        {{ row.failed ?? '—' }}
+                                    </div>
+                                </td>
+                                <td>
+                                    <div data-slot="table-cell-content">
+                                        {{ row.total ?? '—' }}
+                                    </div>
+                                </td></template
                             >
-                            <td v-else>{{ row.action ?? '—' }}</td>
+                            <td v-else>
+                                <div data-slot="table-cell-content">
+                                    {{ row.action ?? '—' }}
+                                </div>
+                            </td>
                         </tr>
                         <tr v-if="!rows.length">
                             <td
                                 :colspan="isSwitch ? 2 : 3"
-                                class="py-6! text-center text-muted-foreground"
+                                class="text-center text-muted-foreground"
                             >
-                                {{
-                                    loading
-                                        ? '加载中…'
-                                        : error
-                                          ? '数据加载失败'
-                                          : '暂无数据'
-                                }}
+                                <div data-slot="table-cell-content">
+                                    {{
+                                        loading
+                                            ? '加载中…'
+                                            : error
+                                              ? '数据加载失败'
+                                              : '暂无数据'
+                                    }}
+                                </div>
                             </td>
                         </tr>
                     </tbody>

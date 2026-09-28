@@ -1,3 +1,4 @@
+@import '../../../shared/table-layout.css';
 @import 'tailwindcss';
 
 @import 'tw-animate-css';
@@ -413,12 +414,7 @@
 }
 
 .console-shell th {
-    height: 2rem;
     font-weight: 500;
-}
-
-.console-shell td {
-    height: 2.35rem;
 }
 
 .console-shell tbody tr {
@@ -447,16 +443,12 @@
 }
 
 .console-shell .analytics-ranking-table th {
-    height: 38px;
-    padding-block: 0 !important;
     color: #515a6e;
     font-size: 14px;
     font-weight: 600;
 }
 
 .console-shell .analytics-ranking-table td {
-    height: 48px;
-    padding-block: 0 !important;
     color: #515a6e;
     font-size: 14px;
 }
@@ -533,13 +525,8 @@
 }
 
 .console-shell .ruiyi-subscriptions th {
-    height: 2.5rem;
     color: hsl(215 24% 32%);
     font-weight: 600;
-}
-
-.console-shell .ruiyi-subscriptions td {
-    height: 2.875rem;
 }
 
 .console-shell .ruiyi-cache-card {
@@ -562,13 +549,8 @@
 }
 
 .console-shell .ruiyi-cache-card th {
-    height: 2.5rem;
     color: hsl(215 24% 32%);
     font-weight: 600;
-}
-
-.console-shell .ruiyi-cache-card td {
-    height: 2.875rem;
 }
 
 /* Portal content shares the same console palette and control geometry. */

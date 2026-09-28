@@ -756,11 +756,25 @@ function formatInputDate(date: Date): string {
                         <table class="w-full text-sm">
                             <thead class="border-b text-muted-foreground">
                                 <tr>
-                                    <th class="px-4 py-3 text-left">排名</th>
-                                    <th class="px-4 py-3 text-left">端口</th>
-                                    <th class="px-4 py-3 text-right">连接数</th>
-                                    <th class="px-4 py-3 text-right">
-                                        出站流量
+                                    <th class="text-left">
+                                        <div data-slot="table-cell-content">
+                                            排名
+                                        </div>
+                                    </th>
+                                    <th class="text-left">
+                                        <div data-slot="table-cell-content">
+                                            端口
+                                        </div>
+                                    </th>
+                                    <th class="text-right">
+                                        <div data-slot="table-cell-content">
+                                            连接数
+                                        </div>
+                                    </th>
+                                    <th class="text-right">
+                                        <div data-slot="table-cell-content">
+                                            出站流量
+                                        </div>
                                     </th>
                                 </tr>
                             </thead>
@@ -770,33 +784,43 @@ function formatInputDate(date: Date): string {
                                     :key="i"
                                     class="border-b last:border-b-0"
                                 >
-                                    <td class="px-4 py-3">{{ i + 1 }}</td>
-                                    <td class="px-4 py-3">
-                                        {{ row.res ?? row.port ?? '-' }}
+                                    <td class="">
+                                        <div data-slot="table-cell-content">
+                                            {{ i + 1 }}
+                                        </div>
                                     </td>
-                                    <td class="px-4 py-3 text-right">
-                                        {{
-                                            formatMetric(
-                                                Number(
-                                                    row.new_connections ??
-                                                        row.count ??
-                                                        0,
-                                                ),
-                                                'count',
-                                            )
-                                        }}
+                                    <td class="">
+                                        <div data-slot="table-cell-content">
+                                            {{ row.res ?? row.port ?? '-' }}
+                                        </div>
                                     </td>
-                                    <td class="px-4 py-3 text-right">
-                                        {{
-                                            formatMetric(
-                                                Number(
-                                                    row.outbound_traffic ??
-                                                        row.traffic ??
-                                                        0,
-                                                ),
-                                                'bytes',
-                                            )
-                                        }}
+                                    <td class="text-right">
+                                        <div data-slot="table-cell-content">
+                                            {{
+                                                formatMetric(
+                                                    Number(
+                                                        row.new_connections ??
+                                                            row.count ??
+                                                            0,
+                                                    ),
+                                                    'count',
+                                                )
+                                            }}
+                                        </div>
+                                    </td>
+                                    <td class="text-right">
+                                        <div data-slot="table-cell-content">
+                                            {{
+                                                formatMetric(
+                                                    Number(
+                                                        row.outbound_traffic ??
+                                                            row.traffic ??
+                                                            0,
+                                                    ),
+                                                    'bytes',
+                                                )
+                                            }}
+                                        </div>
                                     </td>
                                 </tr>
                             </tbody>

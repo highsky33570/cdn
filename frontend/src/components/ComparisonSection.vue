@@ -1,5 +1,11 @@
 <template>
-  <section data-public-style id="compare" ref="sectionRef" class="public-comparison-section cmp-section" :class="{ 'is-visible': isVisible }">
+  <section
+    data-public-style
+    id="compare"
+    ref="sectionRef"
+    class="public-comparison-section cmp-section"
+    :class="{ 'is-visible': isVisible }"
+  >
     <div class="container-page">
       <div class="cmp-head">
         <span class="eyebrow">对比</span>
@@ -24,39 +30,56 @@
           </caption>
           <thead>
             <tr>
-              <th scope="col" class="cmp-corner">对比维度</th>
+              <th scope="col" class="cmp-corner">
+                <div data-slot="table-cell-content">对比维度</div>
+              </th>
               <th
                 v-for="(col, ci) in comparison.columns"
                 :key="col"
                 scope="col"
                 :class="['cmp-col-head', { 'is-us': ci === 0 }]"
               >
-                <span v-if="ci === 0" class="cmp-us-mark">推荐</span>
-                {{ col }}
+                <div data-slot="table-cell-content">
+                  <span v-if="ci === 0" class="cmp-us-mark">推荐</span>
+                  {{ col }}
+                </div>
               </th>
             </tr>
           </thead>
           <tbody>
-            <tr v-for="(row, ri) in comparison.rows" :key="row.label" :style="{ '--i': ri }">
-              <th scope="row" class="cmp-row-head">{{ row.label }}</th>
+            <tr
+              v-for="(row, ri) in comparison.rows"
+              :key="row.label"
+              :style="{ '--i': ri }"
+            >
+              <th scope="row" class="cmp-row-head">
+                <div data-slot="table-cell-content">{{ row.label }}</div>
+              </th>
               <td
                 v-for="(cell, ci) in row.cells"
                 :key="ci"
                 :class="['cmp-cell', { 'is-us': ci === 0 }]"
               >
-                <span :class="['pill', `pill-${cell.tone}`]">
-                  <svg v-if="ci === 0" class="pill-check" viewBox="0 0 16 16" aria-hidden="true">
-                    <path
-                      d="M3.5 8.5l3 3 6-7"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="2.2"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    />
-                  </svg>
-                  {{ cell.text }}
-                </span>
+                <div data-slot="table-cell-content">
+                  <span :class="['pill', `pill-${cell.tone}`]">
+                    <svg
+                      v-if="ci === 0"
+                      class="pill-check"
+                      viewBox="0 0 16 16"
+                      aria-hidden="true"
+                    >
+                      <path
+                        d="M3.5 8.5l3 3 6-7"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2.2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      />
+                    </svg>
+                    {{ cell.text }}
+                  </span>
+                </div>
               </td>
             </tr>
           </tbody>
@@ -65,25 +88,33 @@
 
       <!-- mobile: transposed, one capability per card -->
       <div class="cmp-cards mobile-only">
-        <article v-for="row in comparison.rows" :key="`m-${row.label}`" class="cmp-card">
+        <article
+          v-for="row in comparison.rows"
+          :key="`m-${row.label}`"
+          class="cmp-card"
+        >
           <h3 class="cmp-card-title">{{ row.label }}</h3>
           <ul class="cmp-card-list">
             <li v-for="(cell, ci) in row.cells" :key="ci" class="cmp-card-row">
               <span class="cmp-card-col">{{ comparison.columns[ci] }}</span>
-              <span :class="['pill', `pill-${cell.tone}`]">{{ cell.text }}</span>
+              <span :class="['pill', `pill-${cell.tone}`]">{{
+                cell.text
+              }}</span>
             </li>
           </ul>
         </article>
       </div>
 
-      <p class="cmp-foot">以上为结构性差异（计费方式、控制权、接入路径），不随机房与时段变化。</p>
+      <p class="cmp-foot">
+        以上为结构性差异（计费方式、控制权、接入路径），不随机房与时段变化。
+      </p>
     </div>
   </section>
 </template>
 
 <script setup>
-import { comparison } from '../data/landing'
-import { useReveal } from '../composables/useReveal'
+import { comparison } from "../data/landing";
+import { useReveal } from "../composables/useReveal";
 
-const { sectionRef, isVisible } = useReveal(0.08)
+const { sectionRef, isVisible } = useReveal(0.08);
 </script>

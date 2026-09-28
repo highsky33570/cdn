@@ -827,9 +827,21 @@ onUnmounted(() => {
                     >
                         <thead class="bg-muted/40">
                             <tr>
-                                <th class="p-3 text-left">字段</th>
-                                <th class="p-3 text-left">原值</th>
-                                <th class="p-3 text-left">新值</th>
+                                <th class="text-left">
+                                    <div data-slot="table-cell-content">
+                                        字段
+                                    </div>
+                                </th>
+                                <th class="text-left">
+                                    <div data-slot="table-cell-content">
+                                        原值
+                                    </div>
+                                </th>
+                                <th class="text-left">
+                                    <div data-slot="table-cell-content">
+                                        新值
+                                    </div>
+                                </th>
                             </tr>
                         </thead>
                         <tbody>
@@ -838,18 +850,26 @@ onUnmounted(() => {
                                 :key="index"
                                 class="border-b align-top"
                             >
-                                <td class="p-3">{{ change.field }}</td>
-                                <td class="p-3">
-                                    <pre
-                                        class="max-w-72 break-words whitespace-pre-wrap"
-                                        >{{ change.old }}</pre
-                                    >
+                                <td class="">
+                                    <div data-slot="table-cell-content">
+                                        {{ change.field }}
+                                    </div>
                                 </td>
-                                <td class="p-3">
-                                    <pre
-                                        class="max-w-72 break-words whitespace-pre-wrap"
-                                        >{{ change.next }}</pre
-                                    >
+                                <td class="">
+                                    <div data-slot="table-cell-content">
+                                        <pre
+                                            class="max-w-72 break-words whitespace-pre-wrap"
+                                            >{{ change.old }}</pre
+                                        >
+                                    </div>
+                                </td>
+                                <td class="">
+                                    <div data-slot="table-cell-content">
+                                        <pre
+                                            class="max-w-72 break-words whitespace-pre-wrap"
+                                            >{{ change.next }}</pre
+                                        >
+                                    </div>
                                 </td>
                             </tr>
                         </tbody>

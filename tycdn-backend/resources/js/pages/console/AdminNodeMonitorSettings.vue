@@ -904,14 +904,18 @@ onMounted(load);
                                     ]"
                                     :key="title"
                                 >
-                                    {{ title }}
+                                    <div data-slot="table-cell-content">
+                                        {{ title }}
+                                    </div>
                                 </th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr v-if="logLoading">
-                                <td colspan="8" class="h-20 text-center">
-                                    <Spinner class="mx-auto" />
+                                <td colspan="8" class="text-center">
+                                    <div data-slot="table-cell-content">
+                                        <Spinner class="mx-auto" />
+                                    </div>
                                 </td>
                             </tr>
                             <tr
@@ -919,35 +923,67 @@ onMounted(load);
                                 :key="textValue(log.id) || index"
                                 class="border-b"
                             >
-                                <td>{{ log.create_at }}</td>
-                                <td>{{ log.type }}</td>
-                                <td>{{ log.node_group_id }}</td>
-                                <td>{{ log.node_id }}</td>
-                                <td>{{ log.line_id }}</td>
-                                <td>{{ log.ip }}</td>
-                                <td>{{ log.action }}</td>
                                 <td>
-                                    <Button
-                                        variant="link"
-                                        size="inline"
-                                        type="button"
-                                        data-slot="console-link"
-                                        class="text-primary"
-                                        @click="
-                                            detail = log;
-                                            detailOpen = true;
-                                        "
-                                    >
-                                        通知详情
-                                    </Button>
+                                    <div data-slot="table-cell-content">
+                                        {{ log.create_at }}
+                                    </div>
+                                </td>
+                                <td>
+                                    <div data-slot="table-cell-content">
+                                        {{ log.type }}
+                                    </div>
+                                </td>
+                                <td>
+                                    <div data-slot="table-cell-content">
+                                        {{ log.node_group_id }}
+                                    </div>
+                                </td>
+                                <td>
+                                    <div data-slot="table-cell-content">
+                                        {{ log.node_id }}
+                                    </div>
+                                </td>
+                                <td>
+                                    <div data-slot="table-cell-content">
+                                        {{ log.line_id }}
+                                    </div>
+                                </td>
+                                <td>
+                                    <div data-slot="table-cell-content">
+                                        {{ log.ip }}
+                                    </div>
+                                </td>
+                                <td>
+                                    <div data-slot="table-cell-content">
+                                        {{ log.action }}
+                                    </div>
+                                </td>
+                                <td>
+                                    <div data-slot="table-cell-content">
+                                        <Button
+                                            variant="link"
+                                            size="inline"
+                                            type="button"
+                                            data-slot="console-link"
+                                            class="text-primary"
+                                            @click="
+                                                detail = log;
+                                                detailOpen = true;
+                                            "
+                                        >
+                                            通知详情
+                                        </Button>
+                                    </div>
                                 </td>
                             </tr>
                             <tr v-if="!logLoading && !logs.length">
                                 <td
                                     colspan="8"
-                                    class="h-14 text-center text-muted-foreground"
+                                    class="text-center text-muted-foreground"
                                 >
-                                    暂无数据
+                                    <div data-slot="table-cell-content">
+                                        暂无数据
+                                    </div>
                                 </td>
                             </tr>
                         </tbody>

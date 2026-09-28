@@ -350,19 +350,53 @@ function showDiff(row: CdnflyRecord) {
                     </colgroup>
                     <thead>
                         <tr v-if="tab === 'login'">
-                            <th>IP地址</th>
-                            <th>地理位置</th>
-                            <th>登录时间</th>
-                            <th>登录状态</th>
+                            <th>
+                                <div data-slot="table-cell-content">IP地址</div>
+                            </th>
+                            <th>
+                                <div data-slot="table-cell-content">
+                                    地理位置
+                                </div>
+                            </th>
+                            <th>
+                                <div data-slot="table-cell-content">
+                                    登录时间
+                                </div>
+                            </th>
+                            <th>
+                                <div data-slot="table-cell-content">
+                                    登录状态
+                                </div>
+                            </th>
                         </tr>
                         <tr v-else>
-                            <th>类别</th>
-                            <th>对象</th>
-                            <th>动作</th>
-                            <th>变更内容</th>
-                            <th>IP地址</th>
-                            <th>地理位置</th>
-                            <th>操作时间</th>
+                            <th>
+                                <div data-slot="table-cell-content">类别</div>
+                            </th>
+                            <th>
+                                <div data-slot="table-cell-content">对象</div>
+                            </th>
+                            <th>
+                                <div data-slot="table-cell-content">动作</div>
+                            </th>
+                            <th>
+                                <div data-slot="table-cell-content">
+                                    变更内容
+                                </div>
+                            </th>
+                            <th>
+                                <div data-slot="table-cell-content">IP地址</div>
+                            </th>
+                            <th>
+                                <div data-slot="table-cell-content">
+                                    地理位置
+                                </div>
+                            </th>
+                            <th>
+                                <div data-slot="table-cell-content">
+                                    操作时间
+                                </div>
+                            </th>
                         </tr>
                     </thead>
                     <tbody>
@@ -371,10 +405,12 @@ function showDiff(row: CdnflyRecord) {
                                 :colspan="tab === 'login' ? 4 : 7"
                                 class="empty"
                             >
-                                <span
-                                    ><Spinner class="inline size-4" />
-                                    加载中…</span
-                                >
+                                <div data-slot="table-cell-content">
+                                    <span
+                                        ><Spinner class="inline size-4" />
+                                        加载中…</span
+                                    >
+                                </div>
                             </td>
                         </tr>
                         <tr v-else-if="!rows.length">
@@ -382,9 +418,11 @@ function showDiff(row: CdnflyRecord) {
                                 :colspan="tab === 'login' ? 4 : 7"
                                 class="empty"
                             >
-                                <span>{{
-                                    error ? '加载失败，请重试' : '暂无数据'
-                                }}</span>
+                                <div data-slot="table-cell-content">
+                                    <span>{{
+                                        error ? '加载失败，请重试' : '暂无数据'
+                                    }}</span>
+                                </div>
                             </td>
                         </tr>
                         <template v-else
@@ -393,75 +431,109 @@ function showDiff(row: CdnflyRecord) {
                                 :key="String(row.id ?? index)"
                             >
                                 <template v-if="tab === 'login'"
-                                    ><td>{{ text(row.ip) }}</td>
-                                    <td class="location">
-                                        {{ text(row.ip_location) }}
+                                    ><td>
+                                        <div data-slot="table-cell-content">
+                                            {{ text(row.ip) }}
+                                        </div>
                                     </td>
-                                    <td>{{ time(row) }}</td>
+                                    <td class="location">
+                                        <div data-slot="table-cell-content">
+                                            {{ text(row.ip_location) }}
+                                        </div>
+                                    </td>
                                     <td>
-                                        <span
-                                            v-if="
-                                                success(
-                                                    row.success ?? row.status,
-                                                )
-                                            "
-                                            class="status-icon success"
-                                            role="img"
-                                            aria-label="登录成功"
-                                            title="成功"
-                                            ><Check :size="11" /></span
-                                        ><span
-                                            v-else-if="
-                                                failed(
-                                                    row.success ?? row.status,
-                                                )
-                                            "
-                                            class="status-icon failed"
-                                            role="img"
-                                            aria-label="登录失败"
-                                            title="失败"
-                                            ><X :size="11" /></span
-                                        ><span v-else title="未记录登录状态"
-                                            >—</span
-                                        >
+                                        <div data-slot="table-cell-content">
+                                            {{ time(row) }}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div data-slot="table-cell-content">
+                                            <span
+                                                v-if="
+                                                    success(
+                                                        row.success ??
+                                                            row.status,
+                                                    )
+                                                "
+                                                class="status-icon success"
+                                                role="img"
+                                                aria-label="登录成功"
+                                                title="成功"
+                                                ><Check :size="11" /></span
+                                            ><span
+                                                v-else-if="
+                                                    failed(
+                                                        row.success ??
+                                                            row.status,
+                                                    )
+                                                "
+                                                class="status-icon failed"
+                                                role="img"
+                                                aria-label="登录失败"
+                                                title="失败"
+                                                ><X :size="11" /></span
+                                            ><span v-else title="未记录登录状态"
+                                                >—</span
+                                            >
+                                        </div>
                                     </td></template
                                 >
                                 <template v-else
                                     ><td>
-                                        <span
-                                            class="truncate-cell"
-                                            :title="text(row.type)"
-                                            >{{ text(row.type) }}</span
-                                        >
+                                        <div data-slot="table-cell-content">
+                                            <span
+                                                class="truncate-cell"
+                                                :title="text(row.type)"
+                                                >{{ text(row.type) }}</span
+                                            >
+                                        </div>
                                     </td>
                                     <td>
-                                        <span
-                                            class="truncate-cell"
-                                            :title="text(row.content)"
-                                            >{{ text(row.content) }}</span
-                                        >
+                                        <div data-slot="table-cell-content">
+                                            <span
+                                                class="truncate-cell"
+                                                :title="text(row.content)"
+                                                >{{ text(row.content) }}</span
+                                            >
+                                        </div>
                                     </td>
-                                    <td>{{ text(row.action) }}</td>
                                     <td>
-                                        <Button
-                                            variant="link"
-                                            size="inline"
-                                            type="button"
-                                            data-slot="console-link"
-                                            v-if="hasDiff(row)"
-                                            class="text-link truncate-cell"
-                                            :title="text(row.diff)"
-                                            :aria-label="`查看第 ${index + 1} 条变更详情`"
-                                            @click="showDiff(row)"
-                                        >
-                                            {{ text(row.diff) }}</Button
-                                        ><span v-else>—</span>
+                                        <div data-slot="table-cell-content">
+                                            {{ text(row.action) }}
+                                        </div>
                                     </td>
-                                    <td>{{ text(row.ip) }}</td>
+                                    <td>
+                                        <div data-slot="table-cell-content">
+                                            <Button
+                                                variant="link"
+                                                size="inline"
+                                                type="button"
+                                                data-slot="console-link"
+                                                v-if="hasDiff(row)"
+                                                class="text-link truncate-cell"
+                                                :title="text(row.diff)"
+                                                :aria-label="`查看第 ${index + 1} 条变更详情`"
+                                                @click="showDiff(row)"
+                                            >
+                                                {{ text(row.diff) }}</Button
+                                            ><span v-else>—</span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div data-slot="table-cell-content">
+                                            {{ text(row.ip) }}
+                                        </div>
+                                    </td>
                                     <td class="location">
-                                        {{ text(row.ip_location) }}
+                                        <div data-slot="table-cell-content">
+                                            {{ text(row.ip_location) }}
+                                        </div>
                                     </td>
-                                    <td>{{ time(row) }}</td></template
+                                    <td>
+                                        <div data-slot="table-cell-content">
+                                            {{ time(row) }}
+                                        </div>
+                                    </td></template
                                 >
                             </tr></template
                         >

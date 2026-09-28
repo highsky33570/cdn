@@ -516,44 +516,65 @@ async function remove(): Promise<void> {
                     <thead class="border-b bg-muted/30 text-muted-foreground">
                         <tr>
                             <th class="w-12">
-                                <Checkbox
-                                    aria-label="选择本页全部"
-                                    :disabled="loading || !rows.length"
-                                    :model-value="
-                                        allSelected
-                                            ? true
-                                            : selected.length
-                                              ? 'indeterminate'
-                                              : false
-                                    "
-                                    @update:model-value="
-                                        selected =
-                                            $event === true
-                                                ? rows.map((row) =>
-                                                      Number(row.id),
-                                                  )
-                                                : []
-                                    "
-                                />
+                                <div data-slot="table-cell-content">
+                                    <Checkbox
+                                        aria-label="选择本页全部"
+                                        :disabled="loading || !rows.length"
+                                        :model-value="
+                                            allSelected
+                                                ? true
+                                                : selected.length
+                                                  ? 'indeterminate'
+                                                  : false
+                                        "
+                                        @update:model-value="
+                                            selected =
+                                                $event === true
+                                                    ? rows.map((row) =>
+                                                          Number(row.id),
+                                                      )
+                                                    : []
+                                        "
+                                    />
+                                </div>
                             </th>
-                            <th>ID</th>
-                            <th>名称</th>
+                            <th>
+                                <div data-slot="table-cell-content">ID</div>
+                            </th>
+                            <th>
+                                <div data-slot="table-cell-content">名称</div>
+                            </th>
                             <template v-if="isConfig"
-                                ><th>区域</th>
-                                <th>模式</th>
-                                <th>负载方式</th></template
+                                ><th>
+                                    <div data-slot="table-cell-content">
+                                        区域
+                                    </div>
+                                </th>
+                                <th>
+                                    <div data-slot="table-cell-content">
+                                        模式
+                                    </div>
+                                </th>
+                                <th>
+                                    <div data-slot="table-cell-content">
+                                        负载方式
+                                    </div>
+                                </th></template
                             >
-                            <th v-else>备注</th>
-                            <th>操作</th>
+                            <th v-else>
+                                <div data-slot="table-cell-content">备注</div>
+                            </th>
+                            <th>
+                                <div data-slot="table-cell-content">操作</div>
+                            </th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr v-if="loading">
-                            <td
-                                :colspan="isConfig ? 7 : 5"
-                                class="h-24 text-center"
-                            >
-                                <Spinner class="mx-auto" />
+                            <td :colspan="isConfig ? 7 : 5" class="text-center">
+                                <div data-slot="table-cell-content">
+                                    <Spinner class="mx-auto" />
+                                </div>
                             </td>
                         </tr>
                         <tr
@@ -562,94 +583,120 @@ async function remove(): Promise<void> {
                             class="border-b"
                         >
                             <td>
-                                <Checkbox
-                                    :aria-label="`选择 ${row.name}`"
-                                    :model-value="
-                                        selected.includes(Number(row.id))
-                                    "
-                                    @update:model-value="
-                                        selectRow(Number(row.id), $event)
-                                    "
-                                />
+                                <div data-slot="table-cell-content">
+                                    <Checkbox
+                                        :aria-label="`选择 ${row.name}`"
+                                        :model-value="
+                                            selected.includes(Number(row.id))
+                                        "
+                                        @update:model-value="
+                                            selectRow(Number(row.id), $event)
+                                        "
+                                    />
+                                </div>
                             </td>
-                            <td>{{ row.id }}</td>
                             <td>
-                                <Button
-                                    variant="link"
-                                    size="inline"
-                                    type="button"
-                                    data-slot="console-link"
-                                    v-if="isConfig"
-                                    class="text-primary hover:underline"
-                                    @click="edit(row)"
-                                >
-                                    {{ row.name }}</Button
-                                ><span v-else>{{ row.name }}</span>
+                                <div data-slot="table-cell-content">
+                                    {{ row.id }}
+                                </div>
                             </td>
-                            <template v-if="isConfig"
-                                ><td>{{ regionName(row) }}</td>
-                                <td>
-                                    {{
-                                        row.mode === 'cache'
-                                            ? '缓存'
-                                            : row.mode === 'global'
-                                              ? '全局'
-                                              : row.mode
-                                    }}
-                                </td>
-                                <td>
-                                    {{
-                                        row.balance_way === 'rr'
-                                            ? '轮询'
-                                            : row.balance_way === 'url_hash'
-                                              ? 'URL哈希'
-                                              : row.balance_way
-                                    }}
-                                </td></template
-                            >
-                            <td v-else>{{ row.des }}</td>
                             <td>
-                                <div
-                                    class="flex gap-2 whitespace-nowrap text-primary"
-                                >
+                                <div data-slot="table-cell-content">
                                     <Button
                                         variant="link"
                                         size="inline"
                                         type="button"
                                         data-slot="console-link"
                                         v-if="isConfig"
-                                        @click="
-                                            router.visit(
-                                                `/console/admin/workspace/l2-nodes?l2_config_id=${row.id}`,
-                                            )
-                                        "
-                                    >
-                                        配置节点</Button
-                                    ><Button
-                                        variant="link"
-                                        size="inline"
-                                        type="button"
-                                        data-slot="console-link"
+                                        class="text-primary hover:underline"
                                         @click="edit(row)"
-                                        >编辑</Button
-                                    ><Button
-                                        variant="link"
-                                        size="inline"
-                                        type="button"
-                                        data-slot="console-link"
-                                        @click="confirmDelete([Number(row.id)])"
                                     >
-                                        删除
-                                    </Button>
+                                        {{ row.name }}</Button
+                                    ><span v-else>{{ row.name }}</span>
+                                </div>
+                            </td>
+                            <template v-if="isConfig"
+                                ><td>
+                                    <div data-slot="table-cell-content">
+                                        {{ regionName(row) }}
+                                    </div>
+                                </td>
+                                <td>
+                                    <div data-slot="table-cell-content">
+                                        {{
+                                            row.mode === 'cache'
+                                                ? '缓存'
+                                                : row.mode === 'global'
+                                                  ? '全局'
+                                                  : row.mode
+                                        }}
+                                    </div>
+                                </td>
+                                <td>
+                                    <div data-slot="table-cell-content">
+                                        {{
+                                            row.balance_way === 'rr'
+                                                ? '轮询'
+                                                : row.balance_way === 'url_hash'
+                                                  ? 'URL哈希'
+                                                  : row.balance_way
+                                        }}
+                                    </div>
+                                </td></template
+                            >
+                            <td v-else>
+                                <div data-slot="table-cell-content">
+                                    {{ row.des }}
+                                </div>
+                            </td>
+                            <td>
+                                <div data-slot="table-cell-content">
+                                    <div
+                                        class="flex gap-2 whitespace-nowrap text-primary"
+                                    >
+                                        <Button
+                                            variant="link"
+                                            size="inline"
+                                            type="button"
+                                            data-slot="console-link"
+                                            v-if="isConfig"
+                                            @click="
+                                                router.visit(
+                                                    `/console/admin/workspace/l2-nodes?l2_config_id=${row.id}`,
+                                                )
+                                            "
+                                        >
+                                            配置节点</Button
+                                        ><Button
+                                            variant="link"
+                                            size="inline"
+                                            type="button"
+                                            data-slot="console-link"
+                                            @click="edit(row)"
+                                            >编辑</Button
+                                        ><Button
+                                            variant="link"
+                                            size="inline"
+                                            type="button"
+                                            data-slot="console-link"
+                                            @click="
+                                                confirmDelete([Number(row.id)])
+                                            "
+                                        >
+                                            删除
+                                        </Button>
+                                    </div>
                                 </div>
                             </td>
                         </tr>
                         <tr v-if="!loading && !rows.length">
                             <td
                                 :colspan="isConfig ? 7 : 5"
-                                class="h-20 text-center text-muted-foreground"
+                                class="text-center text-muted-foreground"
                             >
-                                暂无数据
+                                <div data-slot="table-cell-content">
+                                    暂无数据
+                                </div>
                             </td>
                         </tr>
                     </tbody>
@@ -864,10 +911,34 @@ async function remove(): Promise<void> {
                                         class="border-b bg-muted/30 text-muted-foreground"
                                     >
                                         <tr>
-                                            <th>匹配项</th>
-                                            <th>操作符</th>
-                                            <th>匹配值</th>
-                                            <th>操作</th>
+                                            <th>
+                                                <div
+                                                    data-slot="table-cell-content"
+                                                >
+                                                    匹配项
+                                                </div>
+                                            </th>
+                                            <th>
+                                                <div
+                                                    data-slot="table-cell-content"
+                                                >
+                                                    操作符
+                                                </div>
+                                            </th>
+                                            <th>
+                                                <div
+                                                    data-slot="table-cell-content"
+                                                >
+                                                    匹配值
+                                                </div>
+                                            </th>
+                                            <th>
+                                                <div
+                                                    data-slot="table-cell-content"
+                                                >
+                                                    操作
+                                                </div>
+                                            </th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -877,57 +948,86 @@ async function remove(): Promise<void> {
                                             class="border-b"
                                         >
                                             <td>
-                                                {{
-                                                    l2MatchItems[rule.item] ||
-                                                    rule.item
-                                                }}
-                                            </td>
-                                            <td>
-                                                {{
-                                                    l2MatchOperators[rule.op] ||
-                                                    rule.op
-                                                }}
-                                            </td>
-                                            <td class="max-w-56">
                                                 <div
-                                                    class="truncate whitespace-pre-line"
-                                                    :title="rule.value"
+                                                    data-slot="table-cell-content"
                                                 >
-                                                    {{ rule.value || '（空）' }}
+                                                    {{
+                                                        l2MatchItems[
+                                                            rule.item
+                                                        ] || rule.item
+                                                    }}
                                                 </div>
                                             </td>
                                             <td>
                                                 <div
-                                                    class="flex gap-2 text-primary"
+                                                    data-slot="table-cell-content"
                                                 >
-                                                    <Button
-                                                        variant="link"
-                                                        size="inline"
-                                                        data-slot="console-link"
-                                                        type="button"
-                                                        @click="editRule(index)"
+                                                    {{
+                                                        l2MatchOperators[
+                                                            rule.op
+                                                        ] || rule.op
+                                                    }}
+                                                </div>
+                                            </td>
+                                            <td class="max-w-56">
+                                                <div
+                                                    data-slot="table-cell-content"
+                                                >
+                                                    <div
+                                                        class="truncate whitespace-pre-line"
+                                                        :title="rule.value"
                                                     >
-                                                        编辑</Button
-                                                    ><Button
-                                                        variant="link"
-                                                        size="inline"
-                                                        data-slot="console-link"
-                                                        type="button"
-                                                        @click="
-                                                            removeRule(index)
-                                                        "
+                                                        {{
+                                                            rule.value ||
+                                                            '（空）'
+                                                        }}
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div
+                                                    data-slot="table-cell-content"
+                                                >
+                                                    <div
+                                                        class="flex gap-2 text-primary"
                                                     >
-                                                        删除
-                                                    </Button>
+                                                        <Button
+                                                            variant="link"
+                                                            size="inline"
+                                                            data-slot="console-link"
+                                                            type="button"
+                                                            @click="
+                                                                editRule(index)
+                                                            "
+                                                        >
+                                                            编辑</Button
+                                                        ><Button
+                                                            variant="link"
+                                                            size="inline"
+                                                            data-slot="console-link"
+                                                            type="button"
+                                                            @click="
+                                                                removeRule(
+                                                                    index,
+                                                                )
+                                                            "
+                                                        >
+                                                            删除
+                                                        </Button>
+                                                    </div>
                                                 </div>
                                             </td>
                                         </tr>
                                         <tr v-if="!rules.length">
                                             <td
                                                 colspan="4"
-                                                class="h-14 text-center text-muted-foreground"
+                                                class="text-center text-muted-foreground"
                                             >
-                                                暂无数据
+                                                <div
+                                                    data-slot="table-cell-content"
+                                                >
+                                                    暂无数据
+                                                </div>
                                             </td>
                                         </tr>
                                     </tbody>

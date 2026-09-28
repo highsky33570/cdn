@@ -1067,54 +1067,176 @@ defineExpose({ refresh: load });
                     <thead>
                         <tr>
                             <th class="selection">
-                                <CheckboxField
-                                    aria-label="选择本页全部"
-                                    :checked="allSelected"
-                                    :disabled="
-                                        loading || busy || !visibleRows.length
-                                    "
-                                    @change="toggleAll"
-                                />
+                                <div data-slot="table-cell-content">
+                                    <CheckboxField
+                                        aria-label="选择本页全部"
+                                        :checked="allSelected"
+                                        :disabled="
+                                            loading ||
+                                            busy ||
+                                            !visibleRows.length
+                                        "
+                                        @change="toggleAll"
+                                    />
+                                </div>
                             </th>
-                            <th>ID</th>
+                            <th>
+                                <div data-slot="table-cell-content">ID</div>
+                            </th>
                             <template v-if="tab === 'sites'"
-                                ><th>域名</th>
-                                <th>CNAME</th>
-                                <th>HTTPS</th>
-                                <th>源站 / 监听</th>
-                                <th>套餐/分组</th>
-                                <th>区域</th>
-                                <th>状态</th>
-                                <th>添加时间</th>
-                                <th>操作</th></template
+                                ><th>
+                                    <div data-slot="table-cell-content">
+                                        域名
+                                    </div>
+                                </th>
+                                <th>
+                                    <div data-slot="table-cell-content">
+                                        CNAME
+                                    </div>
+                                </th>
+                                <th>
+                                    <div data-slot="table-cell-content">
+                                        HTTPS
+                                    </div>
+                                </th>
+                                <th>
+                                    <div data-slot="table-cell-content">
+                                        源站 / 监听
+                                    </div>
+                                </th>
+                                <th>
+                                    <div data-slot="table-cell-content">
+                                        套餐/分组
+                                    </div>
+                                </th>
+                                <th>
+                                    <div data-slot="table-cell-content">
+                                        区域
+                                    </div>
+                                </th>
+                                <th>
+                                    <div data-slot="table-cell-content">
+                                        状态
+                                    </div>
+                                </th>
+                                <th>
+                                    <div data-slot="table-cell-content">
+                                        添加时间
+                                    </div>
+                                </th>
+                                <th>
+                                    <div data-slot="table-cell-content">
+                                        操作
+                                    </div>
+                                </th></template
                             >
                             <template v-else-if="tab === 'groups'"
-                                ><th>用户</th>
-                                <th>名称</th>
-                                <th>备注</th>
-                                <th>操作</th></template
+                                ><th>
+                                    <div data-slot="table-cell-content">
+                                        用户
+                                    </div>
+                                </th>
+                                <th>
+                                    <div data-slot="table-cell-content">
+                                        名称
+                                    </div>
+                                </th>
+                                <th>
+                                    <div data-slot="table-cell-content">
+                                        备注
+                                    </div>
+                                </th>
+                                <th>
+                                    <div data-slot="table-cell-content">
+                                        操作
+                                    </div>
+                                </th></template
                             >
                             <template v-else-if="tab === 'defaults'"
-                                ><th>用户</th>
-                                <th>设置项</th>
-                                <th>设置值</th>
-                                <th>生效范围</th>
-                                <th>操作</th></template
+                                ><th>
+                                    <div data-slot="table-cell-content">
+                                        用户
+                                    </div>
+                                </th>
+                                <th>
+                                    <div data-slot="table-cell-content">
+                                        设置项
+                                    </div>
+                                </th>
+                                <th>
+                                    <div data-slot="table-cell-content">
+                                        设置值
+                                    </div>
+                                </th>
+                                <th>
+                                    <div data-slot="table-cell-content">
+                                        生效范围
+                                    </div>
+                                </th>
+                                <th>
+                                    <div data-slot="table-cell-content">
+                                        操作
+                                    </div>
+                                </th></template
                             >
                             <template v-else-if="tab === 'dnsapi'"
-                                ><th>用户</th>
-                                <th>名称</th>
-                                <th>类型</th>
-                                <th>备注</th>
-                                <th>操作</th></template
+                                ><th>
+                                    <div data-slot="table-cell-content">
+                                        用户
+                                    </div>
+                                </th>
+                                <th>
+                                    <div data-slot="table-cell-content">
+                                        名称
+                                    </div>
+                                </th>
+                                <th>
+                                    <div data-slot="table-cell-content">
+                                        类型
+                                    </div>
+                                </th>
+                                <th>
+                                    <div data-slot="table-cell-content">
+                                        备注
+                                    </div>
+                                </th>
+                                <th>
+                                    <div data-slot="table-cell-content">
+                                        操作
+                                    </div>
+                                </th></template
                             >
                             <template v-else
-                                ><th>网站ID</th>
-                                <th>域名</th>
-                                <th>CNAME</th>
-                                <th>解析状态</th>
-                                <th>DNS API</th>
-                                <th>任务状态</th></template
+                                ><th>
+                                    <div data-slot="table-cell-content">
+                                        网站ID
+                                    </div>
+                                </th>
+                                <th>
+                                    <div data-slot="table-cell-content">
+                                        域名
+                                    </div>
+                                </th>
+                                <th>
+                                    <div data-slot="table-cell-content">
+                                        CNAME
+                                    </div>
+                                </th>
+                                <th>
+                                    <div data-slot="table-cell-content">
+                                        解析状态
+                                    </div>
+                                </th>
+                                <th>
+                                    <div data-slot="table-cell-content">
+                                        DNS API
+                                    </div>
+                                </th>
+                                <th>
+                                    <div data-slot="table-cell-content">
+                                        任务状态
+                                    </div>
+                                </th></template
                             >
                         </tr>
                     </thead>
@@ -1132,7 +1254,9 @@ defineExpose({ refresh: load });
                                 "
                                 class="empty"
                             >
-                                {{ loading ? '加载中…' : '暂无数据' }}
+                                <div data-slot="table-cell-content">
+                                    {{ loading ? '加载中…' : '暂无数据' }}
+                                </div>
                             </td>
                         </tr>
                         <tr
@@ -1140,317 +1264,393 @@ defineExpose({ refresh: load });
                             :key="Number(row.id)"
                         >
                             <td class="selection">
-                                <CheckboxField
-                                    :aria-label="`选择 ${row.id}`"
-                                    :checked="selected.includes(Number(row.id))"
-                                    :disabled="busy"
-                                    @change="toggle(Number(row.id))"
-                                />
+                                <div data-slot="table-cell-content">
+                                    <CheckboxField
+                                        :aria-label="`选择 ${row.id}`"
+                                        :checked="
+                                            selected.includes(Number(row.id))
+                                        "
+                                        :disabled="busy"
+                                        @change="toggle(Number(row.id))"
+                                    />
+                                </div>
                             </td>
-                            <td>{{ row.id }}</td>
+                            <td>
+                                <div data-slot="table-cell-content">
+                                    {{ row.id }}
+                                </div>
+                            </td>
                             <template v-if="tab === 'sites'">
                                 <td>
-                                    <div class="copy-cell">
-                                        <Button
-                                            variant="link"
-                                            size="inline"
-                                            type="button"
-                                            data-slot="console-link"
-                                            class="link max-w-60 truncate"
-                                            :title="String(row.domain)"
-                                            @click="emit('manage', row)"
-                                        >
-                                            {{ row.domain }}</Button
-                                        ><Button
-                                            variant="ghost"
-                                            size="icon-sm"
-                                            type="button"
-                                            class="copy"
-                                            :aria-label="`复制域名 ${row.id}`"
-                                            @click="copy(row.domain)"
-                                        >
-                                            <Copy />
-                                        </Button>
-                                    </div>
-                                    <div class="subline">
-                                        用户
-                                        <span class="link">{{
-                                            username(row)
-                                        }}</span>
-                                    </div>
-                                </td>
-                                <td>
-                                    <div class="copy-cell">
-                                        <span>{{ siteCname(row) || '—' }}</span
-                                        ><Button
-                                            variant="ghost"
-                                            size="icon-sm"
-                                            type="button"
-                                            class="copy"
-                                            :aria-label="`复制CNAME ${row.id}`"
-                                            @click="copy(siteCname(row))"
-                                        >
-                                            <Copy />
-                                        </Button>
+                                    <div data-slot="table-cell-content">
+                                        <div class="copy-cell">
+                                            <Button
+                                                variant="link"
+                                                size="inline"
+                                                type="button"
+                                                data-slot="console-link"
+                                                class="link max-w-60 truncate"
+                                                :title="String(row.domain)"
+                                                @click="emit('manage', row)"
+                                            >
+                                                {{ row.domain }}</Button
+                                            ><Button
+                                                variant="ghost"
+                                                size="icon-sm"
+                                                type="button"
+                                                class="copy"
+                                                :aria-label="`复制域名 ${row.id}`"
+                                                @click="copy(row.domain)"
+                                            >
+                                                <Copy />
+                                            </Button>
+                                        </div>
+                                        <div class="subline">
+                                            用户
+                                            <span class="link">{{
+                                                username(row)
+                                            }}</span>
+                                        </div>
                                     </div>
                                 </td>
                                 <td>
-                                    <span
-                                        class="pill"
-                                        :class="
-                                            siteObject(row.https_listen).port
-                                                ? 'success'
-                                                : 'muted'
-                                        "
-                                        >{{
-                                            siteObject(row.https_listen).port
-                                                ? '已开启'
-                                                : '未开启'
-                                        }}</span
-                                    >
+                                    <div data-slot="table-cell-content">
+                                        <div class="copy-cell">
+                                            <span>{{
+                                                siteCname(row) || '—'
+                                            }}</span
+                                            ><Button
+                                                variant="ghost"
+                                                size="icon-sm"
+                                                type="button"
+                                                class="copy"
+                                                :aria-label="`复制CNAME ${row.id}`"
+                                                @click="copy(siteCname(row))"
+                                            >
+                                                <Copy />
+                                            </Button>
+                                        </div>
+                                    </div>
                                 </td>
                                 <td>
-                                    <div class="subline">
-                                        源站
+                                    <div data-slot="table-cell-content">
                                         <span
-                                            class="foreground"
-                                            :title="siteOrigins(row)"
-                                            >{{ siteOrigins(row) }}</span
-                                        >
-                                    </div>
-                                    <div class="subline">
-                                        监听
-                                        <span
-                                            v-for="port in sitePorts(row)"
-                                            :key="port"
-                                            class="port"
-                                            >{{ port }}</span
-                                        >
-                                    </div>
-                                </td>
-                                <td>
-                                    <div class="subline">
-                                        套餐
-                                        <span class="foreground"
+                                            class="pill"
+                                            :class="
+                                                siteObject(row.https_listen)
+                                                    .port
+                                                    ? 'success'
+                                                    : 'muted'
+                                            "
                                             >{{
-                                                row.package_name ??
-                                                row.user_package ??
-                                                '—'
-                                            }}
-                                            (id:
-                                            {{ row.user_package ?? '—' }})</span
+                                                siteObject(row.https_listen)
+                                                    .port
+                                                    ? '已开启'
+                                                    : '未开启'
+                                            }}</span
                                         >
                                     </div>
-                                    <div class="subline">
-                                        分组 {{ row.group_name || '—' }}
+                                </td>
+                                <td>
+                                    <div data-slot="table-cell-content">
+                                        <div class="subline">
+                                            源站
+                                            <span
+                                                class="foreground"
+                                                :title="siteOrigins(row)"
+                                                >{{ siteOrigins(row) }}</span
+                                            >
+                                        </div>
+                                        <div class="subline">
+                                            监听
+                                            <span
+                                                v-for="port in sitePorts(row)"
+                                                :key="port"
+                                                class="port"
+                                                >{{ port }}</span
+                                            >
+                                        </div>
                                     </div>
                                 </td>
-                                <td>{{ originRegion(row) }}</td>
                                 <td>
-                                    <span
-                                        class="pill"
-                                        :class="siteStatus(row).tone"
-                                        >● {{ siteStatus(row).text }}</span
-                                    >
+                                    <div data-slot="table-cell-content">
+                                        <div class="subline">
+                                            套餐
+                                            <span class="foreground"
+                                                >{{
+                                                    row.package_name ??
+                                                    row.user_package ??
+                                                    '—'
+                                                }}
+                                                (id:
+                                                {{
+                                                    row.user_package ?? '—'
+                                                }})</span
+                                            >
+                                        </div>
+                                        <div class="subline">
+                                            分组 {{ row.group_name || '—' }}
+                                        </div>
+                                    </div>
                                 </td>
                                 <td>
-                                    {{
-                                        row.create_at2 ??
-                                        String(row.create_at ?? '')
-                                            .replace('T', ' ')
-                                            .slice(0, 19)
-                                    }}
+                                    <div data-slot="table-cell-content">
+                                        {{ originRegion(row) }}
+                                    </div>
                                 </td>
                                 <td>
-                                    <div class="row-actions">
-                                        <Button
-                                            variant="link"
-                                            size="inline"
-                                            type="button"
-                                            data-slot="console-link"
-                                            class="link"
-                                            @click="emit('manage', row)"
+                                    <div data-slot="table-cell-content">
+                                        <span
+                                            class="pill"
+                                            :class="siteStatus(row).tone"
+                                            >● {{ siteStatus(row).text }}</span
                                         >
-                                            管理
-                                        </Button>
-                                        <DropdownMenu
-                                            ><DropdownMenuTrigger as-child
-                                                ><Button
-                                                    variant="ghost"
-                                                    size="icon-sm"
-                                                    type="button"
-                                                    data-slot="console-link"
-                                                    class="link"
-                                                    :aria-label="`更多操作 ${row.id}`"
-                                                >
-                                                    <MoreHorizontal /></Button></DropdownMenuTrigger
-                                            ><DropdownMenuContent
-                                                align="end"
-                                                class="console-admin-site-workspace min-w-28"
-                                                ><DropdownMenuItem
-                                                    @select="
-                                                        emit('details', row)
-                                                    "
-                                                    >查看详情</DropdownMenuItem
-                                                ><DropdownMenuItem
-                                                    @select="emit('edit', row)"
-                                                    >编辑</DropdownMenuItem
-                                                ><DropdownMenuItem
-                                                    @select="
-                                                        emit('certificate', row)
-                                                    "
-                                                    >申请证书</DropdownMenuItem
-                                                ><DropdownMenuItem
-                                                    @select="
-                                                        emit('toggle', row)
-                                                    "
-                                                    >{{
-                                                        String(row.enable) ===
-                                                        '0'
-                                                            ? '启用'
-                                                            : '禁用'
-                                                    }}</DropdownMenuItem
-                                                ><DropdownMenuItem
-                                                    @select="
-                                                        emit('delete', row)
-                                                    "
-                                                    >删除</DropdownMenuItem
-                                                ></DropdownMenuContent
-                                            ></DropdownMenu
-                                        >
+                                    </div>
+                                </td>
+                                <td>
+                                    <div data-slot="table-cell-content">
+                                        {{
+                                            row.create_at2 ??
+                                            String(row.create_at ?? '')
+                                                .replace('T', ' ')
+                                                .slice(0, 19)
+                                        }}
+                                    </div>
+                                </td>
+                                <td>
+                                    <div data-slot="table-cell-content">
+                                        <div class="row-actions">
+                                            <Button
+                                                variant="link"
+                                                size="inline"
+                                                type="button"
+                                                data-slot="console-link"
+                                                class="link"
+                                                @click="emit('manage', row)"
+                                            >
+                                                管理
+                                            </Button>
+                                            <DropdownMenu
+                                                ><DropdownMenuTrigger as-child
+                                                    ><Button
+                                                        variant="ghost"
+                                                        size="icon-sm"
+                                                        type="button"
+                                                        data-slot="console-link"
+                                                        class="link"
+                                                        :aria-label="`更多操作 ${row.id}`"
+                                                    >
+                                                        <MoreHorizontal /></Button></DropdownMenuTrigger
+                                                ><DropdownMenuContent
+                                                    align="end"
+                                                    class="console-admin-site-workspace min-w-28"
+                                                    ><DropdownMenuItem
+                                                        @select="
+                                                            emit('details', row)
+                                                        "
+                                                        >查看详情</DropdownMenuItem
+                                                    ><DropdownMenuItem
+                                                        @select="
+                                                            emit('edit', row)
+                                                        "
+                                                        >编辑</DropdownMenuItem
+                                                    ><DropdownMenuItem
+                                                        @select="
+                                                            emit(
+                                                                'certificate',
+                                                                row,
+                                                            )
+                                                        "
+                                                        >申请证书</DropdownMenuItem
+                                                    ><DropdownMenuItem
+                                                        @select="
+                                                            emit('toggle', row)
+                                                        "
+                                                        >{{
+                                                            String(
+                                                                row.enable,
+                                                            ) === '0'
+                                                                ? '启用'
+                                                                : '禁用'
+                                                        }}</DropdownMenuItem
+                                                    ><DropdownMenuItem
+                                                        @select="
+                                                            emit('delete', row)
+                                                        "
+                                                        >删除</DropdownMenuItem
+                                                    ></DropdownMenuContent
+                                                ></DropdownMenu
+                                            >
+                                        </div>
                                     </div>
                                 </td>
                             </template>
                             <template v-else-if="tab === 'resolve'"
-                                ><td>{{ row.site_id }}</td>
-                                <td>
-                                    <div class="copy-cell">
-                                        <span class="link">{{
-                                            row.domain
-                                        }}</span
-                                        ><Button
-                                            variant="ghost"
-                                            size="icon-sm"
-                                            type="button"
-                                            class="copy"
-                                            aria-label="复制域名"
-                                            @click="copy(row.domain)"
-                                        >
-                                            <Copy />
-                                        </Button>
+                                ><td>
+                                    <div data-slot="table-cell-content">
+                                        {{ row.site_id }}
                                     </div>
                                 </td>
                                 <td>
-                                    <div class="copy-cell">
-                                        {{ row.cname
-                                        }}<Button
-                                            variant="ghost"
-                                            size="icon-sm"
-                                            type="button"
-                                            class="copy"
-                                            aria-label="复制CNAME"
-                                            @click="copy(row.cname)"
-                                        >
-                                            <Copy />
-                                        </Button>
+                                    <div data-slot="table-cell-content">
+                                        <div class="copy-cell">
+                                            <span class="link">{{
+                                                row.domain
+                                            }}</span
+                                            ><Button
+                                                variant="ghost"
+                                                size="icon-sm"
+                                                type="button"
+                                                class="copy"
+                                                aria-label="复制域名"
+                                                @click="copy(row.domain)"
+                                            >
+                                                <Copy />
+                                            </Button>
+                                        </div>
                                     </div>
                                 </td>
                                 <td>
-                                    <span
-                                        class="pill outlined"
-                                        :class="
-                                            checks[String(row.id)] ===
-                                            'resolved'
-                                                ? 'success'
-                                                : checks[String(row.id)] ===
-                                                    'checking'
-                                                  ? 'muted'
-                                                  : 'danger'
-                                        "
-                                        >{{ checkText(row) }}</span
-                                    >
+                                    <div data-slot="table-cell-content">
+                                        <div class="copy-cell">
+                                            {{ row.cname
+                                            }}<Button
+                                                variant="ghost"
+                                                size="icon-sm"
+                                                type="button"
+                                                class="copy"
+                                                aria-label="复制CNAME"
+                                                @click="copy(row.cname)"
+                                            >
+                                                <Copy />
+                                            </Button>
+                                        </div>
+                                    </div>
                                 </td>
                                 <td>
-                                    <span
-                                        class="pill outlined"
-                                        :class="
-                                            row.dns_api ? 'success' : 'warning'
-                                        "
-                                        >{{
-                                            row.dns_api ? '已配置' : '未配置'
-                                        }}</span
-                                    >
+                                    <div data-slot="table-cell-content">
+                                        <span
+                                            class="pill outlined"
+                                            :class="
+                                                checks[String(row.id)] ===
+                                                'resolved'
+                                                    ? 'success'
+                                                    : checks[String(row.id)] ===
+                                                        'checking'
+                                                      ? 'muted'
+                                                      : 'danger'
+                                            "
+                                            >{{ checkText(row) }}</span
+                                        >
+                                    </div>
                                 </td>
                                 <td>
-                                    <span
-                                        class="pill outlined"
-                                        :class="
-                                            row.state === 'failed'
-                                                ? 'danger'
-                                                : row.state === 'done'
-                                                  ? 'success'
-                                                  : 'muted'
-                                        "
-                                        :title="String(row.ret ?? '')"
-                                        >{{ taskText(row) }}</span
-                                    >
+                                    <div data-slot="table-cell-content">
+                                        <span
+                                            class="pill outlined"
+                                            :class="
+                                                row.dns_api
+                                                    ? 'success'
+                                                    : 'warning'
+                                            "
+                                            >{{
+                                                row.dns_api
+                                                    ? '已配置'
+                                                    : '未配置'
+                                            }}</span
+                                        >
+                                    </div>
+                                </td>
+                                <td>
+                                    <div data-slot="table-cell-content">
+                                        <span
+                                            class="pill outlined"
+                                            :class="
+                                                row.state === 'failed'
+                                                    ? 'danger'
+                                                    : row.state === 'done'
+                                                      ? 'success'
+                                                      : 'muted'
+                                            "
+                                            :title="String(row.ret ?? '')"
+                                            >{{ taskText(row) }}</span
+                                        >
+                                    </div>
                                 </td></template
                             >
                             <template v-else
-                                ><td>{{ username(row) }}</td>
-                                <td>
-                                    {{
-                                        tab === 'defaults'
-                                            ? configLabel(row)
-                                            : row.name
-                                    }}
+                                ><td>
+                                    <div data-slot="table-cell-content">
+                                        {{ username(row) }}
+                                    </div>
                                 </td>
-                                <td v-if="tab === 'dnsapi'">{{ row.type }}</td>
+                                <td>
+                                    <div data-slot="table-cell-content">
+                                        {{
+                                            tab === 'defaults'
+                                                ? configLabel(row)
+                                                : row.name
+                                        }}
+                                    </div>
+                                </td>
+                                <td v-if="tab === 'dnsapi'">
+                                    <div data-slot="table-cell-content">
+                                        {{ row.type }}
+                                    </div>
+                                </td>
                                 <td
                                     v-if="tab === 'defaults'"
                                     class="max-w-72 truncate"
                                     :title="String(row.value ?? '')"
                                 >
-                                    {{ configValue(row)
-                                    }}<span
-                                        v-if="String(row.enable) === '0'"
-                                        class="pill muted ml-2"
-                                        >已禁用</span
-                                    >
+                                    <div data-slot="table-cell-content">
+                                        {{ configValue(row)
+                                        }}<span
+                                            v-if="String(row.enable) === '0'"
+                                            class="pill muted ml-2"
+                                            >已禁用</span
+                                        >
+                                    </div>
                                 </td>
                                 <td>
-                                    {{
-                                        tab === 'defaults'
-                                            ? row.scope_name === 'group'
-                                                ? `网站分组 (${row.scope_id})`
-                                                : '全局'
-                                            : row.des || '—'
-                                    }}
+                                    <div data-slot="table-cell-content">
+                                        {{
+                                            tab === 'defaults'
+                                                ? row.scope_name === 'group'
+                                                    ? `网站分组 (${row.scope_id})`
+                                                    : '全局'
+                                                : row.des || '—'
+                                        }}
+                                    </div>
                                 </td>
                                 <td>
-                                    <div class="row-actions">
-                                        <Button
-                                            variant="link"
-                                            size="inline"
-                                            type="button"
-                                            data-slot="console-link"
-                                            class="link"
-                                            @click="openEditor(row)"
-                                        >
-                                            编辑</Button
-                                        ><Button
-                                            variant="link"
-                                            size="inline"
-                                            type="button"
-                                            data-slot="console-link"
-                                            class="link"
-                                            :disabled="busy"
-                                            @click="
-                                                confirmDelete([Number(row.id)])
-                                            "
-                                        >
-                                            删除
-                                        </Button>
+                                    <div data-slot="table-cell-content">
+                                        <div class="row-actions">
+                                            <Button
+                                                variant="link"
+                                                size="inline"
+                                                type="button"
+                                                data-slot="console-link"
+                                                class="link"
+                                                @click="openEditor(row)"
+                                            >
+                                                编辑</Button
+                                            ><Button
+                                                variant="link"
+                                                size="inline"
+                                                type="button"
+                                                data-slot="console-link"
+                                                class="link"
+                                                :disabled="busy"
+                                                @click="
+                                                    confirmDelete([
+                                                        Number(row.id),
+                                                    ])
+                                                "
+                                            >
+                                                删除
+                                            </Button>
+                                        </div>
                                     </div>
                                 </td></template
                             >

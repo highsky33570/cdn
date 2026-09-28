@@ -550,15 +550,21 @@ function goBack(): void {
                         <table class="w-full text-sm">
                             <thead class="border-b bg-muted/50">
                                 <tr>
-                                    <th
-                                        class="w-32 px-3 py-2 text-left font-medium"
-                                    >
-                                        协议
+                                    <th class="w-32 text-left font-medium">
+                                        <div data-slot="table-cell-content">
+                                            协议
+                                        </div>
                                     </th>
-                                    <th class="px-3 py-2 text-left font-medium">
-                                        端口
+                                    <th class="text-left font-medium">
+                                        <div data-slot="table-cell-content">
+                                            端口
+                                        </div>
                                     </th>
-                                    <th class="w-10 px-3 py-2"></th>
+                                    <th class="w-10">
+                                        <div
+                                            data-slot="table-cell-content"
+                                        ></div>
+                                    </th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -567,42 +573,50 @@ function goBack(): void {
                                     :key="index"
                                     class="border-b last:border-0"
                                 >
-                                    <td class="px-3 py-2">
-                                        <Select v-model="row.protocol">
-                                            <SelectTrigger class="h-8">
-                                                <SelectValue />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectGroup>
-                                                    <SelectItem value="tcp"
-                                                        >TCP</SelectItem
-                                                    >
-                                                    <SelectItem value="udp"
-                                                        >UDP</SelectItem
-                                                    >
-                                                </SelectGroup>
-                                            </SelectContent>
-                                        </Select>
+                                    <td class="">
+                                        <div data-slot="table-cell-content">
+                                            <Select v-model="row.protocol">
+                                                <SelectTrigger class="h-8">
+                                                    <SelectValue />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectGroup>
+                                                        <SelectItem value="tcp"
+                                                            >TCP</SelectItem
+                                                        >
+                                                        <SelectItem value="udp"
+                                                            >UDP</SelectItem
+                                                        >
+                                                    </SelectGroup>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
                                     </td>
-                                    <td class="px-3 py-2">
-                                        <Input
-                                            v-model="row.port"
-                                            class="h-8"
-                                            inputmode="numeric"
-                                            placeholder="1–65535"
-                                        />
+                                    <td class="">
+                                        <div data-slot="table-cell-content">
+                                            <Input
+                                                v-model="row.port"
+                                                class="h-8"
+                                                inputmode="numeric"
+                                                placeholder="1–65535"
+                                            />
+                                        </div>
                                     </td>
-                                    <td class="px-3 py-2 text-center">
-                                        <Button
-                                            variant="ghost"
-                                            size="icon-sm"
-                                            type="button"
-                                            class="text-muted-foreground hover:text-destructive"
-                                            :disabled="listenRows.length <= 1"
-                                            @click="removeListenRow(index)"
-                                        >
-                                            <X class="h-4 w-4" />
-                                        </Button>
+                                    <td class="text-center">
+                                        <div data-slot="table-cell-content">
+                                            <Button
+                                                variant="ghost"
+                                                size="icon-sm"
+                                                type="button"
+                                                class="text-muted-foreground hover:text-destructive"
+                                                :disabled="
+                                                    listenRows.length <= 1
+                                                "
+                                                @click="removeListenRow(index)"
+                                            >
+                                                <X class="h-4 w-4" />
+                                            </Button>
+                                        </div>
                                     </td>
                                 </tr>
                             </tbody>
@@ -684,20 +698,26 @@ function goBack(): void {
                         <table class="w-full text-sm">
                             <thead class="border-b bg-muted/50">
                                 <tr>
-                                    <th class="px-3 py-2 text-left font-medium">
-                                        地址
+                                    <th class="text-left font-medium">
+                                        <div data-slot="table-cell-content">
+                                            地址
+                                        </div>
                                     </th>
-                                    <th
-                                        class="w-24 px-3 py-2 text-left font-medium"
-                                    >
-                                        权重
+                                    <th class="w-24 text-left font-medium">
+                                        <div data-slot="table-cell-content">
+                                            权重
+                                        </div>
                                     </th>
-                                    <th
-                                        class="w-32 px-3 py-2 text-left font-medium"
-                                    >
-                                        状态
+                                    <th class="w-32 text-left font-medium">
+                                        <div data-slot="table-cell-content">
+                                            状态
+                                        </div>
                                     </th>
-                                    <th class="w-10 px-3 py-2"></th>
+                                    <th class="w-10">
+                                        <div
+                                            data-slot="table-cell-content"
+                                        ></div>
+                                    </th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -706,53 +726,64 @@ function goBack(): void {
                                     :key="index"
                                     class="border-b last:border-0"
                                 >
-                                    <td class="px-3 py-2">
-                                        <Input
-                                            v-model="row.addr"
-                                            class="h-8"
-                                            placeholder="如 1.2.3.4"
-                                        />
+                                    <td class="">
+                                        <div data-slot="table-cell-content">
+                                            <Input
+                                                v-model="row.addr"
+                                                class="h-8"
+                                                placeholder="如 1.2.3.4"
+                                            />
+                                        </div>
                                     </td>
-                                    <td class="px-3 py-2">
-                                        <Input
-                                            v-model.number="row.weight"
-                                            class="h-8"
-                                            type="number"
-                                            min="1"
-                                            max="100"
-                                        />
+                                    <td class="">
+                                        <div data-slot="table-cell-content">
+                                            <Input
+                                                v-model.number="row.weight"
+                                                class="h-8"
+                                                type="number"
+                                                min="1"
+                                                max="100"
+                                            />
+                                        </div>
                                     </td>
-                                    <td class="px-3 py-2">
-                                        <Select v-model="row.state">
-                                            <SelectTrigger class="h-8">
-                                                <SelectValue />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectGroup>
-                                                    <SelectItem value="up"
-                                                        >up（正常）</SelectItem
-                                                    >
-                                                    <SelectItem value="down"
-                                                        >down（停用）</SelectItem
-                                                    >
-                                                    <SelectItem value="backup"
-                                                        >backup（备用）</SelectItem
-                                                    >
-                                                </SelectGroup>
-                                            </SelectContent>
-                                        </Select>
+                                    <td class="">
+                                        <div data-slot="table-cell-content">
+                                            <Select v-model="row.state">
+                                                <SelectTrigger class="h-8">
+                                                    <SelectValue />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectGroup>
+                                                        <SelectItem value="up"
+                                                            >up（正常）</SelectItem
+                                                        >
+                                                        <SelectItem value="down"
+                                                            >down（停用）</SelectItem
+                                                        >
+                                                        <SelectItem
+                                                            value="backup"
+                                                            >backup（备用）</SelectItem
+                                                        >
+                                                    </SelectGroup>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
                                     </td>
-                                    <td class="px-3 py-2 text-center">
-                                        <Button
-                                            variant="ghost"
-                                            size="icon-sm"
-                                            type="button"
-                                            class="text-muted-foreground hover:text-destructive"
-                                            :disabled="backendRows.length <= 1"
-                                            @click="removeBackendRow(index)"
-                                        >
-                                            <X class="h-4 w-4" />
-                                        </Button>
+                                    <td class="text-center">
+                                        <div data-slot="table-cell-content">
+                                            <Button
+                                                variant="ghost"
+                                                size="icon-sm"
+                                                type="button"
+                                                class="text-muted-foreground hover:text-destructive"
+                                                :disabled="
+                                                    backendRows.length <= 1
+                                                "
+                                                @click="removeBackendRow(index)"
+                                            >
+                                                <X class="h-4 w-4" />
+                                            </Button>
+                                        </div>
                                     </td>
                                 </tr>
                             </tbody>
@@ -896,15 +927,21 @@ function goBack(): void {
                         <table class="w-full text-sm">
                             <thead class="border-b bg-muted/50">
                                 <tr>
-                                    <th class="px-3 py-2 text-left font-medium">
-                                        IP 地址
+                                    <th class="text-left font-medium">
+                                        <div data-slot="table-cell-content">
+                                            IP 地址
+                                        </div>
                                     </th>
-                                    <th
-                                        class="w-36 px-3 py-2 text-left font-medium"
-                                    >
-                                        动作
+                                    <th class="w-36 text-left font-medium">
+                                        <div data-slot="table-cell-content">
+                                            动作
+                                        </div>
                                     </th>
-                                    <th class="w-10 px-3 py-2"></th>
+                                    <th class="w-10">
+                                        <div
+                                            data-slot="table-cell-content"
+                                        ></div>
+                                    </th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -913,40 +950,47 @@ function goBack(): void {
                                     :key="index"
                                     class="border-b last:border-0"
                                 >
-                                    <td class="px-3 py-2">
-                                        <Input
-                                            v-model="rule.ip"
-                                            class="h-8 font-mono"
-                                            placeholder="如 1.2.3.4 或 1.2.3.0/24"
-                                        />
+                                    <td class="">
+                                        <div data-slot="table-cell-content">
+                                            <Input
+                                                v-model="rule.ip"
+                                                class="h-8 font-mono"
+                                                placeholder="如 1.2.3.4 或 1.2.3.0/24"
+                                            />
+                                        </div>
                                     </td>
-                                    <td class="px-3 py-2">
-                                        <Select v-model="rule.action">
-                                            <SelectTrigger class="h-8">
-                                                <SelectValue />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectGroup>
-                                                    <SelectItem value="allow"
-                                                        >允许</SelectItem
-                                                    >
-                                                    <SelectItem value="deny"
-                                                        >拒绝</SelectItem
-                                                    >
-                                                </SelectGroup>
-                                            </SelectContent>
-                                        </Select>
+                                    <td class="">
+                                        <div data-slot="table-cell-content">
+                                            <Select v-model="rule.action">
+                                                <SelectTrigger class="h-8">
+                                                    <SelectValue />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectGroup>
+                                                        <SelectItem
+                                                            value="allow"
+                                                            >允许</SelectItem
+                                                        >
+                                                        <SelectItem value="deny"
+                                                            >拒绝</SelectItem
+                                                        >
+                                                    </SelectGroup>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
                                     </td>
-                                    <td class="px-3 py-2 text-center">
-                                        <Button
-                                            variant="ghost"
-                                            size="icon-sm"
-                                            type="button"
-                                            class="text-muted-foreground hover:text-destructive"
-                                            @click="removeAclRule(index)"
-                                        >
-                                            <X class="h-4 w-4" />
-                                        </Button>
+                                    <td class="text-center">
+                                        <div data-slot="table-cell-content">
+                                            <Button
+                                                variant="ghost"
+                                                size="icon-sm"
+                                                type="button"
+                                                class="text-muted-foreground hover:text-destructive"
+                                                @click="removeAclRule(index)"
+                                            >
+                                                <X class="h-4 w-4" />
+                                            </Button>
+                                        </div>
                                     </td>
                                 </tr>
                             </tbody>

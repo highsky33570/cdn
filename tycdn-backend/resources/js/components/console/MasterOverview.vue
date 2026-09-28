@@ -505,15 +505,26 @@ onUnmounted(() => {
                                 <thead class="sr-only">
                                     <tr>
                                         <th>
-                                            {{
-                                                tops.find(
-                                                    (item) =>
-                                                        item.key === topType,
-                                                )?.label
-                                            }}
+                                            <div data-slot="table-cell-content">
+                                                {{
+                                                    tops.find(
+                                                        (item) =>
+                                                            item.key ===
+                                                            topType,
+                                                    )?.label
+                                                }}
+                                            </div>
                                         </th>
-                                        <th>请求次数</th>
-                                        <th>出站流量</th>
+                                        <th>
+                                            <div data-slot="table-cell-content">
+                                                请求次数
+                                            </div>
+                                        </th>
+                                        <th>
+                                            <div data-slot="table-cell-content">
+                                                出站流量
+                                            </div>
+                                        </th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -526,24 +537,30 @@ onUnmounted(() => {
                                         :key="index"
                                     >
                                         <td>
-                                            <div
-                                                class="max-w-32 truncate"
-                                                :title="String(row.res)"
-                                            >
-                                                {{ row.res }}
+                                            <div data-slot="table-cell-content">
+                                                <div
+                                                    class="max-w-32 truncate"
+                                                    :title="String(row.res)"
+                                                >
+                                                    {{ row.res }}
+                                                </div>
                                             </div>
                                         </td>
                                         <td class="whitespace-nowrap">
-                                            {{
-                                                row.count == null
-                                                    ? '—'
-                                                    : `${row.count}次`
-                                            }}
+                                            <div data-slot="table-cell-content">
+                                                {{
+                                                    row.count == null
+                                                        ? '—'
+                                                        : `${row.count}次`
+                                                }}
+                                            </div>
                                         </td>
                                         <td
                                             class="text-right whitespace-nowrap"
                                         >
-                                            {{ streamBytes(row.traffic) }}
+                                            <div data-slot="table-cell-content">
+                                                {{ streamBytes(row.traffic) }}
+                                            </div>
                                         </td>
                                     </tr>
                                     <tr
@@ -554,15 +571,17 @@ onUnmounted(() => {
                                     >
                                         <td
                                             colspan="3"
-                                            class="h-32 text-center text-muted-foreground"
+                                            class="text-center text-muted-foreground"
                                         >
-                                            {{
-                                                ranking.loading
-                                                    ? '加载中…'
-                                                    : ranking.error
-                                                      ? '数据加载失败'
-                                                      : '暂无数据'
-                                            }}
+                                            <div data-slot="table-cell-content">
+                                                {{
+                                                    ranking.loading
+                                                        ? '加载中…'
+                                                        : ranking.error
+                                                          ? '数据加载失败'
+                                                          : '暂无数据'
+                                                }}
+                                            </div>
                                         </td>
                                     </tr>
                                 </tbody>
@@ -661,50 +680,72 @@ onUnmounted(() => {
                     <table class="w-full text-xs" aria-label="系统状态">
                         <tbody>
                             <tr>
-                                <td>主控状态</td>
                                 <td>
-                                    <CheckCircle2
-                                        v-if="system.data && !system.error"
-                                        class="status-ok"
-                                        aria-label="正常"
-                                    /><span v-else>{{
-                                        system.loading ? '检查中' : '—'
-                                    }}</span>
+                                    <div data-slot="table-cell-content">
+                                        主控状态
+                                    </div>
                                 </td>
-                            </tr>
-                            <tr>
-                                <td>Elasticsearch</td>
                                 <td>
-                                    <CheckCircle2
-                                        v-if="es.code === 0"
-                                        class="status-ok"
-                                        aria-label="正常"
-                                    /><span v-else>{{ es.msg || '—' }}</span>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>Agent状态</td>
-                                <td>
-                                    <div
-                                        class="flex flex-wrap items-center gap-2"
-                                    >
+                                    <div data-slot="table-cell-content">
                                         <CheckCircle2
-                                            v-if="agent.state === 'done'"
+                                            v-if="system.data && !system.error"
                                             class="status-ok"
                                             aria-label="正常"
-                                        /><span v-else>{{ agentLabel }}</span
-                                        ><Button
-                                            class="h-6 px-2 text-xs"
-                                            :disabled="
-                                                checking || system.loading
-                                            "
-                                            @click="checkAgent"
-                                            >{{
-                                                checking
-                                                    ? '提交中…'
-                                                    : '立即检查'
-                                            }}</Button
+                                        /><span v-else>{{
+                                            system.loading ? '检查中' : '—'
+                                        }}</span>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <div data-slot="table-cell-content">
+                                        Elasticsearch
+                                    </div>
+                                </td>
+                                <td>
+                                    <div data-slot="table-cell-content">
+                                        <CheckCircle2
+                                            v-if="es.code === 0"
+                                            class="status-ok"
+                                            aria-label="正常"
+                                        /><span v-else>{{
+                                            es.msg || '—'
+                                        }}</span>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <div data-slot="table-cell-content">
+                                        Agent状态
+                                    </div>
+                                </td>
+                                <td>
+                                    <div data-slot="table-cell-content">
+                                        <div
+                                            class="flex flex-wrap items-center gap-2"
                                         >
+                                            <CheckCircle2
+                                                v-if="agent.state === 'done'"
+                                                class="status-ok"
+                                                aria-label="正常"
+                                            /><span v-else>{{
+                                                agentLabel
+                                            }}</span
+                                            ><Button
+                                                class="h-6 px-2 text-xs"
+                                                :disabled="
+                                                    checking || system.loading
+                                                "
+                                                @click="checkAgent"
+                                                >{{
+                                                    checking
+                                                        ? '提交中…'
+                                                        : '立即检查'
+                                                }}</Button
+                                            >
+                                        </div>
                                     </div>
                                 </td>
                             </tr>
@@ -754,44 +795,71 @@ onUnmounted(() => {
                     <table class="w-full text-xs" aria-label="系统授权">
                         <tbody>
                             <tr>
-                                <td>授权节点</td>
                                 <td>
-                                    {{
-                                        Number(auth.nodes) === -1
-                                            ? '不限制'
-                                            : (auth.nodes ?? '—')
-                                    }}
+                                    <div data-slot="table-cell-content">
+                                        授权节点
+                                    </div>
+                                </td>
+                                <td>
+                                    <div data-slot="table-cell-content">
+                                        {{
+                                            Number(auth.nodes) === -1
+                                                ? '不限制'
+                                                : (auth.nodes ?? '—')
+                                        }}
+                                    </div>
                                 </td>
                             </tr>
                             <tr>
-                                <td>当前节点</td>
-                                <td>{{ sys.node_count ?? '—' }}</td>
-                            </tr>
-                            <tr>
-                                <td>到期时间</td>
                                 <td>
-                                    {{
-                                        Number(auth.nodes) === -1
-                                            ? '不限制'
-                                            : (auth.end_at ?? '—')
-                                    }}
+                                    <div data-slot="table-cell-content">
+                                        当前节点
+                                    </div>
+                                </td>
+                                <td>
+                                    <div data-slot="table-cell-content">
+                                        {{ sys.node_count ?? '—' }}
+                                    </div>
                                 </td>
                             </tr>
                             <tr>
-                                <td>操作</td>
                                 <td>
-                                    <Button
-                                        class="h-6 px-2 text-xs"
-                                        :disabled="
-                                            refreshingLicense || license.loading
-                                        "
-                                        @click="refreshLicense"
-                                        >{{
-                                            refreshingLicense
-                                                ? '刷新中…'
-                                                : '刷新授权'
-                                        }}</Button
-                                    >
+                                    <div data-slot="table-cell-content">
+                                        到期时间
+                                    </div>
+                                </td>
+                                <td>
+                                    <div data-slot="table-cell-content">
+                                        {{
+                                            Number(auth.nodes) === -1
+                                                ? '不限制'
+                                                : (auth.end_at ?? '—')
+                                        }}
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <div data-slot="table-cell-content">
+                                        操作
+                                    </div>
+                                </td>
+                                <td>
+                                    <div data-slot="table-cell-content">
+                                        <Button
+                                            class="h-6 px-2 text-xs"
+                                            :disabled="
+                                                refreshingLicense ||
+                                                license.loading
+                                            "
+                                            @click="refreshLicense"
+                                            >{{
+                                                refreshingLicense
+                                                    ? '刷新中…'
+                                                    : '刷新授权'
+                                            }}</Button
+                                        >
+                                    </div>
                                 </td>
                             </tr>
                         </tbody>
@@ -806,8 +874,16 @@ onUnmounted(() => {
                     <table class="w-full text-xs" aria-label="使用统计">
                         <tbody>
                             <tr v-for="item in usageStats" :key="item.field">
-                                <td>{{ item.label }}</td>
-                                <td>{{ sys[item.field] ?? '—' }}</td>
+                                <td>
+                                    <div data-slot="table-cell-content">
+                                        {{ item.label }}
+                                    </div>
+                                </td>
+                                <td>
+                                    <div data-slot="table-cell-content">
+                                        {{ sys[item.field] ?? '—' }}
+                                    </div>
+                                </td>
                             </tr>
                         </tbody>
                     </table>

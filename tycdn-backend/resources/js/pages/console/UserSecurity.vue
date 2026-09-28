@@ -1031,49 +1031,62 @@ function omitEnable<TPayload extends { enable?: unknown }>(
                                 <thead class="border-b bg-muted/30">
                                     <tr>
                                         <th
-                                            class="px-4 py-3 text-left font-medium text-muted-foreground"
+                                            class="text-left font-medium text-muted-foreground"
                                         >
-                                            网站ID
+                                            <div data-slot="table-cell-content">
+                                                网站ID
+                                            </div>
                                         </th>
                                         <th
-                                            class="px-4 py-3 text-left font-medium text-muted-foreground"
+                                            class="text-left font-medium text-muted-foreground"
                                         >
-                                            域名
+                                            <div data-slot="table-cell-content">
+                                                域名
+                                            </div>
                                         </th>
                                         <th
-                                            class="px-4 py-3 text-left font-medium text-muted-foreground"
+                                            class="text-left font-medium text-muted-foreground"
                                         >
-                                            IP
+                                            <div data-slot="table-cell-content">
+                                                IP
+                                            </div>
                                         </th>
                                         <th
-                                            class="px-4 py-3 text-left font-medium text-muted-foreground"
+                                            class="text-left font-medium text-muted-foreground"
                                         >
-                                            位置
+                                            <div data-slot="table-cell-content">
+                                                位置
+                                            </div>
                                         </th>
                                         <th
-                                            class="px-4 py-3 text-left font-medium text-muted-foreground"
+                                            class="text-left font-medium text-muted-foreground"
                                         >
-                                            过滤器
+                                            <div data-slot="table-cell-content">
+                                                过滤器
+                                            </div>
                                         </th>
                                         <th
-                                            class="px-4 py-3 text-left font-medium text-muted-foreground"
+                                            class="text-left font-medium text-muted-foreground"
                                         >
-                                            拉黑时间
+                                            <div data-slot="table-cell-content">
+                                                拉黑时间
+                                            </div>
                                         </th>
                                         <th
-                                            class="px-4 py-3 text-left font-medium text-muted-foreground"
+                                            class="text-left font-medium text-muted-foreground"
                                         >
-                                            手动解锁?
+                                            <div data-slot="table-cell-content">
+                                                手动解锁?
+                                            </div>
                                         </th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     <tr v-if="historyBlackIpLoading">
-                                        <td
-                                            colspan="7"
-                                            class="px-4 py-12 text-center"
-                                        >
-                                            <Spinner class="mx-auto" />
+                                        <td colspan="7" class="text-center">
+                                            <div data-slot="table-cell-content">
+                                                <Spinner class="mx-auto" />
+                                            </div>
                                         </td>
                                     </tr>
                                     <tr
@@ -1083,61 +1096,73 @@ function omitEnable<TPayload extends { enable?: unknown }>(
                                         :key="index"
                                         class="border-b transition-colors last:border-0 hover:bg-muted/20"
                                     >
-                                        <td
-                                            class="px-4 py-3 text-muted-foreground"
-                                        >
-                                            {{ textValue(row.site_id) || '-' }}
-                                        </td>
-                                        <td class="px-4 py-3">
-                                            {{
-                                                textValue(row.domain) ||
-                                                textValue(row.host) ||
-                                                '-'
-                                            }}
-                                        </td>
-                                        <td class="px-4 py-3 font-mono text-xs">
-                                            {{ textValue(row.ip) || '-' }}
-                                        </td>
-                                        <td
-                                            class="px-4 py-3 text-muted-foreground"
-                                        >
-                                            {{
-                                                textValue(row.position) ||
-                                                textValue(row.country) ||
-                                                '-'
-                                            }}
-                                        </td>
-                                        <td class="px-4 py-3">
-                                            <span
-                                                class="inline-flex items-center rounded-md bg-muted px-2 py-0.5 text-xs font-medium"
-                                            >
+                                        <td class="text-muted-foreground">
+                                            <div data-slot="table-cell-content">
                                                 {{
-                                                    textValue(row.name) ||
-                                                    textValue(row.filter) ||
+                                                    textValue(row.site_id) ||
                                                     '-'
                                                 }}
-                                            </span>
+                                            </div>
+                                        </td>
+                                        <td class="">
+                                            <div data-slot="table-cell-content">
+                                                {{
+                                                    textValue(row.domain) ||
+                                                    textValue(row.host) ||
+                                                    '-'
+                                                }}
+                                            </div>
+                                        </td>
+                                        <td class="font-mono text-xs">
+                                            <div data-slot="table-cell-content">
+                                                {{ textValue(row.ip) || '-' }}
+                                            </div>
+                                        </td>
+                                        <td class="text-muted-foreground">
+                                            <div data-slot="table-cell-content">
+                                                {{
+                                                    textValue(row.position) ||
+                                                    textValue(row.country) ||
+                                                    '-'
+                                                }}
+                                            </div>
+                                        </td>
+                                        <td class="">
+                                            <div data-slot="table-cell-content">
+                                                <span
+                                                    class="inline-flex items-center rounded-md bg-muted px-2 py-0.5 text-xs font-medium"
+                                                >
+                                                    {{
+                                                        textValue(row.name) ||
+                                                        textValue(row.filter) ||
+                                                        '-'
+                                                    }}
+                                                </span>
+                                            </div>
                                         </td>
                                         <td
-                                            class="px-4 py-3 text-xs text-muted-foreground tabular-nums"
+                                            class="text-xs text-muted-foreground tabular-nums"
                                         >
-                                            {{
-                                                formatDate(
-                                                    row.create_time ??
-                                                        row.created_at ??
-                                                        row.time,
-                                                )
-                                            }}
+                                            <div data-slot="table-cell-content">
+                                                {{
+                                                    formatDate(
+                                                        row.create_time ??
+                                                            row.created_at ??
+                                                            row.time,
+                                                    )
+                                                }}
+                                            </div>
                                         </td>
-                                        <td
-                                            class="px-4 py-3 text-muted-foreground"
-                                        >
-                                            {{
-                                                row.manual_unlock === true ||
-                                                row.manual_unlock === 1
-                                                    ? '是'
-                                                    : '否'
-                                            }}
+                                        <td class="text-muted-foreground">
+                                            <div data-slot="table-cell-content">
+                                                {{
+                                                    row.manual_unlock ===
+                                                        true ||
+                                                    row.manual_unlock === 1
+                                                        ? '是'
+                                                        : '否'
+                                                }}
+                                            </div>
                                         </td>
                                     </tr>
                                     <tr
@@ -1148,9 +1173,11 @@ function omitEnable<TPayload extends { enable?: unknown }>(
                                     >
                                         <td
                                             colspan="7"
-                                            class="px-4 py-16 text-center text-muted-foreground"
+                                            class="text-center text-muted-foreground"
                                         >
-                                            暂无历史拉黑记录
+                                            <div data-slot="table-cell-content">
+                                                暂无历史拉黑记录
+                                            </div>
                                         </td>
                                     </tr>
                                 </tbody>
@@ -1185,29 +1212,34 @@ function omitEnable<TPayload extends { enable?: unknown }>(
                                 <thead class="border-b bg-muted/30">
                                     <tr>
                                         <th
-                                            class="w-16 px-4 py-3 text-left font-medium text-muted-foreground"
+                                            class="w-16 text-left font-medium text-muted-foreground"
                                         >
-                                            排行
+                                            <div data-slot="table-cell-content">
+                                                排行
+                                            </div>
                                         </th>
                                         <th
-                                            class="px-4 py-3 text-left font-medium text-muted-foreground"
+                                            class="text-left font-medium text-muted-foreground"
                                         >
-                                            网站ID
+                                            <div data-slot="table-cell-content">
+                                                网站ID
+                                            </div>
                                         </th>
                                         <th
-                                            class="px-4 py-3 text-left font-medium text-muted-foreground"
+                                            class="text-left font-medium text-muted-foreground"
                                         >
-                                            黑名单数量
+                                            <div data-slot="table-cell-content">
+                                                黑名单数量
+                                            </div>
                                         </th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     <tr v-if="blackIpCountLoading">
-                                        <td
-                                            colspan="3"
-                                            class="px-4 py-12 text-center"
-                                        >
-                                            <Spinner class="mx-auto" />
+                                        <td colspan="3" class="text-center">
+                                            <div data-slot="table-cell-content">
+                                                <Spinner class="mx-auto" />
+                                            </div>
                                         </td>
                                     </tr>
                                     <tr
@@ -1215,20 +1247,27 @@ function omitEnable<TPayload extends { enable?: unknown }>(
                                         :key="index"
                                         class="border-b last:border-0 hover:bg-muted/20"
                                     >
-                                        <td
-                                            class="px-4 py-3 text-muted-foreground"
-                                        >
-                                            {{ index + 1 }}
+                                        <td class="text-muted-foreground">
+                                            <div data-slot="table-cell-content">
+                                                {{ index + 1 }}
+                                            </div>
                                         </td>
-                                        <td class="px-4 py-3">
-                                            {{ textValue(row.site_id) || '-' }}
+                                        <td class="">
+                                            <div data-slot="table-cell-content">
+                                                {{
+                                                    textValue(row.site_id) ||
+                                                    '-'
+                                                }}
+                                            </div>
                                         </td>
-                                        <td class="px-4 py-3 tabular-nums">
-                                            {{
-                                                textValue(row.count) ||
-                                                textValue(row.total) ||
-                                                '-'
-                                            }}
+                                        <td class="tabular-nums">
+                                            <div data-slot="table-cell-content">
+                                                {{
+                                                    textValue(row.count) ||
+                                                    textValue(row.total) ||
+                                                    '-'
+                                                }}
+                                            </div>
                                         </td>
                                     </tr>
                                     <tr
@@ -1239,9 +1278,11 @@ function omitEnable<TPayload extends { enable?: unknown }>(
                                     >
                                         <td
                                             colspan="3"
-                                            class="px-4 py-16 text-center text-muted-foreground"
+                                            class="text-center text-muted-foreground"
                                         >
-                                            暂无数据
+                                            <div data-slot="table-cell-content">
+                                                暂无数据
+                                            </div>
                                         </td>
                                     </tr>
                                 </tbody>
@@ -1339,54 +1380,69 @@ function omitEnable<TPayload extends { enable?: unknown }>(
                                 <thead class="border-b bg-muted/30">
                                     <tr>
                                         <th
-                                            class="px-4 py-3 text-left font-medium text-muted-foreground"
+                                            class="text-left font-medium text-muted-foreground"
                                         >
-                                            网站ID
+                                            <div data-slot="table-cell-content">
+                                                网站ID
+                                            </div>
                                         </th>
                                         <th
-                                            class="px-4 py-3 text-left font-medium text-muted-foreground"
+                                            class="text-left font-medium text-muted-foreground"
                                         >
-                                            域名
+                                            <div data-slot="table-cell-content">
+                                                域名
+                                            </div>
                                         </th>
                                         <th
-                                            class="px-4 py-3 text-left font-medium text-muted-foreground"
+                                            class="text-left font-medium text-muted-foreground"
                                         >
-                                            IP
+                                            <div data-slot="table-cell-content">
+                                                IP
+                                            </div>
                                         </th>
                                         <th
-                                            class="px-4 py-3 text-left font-medium text-muted-foreground"
+                                            class="text-left font-medium text-muted-foreground"
                                         >
-                                            位置
+                                            <div data-slot="table-cell-content">
+                                                位置
+                                            </div>
                                         </th>
                                         <th
-                                            class="px-4 py-3 text-left font-medium text-muted-foreground"
+                                            class="text-left font-medium text-muted-foreground"
                                         >
-                                            过滤器
+                                            <div data-slot="table-cell-content">
+                                                过滤器
+                                            </div>
                                         </th>
                                         <th
-                                            class="px-4 py-3 text-left font-medium text-muted-foreground"
+                                            class="text-left font-medium text-muted-foreground"
                                         >
-                                            拉黑时间
+                                            <div data-slot="table-cell-content">
+                                                拉黑时间
+                                            </div>
                                         </th>
                                         <th
-                                            class="px-4 py-3 text-left font-medium text-muted-foreground"
+                                            class="text-left font-medium text-muted-foreground"
                                         >
-                                            解锁时间
+                                            <div data-slot="table-cell-content">
+                                                解锁时间
+                                            </div>
                                         </th>
                                         <th
-                                            class="px-4 py-3 text-right font-medium text-muted-foreground"
+                                            class="text-right font-medium text-muted-foreground"
                                         >
-                                            操作
+                                            <div data-slot="table-cell-content">
+                                                操作
+                                            </div>
                                         </th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     <tr v-if="loading">
-                                        <td
-                                            colspan="8"
-                                            class="px-4 py-12 text-center"
-                                        >
-                                            <Spinner class="mx-auto" />
+                                        <td colspan="8" class="text-center">
+                                            <div data-slot="table-cell-content">
+                                                <Spinner class="mx-auto" />
+                                            </div>
                                         </td>
                                     </tr>
                                     <tr
@@ -1394,74 +1450,100 @@ function omitEnable<TPayload extends { enable?: unknown }>(
                                         :key="`${textValue(row.site_id)}-${textValue(row.ip)}`"
                                         class="border-b transition-colors last:border-0 hover:bg-muted/20"
                                     >
+                                        <td class="text-muted-foreground">
+                                            <div data-slot="table-cell-content">
+                                                {{
+                                                    textValue(row.site_id) ||
+                                                    '-'
+                                                }}
+                                            </div>
+                                        </td>
+                                        <td class="">
+                                            <div data-slot="table-cell-content">
+                                                {{
+                                                    textValue(row.domain) || '-'
+                                                }}
+                                            </div>
+                                        </td>
+                                        <td class="font-mono text-xs">
+                                            <div data-slot="table-cell-content">
+                                                {{ textValue(row.ip) || '-' }}
+                                            </div>
+                                        </td>
+                                        <td class="text-muted-foreground">
+                                            <div data-slot="table-cell-content">
+                                                {{
+                                                    textValue(row.position) ||
+                                                    '-'
+                                                }}
+                                            </div>
+                                        </td>
+                                        <td class="">
+                                            <div data-slot="table-cell-content">
+                                                <span
+                                                    class="inline-flex items-center rounded-md bg-muted px-2 py-0.5 text-xs font-medium"
+                                                >
+                                                    {{
+                                                        textValue(row.name) ||
+                                                        '-'
+                                                    }}
+                                                </span>
+                                            </div>
+                                        </td>
                                         <td
-                                            class="px-4 py-3 text-muted-foreground"
+                                            class="text-xs text-muted-foreground tabular-nums"
                                         >
-                                            {{ textValue(row.site_id) || '-' }}
-                                        </td>
-                                        <td class="px-4 py-3">
-                                            {{ textValue(row.domain) || '-' }}
-                                        </td>
-                                        <td class="px-4 py-3 font-mono text-xs">
-                                            {{ textValue(row.ip) || '-' }}
-                                        </td>
-                                        <td
-                                            class="px-4 py-3 text-muted-foreground"
-                                        >
-                                            {{ textValue(row.position) || '-' }}
-                                        </td>
-                                        <td class="px-4 py-3">
-                                            <span
-                                                class="inline-flex items-center rounded-md bg-muted px-2 py-0.5 text-xs font-medium"
-                                            >
-                                                {{ textValue(row.name) || '-' }}
-                                            </span>
-                                        </td>
-                                        <td
-                                            class="px-4 py-3 text-xs text-muted-foreground tabular-nums"
-                                        >
-                                            {{
-                                                formatDate(
-                                                    row.create_time ?? row.time,
-                                                )
-                                            }}
-                                        </td>
-                                        <td
-                                            class="px-4 py-3 text-xs text-muted-foreground tabular-nums"
-                                        >
-                                            {{ textValue(row.exp) || '-' }}
-                                        </td>
-                                        <td class="px-4 py-3 text-right">
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                :disabled="
-                                                    unlocking &&
-                                                    unlockingId ===
-                                                        `${textValue(row.site_id)}-${textValue(row.ip)}`
-                                                "
-                                                @click="
-                                                    unlockBlackIp(
-                                                        textValue(row.site_id),
-                                                        textValue(row.ip),
-                                                        `${textValue(row.site_id)}-${textValue(row.ip)}`,
+                                            <div data-slot="table-cell-content">
+                                                {{
+                                                    formatDate(
+                                                        row.create_time ??
+                                                            row.time,
                                                     )
-                                                "
-                                            >
-                                                <Spinner
-                                                    v-if="
+                                                }}
+                                            </div>
+                                        </td>
+                                        <td
+                                            class="text-xs text-muted-foreground tabular-nums"
+                                        >
+                                            <div data-slot="table-cell-content">
+                                                {{ textValue(row.exp) || '-' }}
+                                            </div>
+                                        </td>
+                                        <td class="text-right">
+                                            <div data-slot="table-cell-content">
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    :disabled="
                                                         unlocking &&
                                                         unlockingId ===
                                                             `${textValue(row.site_id)}-${textValue(row.ip)}`
                                                     "
-                                                    data-icon="inline-start"
-                                                />
-                                                <UnlockKeyhole
-                                                    v-else
-                                                    data-icon="inline-start"
-                                                />
-                                                解锁
-                                            </Button>
+                                                    @click="
+                                                        unlockBlackIp(
+                                                            textValue(
+                                                                row.site_id,
+                                                            ),
+                                                            textValue(row.ip),
+                                                            `${textValue(row.site_id)}-${textValue(row.ip)}`,
+                                                        )
+                                                    "
+                                                >
+                                                    <Spinner
+                                                        v-if="
+                                                            unlocking &&
+                                                            unlockingId ===
+                                                                `${textValue(row.site_id)}-${textValue(row.ip)}`
+                                                        "
+                                                        data-icon="inline-start"
+                                                    />
+                                                    <UnlockKeyhole
+                                                        v-else
+                                                        data-icon="inline-start"
+                                                    />
+                                                    解锁
+                                                </Button>
+                                            </div>
                                         </td>
                                     </tr>
                                     <tr
@@ -1471,9 +1553,11 @@ function omitEnable<TPayload extends { enable?: unknown }>(
                                     >
                                         <td
                                             colspan="8"
-                                            class="px-4 py-16 text-center text-muted-foreground"
+                                            class="text-center text-muted-foreground"
                                         >
-                                            暂无黑名单
+                                            <div data-slot="table-cell-content">
+                                                暂无黑名单
+                                            </div>
                                         </td>
                                     </tr>
                                 </tbody>

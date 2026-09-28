@@ -1,0 +1,49 @@
+/* One table layout for both applications, including empty and loading rows.
+ * This first cascade layer owns geometry; page CSS owns content and colors.
+ * Important declarations in this layer outrank legacy unlayered overrides. */
+@layer table-layout {
+  table {
+    border-collapse: collapse !important;
+    border-spacing: 0 !important;
+  }
+
+  table,
+  table :is(thead, tbody, tfoot, tr, th, td, col, colgroup) {
+    border-inline-width: 0 !important;
+  }
+
+  table tr {
+    height: 48px !important;
+  }
+
+  table,
+  table :is(thead, tbody, tfoot, tr, col, colgroup) {
+    border-block-width: 0 !important;
+  }
+
+  table :is(th, td) {
+    box-sizing: border-box !important;
+    height: 48px !important;
+    min-height: 48px !important;
+    max-height: 48px !important;
+    padding: 0 !important;
+    vertical-align: middle !important;
+    border-top-width: 0 !important;
+    border-bottom: 1px solid var(--border) !important;
+  }
+
+  table :is(th, td) > [data-slot="table-cell-content"] {
+    box-sizing: border-box !important;
+    display: block !important;
+    align-content: center;
+    height: 47px !important;
+    min-height: 0 !important;
+    max-height: 47px !important;
+    min-width: 0;
+    max-width: 100%;
+    margin: 0 !important;
+    padding: 0 16px !important;
+    overflow: auto;
+    scrollbar-width: thin;
+  }
+}

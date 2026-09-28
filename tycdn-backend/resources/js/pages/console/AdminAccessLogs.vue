@@ -666,7 +666,6 @@ onUnmounted(() => {
                             variant="default"
                             data-slot="console-action"
                             type="button"
-                            class="rounded border px-2 py-1 text-muted-foreground hover:text-primary"
                             @click="
                                 Object.assign(draft, filters);
                                 advanced = true;
@@ -733,9 +732,15 @@ onUnmounted(() => {
                         <thead class="bg-muted/40 text-muted-foreground">
                             <tr>
                                 <th v-for="col in columns" :key="col.key">
-                                    {{ col.label }}
+                                    <div data-slot="table-cell-content">
+                                        {{ col.label }}
+                                    </div>
                                 </th>
-                                <th>操作</th>
+                                <th>
+                                    <div data-slot="table-cell-content">
+                                        操作
+                                    </div>
+                                </th>
                             </tr>
                         </thead>
                         <tbody>
@@ -744,20 +749,24 @@ onUnmounted(() => {
                                     :colspan="columns.length + 1"
                                     class="text-destructive"
                                 >
-                                    <span role="alert">{{ error }}</span
-                                    ><Button
-                                        variant="link"
-                                        size="sm"
-                                        @click="load()"
-                                        >重试</Button
-                                    >
+                                    <div data-slot="table-cell-content">
+                                        <span role="alert">{{ error }}</span
+                                        ><Button
+                                            variant="link"
+                                            size="sm"
+                                            @click="load()"
+                                            >重试</Button
+                                        >
+                                    </div>
                                 </td>
                             </tr>
                             <tr v-else-if="loading">
-                                <td :colspan="columns.length + 1" class="h-24">
-                                    <Spinner /><span class="sr-only"
-                                        >加载中</span
-                                    >
+                                <td :colspan="columns.length + 1" class="">
+                                    <div data-slot="table-cell-content">
+                                        <Spinner /><span class="sr-only"
+                                            >加载中</span
+                                        >
+                                    </div>
                                 </td>
                             </tr>
                             <template v-else
@@ -770,41 +779,47 @@ onUnmounted(() => {
                                         :key="col.key"
                                         :title="accessLogCell(row, col.key)"
                                     >
-                                        <span
-                                            :class="
-                                                userScope &&
-                                                [
-                                                    'host',
-                                                    'tls_fp',
-                                                    'country',
-                                                    'isp',
-                                                    'sip',
-                                                ].includes(col.key)
-                                                    ? 'block break-words whitespace-normal'
-                                                    : 'block truncate'
-                                            "
-                                            >{{
-                                                accessLogCell(row, col.key)
-                                            }}</span
-                                        >
+                                        <div data-slot="table-cell-content">
+                                            <span
+                                                :class="
+                                                    userScope &&
+                                                    [
+                                                        'host',
+                                                        'tls_fp',
+                                                        'country',
+                                                        'isp',
+                                                        'sip',
+                                                    ].includes(col.key)
+                                                        ? 'block break-words whitespace-normal'
+                                                        : 'block truncate'
+                                                "
+                                                >{{
+                                                    accessLogCell(row, col.key)
+                                                }}</span
+                                            >
+                                        </div>
                                     </td>
                                     <td>
-                                        <Button
-                                            variant="link"
-                                            size="sm"
-                                            class="h-auto p-0"
-                                            :disabled="!row._id"
-                                            @click="showDetail(row)"
-                                            >查看更多</Button
-                                        >
+                                        <div data-slot="table-cell-content">
+                                            <Button
+                                                variant="link"
+                                                size="sm"
+                                                class="h-auto p-0"
+                                                :disabled="!row._id"
+                                                @click="showDetail(row)"
+                                                >查看更多</Button
+                                            >
+                                        </div>
                                     </td>
                                 </tr>
                                 <tr v-if="!rows.length">
                                     <td
                                         :colspan="columns.length + 1"
-                                        class="h-24 text-muted-foreground"
+                                        class="text-muted-foreground"
                                     >
-                                        暂无数据
+                                        <div data-slot="table-cell-content">
+                                            暂无数据
+                                        </div>
                                     </td>
                                 </tr></template
                             >
@@ -819,33 +834,65 @@ onUnmounted(() => {
                         </caption>
                         <thead class="bg-muted/40 text-muted-foreground">
                             <tr>
-                                <th>JobId / TaskId</th>
-                                <th>申请时间</th>
-                                <th>日志时间</th>
-                                <th>日志域名</th>
-                                <th>状态</th>
-                                <th>进度</th>
-                                <th>操作</th>
+                                <th>
+                                    <div data-slot="table-cell-content">
+                                        JobId / TaskId
+                                    </div>
+                                </th>
+                                <th>
+                                    <div data-slot="table-cell-content">
+                                        申请时间
+                                    </div>
+                                </th>
+                                <th>
+                                    <div data-slot="table-cell-content">
+                                        日志时间
+                                    </div>
+                                </th>
+                                <th>
+                                    <div data-slot="table-cell-content">
+                                        日志域名
+                                    </div>
+                                </th>
+                                <th>
+                                    <div data-slot="table-cell-content">
+                                        状态
+                                    </div>
+                                </th>
+                                <th>
+                                    <div data-slot="table-cell-content">
+                                        进度
+                                    </div>
+                                </th>
+                                <th>
+                                    <div data-slot="table-cell-content">
+                                        操作
+                                    </div>
+                                </th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr v-if="error">
                                 <td
                                     colspan="7"
-                                    class="h-24 text-center text-destructive"
+                                    class="text-center text-destructive"
                                 >
-                                    <span role="alert">{{ error }}</span
-                                    ><Button
-                                        variant="link"
-                                        size="sm"
-                                        @click="load()"
-                                        >重试</Button
-                                    >
+                                    <div data-slot="table-cell-content">
+                                        <span role="alert">{{ error }}</span
+                                        ><Button
+                                            variant="link"
+                                            size="sm"
+                                            @click="load()"
+                                            >重试</Button
+                                        >
+                                    </div>
                                 </td>
                             </tr>
                             <tr v-else-if="loading">
-                                <td colspan="7" class="h-24">
-                                    <Spinner class="mx-auto" />
+                                <td colspan="7" class="">
+                                    <div data-slot="table-cell-content">
+                                        <Spinner class="mx-auto" />
+                                    </div>
                                 </td>
                             </tr>
                             <template v-else>
@@ -854,25 +901,36 @@ onUnmounted(() => {
                                     :key="textValue(row.id)"
                                 >
                                     <td>
-                                        {{ row.id ?? '-' }} /
-                                        {{ row.task_id ?? '-' }}
+                                        <div data-slot="table-cell-content">
+                                            {{ row.id ?? '-' }} /
+                                            {{ row.task_id ?? '-' }}
+                                        </div>
                                     </td>
                                     <td class="whitespace-nowrap">
-                                        {{ formatDate(row.create_at2) }}
+                                        <div data-slot="table-cell-content">
+                                            {{ formatDate(row.create_at2) }}
+                                        </div>
                                     </td>
                                     <td class="whitespace-nowrap">
-                                        {{
-                                            textValue(
-                                                accessJobData(row).start,
-                                            ) || '-'
-                                        }}
-                                        -
-                                        {{
-                                            textValue(accessJobData(row).end) ||
-                                            '-'
-                                        }}
+                                        <div data-slot="table-cell-content">
+                                            {{
+                                                textValue(
+                                                    accessJobData(row).start,
+                                                ) || '-'
+                                            }}
+                                            -
+                                            {{
+                                                textValue(
+                                                    accessJobData(row).end,
+                                                ) || '-'
+                                            }}
+                                        </div>
                                     </td>
-                                    <td>{{ accessJobData(row).host ?? '' }}</td>
+                                    <td>
+                                        <div data-slot="table-cell-content">
+                                            {{ accessJobData(row).host ?? '' }}
+                                        </div>
+                                    </td>
                                     <td
                                         :class="
                                             row.state === 'failed'
@@ -882,30 +940,41 @@ onUnmounted(() => {
                                                   : 'text-muted-foreground'
                                         "
                                     >
-                                        {{ accessJobState(row.state) }}
+                                        <div data-slot="table-cell-content">
+                                            {{ accessJobState(row.state) }}
+                                        </div>
                                     </td>
-                                    <td>{{ row.progress ?? '-' }}</td>
                                     <td>
-                                        <Button
-                                            variant="link"
-                                            size="sm"
-                                            class="h-auto p-0"
-                                            :disabled="downloading !== null"
-                                            @click="download(row)"
-                                            >{{
-                                                downloading === String(row.id)
-                                                    ? '下载中…'
-                                                    : '下载'
-                                            }}</Button
-                                        >
+                                        <div data-slot="table-cell-content">
+                                            {{ row.progress ?? '-' }}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div data-slot="table-cell-content">
+                                            <Button
+                                                variant="link"
+                                                size="sm"
+                                                class="h-auto p-0"
+                                                :disabled="downloading !== null"
+                                                @click="download(row)"
+                                                >{{
+                                                    downloading ===
+                                                    String(row.id)
+                                                        ? '下载中…'
+                                                        : '下载'
+                                                }}</Button
+                                            >
+                                        </div>
                                     </td>
                                 </tr>
                                 <tr v-if="!jobs.length">
                                     <td
                                         colspan="7"
-                                        class="h-24 text-center text-muted-foreground"
+                                        class="text-center text-muted-foreground"
                                     >
-                                        暂无数据
+                                        <div data-slot="table-cell-content">
+                                            暂无数据
+                                        </div>
                                     </td>
                                 </tr>
                             </template>

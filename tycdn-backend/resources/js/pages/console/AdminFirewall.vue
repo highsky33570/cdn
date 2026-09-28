@@ -1048,8 +1048,20 @@ async function removeOverrides() {
                                 <table class="fw-rule-table">
                                     <thead>
                                         <tr>
-                                            <th>统计时长(秒)</th>
-                                            <th>最大次数</th>
+                                            <th>
+                                                <div
+                                                    data-slot="table-cell-content"
+                                                >
+                                                    统计时长(秒)
+                                                </div>
+                                            </th>
+                                            <th>
+                                                <div
+                                                    data-slot="table-cell-content"
+                                                >
+                                                    最大次数
+                                                </div>
+                                            </th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -1058,22 +1070,30 @@ async function removeOverrides() {
                                             :key="i"
                                         >
                                             <td>
-                                                <Input
-                                                    v-model="row.period"
-                                                    :aria-label="`统计时长 ${i + 1}`"
-                                                    type="number"
-                                                    min="1"
-                                                    placeholder="为空则不启用"
-                                                />
+                                                <div
+                                                    data-slot="table-cell-content"
+                                                >
+                                                    <Input
+                                                        v-model="row.period"
+                                                        :aria-label="`统计时长 ${i + 1}`"
+                                                        type="number"
+                                                        min="1"
+                                                        placeholder="为空则不启用"
+                                                    />
+                                                </div>
                                             </td>
                                             <td>
-                                                <Input
-                                                    v-model="row.reqs"
-                                                    :aria-label="`最大次数 ${i + 1}`"
-                                                    type="number"
-                                                    min="1"
-                                                    placeholder="为空则不启用"
-                                                />
+                                                <div
+                                                    data-slot="table-cell-content"
+                                                >
+                                                    <Input
+                                                        v-model="row.reqs"
+                                                        :aria-label="`最大次数 ${i + 1}`"
+                                                        type="number"
+                                                        min="1"
+                                                        placeholder="为空则不启用"
+                                                    />
+                                                </div>
                                             </td>
                                         </tr>
                                     </tbody>
@@ -1197,73 +1217,100 @@ async function removeOverrides() {
                         <thead>
                             <tr>
                                 <th>
-                                    <CheckboxField
-                                        aria-label="选择全部配置"
-                                        :checked="
-                                            overrides.length > 0 &&
-                                            selected.length === overrides.length
-                                        "
-                                        @change="
-                                            selected =
+                                    <div data-slot="table-cell-content">
+                                        <CheckboxField
+                                            aria-label="选择全部配置"
+                                            :checked="
+                                                overrides.length > 0 &&
                                                 selected.length ===
-                                                overrides.length
-                                                    ? []
-                                                    : overrides.map(rowKey)
-                                        "
-                                    />
+                                                    overrides.length
+                                            "
+                                            @change="
+                                                selected =
+                                                    selected.length ===
+                                                    overrides.length
+                                                        ? []
+                                                        : overrides.map(rowKey)
+                                            "
+                                        />
+                                    </div>
                                 </th>
-                                <th>配置范围</th>
-                                <th>配置项</th>
-                                <th>操作</th>
+                                <th>
+                                    <div data-slot="table-cell-content">
+                                        配置范围
+                                    </div>
+                                </th>
+                                <th>
+                                    <div data-slot="table-cell-content">
+                                        配置项
+                                    </div>
+                                </th>
+                                <th>
+                                    <div data-slot="table-cell-content">
+                                        操作
+                                    </div>
+                                </th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr v-for="row in overrides" :key="rowKey(row)">
                                 <td>
-                                    <CheckboxField
-                                        v-model="selected"
-                                        :value="rowKey(row)"
-                                        :aria-label="`选择配置 ${rowKey(row)}`"
-                                    />
+                                    <div data-slot="table-cell-content">
+                                        <CheckboxField
+                                            v-model="selected"
+                                            :value="rowKey(row)"
+                                            :aria-label="`选择配置 ${rowKey(row)}`"
+                                        />
+                                    </div>
                                 </td>
                                 <td>
-                                    <span class="fw-count"
-                                        >{{
-                                            row.scope_name === 'node'
-                                                ? '节点'
-                                                : '区域'
-                                        }}
-                                        {{ row.scope_id }}</span
-                                    >
+                                    <div data-slot="table-cell-content">
+                                        <span class="fw-count"
+                                            >{{
+                                                row.scope_name === 'node'
+                                                    ? '节点'
+                                                    : '区域'
+                                            }}
+                                            {{ row.scope_id }}</span
+                                        >
+                                    </div>
                                 </td>
-                                <td>{{ overrideSummary(row) }}</td>
                                 <td>
-                                    <Button
-                                        size="sm"
-                                        variant="ghost"
-                                        class="fw-link"
-                                        @click="openEditor(row)"
-                                    >
-                                        编辑</Button
-                                    ><Button
-                                        size="sm"
-                                        variant="ghost"
-                                        class="fw-link"
-                                        @click="askDelete([rowKey(row)])"
-                                    >
-                                        删除
-                                    </Button>
+                                    <div data-slot="table-cell-content">
+                                        {{ overrideSummary(row) }}
+                                    </div>
+                                </td>
+                                <td>
+                                    <div data-slot="table-cell-content">
+                                        <Button
+                                            size="sm"
+                                            variant="ghost"
+                                            class="fw-link"
+                                            @click="openEditor(row)"
+                                        >
+                                            编辑</Button
+                                        ><Button
+                                            size="sm"
+                                            variant="ghost"
+                                            class="fw-link"
+                                            @click="askDelete([rowKey(row)])"
+                                        >
+                                            删除
+                                        </Button>
+                                    </div>
                                 </td>
                             </tr>
                             <tr v-if="!overrides.length">
                                 <td colspan="4" class="fw-empty">
-                                    {{
-                                        overrideLoading
-                                            ? '加载中…'
-                                            : overrideError
-                                              ? '加载失败'
-                                              : '暂无数据'
-                                    }}
+                                    <div data-slot="table-cell-content">
+                                        {{
+                                            overrideLoading
+                                                ? '加载中…'
+                                                : overrideError
+                                                  ? '加载失败'
+                                                  : '暂无数据'
+                                        }}
+                                    </div>
                                 </td>
                             </tr>
                         </tbody>

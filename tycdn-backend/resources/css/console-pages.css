@@ -243,14 +243,10 @@ table:is(.console-admin-cc-workspace, .console-admin-cc-workspace *) {
 th:is(.console-admin-cc-workspace, .console-admin-cc-workspace *) {
     font-size: var(--console-text-body);
     font-weight: 500;
-    height: 33px;
     background: color-mix(in srgb, var(--muted) 20%, var(--card));
-    padding: 6px 10px;
     border-bottom: 1px solid var(--border);
 }
 td:is(.console-admin-cc-workspace, .console-admin-cc-workspace *) {
-    height: 40px;
-    padding: 2px 10px;
     font-size: var(--console-text-body);
     border-bottom: 1px solid var(--border);
 }
@@ -582,15 +578,11 @@ table:is(.console-admin-site-workspace, .console-admin-site-workspace *) {
     white-space: nowrap;
 }
 th:is(.console-admin-site-workspace, .console-admin-site-workspace *) {
-    height: 34px;
     font-weight: 500;
     background: color-mix(in srgb, var(--muted) 25%, var(--card));
-    padding: 8px 10px;
     border-bottom: 1px solid var(--border);
 }
 td:is(.console-admin-site-workspace, .console-admin-site-workspace *) {
-    height: 46px;
-    padding: 4px 10px;
     border-bottom: 1px solid var(--border);
     font-size: var(--console-text-body);
 }
@@ -1400,13 +1392,11 @@ table:is(.console-admin-waf-workspace, .console-admin-waf-workspace *) {
     min-width: 1000px;
 }
 th:is(.console-admin-waf-workspace, .console-admin-waf-workspace *) {
-    height: 32px;
     background: #fafcff;
     font-weight: 500;
 }
 th:is(.console-admin-waf-workspace, .console-admin-waf-workspace *),
 td:is(.console-admin-waf-workspace, .console-admin-waf-workspace *) {
-    padding: 8px;
     border-bottom: 1px solid var(--line);
 }
 th.check:is(.console-admin-waf-workspace, .console-admin-waf-workspace *),
@@ -1939,11 +1929,9 @@ button:where([data-slot='button'], [data-slot^='console-']):is(
     text-overflow: ellipsis;
 }
 th:is(.console-node-ip-logs-dialog, .console-node-ip-logs-dialog *) {
-    padding: 8px;
     font-weight: 600;
 }
 td:is(.console-node-ip-logs-dialog, .console-node-ip-logs-dialog *) {
-    padding: 9px 8px;
     font-size: var(--console-text-body);
 }
 th:is(.console-node-ip-logs-dialog, .console-node-ip-logs-dialog *),
@@ -2147,16 +2135,12 @@ input:is(
     font-size: var(--console-text-body);
 }
 .acl-table th:is(.console-user-acl-workspace, .console-user-acl-workspace *) {
-    height: 48px;
-    padding: 10px 20px;
     text-align: left;
     font-weight: 600;
     background: var(--muted);
     border-bottom: 1px solid var(--border);
 }
 .acl-table td:is(.console-user-acl-workspace, .console-user-acl-workspace *) {
-    height: 60px;
-    padding: 10px 20px;
     border-bottom: 1px solid var(--border);
     overflow-wrap: anywhere;
 }
@@ -2414,16 +2398,12 @@ input:is(
     font-size: var(--console-text-body);
 }
 .cc-table th:is(.console-user-cc-workspace, .console-user-cc-workspace *) {
-    height: 48px;
-    padding: 10px 20px;
     text-align: left;
     font-weight: 600;
     background: var(--muted);
     border-bottom: 1px solid var(--border);
 }
 .cc-table td:is(.console-user-cc-workspace, .console-user-cc-workspace *) {
-    height: 60px;
-    padding: 10px 20px;
     border-bottom: 1px solid var(--border);
     overflow-wrap: anywhere;
 }
@@ -2697,8 +2677,6 @@ input:is(
 }
 .stream-table
     th:is(.console-user-stream-workspace, .console-user-stream-workspace *) {
-    height: 48px;
-    padding: 10px 18px;
     font-weight: 600;
     text-align: left;
     background: var(--muted);
@@ -2706,8 +2684,6 @@ input:is(
 }
 .stream-table
     td:is(.console-user-stream-workspace, .console-user-stream-workspace *) {
-    height: 60px;
-    padding: 10px 18px;
     border-bottom: 1px solid var(--border);
     overflow-wrap: anywhere;
 }
@@ -2953,12 +2929,8 @@ input:is(
 
 /* pages/console/AdminAccessLogs.vue */
 .access-table th:is(.console-admin-access-logs, .console-admin-access-logs *) {
-    padding: 0.75rem;
     font-weight: 600;
     white-space: nowrap;
-}
-.access-table td:is(.console-admin-access-logs, .console-admin-access-logs *) {
-    padding: 0.875rem 0.75rem;
 }
 .access-table tr:is(.console-admin-access-logs, .console-admin-access-logs *) {
     border-bottom: 1px solid var(--border);
@@ -3092,21 +3064,8 @@ input:is(
 }
 .user-access-log
     .access-table
-    th:is(.console-admin-access-logs, .console-admin-access-logs *) {
-    height: 3rem;
-    padding: 0.75rem 1.375rem;
-}
-.user-access-log
-    .access-table
     td:is(.console-admin-access-logs, .console-admin-access-logs *) {
-    height: 3.75rem;
-    padding: 0.5rem 1.375rem;
     line-height: 1.625;
-}
-.user-access-log
-    .access-table
-    td[colspan]:is(.console-admin-access-logs, .console-admin-access-logs *) {
-    height: 3.75rem;
 }
 .user-access-log
     [aria-busy]:is(.console-admin-access-logs, .console-admin-access-logs *) {
@@ -3130,19 +3089,6 @@ input:is(
 .user-access-detail
     [role='tab']:is(.console-admin-access-logs, .console-admin-access-logs *) {
     font-size: var(--console-text-body);
-}
-.user-access-log
-    .access-table
-    th:is(.console-admin-access-logs, .console-admin-access-logs *) {
-    height: 48px;
-}
-.user-access-log
-    .access-table
-    td:is(.console-admin-access-logs, .console-admin-access-logs *),
-.user-access-log
-    .access-table
-    td[colspan]:is(.console-admin-access-logs, .console-admin-access-logs *) {
-    height: 60px;
 }
 .user-access-log
     [aria-label='已应用筛选']:is(
@@ -3368,17 +3314,9 @@ input:is(
 .user-block-log nav:is(.console-admin-block-logs, .console-admin-block-logs *) {
     justify-content: flex-start;
 }
-.user-block-log
-    td[colspan]:is(.console-admin-block-logs, .console-admin-block-logs *) {
-    height: 3.75rem;
-}
 .block-log-table th:is(.console-admin-block-logs, .console-admin-block-logs *) {
-    padding: 0.75rem;
     font-weight: 600;
     white-space: nowrap;
-}
-.block-log-table td:is(.console-admin-block-logs, .console-admin-block-logs *) {
-    padding: 0.875rem 0.75rem;
 }
 .block-log-table tr:is(.console-admin-block-logs, .console-admin-block-logs *) {
     border-bottom: 1px solid var(--border);
@@ -3806,14 +3744,12 @@ table:is(.console-admin-cache, .console-admin-cache *) {
     white-space: nowrap;
 }
 th:is(.console-admin-cache, .console-admin-cache *) {
-    padding: 8px;
     font-size: var(--console-text-body);
     font-weight: 500;
     background: color-mix(in srgb, var(--muted) 20%, var(--card));
     border-bottom: 1px solid var(--border);
 }
 td:is(.console-admin-cache, .console-admin-cache *) {
-    padding: 8px;
     border-bottom: 1px solid var(--border);
     font-size: var(--console-text-body);
 }
@@ -4152,22 +4088,15 @@ table:is(.console-admin-certificates, .console-admin-certificates *) {
     text-align: left;
 }
 th:is(.console-admin-certificates, .console-admin-certificates *) {
-    height: 34px;
     background: color-mix(in srgb, var(--muted) 25%, var(--card));
     font-weight: 500;
     font-size: var(--console-text-body);
-    padding: 6px 10px;
     border-bottom: 1px solid var(--border);
 }
 td:is(.console-admin-certificates, .console-admin-certificates *) {
-    height: 42px;
-    padding: 3px 10px;
     border-bottom: 1px solid var(--border);
     font-size: var(--console-text-body);
     vertical-align: top;
-}
-td.selection:is(.console-admin-certificates, .console-admin-certificates *) {
-    padding-top: 5px;
 }
 .selection:is(.console-admin-certificates, .console-admin-certificates *) {
     width: 44px;
@@ -4378,13 +4307,7 @@ tbody tr:is(.console-admin-certificates, .console-admin-certificates *):hover {
     height: 32px;
 }
 .dns-panel th:is(.console-admin-dns, .console-admin-dns *) {
-    height: 36px;
-    padding: 0 12px;
     font-weight: 500;
-}
-.dns-panel td:is(.console-admin-dns, .console-admin-dns *) {
-    height: 46px;
-    padding: 8px 12px;
 }
 @media (max-width: 540px) {
     .form-row:is(.console-admin-dns, .console-admin-dns *) {
@@ -4651,7 +4574,6 @@ tbody tr:is(.console-admin-certificates, .console-admin-certificates *):hover {
 }
 .fw-rule-table th,
 .fw-rule-table td {
-    padding: 7px;
     text-align: left;
     border-bottom: 1px solid var(--fw-line, var(--border));
     font-weight: 400;
@@ -4723,7 +4645,6 @@ tbody tr:is(.console-admin-certificates, .console-admin-certificates *):hover {
 .fw-table-scroll th,
 .fw-table-scroll td {
     text-align: left;
-    padding: 10px;
     border-bottom: 1px solid var(--fw-line);
     font-weight: 400;
 }
@@ -4812,15 +4733,8 @@ tbody tr:is(.console-admin-certificates, .console-admin-certificates *):hover {
 /* pages/console/AdminL2.vue */
 .l2-panel th:is(.console-admin-l2, .console-admin-l2 *),
 .rule-table th:is(.console-admin-l2, .console-admin-l2 *) {
-    height: 36px;
-    padding: 0 12px;
     font-weight: 600;
     white-space: nowrap;
-}
-.l2-panel td:is(.console-admin-l2, .console-admin-l2 *),
-.rule-table td:is(.console-admin-l2, .console-admin-l2 *) {
-    height: 46px;
-    padding: 8px 12px;
 }
 .form-row:is(.console-admin-l2, .console-admin-l2 *) {
     display: grid;
@@ -4865,15 +4779,8 @@ tbody tr:is(.console-admin-certificates, .console-admin-certificates *):hover {
 /* pages/console/AdminLineGroups.vue */
 .line-group-panel
     th:is(.console-admin-line-groups, .console-admin-line-groups *) {
-    height: 36px;
-    padding: 0 12px;
     font-weight: 600;
     white-space: nowrap;
-}
-.line-group-panel
-    td:is(.console-admin-line-groups, .console-admin-line-groups *) {
-    height: 46px;
-    padding: 8px 12px;
 }
 .form-row:is(.console-admin-line-groups, .console-admin-line-groups *) {
     display: grid;
@@ -5095,7 +5002,6 @@ tbody tr:is(.console-admin-certificates, .console-admin-certificates *):hover {
 }
 .message-table:is(.console-admin-message-query, .console-admin-message-query *)
     td[colspan] {
-    padding-block: 18px;
     border-bottom: 1px solid var(--border);
 }
 
@@ -5449,17 +5355,7 @@ tbody tr:is(.console-admin-certificates, .console-admin-certificates *):hover {
         .console-admin-node-monitor-settings,
         .console-admin-node-monitor-settings *
     ) {
-    height: 36px;
-    padding: 0 10px;
     font-weight: 500;
-}
-.monitor-panel
-    td:is(
-        .console-admin-node-monitor-settings,
-        .console-admin-node-monitor-settings *
-    ) {
-    height: 46px;
-    padding: 8px 10px;
 }
 @media (max-width: 600px) {
     .form-row:is(
@@ -5545,11 +5441,7 @@ tbody tr:is(.console-admin-certificates, .console-admin-certificates *):hover {
     background: color-mix(in srgb, #2d8cf0 4%, var(--card));
 }
 th:is(.console-admin-node-monitoring, .console-admin-node-monitoring *) {
-    padding: 10px;
     font-weight: 500;
-}
-td:is(.console-admin-node-monitoring, .console-admin-node-monitoring *) {
-    padding: 15px 10px;
 }
 th:is(.console-admin-node-monitoring, .console-admin-node-monitoring *),
 td:is(.console-admin-node-monitoring, .console-admin-node-monitoring *) {
@@ -5945,15 +5837,11 @@ td:is(.console-admin-node-monitoring, .console-admin-node-monitoring *) {
 .user-stream-analytics
     .stream-ranking
     th:is(.console-admin-stream-analytics, .console-admin-stream-analytics *) {
-    height: 48px;
-    padding: 10px 22px;
     font-size: var(--console-text-body);
 }
 .user-stream-analytics
     .stream-ranking
     td:is(.console-admin-stream-analytics, .console-admin-stream-analytics *) {
-    height: 60px;
-    padding: 12px 22px;
     font-size: var(--console-text-body);
 }
 @media (max-width: 640px) {
@@ -6048,12 +5936,8 @@ td:is(.console-admin-node-monitoring, .console-admin-node-monitoring *) {
 
 /* pages/console/AdminWafLogs.vue */
 .waf-log-table th:is(.console-admin-waf-logs, .console-admin-waf-logs *) {
-    padding: 0.65rem 0.75rem;
     font-weight: 600;
     white-space: nowrap;
-}
-.waf-log-table td:is(.console-admin-waf-logs, .console-admin-waf-logs *) {
-    padding: 0.8rem 0.75rem;
 }
 .waf-log-table th:is(.console-admin-waf-logs, .console-admin-waf-logs *),
 .waf-log-table td:is(.console-admin-waf-logs, .console-admin-waf-logs *) {
@@ -6186,23 +6070,19 @@ table:is(.console-user-account-logs, .console-user-account-logs *) {
 th:is(.console-user-account-logs, .console-user-account-logs *),
 td:is(.console-user-account-logs, .console-user-account-logs *) {
     border-bottom: 1px solid var(--border);
-    padding: 0 22px;
     text-align: left;
     font-size: var(--console-text-body);
 }
 th:is(.console-user-account-logs, .console-user-account-logs *) {
-    height: 48px;
     background: var(--muted);
     font-weight: 600;
 }
 td:is(.console-user-account-logs, .console-user-account-logs *) {
-    height: 60px;
     white-space: nowrap;
 }
 td.location:is(.console-user-account-logs, .console-user-account-logs *) {
     white-space: normal;
     overflow-wrap: anywhere;
-    padding-block: 6px;
 }
 tbody tr:is(.console-user-account-logs, .console-user-account-logs *):hover {
     background: var(--accent);
@@ -6577,17 +6457,14 @@ table:is(.console-user-cache, .console-user-cache *) {
 }
 th:is(.console-user-cache, .console-user-cache *) {
     background: color-mix(in srgb, var(--muted) 55%, var(--card));
-    height: 48px;
     font-weight: 600;
     text-align: left;
 }
 th:is(.console-user-cache, .console-user-cache *),
 td:is(.console-user-cache, .console-user-cache *) {
-    padding: 10px 20px;
     border-bottom: 1px solid var(--border);
 }
 td:is(.console-user-cache, .console-user-cache *) {
-    height: 60px;
     overflow-wrap: anywhere;
 }
 th:is(.console-user-cache, .console-user-cache *):first-child,
@@ -6797,15 +6674,11 @@ tbody tr:is(.console-user-cache, .console-user-cache *):hover {
     font-size: var(--console-text-body);
 }
 .cert-table th:is(.console-user-certificates, .console-user-certificates *) {
-    height: 48px;
-    padding: 10px 18px;
     color: var(--muted-foreground);
     background: var(--muted);
     font-weight: 600;
 }
 .cert-table td:is(.console-user-certificates, .console-user-certificates *) {
-    height: 60px;
-    padding: 6px 18px;
     border-bottom: 1px solid var(--border);
 }
 .cert-table
@@ -7062,18 +6935,15 @@ table:is(.console-user-message-query, .console-user-message-query *) {
 }
 th:is(.console-user-message-query, .console-user-message-query *),
 td:is(.console-user-message-query, .console-user-message-query *) {
-    padding: 0 22px;
     border-bottom: 1px solid var(--border);
     font-size: var(--console-text-body);
     text-align: left;
 }
 th:is(.console-user-message-query, .console-user-message-query *) {
-    height: 48px;
     background: var(--muted);
     font-weight: 600;
 }
 td:is(.console-user-message-query, .console-user-message-query *) {
-    height: 60px;
     white-space: nowrap;
 }
 tbody tr:is(.console-user-message-query, .console-user-message-query *):hover {
@@ -7144,18 +7014,15 @@ table:is(.console-user-messages, .console-user-messages *) {
 }
 th:is(.console-user-messages, .console-user-messages *),
 td:is(.console-user-messages, .console-user-messages *) {
-    padding: 0 22px;
     border-bottom: 1px solid var(--border);
     font-size: var(--console-text-body);
     text-align: left;
 }
 th:is(.console-user-messages, .console-user-messages *) {
-    height: 48px;
     background: var(--muted);
     font-weight: 600;
 }
 td:is(.console-user-messages, .console-user-messages *) {
-    height: 60px;
     overflow-wrap: anywhere;
 }
 tbody tr:is(.console-user-messages, .console-user-messages *):hover {
@@ -7204,10 +7071,6 @@ tbody tr:is(.console-user-messages, .console-user-messages *):hover {
     ) {
         margin: 8px;
         padding: 10px 8px 0;
-    }
-    th:is(.console-user-messages, .console-user-messages *),
-    td:is(.console-user-messages, .console-user-messages *) {
-        padding-inline: 10px;
     }
 }
 
@@ -7266,7 +7129,6 @@ table:is(.console-user-orders, .console-user-orders *) {
     border-collapse: collapse;
 }
 th:is(.console-user-orders, .console-user-orders *) {
-    height: 48px;
     background: var(--muted);
     font-weight: 600;
     text-align: left;
@@ -7274,11 +7136,9 @@ th:is(.console-user-orders, .console-user-orders *) {
 th:is(.console-user-orders, .console-user-orders *),
 td:is(.console-user-orders, .console-user-orders *) {
     font-size: var(--console-text-body);
-    padding: 0 22px;
     border-bottom: 1px solid var(--border);
 }
 td:is(.console-user-orders, .console-user-orders *) {
-    height: 60px;
     white-space: nowrap;
 }
 tbody tr:is(.console-user-orders, .console-user-orders *):hover {
@@ -7505,15 +7365,11 @@ tbody tr:is(.console-user-orders, .console-user-orders *):hover {
     min-width: 1200px;
 }
 .sites-table th:is(.console-user-sites, .console-user-sites *) {
-    height: 48px;
-    padding: 10px 18px;
     background: var(--muted);
     color: var(--muted-foreground);
     font-weight: 600;
 }
 .sites-table td:is(.console-user-sites, .console-user-sites *) {
-    height: 60px;
-    padding: 10px 18px;
     border-bottom: 1px solid var(--border);
 }
 .sites-table tbody tr:is(.console-user-sites, .console-user-sites *):hover {
@@ -7544,10 +7400,6 @@ tbody tr:is(.console-user-orders, .console-user-orders *):hover {
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
     line-height: 24px;
-}
-.site-list-table
-    td:is(.console-user-sites, .console-user-sites *):nth-child(8) {
-    padding: 6px 12px;
 }
 .row-actions:is(.console-user-sites, .console-user-sites *) {
     display: flex;

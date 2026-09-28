@@ -372,28 +372,41 @@ const body = computed(() =>
                 </colgroup>
                 <thead>
                     <tr>
-                        <th>所属用户ID</th>
-                        <th>类型</th>
-                        <th>标题</th>
-                        <th>用户套餐ID</th>
-                        <th>网站ID</th>
-                        <th>创建时间</th>
-                        <th>操作</th>
+                        <th>
+                            <div data-slot="table-cell-content">所属用户ID</div>
+                        </th>
+                        <th><div data-slot="table-cell-content">类型</div></th>
+                        <th><div data-slot="table-cell-content">标题</div></th>
+                        <th>
+                            <div data-slot="table-cell-content">用户套餐ID</div>
+                        </th>
+                        <th>
+                            <div data-slot="table-cell-content">网站ID</div>
+                        </th>
+                        <th>
+                            <div data-slot="table-cell-content">创建时间</div>
+                        </th>
+                        <th><div data-slot="table-cell-content">操作</div></th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr v-if="loading">
                         <td colspan="7" class="empty">
-                            <span
-                                ><Spinner class="inline size-4" /> 加载中…</span
-                            >
+                            <div data-slot="table-cell-content">
+                                <span
+                                    ><Spinner class="inline size-4" />
+                                    加载中…</span
+                                >
+                            </div>
                         </td>
                     </tr>
                     <tr v-else-if="!rows.length">
                         <td colspan="7" class="empty">
-                            <span>{{
-                                error ? '加载失败，请重试' : '暂无数据'
-                            }}</span>
+                            <div data-slot="table-cell-content">
+                                <span>{{
+                                    error ? '加载失败，请重试' : '暂无数据'
+                                }}</span>
+                            </div>
                         </td>
                     </tr>
                     <template v-else
@@ -402,45 +415,69 @@ const body = computed(() =>
                             :key="text(row.id) || index"
                         >
                             <td>
-                                {{
-                                    text(row.receive ?? row.uid ?? row.user_id)
-                                }}
+                                <div data-slot="table-cell-content">
+                                    {{
+                                        text(
+                                            row.receive ??
+                                                row.uid ??
+                                                row.user_id,
+                                        )
+                                    }}
+                                </div>
                             </td>
                             <td>
-                                <span
-                                    class="truncate-cell"
-                                    :title="
-                                        labels[String(row.type)] ||
-                                        text(row.type)
-                                    "
-                                    >{{
-                                        labels[String(row.type)] ||
-                                        text(row.type)
-                                    }}</span
-                                >
+                                <div data-slot="table-cell-content">
+                                    <span
+                                        class="truncate-cell"
+                                        :title="
+                                            labels[String(row.type)] ||
+                                            text(row.type)
+                                        "
+                                        >{{
+                                            labels[String(row.type)] ||
+                                            text(row.type)
+                                        }}</span
+                                    >
+                                </div>
                             </td>
                             <td>
-                                <span
-                                    class="truncate-cell"
-                                    :title="title(row)"
-                                    >{{ title(row) }}</span
-                                >
+                                <div data-slot="table-cell-content">
+                                    <span
+                                        class="truncate-cell"
+                                        :title="title(row)"
+                                        >{{ title(row) }}</span
+                                    >
+                                </div>
                             </td>
-                            <td>{{ text(row.user_package_id) }}</td>
-                            <td>{{ text(row.site_id) }}</td>
-                            <td>{{ time(row) }}</td>
                             <td>
-                                <Button
-                                    variant="link"
-                                    size="inline"
-                                    type="button"
-                                    data-slot="console-link"
-                                    class="text-link"
-                                    :aria-label="`查看消息 ${text(row.id)} 详情`"
-                                    @click="openDetail(row)"
-                                >
-                                    详情
-                                </Button>
+                                <div data-slot="table-cell-content">
+                                    {{ text(row.user_package_id) }}
+                                </div>
+                            </td>
+                            <td>
+                                <div data-slot="table-cell-content">
+                                    {{ text(row.site_id) }}
+                                </div>
+                            </td>
+                            <td>
+                                <div data-slot="table-cell-content">
+                                    {{ time(row) }}
+                                </div>
+                            </td>
+                            <td>
+                                <div data-slot="table-cell-content">
+                                    <Button
+                                        variant="link"
+                                        size="inline"
+                                        type="button"
+                                        data-slot="console-link"
+                                        class="text-link"
+                                        :aria-label="`查看消息 ${text(row.id)} 详情`"
+                                        @click="openDetail(row)"
+                                    >
+                                        详情
+                                    </Button>
+                                </div>
                             </td>
                         </tr></template
                     >

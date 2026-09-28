@@ -498,40 +498,60 @@ const resolving = ref<CdnflyRecord | null>(null);
                     <thead class="border-b bg-muted/30 text-muted-foreground">
                         <tr>
                             <th class="w-12">
-                                <Checkbox
-                                    aria-label="选择本页全部分组"
-                                    :disabled="loading || !rows.length"
-                                    :model-value="
-                                        allSelected
-                                            ? true
-                                            : selected.length
-                                              ? 'indeterminate'
-                                              : false
-                                    "
-                                    @update:model-value="
-                                        selected =
-                                            $event === true
-                                                ? rows.map((row) =>
-                                                      Number(row.id),
-                                                  )
-                                                : []
-                                    "
-                                />
+                                <div data-slot="table-cell-content">
+                                    <Checkbox
+                                        aria-label="选择本页全部分组"
+                                        :disabled="loading || !rows.length"
+                                        :model-value="
+                                            allSelected
+                                                ? true
+                                                : selected.length
+                                                  ? 'indeterminate'
+                                                  : false
+                                        "
+                                        @update:model-value="
+                                            selected =
+                                                $event === true
+                                                    ? rows.map((row) =>
+                                                          Number(row.id),
+                                                      )
+                                                    : []
+                                        "
+                                    />
+                                </div>
                             </th>
-                            <th>ID</th>
-                            <th>名称</th>
-                            <th>区域</th>
-                            <th>解析值</th>
-                            <th>统计</th>
-                            <th>L2配置</th>
-                            <th>排序</th>
-                            <th class="text-center">操作</th>
+                            <th>
+                                <div data-slot="table-cell-content">ID</div>
+                            </th>
+                            <th>
+                                <div data-slot="table-cell-content">名称</div>
+                            </th>
+                            <th>
+                                <div data-slot="table-cell-content">区域</div>
+                            </th>
+                            <th>
+                                <div data-slot="table-cell-content">解析值</div>
+                            </th>
+                            <th>
+                                <div data-slot="table-cell-content">统计</div>
+                            </th>
+                            <th>
+                                <div data-slot="table-cell-content">L2配置</div>
+                            </th>
+                            <th>
+                                <div data-slot="table-cell-content">排序</div>
+                            </th>
+                            <th class="text-center">
+                                <div data-slot="table-cell-content">操作</div>
+                            </th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr v-if="loading">
-                            <td colspan="9" class="h-24 text-center">
-                                <Spinner class="mx-auto" />
+                            <td colspan="9" class="text-center">
+                                <div data-slot="table-cell-content">
+                                    <Spinner class="mx-auto" />
+                                </div>
                             </td>
                         </tr>
                         <tr
@@ -540,81 +560,112 @@ const resolving = ref<CdnflyRecord | null>(null);
                             class="border-b"
                         >
                             <td>
-                                <Checkbox
-                                    :aria-label="`选择分组 ${row.name}`"
-                                    :model-value="
-                                        selected.includes(Number(row.id))
-                                    "
-                                    @update:model-value="
-                                        selectRow(Number(row.id), $event)
-                                    "
-                                />
+                                <div data-slot="table-cell-content">
+                                    <Checkbox
+                                        :aria-label="`选择分组 ${row.name}`"
+                                        :model-value="
+                                            selected.includes(Number(row.id))
+                                        "
+                                        @update:model-value="
+                                            selectRow(Number(row.id), $event)
+                                        "
+                                    />
+                                </div>
                             </td>
-                            <td>{{ row.id }}</td>
                             <td>
-                                <Button
-                                    variant="link"
-                                    size="inline"
-                                    type="button"
-                                    data-slot="console-link"
-                                    class="text-primary hover:underline"
-                                    @click="openEditor(row)"
-                                >
-                                    {{ row.name }}
-                                </Button>
+                                <div data-slot="table-cell-content">
+                                    {{ row.id }}
+                                </div>
                             </td>
-                            <td>{{ regionName(row) }}</td>
                             <td>
-                                {{ row.cname_hostname
-                                }}<span v-if="row.v4_cname_hostname"
-                                    >（IPv4: {{ row.v4_cname_hostname }}）</span
-                                >
-                            </td>
-                            <td class="whitespace-nowrap">
-                                节点数({{ count(row.node_count) }}个) 网站数({{
-                                    count(row.site_count)
-                                }}个) 转发数({{ count(row.stream_count) }}个)
-                            </td>
-                            <td>{{ row.l2_config_name }}</td>
-                            <td>{{ row.sort }}</td>
-                            <td>
-                                <div
-                                    class="flex justify-center gap-2 whitespace-nowrap text-primary"
-                                >
+                                <div data-slot="table-cell-content">
                                     <Button
                                         variant="link"
                                         size="inline"
                                         type="button"
                                         data-slot="console-link"
-                                        @click="resolving = row"
-                                    >
-                                        配置解析</Button
-                                    ><Button
-                                        variant="link"
-                                        size="inline"
-                                        type="button"
-                                        data-slot="console-link"
+                                        class="text-primary hover:underline"
                                         @click="openEditor(row)"
                                     >
-                                        编辑</Button
-                                    ><Button
-                                        variant="link"
-                                        size="inline"
-                                        type="button"
-                                        data-slot="console-link"
-                                        @click="confirmDelete([Number(row.id)])"
-                                    >
-                                        删除
+                                        {{ row.name }}
                                     </Button>
+                                </div>
+                            </td>
+                            <td>
+                                <div data-slot="table-cell-content">
+                                    {{ regionName(row) }}
+                                </div>
+                            </td>
+                            <td>
+                                <div data-slot="table-cell-content">
+                                    {{ row.cname_hostname
+                                    }}<span v-if="row.v4_cname_hostname"
+                                        >（IPv4:
+                                        {{ row.v4_cname_hostname }}）</span
+                                    >
+                                </div>
+                            </td>
+                            <td class="whitespace-nowrap">
+                                <div data-slot="table-cell-content">
+                                    节点数({{ count(row.node_count) }}个)
+                                    网站数({{ count(row.site_count) }}个)
+                                    转发数({{ count(row.stream_count) }}个)
+                                </div>
+                            </td>
+                            <td>
+                                <div data-slot="table-cell-content">
+                                    {{ row.l2_config_name }}
+                                </div>
+                            </td>
+                            <td>
+                                <div data-slot="table-cell-content">
+                                    {{ row.sort }}
+                                </div>
+                            </td>
+                            <td>
+                                <div data-slot="table-cell-content">
+                                    <div
+                                        class="flex justify-center gap-2 whitespace-nowrap text-primary"
+                                    >
+                                        <Button
+                                            variant="link"
+                                            size="inline"
+                                            type="button"
+                                            data-slot="console-link"
+                                            @click="resolving = row"
+                                        >
+                                            配置解析</Button
+                                        ><Button
+                                            variant="link"
+                                            size="inline"
+                                            type="button"
+                                            data-slot="console-link"
+                                            @click="openEditor(row)"
+                                        >
+                                            编辑</Button
+                                        ><Button
+                                            variant="link"
+                                            size="inline"
+                                            type="button"
+                                            data-slot="console-link"
+                                            @click="
+                                                confirmDelete([Number(row.id)])
+                                            "
+                                        >
+                                            删除
+                                        </Button>
+                                    </div>
                                 </div>
                             </td>
                         </tr>
                         <tr v-if="!loading && !rows.length">
                             <td
                                 colspan="9"
-                                class="h-20 text-center text-muted-foreground"
+                                class="text-center text-muted-foreground"
                             >
-                                暂无数据
+                                <div data-slot="table-cell-content">
+                                    暂无数据
+                                </div>
                             </td>
                         </tr>
                     </tbody>

@@ -1264,45 +1264,54 @@ function regionNameById(id: unknown): string {
                                 class="border-b bg-muted/40 text-muted-foreground"
                             >
                                 <tr>
-                                    <th
-                                        class="w-16 px-4 py-3 text-left font-medium"
-                                    >
-                                        ID
+                                    <th class="w-16 text-left font-medium">
+                                        <div data-slot="table-cell-content">
+                                            ID
+                                        </div>
                                     </th>
-                                    <th class="px-4 py-3 text-left font-medium">
-                                        名称
+                                    <th class="text-left font-medium">
+                                        <div data-slot="table-cell-content">
+                                            名称
+                                        </div>
                                     </th>
-                                    <th class="px-4 py-3 text-left font-medium">
-                                        所属区域
+                                    <th class="text-left font-medium">
+                                        <div data-slot="table-cell-content">
+                                            所属区域
+                                        </div>
                                     </th>
-                                    <th class="px-4 py-3 text-left font-medium">
-                                        CNAME
+                                    <th class="text-left font-medium">
+                                        <div data-slot="table-cell-content">
+                                            CNAME
+                                        </div>
                                     </th>
-                                    <th class="px-4 py-3 text-left font-medium">
-                                        备注
+                                    <th class="text-left font-medium">
+                                        <div data-slot="table-cell-content">
+                                            备注
+                                        </div>
                                     </th>
-                                    <th class="px-4 py-3 text-left font-medium">
-                                        切换策略
+                                    <th class="text-left font-medium">
+                                        <div data-slot="table-cell-content">
+                                            切换策略
+                                        </div>
                                     </th>
-                                    <th
-                                        class="w-20 px-4 py-3 text-left font-medium"
-                                    >
-                                        节点数
+                                    <th class="w-20 text-left font-medium">
+                                        <div data-slot="table-cell-content">
+                                            节点数
+                                        </div>
                                     </th>
-                                    <th
-                                        class="w-44 px-4 py-3 text-right font-medium"
-                                    >
-                                        操作
+                                    <th class="w-44 text-right font-medium">
+                                        <div data-slot="table-cell-content">
+                                            操作
+                                        </div>
                                     </th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <tr v-if="ngLoading && ngRows.length === 0">
-                                    <td
-                                        class="px-4 py-12 text-center"
-                                        colspan="8"
-                                    >
-                                        <Spinner />
+                                    <td class="text-center" colspan="8">
+                                        <div data-slot="table-cell-content">
+                                            <Spinner />
+                                        </div>
                                     </td>
                                 </tr>
                                 <tr
@@ -1310,64 +1319,90 @@ function regionNameById(id: unknown): string {
                                     :key="textValue(g.id)"
                                     class="border-b last:border-b-0"
                                 >
-                                    <td class="px-4 py-3 text-muted-foreground">
-                                        {{ textValue(g.id) }}
+                                    <td class="text-muted-foreground">
+                                        <div data-slot="table-cell-content">
+                                            {{ textValue(g.id) }}
+                                        </div>
                                     </td>
-                                    <td class="px-4 py-3 font-medium">
-                                        {{ textValue(g.name) || '-' }}
+                                    <td class="font-medium">
+                                        <div data-slot="table-cell-content">
+                                            {{ textValue(g.name) || '-' }}
+                                        </div>
                                     </td>
-                                    <td class="px-4 py-3 text-muted-foreground">
-                                        {{
-                                            textValue(g.region_name) ||
-                                            regionNameById(g.region_id)
-                                        }}
+                                    <td class="text-muted-foreground">
+                                        <div data-slot="table-cell-content">
+                                            {{
+                                                textValue(g.region_name) ||
+                                                regionNameById(g.region_id)
+                                            }}
+                                        </div>
                                     </td>
-                                    <td class="px-4 py-3 font-mono text-xs">
-                                        {{ textValue(g.cname_hostname) || '-' }}
+                                    <td class="font-mono text-xs">
+                                        <div data-slot="table-cell-content">
+                                            {{
+                                                textValue(g.cname_hostname) ||
+                                                '-'
+                                            }}
+                                        </div>
                                     </td>
-                                    <td class="px-4 py-3 text-muted-foreground">
-                                        {{ textValue(g.des) || '-' }}
+                                    <td class="text-muted-foreground">
+                                        <div data-slot="table-cell-content">
+                                            {{ textValue(g.des) || '-' }}
+                                        </div>
                                     </td>
-                                    <td class="px-4 py-3">
-                                        {{
-                                            textValue(g.backup_switch_type) ||
-                                            'master_down'
-                                        }}
+                                    <td class="">
+                                        <div data-slot="table-cell-content">
+                                            {{
+                                                textValue(
+                                                    g.backup_switch_type,
+                                                ) || 'master_down'
+                                            }}
+                                        </div>
                                     </td>
-                                    <td class="px-4 py-3">
-                                        {{ textValue(g.node_count) || '0' }}
+                                    <td class="">
+                                        <div data-slot="table-cell-content">
+                                            {{ textValue(g.node_count) || '0' }}
+                                        </div>
                                     </td>
-                                    <td class="px-4 py-3">
-                                        <div class="flex justify-end gap-2">
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                @click="openEditNodeGroup(g)"
-                                            >
-                                                <Pencil
-                                                    data-icon="inline-start"
-                                                />
-                                                编辑
-                                            </Button>
-                                            <Button
-                                                variant="destructive"
-                                                size="sm"
-                                                @click="openDeleteNodeGroup(g)"
-                                            >
-                                                <Trash2
-                                                    data-icon="inline-start"
-                                                />
-                                                删除
-                                            </Button>
+                                    <td class="">
+                                        <div data-slot="table-cell-content">
+                                            <div class="flex justify-end gap-2">
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    @click="
+                                                        openEditNodeGroup(g)
+                                                    "
+                                                >
+                                                    <Pencil
+                                                        data-icon="inline-start"
+                                                    />
+                                                    编辑
+                                                </Button>
+                                                <Button
+                                                    variant="destructive"
+                                                    size="sm"
+                                                    @click="
+                                                        openDeleteNodeGroup(g)
+                                                    "
+                                                >
+                                                    <Trash2
+                                                        data-icon="inline-start"
+                                                    />
+                                                    删除
+                                                </Button>
+                                            </div>
                                         </div>
                                     </td>
                                 </tr>
                                 <tr v-if="!ngLoading && ngRows.length === 0">
                                     <td
-                                        class="px-4 py-12 text-center text-muted-foreground"
+                                        class="text-center text-muted-foreground"
                                         colspan="8"
                                     >
-                                        暂无节点组
+                                        <div data-slot="table-cell-content">
+                                            暂无节点组
+                                        </div>
                                     </td>
                                 </tr>
                             </tbody>
@@ -1422,31 +1457,35 @@ function regionNameById(id: unknown): string {
                                 class="border-b bg-muted/40 text-muted-foreground"
                             >
                                 <tr>
-                                    <th
-                                        class="w-20 px-4 py-3 text-left font-medium"
-                                    >
-                                        ID
+                                    <th class="w-20 text-left font-medium">
+                                        <div data-slot="table-cell-content">
+                                            ID
+                                        </div>
                                     </th>
-                                    <th class="px-4 py-3 text-left font-medium">
-                                        名称
+                                    <th class="text-left font-medium">
+                                        <div data-slot="table-cell-content">
+                                            名称
+                                        </div>
                                     </th>
-                                    <th class="px-4 py-3 text-left font-medium">
-                                        备注
+                                    <th class="text-left font-medium">
+                                        <div data-slot="table-cell-content">
+                                            备注
+                                        </div>
                                     </th>
-                                    <th
-                                        class="w-24 px-4 py-3 text-left font-medium"
-                                    >
-                                        排序
+                                    <th class="w-24 text-left font-medium">
+                                        <div data-slot="table-cell-content">
+                                            排序
+                                        </div>
                                     </th>
-                                    <th
-                                        class="w-32 px-4 py-3 text-left font-medium"
-                                    >
-                                        L2检测端口
+                                    <th class="w-32 text-left font-medium">
+                                        <div data-slot="table-cell-content">
+                                            L2检测端口
+                                        </div>
                                     </th>
-                                    <th
-                                        class="w-44 px-4 py-3 text-right font-medium"
-                                    >
-                                        操作
+                                    <th class="w-44 text-right font-medium">
+                                        <div data-slot="table-cell-content">
+                                            操作
+                                        </div>
                                     </th>
                                 </tr>
                             </thead>
@@ -1456,11 +1495,10 @@ function regionNameById(id: unknown): string {
                                         regionLoading && regionRows.length === 0
                                     "
                                 >
-                                    <td
-                                        class="px-4 py-12 text-center"
-                                        colspan="6"
-                                    >
-                                        <Spinner />
+                                    <td class="text-center" colspan="6">
+                                        <div data-slot="table-cell-content">
+                                            <Spinner />
+                                        </div>
                                     </td>
                                 </tr>
                                 <tr
@@ -1468,43 +1506,58 @@ function regionNameById(id: unknown): string {
                                     :key="textValue(r.id)"
                                     class="border-b last:border-b-0"
                                 >
-                                    <td class="px-4 py-3 text-muted-foreground">
-                                        {{ textValue(r.id) }}
+                                    <td class="text-muted-foreground">
+                                        <div data-slot="table-cell-content">
+                                            {{ textValue(r.id) }}
+                                        </div>
                                     </td>
-                                    <td class="px-4 py-3 font-medium">
-                                        {{ textValue(r.name) || '-' }}
+                                    <td class="font-medium">
+                                        <div data-slot="table-cell-content">
+                                            {{ textValue(r.name) || '-' }}
+                                        </div>
                                     </td>
-                                    <td class="px-4 py-3 text-muted-foreground">
-                                        {{ textValue(r.des) || '-' }}
+                                    <td class="text-muted-foreground">
+                                        <div data-slot="table-cell-content">
+                                            {{ textValue(r.des) || '-' }}
+                                        </div>
                                     </td>
-                                    <td class="px-4 py-3">
-                                        {{ textValue(r.sort) || '-' }}
+                                    <td class="">
+                                        <div data-slot="table-cell-content">
+                                            {{ textValue(r.sort) || '-' }}
+                                        </div>
                                     </td>
-                                    <td class="px-4 py-3">
-                                        {{ textValue(r.l2_check_port) || '-' }}
+                                    <td class="">
+                                        <div data-slot="table-cell-content">
+                                            {{
+                                                textValue(r.l2_check_port) ||
+                                                '-'
+                                            }}
+                                        </div>
                                     </td>
-                                    <td class="px-4 py-3">
-                                        <div class="flex justify-end gap-2">
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                @click="openEditRegion(r)"
-                                            >
-                                                <Pencil
-                                                    data-icon="inline-start"
-                                                />
-                                                编辑
-                                            </Button>
-                                            <Button
-                                                variant="destructive"
-                                                size="sm"
-                                                @click="openDeleteRegion(r)"
-                                            >
-                                                <Trash2
-                                                    data-icon="inline-start"
-                                                />
-                                                删除
-                                            </Button>
+                                    <td class="">
+                                        <div data-slot="table-cell-content">
+                                            <div class="flex justify-end gap-2">
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    @click="openEditRegion(r)"
+                                                >
+                                                    <Pencil
+                                                        data-icon="inline-start"
+                                                    />
+                                                    编辑
+                                                </Button>
+                                                <Button
+                                                    variant="destructive"
+                                                    size="sm"
+                                                    @click="openDeleteRegion(r)"
+                                                >
+                                                    <Trash2
+                                                        data-icon="inline-start"
+                                                    />
+                                                    删除
+                                                </Button>
+                                            </div>
                                         </div>
                                     </td>
                                 </tr>
@@ -1515,10 +1568,12 @@ function regionNameById(id: unknown): string {
                                     "
                                 >
                                     <td
-                                        class="px-4 py-12 text-center text-muted-foreground"
+                                        class="text-center text-muted-foreground"
                                         colspan="6"
                                     >
-                                        暂无区域
+                                        <div data-slot="table-cell-content">
+                                            暂无区域
+                                        </div>
                                     </td>
                                 </tr>
                             </tbody>

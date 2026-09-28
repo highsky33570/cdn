@@ -651,35 +651,65 @@ function showDetail(row: CdnflyRecord, kind: 'reason' | 'progress') {
                         <thead>
                             <tr>
                                 <th class="selection">
-                                    <CheckboxField
-                                        aria-label="选择本页全部"
-                                        :checked="allSelected"
-                                        :disabled="
-                                            !rows.length ||
-                                            loading ||
-                                            submitting
-                                        "
-                                        @change="
-                                            selected = allSelected
-                                                ? []
-                                                : rows.map((row) =>
-                                                      Number(row.id),
-                                                  )
-                                        "
-                                    />
+                                    <div data-slot="table-cell-content">
+                                        <CheckboxField
+                                            aria-label="选择本页全部"
+                                            :checked="allSelected"
+                                            :disabled="
+                                                !rows.length ||
+                                                loading ||
+                                                submitting
+                                            "
+                                            @change="
+                                                selected = allSelected
+                                                    ? []
+                                                    : rows.map((row) =>
+                                                          Number(row.id),
+                                                      )
+                                            "
+                                        />
+                                    </div>
                                 </th>
-                                <th>任务编号</th>
-                                <th>类型</th>
-                                <th>URL</th>
-                                <th>状态</th>
-                                <th>创建时间</th>
-                                <th>操作</th>
+                                <th>
+                                    <div data-slot="table-cell-content">
+                                        任务编号
+                                    </div>
+                                </th>
+                                <th>
+                                    <div data-slot="table-cell-content">
+                                        类型
+                                    </div>
+                                </th>
+                                <th>
+                                    <div data-slot="table-cell-content">
+                                        URL
+                                    </div>
+                                </th>
+                                <th>
+                                    <div data-slot="table-cell-content">
+                                        状态
+                                    </div>
+                                </th>
+                                <th>
+                                    <div data-slot="table-cell-content">
+                                        创建时间
+                                    </div>
+                                </th>
+                                <th>
+                                    <div data-slot="table-cell-content">
+                                        操作
+                                    </div>
+                                </th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr v-if="loading || !rows.length">
                                 <td colspan="7" class="empty">
-                                    {{ loading ? '加载中…' : '暂无操作日志' }}
+                                    <div data-slot="table-cell-content">
+                                        {{
+                                            loading ? '加载中…' : '暂无操作日志'
+                                        }}
+                                    </div>
                                 </td>
                             </tr>
                             <tr
@@ -687,114 +717,138 @@ function showDetail(row: CdnflyRecord, kind: 'reason' | 'progress') {
                                 :key="Number(row.id)"
                             >
                                 <td class="selection">
-                                    <CheckboxField
-                                        :aria-label="`选择 ${row.id}`"
-                                        :checked="
-                                            selected.includes(Number(row.id))
-                                        "
-                                        :disabled="submitting"
-                                        @change="toggle(Number(row.id))"
-                                    />
+                                    <div data-slot="table-cell-content">
+                                        <CheckboxField
+                                            :aria-label="`选择 ${row.id}`"
+                                            :checked="
+                                                selected.includes(
+                                                    Number(row.id),
+                                                )
+                                            "
+                                            :disabled="submitting"
+                                            @change="toggle(Number(row.id))"
+                                        />
+                                    </div>
                                 </td>
                                 <td class="job-id">
-                                    <div>
-                                        <span class="muted">Job</span>
-                                        {{ row.id ?? '未记录' }}
-                                    </div>
-                                    <div>
-                                        <span class="muted">Task</span>
-                                        {{ row.task_id ?? '未生成' }}
+                                    <div data-slot="table-cell-content">
+                                        <div>
+                                            <span class="muted">Job</span>
+                                            {{ row.id ?? '未记录' }}
+                                        </div>
+                                        <div>
+                                            <span class="muted">Task</span>
+                                            {{ row.task_id ?? '未生成' }}
+                                        </div>
                                     </div>
                                 </td>
                                 <td>
-                                    <span
-                                        class="type-pill"
-                                        :class="String(row.type)"
-                                        >{{
-                                            cacheModes.find(
-                                                (item) =>
-                                                    item.value === row.type,
-                                            )?.label ?? row.type
-                                        }}</span
-                                    >
+                                    <div data-slot="table-cell-content">
+                                        <span
+                                            class="type-pill"
+                                            :class="String(row.type)"
+                                            >{{
+                                                cacheModes.find(
+                                                    (item) =>
+                                                        item.value === row.type,
+                                                )?.label ?? row.type
+                                            }}</span
+                                        >
+                                    </div>
                                 </td>
                                 <td class="url-cell">
-                                    <div>
-                                        <span :title="cacheJobUrl(row)">{{
-                                            cacheJobUrl(row) || '未记录 URL'
-                                        }}</span
-                                        ><Button
-                                            variant="ghost"
-                                            size="icon-sm"
-                                            type="button"
-                                            data-slot="console-link"
-                                            v-if="cacheJobUrl(row)"
-                                            class="link copy"
-                                            :aria-label="`复制 URL ${row.id}`"
-                                            @click="copy(cacheJobUrl(row))"
-                                        >
-                                            <Copy />
-                                        </Button>
+                                    <div data-slot="table-cell-content">
+                                        <div>
+                                            <span :title="cacheJobUrl(row)">{{
+                                                cacheJobUrl(row) || '未记录 URL'
+                                            }}</span
+                                            ><Button
+                                                variant="ghost"
+                                                size="icon-sm"
+                                                type="button"
+                                                data-slot="console-link"
+                                                v-if="cacheJobUrl(row)"
+                                                class="link copy"
+                                                :aria-label="`复制 URL ${row.id}`"
+                                                @click="copy(cacheJobUrl(row))"
+                                            >
+                                                <Copy />
+                                            </Button>
+                                        </div>
                                     </div>
                                 </td>
                                 <td>
-                                    <span
-                                        class="status-pill"
-                                        :class="cacheJobStatus(row).tone"
-                                        :title="cacheJobStatus(row).label"
-                                        >● {{ cacheJobStatus(row).label }}</span
-                                    >
-                                </td>
-                                <td>
-                                    {{
-                                        row.create_at2 ??
-                                        row.create_at ??
-                                        '未记录'
-                                    }}
-                                </td>
-                                <td>
-                                    <div class="row-actions">
-                                        <Button
-                                            variant="link"
-                                            size="inline"
-                                            type="button"
-                                            data-slot="console-link"
-                                            v-if="
-                                                cacheJobStatus(row).group ===
-                                                'process'
-                                            "
-                                            class="link"
-                                            @click="showDetail(row, 'progress')"
+                                    <div data-slot="table-cell-content">
+                                        <span
+                                            class="status-pill"
+                                            :class="cacheJobStatus(row).tone"
+                                            :title="cacheJobStatus(row).label"
+                                            >●
+                                            {{
+                                                cacheJobStatus(row).label
+                                            }}</span
                                         >
-                                            查看进度</Button
-                                        ><template v-else
-                                            ><Button
-                                                variant="link"
-                                                size="inline"
-                                                type="button"
-                                                data-slot="console-link"
-                                                class="link"
-                                                :disabled="submitting"
-                                                @click="resubmit([row])"
-                                            >
-                                                重新提交</Button
-                                            ><Button
+                                    </div>
+                                </td>
+                                <td>
+                                    <div data-slot="table-cell-content">
+                                        {{
+                                            row.create_at2 ??
+                                            row.create_at ??
+                                            '未记录'
+                                        }}
+                                    </div>
+                                </td>
+                                <td>
+                                    <div data-slot="table-cell-content">
+                                        <div class="row-actions">
+                                            <Button
                                                 variant="link"
                                                 size="inline"
                                                 type="button"
                                                 data-slot="console-link"
                                                 v-if="
                                                     cacheJobStatus(row)
-                                                        .group === 'failed'
+                                                        .group === 'process'
                                                 "
                                                 class="link"
                                                 @click="
-                                                    showDetail(row, 'reason')
+                                                    showDetail(row, 'progress')
                                                 "
                                             >
-                                                查看原因
-                                            </Button></template
-                                        >
+                                                查看进度</Button
+                                            ><template v-else
+                                                ><Button
+                                                    variant="link"
+                                                    size="inline"
+                                                    type="button"
+                                                    data-slot="console-link"
+                                                    class="link"
+                                                    :disabled="submitting"
+                                                    @click="resubmit([row])"
+                                                >
+                                                    重新提交</Button
+                                                ><Button
+                                                    variant="link"
+                                                    size="inline"
+                                                    type="button"
+                                                    data-slot="console-link"
+                                                    v-if="
+                                                        cacheJobStatus(row)
+                                                            .group === 'failed'
+                                                    "
+                                                    class="link"
+                                                    @click="
+                                                        showDetail(
+                                                            row,
+                                                            'reason',
+                                                        )
+                                                    "
+                                                >
+                                                    查看原因
+                                                </Button></template
+                                            >
+                                        </div>
                                     </div>
                                 </td>
                             </tr>

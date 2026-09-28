@@ -293,137 +293,163 @@ async function batch(
                 <thead>
                     <tr>
                         <th>
-                            <CheckboxField
-                                aria-label="全选当前页"
-                                :checked="allSelected"
-                                :indeterminate="
-                                    selected.length > 0 && !allSelected
-                                "
-                                :disabled="
-                                    busy || loading || !selectableRows.length
-                                "
-                                @change="
-                                    selected = allSelected
-                                        ? []
-                                        : selectableRows.map((row) =>
-                                              Number(row.id),
-                                          )
-                                "
-                            />
+                            <div data-slot="table-cell-content">
+                                <CheckboxField
+                                    aria-label="全选当前页"
+                                    :checked="allSelected"
+                                    :indeterminate="
+                                        selected.length > 0 && !allSelected
+                                    "
+                                    :disabled="
+                                        busy ||
+                                        loading ||
+                                        !selectableRows.length
+                                    "
+                                    @change="
+                                        selected = allSelected
+                                            ? []
+                                            : selectableRows.map((row) =>
+                                                  Number(row.id),
+                                              )
+                                    "
+                                />
+                            </div>
                         </th>
-                        <th>ID</th>
-                        <th>名称</th>
-                        <th>备注</th>
-                        <th>状态</th>
-                        <th>操作</th>
+                        <th><div data-slot="table-cell-content">ID</div></th>
+                        <th><div data-slot="table-cell-content">名称</div></th>
+                        <th><div data-slot="table-cell-content">备注</div></th>
+                        <th><div data-slot="table-cell-content">状态</div></th>
+                        <th><div data-slot="table-cell-content">操作</div></th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr v-if="loading">
-                        <td colspan="6" class="empty"><span>加载中…</span></td>
+                        <td colspan="6" class="empty">
+                            <div data-slot="table-cell-content">
+                                <span>加载中…</span>
+                            </div>
+                        </td>
                     </tr>
                     <template v-else>
                         <tr v-for="row in rows" :key="Number(row.id)">
                             <td>
-                                <CheckboxField
-                                    v-model="selected"
-                                    :value="Number(row.id)"
-                                    :aria-label="`选择 ${row.id}`"
-                                    :disabled="busy || readOnly(row)"
-                                    :title="
-                                        readOnly(row)
-                                            ? '全局 ACL 只读'
-                                            : undefined
-                                    "
-                                />
+                                <div data-slot="table-cell-content">
+                                    <CheckboxField
+                                        v-model="selected"
+                                        :value="Number(row.id)"
+                                        :aria-label="`选择 ${row.id}`"
+                                        :disabled="busy || readOnly(row)"
+                                        :title="
+                                            readOnly(row)
+                                                ? '全局 ACL 只读'
+                                                : undefined
+                                        "
+                                    />
+                                </div>
                             </td>
-                            <td>{{ row.id }}</td>
+                            <td>
+                                <div data-slot="table-cell-content">
+                                    {{ row.id }}
+                                </div>
+                            </td>
                             <td class="name-cell" :title="textValue(row.name)">
-                                {{ row.name || '-' }}
+                                <div data-slot="table-cell-content">
+                                    {{ row.name || '-' }}
+                                </div>
                             </td>
                             <td
                                 class="remark-cell"
                                 :title="textValue(row.des ?? row.remark)"
                             >
-                                {{ row.des || row.remark || '-' }}
+                                <div data-slot="table-cell-content">
+                                    {{ row.des || row.remark || '-' }}
+                                </div>
                             </td>
                             <td>
-                                <span
-                                    class="acl-status"
-                                    :class="{
-                                        'disabled-status':
-                                            Number(row.enable) !== 1,
-                                    }"
-                                    ><i />{{
-                                        Number(row.enable) === 1
-                                            ? '正常'
-                                            : '禁用'
-                                    }}</span
-                                >
+                                <div data-slot="table-cell-content">
+                                    <span
+                                        class="acl-status"
+                                        :class="{
+                                            'disabled-status':
+                                                Number(row.enable) !== 1,
+                                        }"
+                                        ><i />{{
+                                            Number(row.enable) === 1
+                                                ? '正常'
+                                                : '禁用'
+                                        }}</span
+                                    >
+                                </div>
                             </td>
                             <td>
-                                <div class="row-actions">
-                                    <Button
-                                        variant="link"
-                                        size="inline"
-                                        data-slot="console-link"
-                                        type="button"
-                                        class="text-action"
-                                        :disabled="busy || readOnly(row)"
-                                        @click="emit('manage', row)"
-                                    >
-                                        管理</Button
-                                    ><DropdownMenu
-                                        ><DropdownMenuTrigger as-child
-                                            ><Button
-                                                variant="link"
-                                                size="inline"
-                                                data-slot="console-link"
-                                                type="button"
-                                                class="text-action row-more"
-                                                :disabled="
-                                                    busy || readOnly(row)
-                                                "
-                                                :aria-label="`更多操作 ${row.id}`"
-                                            >
-                                                更多
-                                                <ChevronDown
-                                                    :size="
-                                                        14
-                                                    " /></Button></DropdownMenuTrigger
-                                        ><DropdownMenuContent
-                                            class="console-user-acl-workspace"
-                                            align="end"
-                                            ><DropdownMenuItem
-                                                @select="
-                                                    batch('enable', [
-                                                        Number(row.id),
-                                                    ])
-                                                "
-                                                >启用</DropdownMenuItem
-                                            ><DropdownMenuItem
-                                                @select="
-                                                    batch('disable', [
-                                                        Number(row.id),
-                                                    ])
-                                                "
-                                                >禁用</DropdownMenuItem
-                                            ><DropdownMenuItem
-                                                @select="
-                                                    askDelete([Number(row.id)])
-                                                "
-                                                >删除</DropdownMenuItem
-                                            ></DropdownMenuContent
-                                        ></DropdownMenu
-                                    >
+                                <div data-slot="table-cell-content">
+                                    <div class="row-actions">
+                                        <Button
+                                            variant="link"
+                                            size="inline"
+                                            data-slot="console-link"
+                                            type="button"
+                                            class="text-action"
+                                            :disabled="busy || readOnly(row)"
+                                            @click="emit('manage', row)"
+                                        >
+                                            管理</Button
+                                        ><DropdownMenu
+                                            ><DropdownMenuTrigger as-child
+                                                ><Button
+                                                    variant="link"
+                                                    size="inline"
+                                                    data-slot="console-link"
+                                                    type="button"
+                                                    class="text-action row-more"
+                                                    :disabled="
+                                                        busy || readOnly(row)
+                                                    "
+                                                    :aria-label="`更多操作 ${row.id}`"
+                                                >
+                                                    更多
+                                                    <ChevronDown
+                                                        :size="
+                                                            14
+                                                        " /></Button></DropdownMenuTrigger
+                                            ><DropdownMenuContent
+                                                class="console-user-acl-workspace"
+                                                align="end"
+                                                ><DropdownMenuItem
+                                                    @select="
+                                                        batch('enable', [
+                                                            Number(row.id),
+                                                        ])
+                                                    "
+                                                    >启用</DropdownMenuItem
+                                                ><DropdownMenuItem
+                                                    @select="
+                                                        batch('disable', [
+                                                            Number(row.id),
+                                                        ])
+                                                    "
+                                                    >禁用</DropdownMenuItem
+                                                ><DropdownMenuItem
+                                                    @select="
+                                                        askDelete([
+                                                            Number(row.id),
+                                                        ])
+                                                    "
+                                                    >删除</DropdownMenuItem
+                                                ></DropdownMenuContent
+                                            ></DropdownMenu
+                                        >
+                                    </div>
                                 </div>
                             </td>
                         </tr>
                         <tr v-if="!rows.length">
                             <td colspan="6" class="empty">
-                                <span>{{
-                                    error ? '加载失败，请重试' : '暂无数据'
-                                }}</span>
+                                <div data-slot="table-cell-content">
+                                    <span>{{
+                                        error ? '加载失败，请重试' : '暂无数据'
+                                    }}</span>
+                                </div>
                             </td>
                         </tr>
                     </template>

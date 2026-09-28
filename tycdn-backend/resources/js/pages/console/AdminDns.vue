@@ -667,36 +667,54 @@ onMounted(() => {
                         >
                             <tr>
                                 <th class="w-12">
-                                    <Checkbox
-                                        aria-label="选择本页全部"
-                                        :disabled="loading || !rows.length"
-                                        :model-value="
-                                            allSelected
-                                                ? true
-                                                : selected.length
-                                                  ? 'indeterminate'
-                                                  : false
-                                        "
-                                        @update:model-value="
-                                            selected =
-                                                $event === true
-                                                    ? rows.map((r) =>
-                                                          Number(r.id),
-                                                      )
-                                                    : []
-                                        "
-                                    />
+                                    <div data-slot="table-cell-content">
+                                        <Checkbox
+                                            aria-label="选择本页全部"
+                                            :disabled="loading || !rows.length"
+                                            :model-value="
+                                                allSelected
+                                                    ? true
+                                                    : selected.length
+                                                      ? 'indeterminate'
+                                                      : false
+                                            "
+                                            @update:model-value="
+                                                selected =
+                                                    $event === true
+                                                        ? rows.map((r) =>
+                                                              Number(r.id),
+                                                          )
+                                                        : []
+                                            "
+                                        />
+                                    </div>
                                 </th>
-                                <th>ID</th>
-                                <th>域名</th>
-                                <th>备注</th>
-                                <th>操作</th>
+                                <th>
+                                    <div data-slot="table-cell-content">ID</div>
+                                </th>
+                                <th>
+                                    <div data-slot="table-cell-content">
+                                        域名
+                                    </div>
+                                </th>
+                                <th>
+                                    <div data-slot="table-cell-content">
+                                        备注
+                                    </div>
+                                </th>
+                                <th>
+                                    <div data-slot="table-cell-content">
+                                        操作
+                                    </div>
+                                </th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr v-if="loading">
-                                <td colspan="5" class="h-20 text-center">
-                                    <Spinner class="mx-auto" />
+                                <td colspan="5" class="text-center">
+                                    <div data-slot="table-cell-content">
+                                        <Spinner class="mx-auto" />
+                                    </div>
                                 </td>
                             </tr>
                             <tr
@@ -705,48 +723,73 @@ onMounted(() => {
                                 class="border-b"
                             >
                                 <td>
-                                    <Checkbox
-                                        :aria-label="`选择 ${row.domain}`"
-                                        :model-value="
-                                            selected.includes(Number(row.id))
-                                        "
-                                        @update:model-value="
-                                            selectRow(Number(row.id), $event)
-                                        "
-                                    />
-                                </td>
-                                <td>{{ row.id }}</td>
-                                <td>{{ row.domain }}</td>
-                                <td>{{ row.des }}</td>
-                                <td>
-                                    <div class="flex gap-2 text-primary">
-                                        <Button
-                                            variant="link"
-                                            size="inline"
-                                            type="button"
-                                            data-slot="console-link"
-                                            @click="edit(row)"
-                                            >编辑</Button
-                                        ><Button
-                                            variant="link"
-                                            size="inline"
-                                            type="button"
-                                            data-slot="console-link"
-                                            @click="
-                                                confirmDelete([Number(row.id)])
+                                    <div data-slot="table-cell-content">
+                                        <Checkbox
+                                            :aria-label="`选择 ${row.domain}`"
+                                            :model-value="
+                                                selected.includes(
+                                                    Number(row.id),
+                                                )
                                             "
-                                        >
-                                            删除
-                                        </Button>
+                                            @update:model-value="
+                                                selectRow(
+                                                    Number(row.id),
+                                                    $event,
+                                                )
+                                            "
+                                        />
+                                    </div>
+                                </td>
+                                <td>
+                                    <div data-slot="table-cell-content">
+                                        {{ row.id }}
+                                    </div>
+                                </td>
+                                <td>
+                                    <div data-slot="table-cell-content">
+                                        {{ row.domain }}
+                                    </div>
+                                </td>
+                                <td>
+                                    <div data-slot="table-cell-content">
+                                        {{ row.des }}
+                                    </div>
+                                </td>
+                                <td>
+                                    <div data-slot="table-cell-content">
+                                        <div class="flex gap-2 text-primary">
+                                            <Button
+                                                variant="link"
+                                                size="inline"
+                                                type="button"
+                                                data-slot="console-link"
+                                                @click="edit(row)"
+                                                >编辑</Button
+                                            ><Button
+                                                variant="link"
+                                                size="inline"
+                                                type="button"
+                                                data-slot="console-link"
+                                                @click="
+                                                    confirmDelete([
+                                                        Number(row.id),
+                                                    ])
+                                                "
+                                            >
+                                                删除
+                                            </Button>
+                                        </div>
                                     </div>
                                 </td>
                             </tr>
                             <tr v-if="!loading && !rows.length">
                                 <td
                                     colspan="5"
-                                    class="h-14 text-center text-muted-foreground"
+                                    class="text-center text-muted-foreground"
                                 >
-                                    暂无数据
+                                    <div data-slot="table-cell-content">
+                                        暂无数据
+                                    </div>
                                 </td>
                             </tr>
                         </tbody>

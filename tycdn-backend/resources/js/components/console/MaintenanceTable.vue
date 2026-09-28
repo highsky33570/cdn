@@ -119,10 +119,12 @@ const table = computed(() => {
                         v-for="(column, index) in table.columns"
                         :key="index"
                         scope="col"
-                        class="border-y px-5 py-3 font-medium whitespace-nowrap"
+                        class="border-y font-medium whitespace-nowrap"
                         :class="log && index === 0 ? 'w-20' : ''"
                     >
-                        {{ column }}
+                        <div data-slot="table-cell-content">
+                            {{ column }}
+                        </div>
                     </th>
                 </tr>
             </thead>
@@ -136,26 +138,30 @@ const table = computed(() => {
                 >
                     <td
                         :colspan="Math.max(table.columns.length, 1)"
-                        class="px-5 py-8 text-center"
+                        class="text-center"
                     >
-                        <p
-                            data-typography="body"
-                            v-if="error"
-                            role="alert"
-                            class="text-destructive"
-                        >
-                            {{ error }}
-                        </p>
-                        <p
-                            data-typography="body"
-                            v-else
-                            role="status"
-                            class="text-muted-foreground"
-                        >
-                            {{
-                                loading ? '加载中…' : emptyMessage || '暂无数据'
-                            }}
-                        </p>
+                        <div data-slot="table-cell-content">
+                            <p
+                                data-typography="body"
+                                v-if="error"
+                                role="alert"
+                                class="text-destructive"
+                            >
+                                {{ error }}
+                            </p>
+                            <p
+                                data-typography="body"
+                                v-else
+                                role="status"
+                                class="text-muted-foreground"
+                            >
+                                {{
+                                    loading
+                                        ? '加载中…'
+                                        : emptyMessage || '暂无数据'
+                                }}
+                            </p>
+                        </div>
                     </td>
                 </tr>
                 <tr
@@ -166,7 +172,7 @@ const table = computed(() => {
                     <td
                         v-for="(cell, column) in row"
                         :key="column"
-                        class="max-w-xl px-5 py-3 [overflow-wrap:anywhere] break-words whitespace-pre-wrap"
+                        class="max-w-xl [overflow-wrap:anywhere] break-words whitespace-pre-wrap"
                         :class="[
                             column === 0
                                 ? 'text-muted-foreground'
@@ -174,7 +180,9 @@ const table = computed(() => {
                             log ? 'font-mono text-xs leading-6' : '',
                         ]"
                     >
-                        {{ cell }}
+                        <div data-slot="table-cell-content">
+                            {{ cell }}
+                        </div>
                     </td>
                 </tr>
             </tbody>

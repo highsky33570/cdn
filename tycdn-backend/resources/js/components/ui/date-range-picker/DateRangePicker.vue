@@ -318,7 +318,7 @@ function cellClass(cell: Cell): string {
     }
 
     if (cell.isStart || cell.isEnd) {
-        return `${base} cursor-pointer bg-foreground text-background`;
+        return `${base} cursor-pointer`;
     }
 
     if (cell.inRange) {
@@ -337,25 +337,16 @@ function cellClass(cell: Cell): string {
     <DropdownMenu v-model:open="open">
         <DropdownMenuTrigger as-child>
             <Button
-                variant="outline"
+                variant="default"
                 data-slot="date-range-picker"
                 type="button"
                 :class="[
                     'inline-flex h-8 items-center gap-2 rounded-md border px-3 text-xs transition-colors',
-                    'border-input bg-background hover:bg-accent',
                     triggerClass,
                 ]"
             >
-                <CalendarDays
-                    class="h-3.5 w-3.5 shrink-0 text-muted-foreground"
-                />
-                <span
-                    :class="
-                        startDate && endDate
-                            ? 'text-foreground'
-                            : 'text-muted-foreground'
-                    "
-                >
+                <CalendarDays class="h-3.5 w-3.5 shrink-0" />
+                <span>
                     {{ triggerLabel }}
                 </span>
             </Button>
@@ -422,7 +413,11 @@ function cellClass(cell: Cell): string {
                         </div>
                         <div class="grid grid-cols-7">
                             <Button
-                                variant="ghost"
+                                :variant="
+                                    cell.isStart || cell.isEnd
+                                        ? 'default'
+                                        : 'ghost'
+                                "
                                 size="inline"
                                 data-slot="calendar-cell"
                                 type="button"
@@ -473,7 +468,11 @@ function cellClass(cell: Cell): string {
                         </div>
                         <div class="grid grid-cols-7">
                             <Button
-                                variant="ghost"
+                                :variant="
+                                    cell.isStart || cell.isEnd
+                                        ? 'default'
+                                        : 'ghost'
+                                "
                                 size="inline"
                                 data-slot="calendar-cell"
                                 type="button"

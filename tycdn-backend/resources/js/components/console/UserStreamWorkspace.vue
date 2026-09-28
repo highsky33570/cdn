@@ -846,39 +846,101 @@ function tabKey(event: KeyboardEvent) {
                     <thead>
                         <tr>
                             <th>
-                                <CheckboxField
-                                    aria-label="全选当前页"
-                                    :checked="allSelected"
-                                    :indeterminate="
-                                        selected.length > 0 && !allSelected
-                                    "
-                                    :disabled="busy || loading || !rows.length"
-                                    @change="
-                                        selected = allSelected
-                                            ? []
-                                            : rows.map((row) => Number(row.id))
-                                    "
-                                />
+                                <div data-slot="table-cell-content">
+                                    <CheckboxField
+                                        aria-label="全选当前页"
+                                        :checked="allSelected"
+                                        :indeterminate="
+                                            selected.length > 0 && !allSelected
+                                        "
+                                        :disabled="
+                                            busy || loading || !rows.length
+                                        "
+                                        @change="
+                                            selected = allSelected
+                                                ? []
+                                                : rows.map((row) =>
+                                                      Number(row.id),
+                                                  )
+                                        "
+                                    />
+                                </div>
                             </th>
-                            <th>ID</th>
+                            <th>
+                                <div data-slot="table-cell-content">ID</div>
+                            </th>
                             <template v-if="tab === 'streams'"
-                                ><th>监听端口</th>
-                                <th>源站</th>
-                                <th>CNAME</th>
-                                <th>套餐</th>
-                                <th>分组</th>
-                                <th>状态</th>
-                                <th>备注</th>
-                                <th>添加时间</th></template
+                                ><th>
+                                    <div data-slot="table-cell-content">
+                                        监听端口
+                                    </div>
+                                </th>
+                                <th>
+                                    <div data-slot="table-cell-content">
+                                        源站
+                                    </div>
+                                </th>
+                                <th>
+                                    <div data-slot="table-cell-content">
+                                        CNAME
+                                    </div>
+                                </th>
+                                <th>
+                                    <div data-slot="table-cell-content">
+                                        套餐
+                                    </div>
+                                </th>
+                                <th>
+                                    <div data-slot="table-cell-content">
+                                        分组
+                                    </div>
+                                </th>
+                                <th>
+                                    <div data-slot="table-cell-content">
+                                        状态
+                                    </div>
+                                </th>
+                                <th>
+                                    <div data-slot="table-cell-content">
+                                        备注
+                                    </div>
+                                </th>
+                                <th>
+                                    <div data-slot="table-cell-content">
+                                        添加时间
+                                    </div>
+                                </th></template
                             ><template v-else-if="tab === 'groups'"
-                                ><th>名称</th>
-                                <th>备注</th></template
+                                ><th>
+                                    <div data-slot="table-cell-content">
+                                        名称
+                                    </div>
+                                </th>
+                                <th>
+                                    <div data-slot="table-cell-content">
+                                        备注
+                                    </div>
+                                </th></template
                             ><template v-else
-                                ><th>设置项</th>
-                                <th>设置值</th>
-                                <th>生效范围</th></template
+                                ><th>
+                                    <div data-slot="table-cell-content">
+                                        设置项
+                                    </div>
+                                </th>
+                                <th>
+                                    <div data-slot="table-cell-content">
+                                        设置值
+                                    </div>
+                                </th>
+                                <th>
+                                    <div data-slot="table-cell-content">
+                                        生效范围
+                                    </div>
+                                </th></template
                             >
-                            <th>操作</th>
+                            <th>
+                                <div data-slot="table-cell-content">操作</div>
+                            </th>
                         </tr>
                     </thead>
                     <tbody>
@@ -893,150 +955,212 @@ function tabKey(event: KeyboardEvent) {
                                           : 6
                                 "
                             >
-                                加载中…
+                                <div data-slot="table-cell-content">
+                                    加载中…
+                                </div>
                             </td>
                         </tr>
                         <template v-else>
                             <tr v-for="row in rows" :key="Number(row.id)">
                                 <td>
-                                    <CheckboxField
-                                        v-model="selected"
-                                        :value="Number(row.id)"
-                                        :aria-label="`选择 ${row.id}`"
-                                        :disabled="busy"
-                                    />
+                                    <div data-slot="table-cell-content">
+                                        <CheckboxField
+                                            v-model="selected"
+                                            :value="Number(row.id)"
+                                            :aria-label="`选择 ${row.id}`"
+                                            :disabled="busy"
+                                        />
+                                    </div>
                                 </td>
-                                <td>{{ row.id }}</td>
+                                <td>
+                                    <div data-slot="table-cell-content">
+                                        {{ row.id }}
+                                    </div>
+                                </td>
                                 <template v-if="tab === 'streams'"
-                                    ><td>{{ streamListenText(row.listen) }}</td>
+                                    ><td>
+                                        <div data-slot="table-cell-content">
+                                            {{ streamListenText(row.listen) }}
+                                        </div>
+                                    </td>
                                     <td
                                         :title="streamBackendText(row)"
                                         class="truncate-cell"
                                     >
-                                        {{ streamBackendText(row) }}
+                                        <div data-slot="table-cell-content">
+                                            {{ streamBackendText(row) }}
+                                        </div>
                                     </td>
                                     <td
                                         class="truncate-cell"
                                         :title="String(cname(row))"
                                     >
-                                        {{ cname(row) }}
+                                        <div data-slot="table-cell-content">
+                                            {{ cname(row) }}
+                                        </div>
                                     </td>
-                                    <td>{{ packageText(row) }}</td>
-                                    <td>{{ groupText(row) }}</td>
                                     <td>
-                                        <span
-                                            class="stream-status"
-                                            :data-state="status(row)"
-                                            ><i />{{ status(row) }}</span
-                                        >
+                                        <div data-slot="table-cell-content">
+                                            {{ packageText(row) }}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div data-slot="table-cell-content">
+                                            {{ groupText(row) }}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div data-slot="table-cell-content">
+                                            <span
+                                                class="stream-status"
+                                                :data-state="status(row)"
+                                                ><i />{{ status(row) }}</span
+                                            >
+                                        </div>
                                     </td>
                                     <td
                                         class="truncate-cell"
                                         :title="String(row.des || '')"
                                     >
-                                        {{ row.des || '-' }}
+                                        <div data-slot="table-cell-content">
+                                            {{ row.des || '-' }}
+                                        </div>
                                     </td>
-                                    <td>{{ createdAt(row) }}</td></template
+                                    <td>
+                                        <div data-slot="table-cell-content">
+                                            {{ createdAt(row) }}
+                                        </div>
+                                    </td></template
                                 >
                                 <template v-else-if="tab === 'groups'"
-                                    ><td>{{ row.name || '-' }}</td>
-                                    <td>{{ row.des || '-' }}</td></template
+                                    ><td>
+                                        <div data-slot="table-cell-content">
+                                            {{ row.name || '-' }}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div data-slot="table-cell-content">
+                                            {{ row.des || '-' }}
+                                        </div>
+                                    </td></template
                                 >
                                 <template v-else
                                     ><td>
-                                        {{
-                                            names[String(row.name)] || row.name
-                                        }}
+                                        <div data-slot="table-cell-content">
+                                            {{
+                                                names[String(row.name)] ||
+                                                row.name
+                                            }}
+                                        </div>
                                     </td>
-                                    <td>{{ configValue(row) }}</td>
                                     <td>
-                                        {{
-                                            row.scope_name === 'global'
-                                                ? '全局'
-                                                : `转发分组 #${row.scope_id}`
-                                        }}
+                                        <div data-slot="table-cell-content">
+                                            {{ configValue(row) }}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div data-slot="table-cell-content">
+                                            {{
+                                                row.scope_name === 'global'
+                                                    ? '全局'
+                                                    : `转发分组 #${row.scope_id}`
+                                            }}
+                                        </div>
                                     </td></template
                                 >
                                 <td>
-                                    <div class="row-actions">
-                                        <Button
-                                            variant="link"
-                                            size="inline"
-                                            data-slot="console-link"
-                                            type="button"
-                                            class="text-action"
-                                            :disabled="busy"
-                                            @click="
-                                                tab === 'streams'
-                                                    ? manage(row)
-                                                    : editResource(row)
-                                            "
-                                        >
-                                            {{
-                                                tab === 'streams'
-                                                    ? '管理'
-                                                    : '编辑'
-                                            }}</Button
-                                        ><DropdownMenu v-if="tab === 'streams'"
-                                            ><DropdownMenuTrigger as-child
-                                                ><Button
-                                                    variant="link"
-                                                    size="inline"
-                                                    data-slot="console-link"
-                                                    type="button"
-                                                    class="text-action row-more"
-                                                    :disabled="busy"
-                                                    :aria-label="`更多操作 ${row.id}`"
-                                                >
-                                                    更多
-                                                    <ChevronDown
-                                                        :size="
-                                                            14
-                                                        " /></Button></DropdownMenuTrigger
-                                            ><DropdownMenuContent
-                                                class="console-user-stream-workspace"
-                                                align="end"
-                                                ><DropdownMenuItem
-                                                    @select="
-                                                        mutate(
-                                                            [Number(row.id)],
-                                                            'PUT',
-                                                            { enable: 1 },
-                                                        )
-                                                    "
-                                                    >启用</DropdownMenuItem
-                                                ><DropdownMenuItem
-                                                    @select="
-                                                        mutate(
-                                                            [Number(row.id)],
-                                                            'PUT',
-                                                            { enable: 0 },
-                                                        )
-                                                    "
-                                                    >禁用</DropdownMenuItem
-                                                ><DropdownMenuItem
-                                                    @select="
-                                                        confirmDelete([
-                                                            Number(row.id),
-                                                        ])
-                                                    "
-                                                    >删除</DropdownMenuItem
-                                                ></DropdownMenuContent
-                                            ></DropdownMenu
-                                        ><Button
-                                            variant="link"
-                                            size="inline"
-                                            data-slot="console-link"
-                                            v-else
-                                            type="button"
-                                            class="text-action"
-                                            :disabled="busy"
-                                            @click="
-                                                confirmDelete([Number(row.id)])
-                                            "
-                                        >
-                                            删除
-                                        </Button>
+                                    <div data-slot="table-cell-content">
+                                        <div class="row-actions">
+                                            <Button
+                                                variant="link"
+                                                size="inline"
+                                                data-slot="console-link"
+                                                type="button"
+                                                class="text-action"
+                                                :disabled="busy"
+                                                @click="
+                                                    tab === 'streams'
+                                                        ? manage(row)
+                                                        : editResource(row)
+                                                "
+                                            >
+                                                {{
+                                                    tab === 'streams'
+                                                        ? '管理'
+                                                        : '编辑'
+                                                }}</Button
+                                            ><DropdownMenu
+                                                v-if="tab === 'streams'"
+                                                ><DropdownMenuTrigger as-child
+                                                    ><Button
+                                                        variant="link"
+                                                        size="inline"
+                                                        data-slot="console-link"
+                                                        type="button"
+                                                        class="text-action row-more"
+                                                        :disabled="busy"
+                                                        :aria-label="`更多操作 ${row.id}`"
+                                                    >
+                                                        更多
+                                                        <ChevronDown
+                                                            :size="
+                                                                14
+                                                            " /></Button></DropdownMenuTrigger
+                                                ><DropdownMenuContent
+                                                    class="console-user-stream-workspace"
+                                                    align="end"
+                                                    ><DropdownMenuItem
+                                                        @select="
+                                                            mutate(
+                                                                [
+                                                                    Number(
+                                                                        row.id,
+                                                                    ),
+                                                                ],
+                                                                'PUT',
+                                                                { enable: 1 },
+                                                            )
+                                                        "
+                                                        >启用</DropdownMenuItem
+                                                    ><DropdownMenuItem
+                                                        @select="
+                                                            mutate(
+                                                                [
+                                                                    Number(
+                                                                        row.id,
+                                                                    ),
+                                                                ],
+                                                                'PUT',
+                                                                { enable: 0 },
+                                                            )
+                                                        "
+                                                        >禁用</DropdownMenuItem
+                                                    ><DropdownMenuItem
+                                                        @select="
+                                                            confirmDelete([
+                                                                Number(row.id),
+                                                            ])
+                                                        "
+                                                        >删除</DropdownMenuItem
+                                                    ></DropdownMenuContent
+                                                ></DropdownMenu
+                                            ><Button
+                                                variant="link"
+                                                size="inline"
+                                                data-slot="console-link"
+                                                v-else
+                                                type="button"
+                                                class="text-action"
+                                                :disabled="busy"
+                                                @click="
+                                                    confirmDelete([
+                                                        Number(row.id),
+                                                    ])
+                                                "
+                                            >
+                                                删除
+                                            </Button>
+                                        </div>
                                     </div>
                                 </td>
                             </tr>
@@ -1051,9 +1175,13 @@ function tabKey(event: KeyboardEvent) {
                                               : 6
                                     "
                                 >
-                                    {{
-                                        error ? '加载失败，请重试' : '暂无数据'
-                                    }}
+                                    <div data-slot="table-cell-content">
+                                        {{
+                                            error
+                                                ? '加载失败，请重试'
+                                                : '暂无数据'
+                                        }}
+                                    </div>
                                 </td>
                             </tr>
                         </template>

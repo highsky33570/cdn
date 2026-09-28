@@ -102,23 +102,35 @@ const module = computed<ConsoleModule>(
                             class="border-y bg-muted/50 text-muted-foreground"
                         >
                             <tr>
-                                <th class="px-6 py-3 text-left font-medium">
-                                    名称
+                                <th class="text-left font-medium">
+                                    <div data-slot="table-cell-content">
+                                        名称
+                                    </div>
                                 </th>
-                                <th class="px-4 py-3 text-left font-medium">
-                                    类型
+                                <th class="text-left font-medium">
+                                    <div data-slot="table-cell-content">
+                                        类型
+                                    </div>
                                 </th>
-                                <th class="px-4 py-3 text-left font-medium">
-                                    状态
+                                <th class="text-left font-medium">
+                                    <div data-slot="table-cell-content">
+                                        状态
+                                    </div>
                                 </th>
-                                <th class="px-4 py-3 text-left font-medium">
-                                    指标
+                                <th class="text-left font-medium">
+                                    <div data-slot="table-cell-content">
+                                        指标
+                                    </div>
                                 </th>
-                                <th class="px-4 py-3 text-left font-medium">
-                                    接口
+                                <th class="text-left font-medium">
+                                    <div data-slot="table-cell-content">
+                                        接口
+                                    </div>
                                 </th>
-                                <th class="px-6 py-3 text-right font-medium">
-                                    操作
+                                <th class="text-right font-medium">
+                                    <div data-slot="table-cell-content">
+                                        操作
+                                    </div>
                                 </th>
                             </tr>
                         </thead>
@@ -128,53 +140,75 @@ const module = computed<ConsoleModule>(
                                 :key="row.name"
                                 class="border-b last:border-b-0"
                             >
-                                <td class="px-6 py-4 font-medium">
-                                    {{ row.name }}
+                                <td class="font-medium">
+                                    <div data-slot="table-cell-content">
+                                        {{ row.name }}
+                                    </div>
                                 </td>
-                                <td class="px-4 py-4 text-muted-foreground">
-                                    {{ row.type }}
+                                <td class="text-muted-foreground">
+                                    <div data-slot="table-cell-content">
+                                        {{ row.type }}
+                                    </div>
                                 </td>
-                                <td class="px-4 py-4">
-                                    <Badge variant="secondary">
-                                        {{ row.status }}
-                                    </Badge>
+                                <td class="">
+                                    <div data-slot="table-cell-content">
+                                        <Badge variant="secondary">
+                                            {{ row.status }}
+                                        </Badge>
+                                    </div>
                                 </td>
-                                <td class="px-4 py-4 text-muted-foreground">
-                                    {{ row.metric }}
+                                <td class="text-muted-foreground">
+                                    <div data-slot="table-cell-content">
+                                        {{ row.metric }}
+                                    </div>
                                 </td>
-                                <td class="px-4 py-4">
-                                    <code class="text-xs text-muted-foreground">
-                                        {{ row.endpoint }}
-                                    </code>
-                                </td>
-                                <td class="px-6 py-4 text-right">
-                                    <Button
-                                        v-if="props.moduleKey === 'sites'"
-                                        variant="ghost"
-                                        size="sm"
-                                        as-child
-                                    >
-                                        <Link
-                                            href="/console/sites/www.example.com"
+                                <td class="">
+                                    <div data-slot="table-cell-content">
+                                        <code
+                                            class="text-xs text-muted-foreground"
                                         >
-                                            详情
+                                            {{ row.endpoint }}
+                                        </code>
+                                    </div>
+                                </td>
+                                <td class="text-right">
+                                    <div data-slot="table-cell-content">
+                                        <Button
+                                            v-if="props.moduleKey === 'sites'"
+                                            variant="ghost"
+                                            size="sm"
+                                            as-child
+                                        >
+                                            <Link
+                                                href="/console/sites/www.example.com"
+                                            >
+                                                详情
+                                                <ArrowUpRight
+                                                    data-icon="inline-end"
+                                                />
+                                            </Link>
+                                        </Button>
+                                        <Button
+                                            v-else
+                                            variant="ghost"
+                                            size="sm"
+                                        >
+                                            查看
                                             <ArrowUpRight
                                                 data-icon="inline-end"
                                             />
-                                        </Link>
-                                    </Button>
-                                    <Button v-else variant="ghost" size="sm">
-                                        查看
-                                        <ArrowUpRight data-icon="inline-end" />
-                                    </Button>
+                                        </Button>
+                                    </div>
                                 </td>
                             </tr>
                             <tr v-if="module.rows.length === 0">
                                 <td
-                                    class="px-6 py-10 text-center text-muted-foreground"
+                                    class="text-center text-muted-foreground"
                                     colspan="6"
                                 >
-                                    暂无记录
+                                    <div data-slot="table-cell-content">
+                                        暂无记录
+                                    </div>
                                 </td>
                             </tr>
                         </tbody>

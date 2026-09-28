@@ -70,9 +70,15 @@ const time = (value: number) =>
                 <table class="w-full">
                     <tbody>
                         <tr v-for="point in series.points" :key="point[0]">
-                            <td>{{ time(point[0]) }}</td>
+                            <td>
+                                <div data-slot="table-cell-content">
+                                    {{ time(point[0]) }}
+                                </div>
+                            </td>
                             <td class="text-right">
-                                {{ point[1].toLocaleString() }}
+                                <div data-slot="table-cell-content">
+                                    {{ point[1].toLocaleString() }}
+                                </div>
                             </td>
                         </tr>
                     </tbody>

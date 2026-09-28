@@ -280,3 +280,31 @@
 .console-theme [data-slot='switch-thumb'][data-state='checked'] {
     translate: 18px !important;
 }
+
+/* Date controls use the same paired colors as the default Button. Placeholder
+ * labels and icons inherit the foreground instead of retaining muted text. */
+.console-theme :is([data-slot='date-picker'], [data-slot='date-range-picker']) {
+    background: var(--primary) !important;
+    color: var(--primary-foreground) !important;
+    border-color: var(--primary) !important;
+}
+
+.console-theme
+    :is([data-slot='date-picker'], [data-slot='date-range-picker']):hover {
+    background: color-mix(in srgb, var(--primary) 90%, transparent) !important;
+}
+
+.console-theme
+    :is([data-slot='date-picker'], [data-slot='date-range-picker'])
+    :is(span, svg) {
+    color: inherit !important;
+}
+
+.console-theme
+    :is(
+        [data-slot='calendar-cell'][aria-pressed='true'],
+        [data-slot='calendar-day'][data-selected]
+    ) {
+    background: var(--primary) !important;
+    color: var(--primary-foreground) !important;
+}

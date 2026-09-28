@@ -374,22 +374,40 @@ function isRecord(value: unknown): value is Record<string, unknown> {
                                 <tr
                                     class="border-t bg-muted/40 text-left text-xs text-muted-foreground"
                                 >
-                                    <th class="px-6 py-2 font-medium">
-                                        配置项
+                                    <th class="font-medium">
+                                        <div data-slot="table-cell-content">
+                                            配置项
+                                        </div>
                                     </th>
-                                    <th class="px-4 py-2 font-medium">值</th>
-                                    <th class="px-4 py-2 font-medium">
-                                        作用域
+                                    <th class="font-medium">
+                                        <div data-slot="table-cell-content">
+                                            值
+                                        </div>
                                     </th>
-                                    <th class="px-4 py-2 font-medium">类型</th>
-                                    <th class="px-4 py-2 font-medium">状态</th>
-                                    <th class="px-4 py-2 font-medium">
-                                        更新时间
+                                    <th class="font-medium">
+                                        <div data-slot="table-cell-content">
+                                            作用域
+                                        </div>
                                     </th>
-                                    <th
-                                        class="px-4 py-2 text-right font-medium"
-                                    >
-                                        操作
+                                    <th class="font-medium">
+                                        <div data-slot="table-cell-content">
+                                            类型
+                                        </div>
+                                    </th>
+                                    <th class="font-medium">
+                                        <div data-slot="table-cell-content">
+                                            状态
+                                        </div>
+                                    </th>
+                                    <th class="font-medium">
+                                        <div data-slot="table-cell-content">
+                                            更新时间
+                                        </div>
+                                    </th>
+                                    <th class="text-right font-medium">
+                                        <div data-slot="table-cell-content">
+                                            操作
+                                        </div>
                                     </th>
                                 </tr>
                             </thead>
@@ -400,94 +418,114 @@ function isRecord(value: unknown): value is Record<string, unknown> {
                                     class="border-t"
                                 >
                                     <td
-                                        class="truncate px-6 py-3 font-medium"
+                                        class="truncate font-medium"
                                         :title="row.name"
                                     >
-                                        {{ row.name }}
+                                        <div data-slot="table-cell-content">
+                                            {{ row.name }}
+                                        </div>
                                     </td>
                                     <!--
                                         Click to expand: a short value is the
                                         whole point of the column, but a 40 KB
                                         HTML template must not be pasted into it.
                                     -->
-                                    <td class="px-4 py-3">
-                                        <Button
-                                            variant="ghost"
-                                            size="inline"
-                                            v-if="row.value.length > 80"
-                                            type="button"
-                                            class="block w-full text-left"
-                                            :title="
-                                                expanded.has(row.key)
-                                                    ? '收起'
-                                                    : '展开完整值'
-                                            "
-                                            @click="toggleExpanded(row.key)"
-                                        >
-                                            <span
-                                                :class="
-                                                    expanded.has(row.key)
-                                                        ? 'block max-h-64 overflow-y-auto font-mono text-xs break-all whitespace-pre-wrap'
-                                                        : 'block truncate text-muted-foreground'
-                                                "
-                                            >
-                                                {{ row.value }}
-                                            </span>
-                                            <span
-                                                class="mt-1 block text-xs text-primary"
-                                            >
-                                                {{
+                                    <td class="">
+                                        <div data-slot="table-cell-content">
+                                            <Button
+                                                variant="ghost"
+                                                size="inline"
+                                                v-if="row.value.length > 80"
+                                                type="button"
+                                                class="block w-full text-left"
+                                                :title="
                                                     expanded.has(row.key)
                                                         ? '收起'
-                                                        : `展开（${row.value.length} 字符）`
-                                                }}
+                                                        : '展开完整值'
+                                                "
+                                                @click="toggleExpanded(row.key)"
+                                            >
+                                                <span
+                                                    :class="
+                                                        expanded.has(row.key)
+                                                            ? 'block max-h-64 overflow-y-auto font-mono text-xs break-all whitespace-pre-wrap'
+                                                            : 'block truncate text-muted-foreground'
+                                                    "
+                                                >
+                                                    {{ row.value }}
+                                                </span>
+                                                <span
+                                                    class="mt-1 block text-xs text-primary"
+                                                >
+                                                    {{
+                                                        expanded.has(row.key)
+                                                            ? '收起'
+                                                            : `展开（${row.value.length} 字符）`
+                                                    }}
+                                                </span>
+                                            </Button>
+                                            <span v-else class="tabular-nums">
+                                                {{ row.value || '-' }}
                                             </span>
-                                        </Button>
-                                        <span v-else class="tabular-nums">
-                                            {{ row.value || '-' }}
-                                        </span>
+                                        </div>
                                     </td>
-                                    <td class="px-4 py-3 text-muted-foreground">
-                                        {{ row.scope }}
+                                    <td class="text-muted-foreground">
+                                        <div data-slot="table-cell-content">
+                                            {{ row.scope }}
+                                        </div>
                                     </td>
-                                    <td class="px-4 py-3 text-muted-foreground">
-                                        {{ row.type || '-' }}
+                                    <td class="text-muted-foreground">
+                                        <div data-slot="table-cell-content">
+                                            {{ row.type || '-' }}
+                                        </div>
                                     </td>
-                                    <td class="px-4 py-3">
-                                        <Badge
-                                            :variant="
-                                                row.enabled
-                                                    ? 'secondary'
-                                                    : 'outline'
-                                            "
-                                        >
-                                            {{ row.enabled ? '启用' : '停用' }}
-                                        </Badge>
+                                    <td class="">
+                                        <div data-slot="table-cell-content">
+                                            <Badge
+                                                :variant="
+                                                    row.enabled
+                                                        ? 'secondary'
+                                                        : 'outline'
+                                                "
+                                            >
+                                                {{
+                                                    row.enabled
+                                                        ? '启用'
+                                                        : '停用'
+                                                }}
+                                            </Badge>
+                                        </div>
                                     </td>
-                                    <td class="px-4 py-3 text-muted-foreground">
-                                        {{ row.updatedAt || '-' }}
+                                    <td class="text-muted-foreground">
+                                        <div data-slot="table-cell-content">
+                                            {{ row.updatedAt || '-' }}
+                                        </div>
                                     </td>
-                                    <td class="px-4 py-3 text-right">
-                                        <Button
-                                            variant="ghost"
-                                            size="icon-sm"
-                                            title="编辑"
-                                            @click="openEdit(row)"
-                                        >
-                                            <Pencil class="size-3.5" />
-                                        </Button>
+                                    <td class="text-right">
+                                        <div data-slot="table-cell-content">
+                                            <Button
+                                                variant="ghost"
+                                                size="icon-sm"
+                                                title="编辑"
+                                                @click="openEdit(row)"
+                                            >
+                                                <Pencil class="size-3.5" />
+                                            </Button>
+                                        </div>
                                     </td>
                                 </tr>
                                 <tr v-if="visibleConfigRows.length === 0">
                                     <td
                                         colspan="7"
-                                        class="px-6 py-10 text-center text-muted-foreground"
+                                        class="text-center text-muted-foreground"
                                     >
-                                        {{
-                                            configRows.length === 0
-                                                ? '暂无配置'
-                                                : '没有匹配的配置项'
-                                        }}
+                                        <div data-slot="table-cell-content">
+                                            {{
+                                                configRows.length === 0
+                                                    ? '暂无配置'
+                                                    : '没有匹配的配置项'
+                                            }}
+                                        </div>
                                     </td>
                                 </tr>
                             </tbody>

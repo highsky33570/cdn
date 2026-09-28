@@ -385,13 +385,15 @@ onUnmounted(() => {
                         >
                             <thead class="bg-muted/30 text-muted-foreground">
                                 <tr>
-                                    <th
-                                        class="w-[16.5%] px-3 py-2 font-semibold"
-                                    >
-                                        排行
+                                    <th class="w-[16.5%] font-semibold">
+                                        <div data-slot="table-cell-content">
+                                            排行
+                                        </div>
                                     </th>
-                                    <th class="px-3 py-2 font-semibold">
-                                        端口
+                                    <th class="font-semibold">
+                                        <div data-slot="table-cell-content">
+                                            端口
+                                        </div>
                                     </th>
                                     <th
                                         v-for="col in [
@@ -399,7 +401,7 @@ onUnmounted(() => {
                                             { key: 'traffic', label: '流量' },
                                         ] as const"
                                         :key="col.key"
-                                        class="w-[25.75%] px-3 py-2 font-semibold"
+                                        class="w-[25.75%] font-semibold"
                                         :aria-sort="
                                             sort?.key === col.key
                                                 ? sort.direction === 'asc'
@@ -408,41 +410,46 @@ onUnmounted(() => {
                                                 : 'none'
                                         "
                                     >
-                                        <Button
-                                            variant="ghost"
-                                            size="inline"
-                                            data-slot="console-sort"
-                                            type="button"
-                                            class="inline-flex items-center gap-1"
-                                            :aria-label="`按${col.label}排序`"
-                                            @click="changeSort(col.key)"
-                                        >
-                                            {{ col.label
-                                            }}<ArrowDownUp class="size-3" />
-                                        </Button>
+                                        <div data-slot="table-cell-content">
+                                            <Button
+                                                variant="ghost"
+                                                size="inline"
+                                                data-slot="console-sort"
+                                                type="button"
+                                                class="inline-flex items-center gap-1"
+                                                :aria-label="`按${col.label}排序`"
+                                                @click="changeSort(col.key)"
+                                            >
+                                                {{ col.label
+                                                }}<ArrowDownUp class="size-3" />
+                                            </Button>
+                                        </div>
                                     </th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <tr v-if="topLoading" class="border-t">
-                                    <td colspan="4" class="h-14 px-3">
-                                        <Spinner /><span class="sr-only"
-                                            >加载端口排行</span
-                                        >
+                                    <td colspan="4" class="">
+                                        <div data-slot="table-cell-content">
+                                            <Spinner /><span class="sr-only"
+                                                >加载端口排行</span
+                                            >
+                                        </div>
                                     </td>
                                 </tr>
                                 <tr v-else-if="topError" class="border-t">
-                                    <td
-                                        colspan="4"
-                                        class="h-16 px-3 text-destructive"
-                                    >
-                                        <span role="alert">{{ topError }}</span
-                                        ><Button
-                                            variant="link"
-                                            size="sm"
-                                            @click="loadTop"
-                                            >重试</Button
-                                        >
+                                    <td colspan="4" class="text-destructive">
+                                        <div data-slot="table-cell-content">
+                                            <span role="alert">{{
+                                                topError
+                                            }}</span
+                                            ><Button
+                                                variant="link"
+                                                size="sm"
+                                                @click="loadTop"
+                                                >重试</Button
+                                            >
+                                        </div>
                                     </td>
                                 </tr>
                                 <template v-else
@@ -451,23 +458,28 @@ onUnmounted(() => {
                                         :key="`${row.port}-${index}`"
                                         class="border-t"
                                     >
-                                        <td class="px-3 py-3 tabular-nums">
-                                            {{ index + 1 }}
+                                        <td class="tabular-nums">
+                                            <div data-slot="table-cell-content">
+                                                {{ index + 1 }}
+                                            </div>
                                         </td>
-                                        <td
-                                            class="truncate px-3 py-3"
-                                            :title="row.port"
-                                        >
-                                            {{ row.port || '—' }}
+                                        <td class="truncate" :title="row.port">
+                                            <div data-slot="table-cell-content">
+                                                {{ row.port || '—' }}
+                                            </div>
                                         </td>
-                                        <td class="px-3 py-3 tabular-nums">
-                                            {{
-                                                row.count?.toLocaleString() ??
-                                                '—'
-                                            }}
+                                        <td class="tabular-nums">
+                                            <div data-slot="table-cell-content">
+                                                {{
+                                                    row.count?.toLocaleString() ??
+                                                    '—'
+                                                }}
+                                            </div>
                                         </td>
-                                        <td class="px-3 py-3 tabular-nums">
-                                            {{ streamBytes(row.traffic) }}
+                                        <td class="tabular-nums">
+                                            <div data-slot="table-cell-content">
+                                                {{ streamBytes(row.traffic) }}
+                                            </div>
                                         </td>
                                     </tr>
                                     <tr
@@ -476,9 +488,11 @@ onUnmounted(() => {
                                     >
                                         <td
                                             colspan="4"
-                                            class="h-14 text-center text-sm text-muted-foreground"
+                                            class="text-center text-sm text-muted-foreground"
                                         >
-                                            暂无数据
+                                            <div data-slot="table-cell-content">
+                                                暂无数据
+                                            </div>
                                         </td>
                                     </tr></template
                                 >

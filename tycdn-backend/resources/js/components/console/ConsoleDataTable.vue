@@ -488,31 +488,37 @@ defineExpose({
                     </colgroup>
                     <thead class="border-y bg-muted/50 text-muted-foreground">
                         <tr>
-                            <th v-if="selectable" class="px-3 py-2 text-center">
-                                <Checkbox
-                                    aria-label="选择全部"
-                                    :model-value="allSelected"
-                                    :disabled="
-                                        loading ||
-                                        selectionDisabled ||
-                                        !rows.length
-                                    "
-                                    @update:model-value="
-                                        toggleSelectAll($event === true)
-                                    "
-                                />
+                            <th v-if="selectable" class="text-center">
+                                <div data-slot="table-cell-content">
+                                    <Checkbox
+                                        aria-label="选择全部"
+                                        :model-value="allSelected"
+                                        :disabled="
+                                            loading ||
+                                            selectionDisabled ||
+                                            !rows.length
+                                        "
+                                        @update:model-value="
+                                            toggleSelectAll($event === true)
+                                        "
+                                    />
+                                </div>
                             </th>
                             <th
                                 v-for="col in columns"
                                 :key="col.key"
-                                class="px-3 py-2 font-medium"
+                                class="font-medium"
                                 :class="colAlign(col)"
                             >
-                                {{ col.label }}
+                                <div data-slot="table-cell-content">
+                                    {{ col.label }}
+                                </div>
                             </th>
                             <slot v-if="showActions" name="actions-header">
-                                <th class="px-3 py-2 text-right font-medium">
-                                    操作
+                                <th class="text-right font-medium">
+                                    <div data-slot="table-cell-content">
+                                        操作
+                                    </div>
                                 </th>
                             </slot>
                         </tr>
@@ -520,14 +526,16 @@ defineExpose({
                     <tbody>
                         <tr v-if="loading && rows.length === 0">
                             <td
-                                class="px-6 py-16 text-center"
+                                class="text-center"
                                 :colspan="
                                     columns.length +
                                     (selectable ? 1 : 0) +
                                     (showActions ? 1 : 0)
                                 "
                             >
-                                <Spinner />
+                                <div data-slot="table-cell-content">
+                                    <Spinner />
+                                </div>
                             </td>
                         </tr>
                         <tr
@@ -538,59 +546,65 @@ defineExpose({
                         >
                             <td
                                 v-if="selectable"
-                                class="px-3 py-2.5 text-center"
+                                class="text-center"
                                 @click.stop
                             >
-                                <Checkbox
-                                    :aria-label="`选择 ${rowKey(row)}`"
-                                    :model-value="isRowSelected(row)"
-                                    :disabled="loading || selectionDisabled"
-                                    @update:model-value="toggleRow(row)"
-                                />
+                                <div data-slot="table-cell-content">
+                                    <Checkbox
+                                        :aria-label="`选择 ${rowKey(row)}`"
+                                        :model-value="isRowSelected(row)"
+                                        :disabled="loading || selectionDisabled"
+                                        @update:model-value="toggleRow(row)"
+                                    />
+                                </div>
                             </td>
                             <td
                                 v-for="col in columns"
                                 :key="col.key"
-                                class="px-3 py-2.5"
+                                class=""
                                 :class="colAlign(col)"
                             >
-                                <slot
-                                    :name="`cell-${col.key}`"
-                                    :row="row"
-                                    :value="rawValue(row, col)"
-                                    :formatted="cellValue(row, col)"
-                                >
-                                    <Badge
-                                        v-if="col.badge"
-                                        :variant="cellBadgeVariant(row, col)"
+                                <div data-slot="table-cell-content">
+                                    <slot
+                                        :name="`cell-${col.key}`"
+                                        :row="row"
+                                        :value="rawValue(row, col)"
+                                        :formatted="cellValue(row, col)"
                                     >
-                                        {{ cellValue(row, col) }}
-                                    </Badge>
-                                    <span v-else>{{
-                                        cellValue(row, col)
-                                    }}</span>
-                                </slot>
+                                        <Badge
+                                            v-if="col.badge"
+                                            :variant="
+                                                cellBadgeVariant(row, col)
+                                            "
+                                        >
+                                            {{ cellValue(row, col) }}
+                                        </Badge>
+                                        <span v-else>{{
+                                            cellValue(row, col)
+                                        }}</span>
+                                    </slot>
+                                </div>
                             </td>
-                            <td
-                                v-if="showActions"
-                                class="px-3 py-2.5"
-                                @click.stop
-                            >
-                                <div class="flex justify-end gap-1.5">
-                                    <slot name="row-actions" :row="row" />
+                            <td v-if="showActions" class="" @click.stop>
+                                <div data-slot="table-cell-content">
+                                    <div class="flex justify-end gap-1.5">
+                                        <slot name="row-actions" :row="row" />
+                                    </div>
                                 </div>
                             </td>
                         </tr>
                         <tr v-if="!loading && rows.length === 0">
                             <td
-                                class="px-6 py-16 text-center text-muted-foreground"
+                                class="text-center text-muted-foreground"
                                 :colspan="
                                     columns.length +
                                     (selectable ? 1 : 0) +
                                     (showActions ? 1 : 0)
                                 "
                             >
-                                {{ emptyText }}
+                                <div data-slot="table-cell-content">
+                                    {{ emptyText }}
+                                </div>
                             </td>
                         </tr>
                     </tbody>

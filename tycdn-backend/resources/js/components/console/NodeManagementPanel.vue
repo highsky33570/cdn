@@ -561,59 +561,151 @@ async function confirmDelete() {
                     <thead class="bg-muted/25">
                         <tr>
                             <th class="w-12">
-                                <CheckboxField
-                                    aria-label="选择本页全部"
-                                    :checked="allSelected"
-                                    :indeterminate="
-                                        selected.length > 0 && !allSelected
-                                    "
-                                    :disabled="
-                                        busy || loading || !selectable.length
-                                    "
-                                    @change="
-                                        selected = allSelected
-                                            ? []
-                                            : [...selectable]
-                                    "
-                                />
+                                <div data-slot="table-cell-content">
+                                    <CheckboxField
+                                        aria-label="选择本页全部"
+                                        :checked="allSelected"
+                                        :indeterminate="
+                                            selected.length > 0 && !allSelected
+                                        "
+                                        :disabled="
+                                            busy ||
+                                            loading ||
+                                            !selectable.length
+                                        "
+                                        @change="
+                                            selected = allSelected
+                                                ? []
+                                                : [...selectable]
+                                        "
+                                    />
+                                </div>
                             </th>
-                            <th>ID</th>
+                            <th>
+                                <div data-slot="table-cell-content">ID</div>
+                            </th>
                             <template v-if="active === 'nodes'"
-                                ><th>名称</th>
-                                <th>区域</th>
-                                <th>节点IP</th>
-                                <th>监控</th>
-                                <th>带宽</th>
-                                <th>
-                                    月流量
-                                    <span
-                                        class="text-primary"
-                                        title="月流量统计周期及限额由节点流量限制设置决定"
-                                        >?</span
-                                    >
+                                ><th>
+                                    <div data-slot="table-cell-content">
+                                        名称
+                                    </div>
                                 </th>
-                                <th>状态</th>
-                                <th>备注</th>
-                                <th>排序</th>
-                                <th>操作</th></template
+                                <th>
+                                    <div data-slot="table-cell-content">
+                                        区域
+                                    </div>
+                                </th>
+                                <th>
+                                    <div data-slot="table-cell-content">
+                                        节点IP
+                                    </div>
+                                </th>
+                                <th>
+                                    <div data-slot="table-cell-content">
+                                        监控
+                                    </div>
+                                </th>
+                                <th>
+                                    <div data-slot="table-cell-content">
+                                        带宽
+                                    </div>
+                                </th>
+                                <th>
+                                    <div data-slot="table-cell-content">
+                                        月流量
+                                        <span
+                                            class="text-primary"
+                                            title="月流量统计周期及限额由节点流量限制设置决定"
+                                            >?</span
+                                        >
+                                    </div>
+                                </th>
+                                <th>
+                                    <div data-slot="table-cell-content">
+                                        状态
+                                    </div>
+                                </th>
+                                <th>
+                                    <div data-slot="table-cell-content">
+                                        备注
+                                    </div>
+                                </th>
+                                <th>
+                                    <div data-slot="table-cell-content">
+                                        排序
+                                    </div>
+                                </th>
+                                <th>
+                                    <div data-slot="table-cell-content">
+                                        操作
+                                    </div>
+                                </th></template
                             >
                             <template v-else-if="active === 'pending'"
-                                ><th>节点IP</th>
-                                <th>添加时间</th>
-                                <th>操作</th></template
+                                ><th>
+                                    <div data-slot="table-cell-content">
+                                        节点IP
+                                    </div>
+                                </th>
+                                <th>
+                                    <div data-slot="table-cell-content">
+                                        添加时间
+                                    </div>
+                                </th>
+                                <th>
+                                    <div data-slot="table-cell-content">
+                                        操作
+                                    </div>
+                                </th></template
                             >
                             <template v-else-if="active === 'disabled'"
-                                ><th>名称</th>
-                                <th>备注</th>
-                                <th>禁用时间</th>
-                                <th>操作</th></template
+                                ><th>
+                                    <div data-slot="table-cell-content">
+                                        名称
+                                    </div>
+                                </th>
+                                <th>
+                                    <div data-slot="table-cell-content">
+                                        备注
+                                    </div>
+                                </th>
+                                <th>
+                                    <div data-slot="table-cell-content">
+                                        禁用时间
+                                    </div>
+                                </th>
+                                <th>
+                                    <div data-slot="table-cell-content">
+                                        操作
+                                    </div>
+                                </th></template
                             >
                             <template v-else
-                                ><th>名称</th>
-                                <th>备注</th>
-                                <th>排序</th>
-                                <th>添加时间</th>
-                                <th>操作</th></template
+                                ><th>
+                                    <div data-slot="table-cell-content">
+                                        名称
+                                    </div>
+                                </th>
+                                <th>
+                                    <div data-slot="table-cell-content">
+                                        备注
+                                    </div>
+                                </th>
+                                <th>
+                                    <div data-slot="table-cell-content">
+                                        排序
+                                    </div>
+                                </th>
+                                <th>
+                                    <div data-slot="table-cell-content">
+                                        添加时间
+                                    </div>
+                                </th>
+                                <th>
+                                    <div data-slot="table-cell-content">
+                                        操作
+                                    </div>
+                                </th></template
                             >
                         </tr>
                     </thead>
@@ -624,148 +716,26 @@ async function confirmDelete() {
                             :class="Number(row.pid) > 0 ? 'bg-muted/15' : ''"
                         >
                             <td>
-                                <CheckboxField
-                                    v-if="!Number(row.pid)"
-                                    :aria-label="`选择 ${row.id}`"
-                                    :checked="selected.includes(Number(row.id))"
-                                    :disabled="busy || loading"
-                                    @change="toggle(Number(row.id))"
-                                />
+                                <div data-slot="table-cell-content">
+                                    <CheckboxField
+                                        v-if="!Number(row.pid)"
+                                        :aria-label="`选择 ${row.id}`"
+                                        :checked="
+                                            selected.includes(Number(row.id))
+                                        "
+                                        :disabled="busy || loading"
+                                        @change="toggle(Number(row.id))"
+                                    />
+                                </div>
                             </td>
-                            <td>{{ row.id }}</td>
+                            <td>
+                                <div data-slot="table-cell-content">
+                                    {{ row.id }}
+                                </div>
+                            </td>
                             <template v-if="active === 'nodes'">
                                 <td>
-                                    <Button
-                                        variant="link"
-                                        size="inline"
-                                        type="button"
-                                        data-slot="console-link"
-                                        v-if="!Number(row.pid)"
-                                        class="text-primary"
-                                        @click="emit('edit', row)"
-                                    >
-                                        {{ row.name }}
-                                    </Button>
-                                </td>
-                                <td>
-                                    <template v-if="!Number(row.pid)"
-                                        >{{ regionName(row) }}
-                                        <Link
-                                            :href="`/console/admin/line-groups?node_id=${row.id}`"
-                                            class="text-primary"
-                                            >线路组({{
-                                                row.node_group_count ?? '—'
-                                            }}个)</Link
-                                        ></template
-                                    >
-                                </td>
-                                <td>
-                                    <div class="flex items-center gap-2">
-                                        <Button
-                                            variant="ghost"
-                                            size="icon-sm"
-                                            type="button"
-                                            v-if="hasChildren(row.id)"
-                                            :aria-label="`${expanded.includes(Number(row.id)) ? '收起' : '展开'} ${row.ip}`"
-                                            :aria-expanded="
-                                                expanded.includes(
-                                                    Number(row.id),
-                                                )
-                                            "
-                                            class="rounded-sm border p-0.5 text-muted-foreground"
-                                            @click="
-                                                toggleExpanded(Number(row.id))
-                                            "
-                                        >
-                                            <ChevronDown
-                                                v-if="
-                                                    expanded.includes(
-                                                        Number(row.id),
-                                                    )
-                                                "
-                                                class="size-3" /><Plus
-                                                v-else
-                                                class="size-3" /></Button
-                                        ><span
-                                            :class="
-                                                Number(row.pid) > 0
-                                                    ? 'pl-6'
-                                                    : ''
-                                            "
-                                            >{{ row.ip }}</span
-                                        >
-                                    </div>
-                                </td>
-                                <td>
-                                    <span>{{
-                                        Number(row.check_on) === 1
-                                            ? row.check_protocol
-                                            : '未开启'
-                                    }}</span>
-                                    <Button
-                                        variant="link"
-                                        size="inline"
-                                        type="button"
-                                        data-slot="console-link"
-                                        class="ml-1 text-primary"
-                                        @click="
-                                            logNodeId = Number(row.id);
-                                            logIp = text(row.ip);
-                                        "
-                                    >
-                                        [日志]
-                                    </Button>
-                                </td>
-                                <td>
-                                    <Link
-                                        v-if="!Number(row.pid)"
-                                        :href="`/console/admin/node-monitoring?node_id=${row.id}`"
-                                        class="whitespace-nowrap"
-                                        >{{ nodeBandwidth(row.outbound)
-                                        }}<span class="text-primary">↑</span>
-                                        <span class="ml-1">{{
-                                            nodeBandwidth(row.inbound)
-                                        }}</span
-                                        ><span class="text-amber-500"
-                                            >↓</span
-                                        ></Link
-                                    >
-                                </td>
-                                <td>
-                                    {{
-                                        row.month_traffic == null
-                                            ? '—'
-                                            : `${row.month_traffic} GB`
-                                    }}
-                                </td>
-                                <td>
-                                    <span
-                                        class="inline-flex items-center gap-1.5 whitespace-nowrap"
-                                        ><span
-                                            class="size-2 rounded-full"
-                                            :class="{
-                                                'bg-emerald-500':
-                                                    nodeStatus(row).tone ===
-                                                    'success',
-                                                'bg-amber-500':
-                                                    nodeStatus(row).tone ===
-                                                    'warning',
-                                                'bg-red-500':
-                                                    nodeStatus(row).tone ===
-                                                    'danger',
-                                            }"
-                                        />{{ nodeStatus(row).label }}</span
-                                    >
-                                </td>
-                                <td
-                                    class="max-w-48 truncate"
-                                    :title="text(row.des)"
-                                >
-                                    {{ row.des }}
-                                </td>
-                                <td>{{ row.sort }}</td>
-                                <td>
-                                    <div class="flex items-center gap-2">
+                                    <div data-slot="table-cell-content">
                                         <Button
                                             variant="link"
                                             size="inline"
@@ -775,144 +745,349 @@ async function confirmDelete() {
                                             class="text-primary"
                                             @click="emit('edit', row)"
                                         >
-                                            管理</Button
-                                        ><DropdownMenu
-                                            ><DropdownMenuTrigger as-child
-                                                ><Button
-                                                    variant="link"
-                                                    size="inline"
-                                                    type="button"
-                                                    data-slot="console-link"
-                                                    class="inline-flex items-center gap-0.5 text-primary"
-                                                    :disabled="busy"
-                                                >
-                                                    更多<ChevronDown
-                                                        class="size-3" /></Button></DropdownMenuTrigger
-                                            ><DropdownMenuContent
-                                                class="console-node-management-panel"
-                                                align="end"
-                                                ><DropdownMenuItem
-                                                    @select="
-                                                        enableNodes(false, row)
-                                                    "
-                                                    >禁用</DropdownMenuItem
-                                                ><DropdownMenuItem
-                                                    @select="
-                                                        enableNodes(true, row)
-                                                    "
-                                                    >启用</DropdownMenuItem
-                                                ><DropdownMenuItem
-                                                    v-if="!Number(row.pid)"
-                                                    @select="
-                                                        emit('subIps', row)
-                                                    "
-                                                    >管理子 IP</DropdownMenuItem
-                                                ><DropdownMenuItem
-                                                    class="text-destructive"
-                                                    @select="askDelete(row)"
-                                                    >删除</DropdownMenuItem
-                                                ></DropdownMenuContent
-                                            ></DropdownMenu
+                                            {{ row.name }}
+                                        </Button>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div data-slot="table-cell-content">
+                                        <template v-if="!Number(row.pid)"
+                                            >{{ regionName(row) }}
+                                            <Link
+                                                :href="`/console/admin/line-groups?node_id=${row.id}`"
+                                                class="text-primary"
+                                                >线路组({{
+                                                    row.node_group_count ?? '—'
+                                                }}个)</Link
+                                            ></template
                                         >
+                                    </div>
+                                </td>
+                                <td>
+                                    <div data-slot="table-cell-content">
+                                        <div class="flex items-center gap-2">
+                                            <Button
+                                                variant="ghost"
+                                                size="icon-sm"
+                                                type="button"
+                                                v-if="hasChildren(row.id)"
+                                                :aria-label="`${expanded.includes(Number(row.id)) ? '收起' : '展开'} ${row.ip}`"
+                                                :aria-expanded="
+                                                    expanded.includes(
+                                                        Number(row.id),
+                                                    )
+                                                "
+                                                class="rounded-sm border p-0.5 text-muted-foreground"
+                                                @click="
+                                                    toggleExpanded(
+                                                        Number(row.id),
+                                                    )
+                                                "
+                                            >
+                                                <ChevronDown
+                                                    v-if="
+                                                        expanded.includes(
+                                                            Number(row.id),
+                                                        )
+                                                    "
+                                                    class="size-3" /><Plus
+                                                    v-else
+                                                    class="size-3" /></Button
+                                            ><span
+                                                :class="
+                                                    Number(row.pid) > 0
+                                                        ? 'pl-6'
+                                                        : ''
+                                                "
+                                                >{{ row.ip }}</span
+                                            >
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div data-slot="table-cell-content">
+                                        <span>{{
+                                            Number(row.check_on) === 1
+                                                ? row.check_protocol
+                                                : '未开启'
+                                        }}</span>
+                                        <Button
+                                            variant="link"
+                                            size="inline"
+                                            type="button"
+                                            data-slot="console-link"
+                                            class="ml-1 text-primary"
+                                            @click="
+                                                logNodeId = Number(row.id);
+                                                logIp = text(row.ip);
+                                            "
+                                        >
+                                            [日志]
+                                        </Button>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div data-slot="table-cell-content">
+                                        <Link
+                                            v-if="!Number(row.pid)"
+                                            :href="`/console/admin/node-monitoring?node_id=${row.id}`"
+                                            class="whitespace-nowrap"
+                                            >{{ nodeBandwidth(row.outbound)
+                                            }}<span class="text-primary"
+                                                >↑</span
+                                            >
+                                            <span class="ml-1">{{
+                                                nodeBandwidth(row.inbound)
+                                            }}</span
+                                            ><span class="text-amber-500"
+                                                >↓</span
+                                            ></Link
+                                        >
+                                    </div>
+                                </td>
+                                <td>
+                                    <div data-slot="table-cell-content">
+                                        {{
+                                            row.month_traffic == null
+                                                ? '—'
+                                                : `${row.month_traffic} GB`
+                                        }}
+                                    </div>
+                                </td>
+                                <td>
+                                    <div data-slot="table-cell-content">
+                                        <span
+                                            class="inline-flex items-center gap-1.5 whitespace-nowrap"
+                                            ><span
+                                                class="size-2 rounded-full"
+                                                :class="{
+                                                    'bg-emerald-500':
+                                                        nodeStatus(row).tone ===
+                                                        'success',
+                                                    'bg-amber-500':
+                                                        nodeStatus(row).tone ===
+                                                        'warning',
+                                                    'bg-red-500':
+                                                        nodeStatus(row).tone ===
+                                                        'danger',
+                                                }"
+                                            />{{ nodeStatus(row).label }}</span
+                                        >
+                                    </div>
+                                </td>
+                                <td
+                                    class="max-w-48 truncate"
+                                    :title="text(row.des)"
+                                >
+                                    <div data-slot="table-cell-content">
+                                        {{ row.des }}
+                                    </div>
+                                </td>
+                                <td>
+                                    <div data-slot="table-cell-content">
+                                        {{ row.sort }}
+                                    </div>
+                                </td>
+                                <td>
+                                    <div data-slot="table-cell-content">
+                                        <div class="flex items-center gap-2">
+                                            <Button
+                                                variant="link"
+                                                size="inline"
+                                                type="button"
+                                                data-slot="console-link"
+                                                v-if="!Number(row.pid)"
+                                                class="text-primary"
+                                                @click="emit('edit', row)"
+                                            >
+                                                管理</Button
+                                            ><DropdownMenu
+                                                ><DropdownMenuTrigger as-child
+                                                    ><Button
+                                                        variant="link"
+                                                        size="inline"
+                                                        type="button"
+                                                        data-slot="console-link"
+                                                        class="inline-flex items-center gap-0.5 text-primary"
+                                                        :disabled="busy"
+                                                    >
+                                                        更多<ChevronDown
+                                                            class="size-3" /></Button></DropdownMenuTrigger
+                                                ><DropdownMenuContent
+                                                    class="console-node-management-panel"
+                                                    align="end"
+                                                    ><DropdownMenuItem
+                                                        @select="
+                                                            enableNodes(
+                                                                false,
+                                                                row,
+                                                            )
+                                                        "
+                                                        >禁用</DropdownMenuItem
+                                                    ><DropdownMenuItem
+                                                        @select="
+                                                            enableNodes(
+                                                                true,
+                                                                row,
+                                                            )
+                                                        "
+                                                        >启用</DropdownMenuItem
+                                                    ><DropdownMenuItem
+                                                        v-if="!Number(row.pid)"
+                                                        @select="
+                                                            emit('subIps', row)
+                                                        "
+                                                        >管理子
+                                                        IP</DropdownMenuItem
+                                                    ><DropdownMenuItem
+                                                        class="text-destructive"
+                                                        @select="askDelete(row)"
+                                                        >删除</DropdownMenuItem
+                                                    ></DropdownMenuContent
+                                                ></DropdownMenu
+                                            >
+                                        </div>
                                     </div>
                                 </td>
                             </template>
                             <template v-else-if="active === 'pending'"
-                                ><td>{{ row.ip }}</td>
-                                <td>{{ row.create_at ?? row.created_at }}</td>
+                                ><td>
+                                    <div data-slot="table-cell-content">
+                                        {{ row.ip }}
+                                    </div>
+                                </td>
                                 <td>
-                                    <Button
-                                        variant="link"
-                                        size="inline"
-                                        type="button"
-                                        data-slot="console-link"
-                                        class="mr-3 text-primary"
-                                        @click="emit('initialize', row)"
-                                    >
-                                        初始化</Button
-                                    ><Button
-                                        variant="link"
-                                        size="inline"
-                                        type="button"
-                                        data-slot="console-link"
-                                        class="text-primary"
-                                        :disabled="busy"
-                                        @click="askDelete(row)"
-                                    >
-                                        删除
-                                    </Button>
+                                    <div data-slot="table-cell-content">
+                                        {{ row.create_at ?? row.created_at }}
+                                    </div>
+                                </td>
+                                <td>
+                                    <div data-slot="table-cell-content">
+                                        <Button
+                                            variant="link"
+                                            size="inline"
+                                            type="button"
+                                            data-slot="console-link"
+                                            class="mr-3 text-primary"
+                                            @click="emit('initialize', row)"
+                                        >
+                                            初始化</Button
+                                        ><Button
+                                            variant="link"
+                                            size="inline"
+                                            type="button"
+                                            data-slot="console-link"
+                                            class="text-primary"
+                                            :disabled="busy"
+                                            @click="askDelete(row)"
+                                        >
+                                            删除
+                                        </Button>
+                                    </div>
                                 </td></template
                             >
                             <template v-else-if="active === 'disabled'"
-                                ><td>{{ row.name }}</td>
-                                <td>{{ row.des }}</td>
-                                <td>{{ row.disable_at }}</td>
+                                ><td>
+                                    <div data-slot="table-cell-content">
+                                        {{ row.name }}
+                                    </div>
+                                </td>
                                 <td>
-                                    <Button
-                                        variant="link"
-                                        size="inline"
-                                        type="button"
-                                        data-slot="console-link"
-                                        class="text-primary"
-                                        :disabled="busy"
-                                        @click="enableNodes(true, row)"
-                                    >
-                                        启用
-                                    </Button>
+                                    <div data-slot="table-cell-content">
+                                        {{ row.des }}
+                                    </div>
+                                </td>
+                                <td>
+                                    <div data-slot="table-cell-content">
+                                        {{ row.disable_at }}
+                                    </div>
+                                </td>
+                                <td>
+                                    <div data-slot="table-cell-content">
+                                        <Button
+                                            variant="link"
+                                            size="inline"
+                                            type="button"
+                                            data-slot="console-link"
+                                            class="text-primary"
+                                            :disabled="busy"
+                                            @click="enableNodes(true, row)"
+                                        >
+                                            启用
+                                        </Button>
+                                    </div>
                                 </td></template
                             >
                             <template v-else
                                 ><td>
-                                    <Button
-                                        variant="link"
-                                        size="inline"
-                                        type="button"
-                                        data-slot="console-link"
-                                        class="text-primary"
-                                        @click="emit('editRegion', row)"
-                                    >
-                                        {{ row.name }}
-                                    </Button>
+                                    <div data-slot="table-cell-content">
+                                        <Button
+                                            variant="link"
+                                            size="inline"
+                                            type="button"
+                                            data-slot="console-link"
+                                            class="text-primary"
+                                            @click="emit('editRegion', row)"
+                                        >
+                                            {{ row.name }}
+                                        </Button>
+                                    </div>
                                 </td>
-                                <td>{{ row.des }}</td>
-                                <td>{{ row.sort }}</td>
-                                <td>{{ row.create_at ?? row.created_at }}</td>
                                 <td>
-                                    <Button
-                                        variant="link"
-                                        size="inline"
-                                        type="button"
-                                        data-slot="console-link"
-                                        class="mr-3 text-primary"
-                                        @click="emit('editRegion', row)"
-                                    >
-                                        编辑</Button
-                                    ><Button
-                                        variant="link"
-                                        size="inline"
-                                        type="button"
-                                        data-slot="console-link"
-                                        class="text-primary"
-                                        :disabled="busy"
-                                        @click="askDelete(row)"
-                                    >
-                                        删除
-                                    </Button>
+                                    <div data-slot="table-cell-content">
+                                        {{ row.des }}
+                                    </div>
+                                </td>
+                                <td>
+                                    <div data-slot="table-cell-content">
+                                        {{ row.sort }}
+                                    </div>
+                                </td>
+                                <td>
+                                    <div data-slot="table-cell-content">
+                                        {{ row.create_at ?? row.created_at }}
+                                    </div>
+                                </td>
+                                <td>
+                                    <div data-slot="table-cell-content">
+                                        <Button
+                                            variant="link"
+                                            size="inline"
+                                            type="button"
+                                            data-slot="console-link"
+                                            class="mr-3 text-primary"
+                                            @click="emit('editRegion', row)"
+                                        >
+                                            编辑</Button
+                                        ><Button
+                                            variant="link"
+                                            size="inline"
+                                            type="button"
+                                            data-slot="console-link"
+                                            class="text-primary"
+                                            :disabled="busy"
+                                            @click="askDelete(row)"
+                                        >
+                                            删除
+                                        </Button>
+                                    </div>
                                 </td></template
                             >
                         </tr>
                         <tr v-if="!visibleRows.length">
                             <td
                                 :colspan="columns"
-                                class="h-12 text-center text-muted-foreground"
+                                class="text-center text-muted-foreground"
                             >
-                                {{
-                                    loading
-                                        ? '加载中…'
-                                        : error
-                                          ? '数据加载失败'
-                                          : '暂无数据'
-                                }}
+                                <div data-slot="table-cell-content">
+                                    {{
+                                        loading
+                                            ? '加载中…'
+                                            : error
+                                              ? '数据加载失败'
+                                              : '暂无数据'
+                                    }}
+                                </div>
                             </td>
                         </tr>
                     </tbody>

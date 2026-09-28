@@ -121,19 +121,20 @@ defineExpose({ reload: loadData });
                             <th
                                 v-for="col in columns"
                                 :key="col.key"
-                                class="px-3 py-2 text-left font-medium"
+                                class="text-left font-medium"
                             >
-                                {{ col.label }}
+                                <div data-slot="table-cell-content">
+                                    {{ col.label }}
+                                </div>
                             </th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr v-if="loading && rows.length === 0">
-                            <td
-                                class="px-6 py-16 text-center"
-                                :colspan="columns.length"
-                            >
-                                <Spinner />
+                            <td class="text-center" :colspan="columns.length">
+                                <div data-slot="table-cell-content">
+                                    <Spinner />
+                                </div>
                             </td>
                         </tr>
                         <tr
@@ -141,23 +142,25 @@ defineExpose({ reload: loadData });
                             :key="(row.id as string) ?? idx"
                             class="border-b last:border-b-0"
                         >
-                            <td
-                                v-for="col in columns"
-                                :key="col.key"
-                                class="px-3 py-2.5"
-                            >
-                                <Badge v-if="col.badge" variant="secondary">
-                                    {{ cellValue(row, col) }}
-                                </Badge>
-                                <span v-else>{{ cellValue(row, col) }}</span>
+                            <td v-for="col in columns" :key="col.key" class="">
+                                <div data-slot="table-cell-content">
+                                    <Badge v-if="col.badge" variant="secondary">
+                                        {{ cellValue(row, col) }}
+                                    </Badge>
+                                    <span v-else>{{
+                                        cellValue(row, col)
+                                    }}</span>
+                                </div>
                             </td>
                         </tr>
                         <tr v-if="!loading && rows.length === 0">
                             <td
-                                class="px-6 py-16 text-center text-muted-foreground"
+                                class="text-center text-muted-foreground"
                                 :colspan="columns.length"
                             >
-                                暂无记录
+                                <div data-slot="table-cell-content">
+                                    暂无记录
+                                </div>
                             </td>
                         </tr>
                     </tbody>

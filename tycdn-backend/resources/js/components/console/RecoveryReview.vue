@@ -190,19 +190,32 @@ async function execute() {
                                     :key="String(item.id)"
                                     class="border-b"
                                 >
-                                    <td class="p-3">#{{ item.id }}</td>
-                                    <td class="p-3">
-                                        {{ item.name ?? item.package_name }}
+                                    <td class="">
+                                        <div data-slot="table-cell-content">
+                                            #{{ item.id }}
+                                        </div>
                                     </td>
-                                    <td class="p-3">
-                                        {{ item.create_at ?? item.created_at }}
+                                    <td class="">
+                                        <div data-slot="table-cell-content">
+                                            {{ item.name ?? item.package_name }}
+                                        </div>
+                                    </td>
+                                    <td class="">
+                                        <div data-slot="table-cell-content">
+                                            {{
+                                                item.create_at ??
+                                                item.created_at
+                                            }}
+                                        </div>
                                     </td>
                                 </tr>
                                 <tr v-if="!packages.length">
                                     <td
-                                        class="p-5 text-center text-muted-foreground"
+                                        class="text-center text-muted-foreground"
                                     >
-                                        暂无已售套餐
+                                        <div data-slot="table-cell-content">
+                                            暂无已售套餐
+                                        </div>
                                     </td>
                                 </tr>
                             </tbody>

@@ -646,33 +646,83 @@ function presetRange(days: number): void {
                         <thead class="bg-muted/40 text-muted-foreground">
                             <tr>
                                 <template v-if="active === 'stats'"
-                                    ><th>排行</th>
-                                    <th>网站ID</th>
-                                    <th>黑名单数量</th></template
+                                    ><th>
+                                        <div data-slot="table-cell-content">
+                                            排行
+                                        </div>
+                                    </th>
+                                    <th>
+                                        <div data-slot="table-cell-content">
+                                            网站ID
+                                        </div>
+                                    </th>
+                                    <th>
+                                        <div data-slot="table-cell-content">
+                                            黑名单数量
+                                        </div>
+                                    </th></template
                                 >
                                 <template v-else>
                                     <th
                                         v-if="active === 'current'"
                                         class="w-10 text-center"
                                     >
-                                        <Checkbox
-                                            :model-value="allSelected"
-                                            aria-label="选择全部IP"
-                                            :disabled="loading"
-                                            @update:model-value="selectAll"
-                                        />
+                                        <div data-slot="table-cell-content">
+                                            <Checkbox
+                                                :model-value="allSelected"
+                                                aria-label="选择全部IP"
+                                                :disabled="loading"
+                                                @update:model-value="selectAll"
+                                            />
+                                        </div>
                                     </th>
-                                    <th>网站ID</th>
-                                    <th>域名</th>
-                                    <th>IP</th>
-                                    <th>位置</th>
-                                    <th>过滤器</th>
-                                    <th>拉黑时间</th>
+                                    <th>
+                                        <div data-slot="table-cell-content">
+                                            网站ID
+                                        </div>
+                                    </th>
+                                    <th>
+                                        <div data-slot="table-cell-content">
+                                            域名
+                                        </div>
+                                    </th>
+                                    <th>
+                                        <div data-slot="table-cell-content">
+                                            IP
+                                        </div>
+                                    </th>
+                                    <th>
+                                        <div data-slot="table-cell-content">
+                                            位置
+                                        </div>
+                                    </th>
+                                    <th>
+                                        <div data-slot="table-cell-content">
+                                            过滤器
+                                        </div>
+                                    </th>
+                                    <th>
+                                        <div data-slot="table-cell-content">
+                                            拉黑时间
+                                        </div>
+                                    </th>
                                     <template v-if="active === 'current'"
-                                        ><th>解锁时间</th>
-                                        <th>操作</th></template
+                                        ><th>
+                                            <div data-slot="table-cell-content">
+                                                解锁时间
+                                            </div>
+                                        </th>
+                                        <th>
+                                            <div data-slot="table-cell-content">
+                                                操作
+                                            </div>
+                                        </th></template
                                     >
-                                    <th v-else>手动解锁?</th>
+                                    <th v-else>
+                                        <div data-slot="table-cell-content">
+                                            手动解锁?
+                                        </div>
+                                    </th>
                                 </template>
                             </tr>
                         </thead>
@@ -680,24 +730,28 @@ function presetRange(days: number): void {
                             <tr v-if="error">
                                 <td
                                     :colspan="colSpan"
-                                    class="h-24 text-center text-destructive"
+                                    class="text-center text-destructive"
                                     role="alert"
                                 >
-                                    {{ error }}
-                                    <Button
-                                        variant="link"
-                                        size="sm"
-                                        @click="load()"
-                                        >重试</Button
-                                    >
+                                    <div data-slot="table-cell-content">
+                                        {{ error }}
+                                        <Button
+                                            variant="link"
+                                            size="sm"
+                                            @click="load()"
+                                            >重试</Button
+                                        >
+                                    </div>
                                 </td>
                             </tr>
                             <tr v-else-if="loading">
-                                <td :colspan="colSpan" class="h-24 text-center">
-                                    <Spinner class="mx-auto" /><span
-                                        class="sr-only"
-                                        >加载中</span
-                                    >
+                                <td :colspan="colSpan" class="text-center">
+                                    <div data-slot="table-cell-content">
+                                        <Spinner class="mx-auto" /><span
+                                            class="sr-only"
+                                            >加载中</span
+                                        >
+                                    </div>
                                 </td>
                             </tr>
                             <template v-else>
@@ -712,15 +766,23 @@ function presetRange(days: number): void {
                                 >
                                     <template v-if="active === 'stats'"
                                         ><td>
-                                            {{
-                                                (page - 1) * pageSize +
-                                                index +
-                                                1
-                                            }}
+                                            <div data-slot="table-cell-content">
+                                                {{
+                                                    (page - 1) * pageSize +
+                                                    index +
+                                                    1
+                                                }}
+                                            </div>
                                         </td>
-                                        <td>{{ row.site_id ?? '-' }}</td>
                                         <td>
-                                            {{ row.count ?? '-' }}
+                                            <div data-slot="table-cell-content">
+                                                {{ row.site_id ?? '-' }}
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div data-slot="table-cell-content">
+                                                {{ row.count ?? '-' }}
+                                            </div>
                                         </td></template
                                     >
                                     <template v-else>
@@ -728,90 +790,134 @@ function presetRange(days: number): void {
                                             v-if="active === 'current'"
                                             class="text-center"
                                         >
-                                            <Checkbox
-                                                :model-value="
-                                                    selection.has(
-                                                        blockRowKey(row),
-                                                    )
-                                                "
-                                                :aria-label="`选择IP ${row.ip}`"
-                                                :disabled="unlocking"
-                                                @update:model-value="
-                                                    selectRow(row, $event)
-                                                "
-                                            />
+                                            <div data-slot="table-cell-content">
+                                                <Checkbox
+                                                    :model-value="
+                                                        selection.has(
+                                                            blockRowKey(row),
+                                                        )
+                                                    "
+                                                    :aria-label="`选择IP ${row.ip}`"
+                                                    :disabled="unlocking"
+                                                    @update:model-value="
+                                                        selectRow(row, $event)
+                                                    "
+                                                />
+                                            </div>
                                         </td>
-                                        <td>{{ row.site_id ?? '-' }}</td>
                                         <td>
-                                            <span
-                                                class="block max-w-52 truncate"
-                                                :title="
-                                                    String(row.domain ?? '')
-                                                "
-                                                >{{ row.domain ?? '' }}</span
-                                            >
+                                            <div data-slot="table-cell-content">
+                                                {{ row.site_id ?? '-' }}
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div data-slot="table-cell-content">
+                                                <span
+                                                    class="block max-w-52 truncate"
+                                                    :title="
+                                                        String(row.domain ?? '')
+                                                    "
+                                                    >{{
+                                                        row.domain ?? ''
+                                                    }}</span
+                                                >
+                                            </div>
                                         </td>
                                         <td class="tabular-nums">
-                                            {{ row.ip ?? '-' }}
+                                            <div data-slot="table-cell-content">
+                                                {{ row.ip ?? '-' }}
+                                            </div>
                                         </td>
-                                        <td>{{ row.position ?? '-' }}</td>
                                         <td>
-                                            {{
-                                                blockFilterLabel(
-                                                    row,
-                                                    active === 'history',
-                                                )
-                                            }}
+                                            <div data-slot="table-cell-content">
+                                                {{ row.position ?? '-' }}
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div data-slot="table-cell-content">
+                                                {{
+                                                    blockFilterLabel(
+                                                        row,
+                                                        active === 'history',
+                                                    )
+                                                }}
+                                            </div>
                                         </td>
                                         <td
                                             class="whitespace-nowrap tabular-nums"
                                         >
-                                            {{ blockTimestamp(row.create_at) }}
+                                            <div data-slot="table-cell-content">
+                                                {{
+                                                    blockTimestamp(
+                                                        row.create_at,
+                                                    )
+                                                }}
+                                            </div>
                                         </td>
                                         <template v-if="active === 'current'"
                                             ><td
                                                 class="whitespace-nowrap tabular-nums"
                                             >
-                                                {{ blockTimestamp(row.exp) }}
+                                                <div
+                                                    data-slot="table-cell-content"
+                                                >
+                                                    {{
+                                                        blockTimestamp(row.exp)
+                                                    }}
+                                                </div>
                                             </td>
                                             <td>
                                                 <div
-                                                    class="flex items-center gap-2 whitespace-nowrap"
+                                                    data-slot="table-cell-content"
                                                 >
-                                                    <Button
-                                                        variant="link"
-                                                        size="sm"
-                                                        class="h-auto p-0"
-                                                        :disabled="unlocking"
-                                                        @click="
-                                                            unlockRows([row])
-                                                        "
-                                                        >解锁</Button
-                                                    ><Link
-                                                        :href="`${userScope ? '/console' : '/console/admin'}/analytics/logs?addr=${encodeURIComponent(String(row.ip ?? ''))}`"
-                                                        class="text-primary hover:underline"
-                                                        >查看日志</Link
+                                                    <div
+                                                        class="flex items-center gap-2 whitespace-nowrap"
                                                     >
+                                                        <Button
+                                                            variant="link"
+                                                            size="sm"
+                                                            class="h-auto p-0"
+                                                            :disabled="
+                                                                unlocking
+                                                            "
+                                                            @click="
+                                                                unlockRows([
+                                                                    row,
+                                                                ])
+                                                            "
+                                                            >解锁</Button
+                                                        ><Link
+                                                            :href="`${userScope ? '/console' : '/console/admin'}/analytics/logs?addr=${encodeURIComponent(String(row.ip ?? ''))}`"
+                                                            class="text-primary hover:underline"
+                                                            >查看日志</Link
+                                                        >
+                                                    </div>
                                                 </div>
                                             </td></template
                                         >
                                         <td v-else>
-                                            {{
-                                                manualUnlockLabel(
-                                                    row.auto_unlock,
-                                                )
-                                            }}
+                                            <div data-slot="table-cell-content">
+                                                {{
+                                                    manualUnlockLabel(
+                                                        row.auto_unlock,
+                                                    )
+                                                }}
+                                            </div>
                                         </td>
                                     </template>
                                 </tr>
                                 <tr v-if="!visibleRows.length">
                                     <td
                                         :colspan="colSpan"
-                                        class="h-24 text-center text-muted-foreground"
+                                        class="text-center text-muted-foreground"
                                     >
-                                        {{
-                                            userScope ? '暂无数据' : '暂无记录'
-                                        }}
+                                        <div data-slot="table-cell-content">
+                                            {{
+                                                userScope
+                                                    ? '暂无数据'
+                                                    : '暂无记录'
+                                            }}
+                                        </div>
                                     </td>
                                 </tr>
                             </template>

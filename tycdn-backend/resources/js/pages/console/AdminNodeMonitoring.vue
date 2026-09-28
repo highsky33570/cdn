@@ -490,8 +490,16 @@ onMounted(async () => {
                     <table class="w-full min-w-[620px] text-left text-xs">
                         <thead class="bg-muted/20">
                             <tr>
-                                <th>排行</th>
-                                <th>节点</th>
+                                <th>
+                                    <div data-slot="table-cell-content">
+                                        排行
+                                    </div>
+                                </th>
+                                <th>
+                                    <div data-slot="table-cell-content">
+                                        节点
+                                    </div>
+                                </th>
                                 <th
                                     v-for="column in columns"
                                     :key="column.key"
@@ -503,24 +511,29 @@ onMounted(async () => {
                                             : undefined
                                     "
                                 >
-                                    <Button
-                                        variant="ghost"
-                                        size="inline"
-                                        type="button"
-                                        data-slot="console-sort"
-                                        v-if="column.unit"
-                                        class="flex items-center gap-1"
-                                        @click="sortBy(column.key)"
-                                    >
-                                        {{ column.label }}
-                                        <span class="text-muted-foreground">{{
-                                            sort.key === column.key
-                                                ? sort.descending
-                                                    ? '↓'
-                                                    : '↑'
-                                                : '↕'
-                                        }}</span></Button
-                                    ><span v-else>{{ column.label }}</span>
+                                    <div data-slot="table-cell-content">
+                                        <Button
+                                            variant="ghost"
+                                            size="inline"
+                                            type="button"
+                                            data-slot="console-sort"
+                                            v-if="column.unit"
+                                            class="flex items-center gap-1"
+                                            @click="sortBy(column.key)"
+                                        >
+                                            {{ column.label }}
+                                            <span
+                                                class="text-muted-foreground"
+                                                >{{
+                                                    sort.key === column.key
+                                                        ? sort.descending
+                                                            ? '↓'
+                                                            : '↑'
+                                                        : '↕'
+                                                }}</span
+                                            ></Button
+                                        ><span v-else>{{ column.label }}</span>
+                                    </div>
                                 </th>
                             </tr>
                         </thead>
@@ -530,13 +543,15 @@ onMounted(async () => {
                                     :colspan="columns.length + 2"
                                     class="text-center text-muted-foreground"
                                 >
-                                    {{
-                                        loading
-                                            ? '加载中…'
-                                            : error
-                                              ? '数据加载失败'
-                                              : '暂无数据'
-                                    }}
+                                    <div data-slot="table-cell-content">
+                                        {{
+                                            loading
+                                                ? '加载中…'
+                                                : error
+                                                  ? '数据加载失败'
+                                                  : '暂无数据'
+                                        }}
+                                    </div>
                                 </td>
                             </tr>
                             <tr
@@ -544,12 +559,25 @@ onMounted(async () => {
                                 v-else
                                 :key="`${row.node_id}-${row.nic ?? row.path ?? index}`"
                             >
-                                <td>{{ index + 1 }}</td>
-                                <td>{{ nodeName(row) }}</td>
+                                <td>
+                                    <div data-slot="table-cell-content">
+                                        {{ index + 1 }}
+                                    </div>
+                                </td>
+                                <td>
+                                    <div data-slot="table-cell-content">
+                                        {{ nodeName(row) }}
+                                    </div>
+                                </td>
                                 <td v-for="column in columns" :key="column.key">
-                                    {{
-                                        formatCell(row[column.key], column.unit)
-                                    }}
+                                    <div data-slot="table-cell-content">
+                                        {{
+                                            formatCell(
+                                                row[column.key],
+                                                column.unit,
+                                            )
+                                        }}
+                                    </div>
                                 </td>
                             </tr>
                         </tbody>

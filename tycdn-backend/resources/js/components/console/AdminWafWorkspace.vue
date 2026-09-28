@@ -325,150 +325,189 @@ async function updateSubscriptions() {
                 <thead>
                     <tr>
                         <th class="check">
-                            <CheckboxField
-                                aria-label="选择全部规则库"
-                                :checked="allSelected"
-                                :disabled="loading || busy || !rows.length"
-                                @change="
-                                    selected = allSelected
-                                        ? []
-                                        : rows.map((row) => Number(row.id))
-                                "
-                            />
+                            <div data-slot="table-cell-content">
+                                <CheckboxField
+                                    aria-label="选择全部规则库"
+                                    :checked="allSelected"
+                                    :disabled="loading || busy || !rows.length"
+                                    @change="
+                                        selected = allSelected
+                                            ? []
+                                            : rows.map((row) => Number(row.id))
+                                    "
+                                />
+                            </div>
                         </th>
-                        <th>ID</th>
-                        <th class="name-column">名称</th>
-                        <th>类型</th>
-                        <th>范围</th>
-                        <th>归属</th>
-                        <th>状态</th>
-                        <th>订阅</th>
-                        <th>更新时间</th>
-                        <th>操作</th>
+                        <th><div data-slot="table-cell-content">ID</div></th>
+                        <th class="name-column">
+                            <div data-slot="table-cell-content">名称</div>
+                        </th>
+                        <th><div data-slot="table-cell-content">类型</div></th>
+                        <th><div data-slot="table-cell-content">范围</div></th>
+                        <th><div data-slot="table-cell-content">归属</div></th>
+                        <th><div data-slot="table-cell-content">状态</div></th>
+                        <th><div data-slot="table-cell-content">订阅</div></th>
+                        <th>
+                            <div data-slot="table-cell-content">更新时间</div>
+                        </th>
+                        <th><div data-slot="table-cell-content">操作</div></th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr v-for="row in rows" :key="String(row.id)">
                         <td class="check">
-                            <CheckboxField
-                                :aria-label="`选择规则库 ${row.name}`"
-                                :checked="selected.includes(Number(row.id))"
-                                :disabled="loading || busy"
-                                @change="toggle(Number(row.id))"
-                            />
-                        </td>
-                        <td>{{ row.id }}</td>
-                        <td>
-                            <div
-                                class="rule-name"
-                                :title="String(row.name || '')"
-                            >
-                                {{ row.name || '-' }}
-                            </div>
-                            <div
-                                class="muted description"
-                                :title="String(row.des || '')"
-                            >
-                                {{ row.des || '未填写备注' }}
+                            <div data-slot="table-cell-content">
+                                <CheckboxField
+                                    :aria-label="`选择规则库 ${row.name}`"
+                                    :checked="selected.includes(Number(row.id))"
+                                    :disabled="loading || busy"
+                                    @change="toggle(Number(row.id))"
+                                />
                             </div>
                         </td>
-                        <td><span class="pill">普通</span></td>
                         <td>
-                            <span
-                                class="pill"
-                                :class="{ primary: row.scope === 'global' }"
-                                >{{
-                                    row.scope === 'global' ? '全局' : '用户'
-                                }}</span
-                            >
+                            <div data-slot="table-cell-content">
+                                {{ row.id }}
+                            </div>
                         </td>
                         <td>
-                            {{
-                                row.scope === 'global'
-                                    ? '全局规则'
-                                    : row.username ||
-                                      (row.uid ? `UID ${row.uid}` : '当前用户')
-                            }}
+                            <div data-slot="table-cell-content">
+                                <div
+                                    class="rule-name"
+                                    :title="String(row.name || '')"
+                                >
+                                    {{ row.name || '-' }}
+                                </div>
+                                <div
+                                    class="muted description"
+                                    :title="String(row.des || '')"
+                                >
+                                    {{ row.des || '未填写备注' }}
+                                </div>
+                            </div>
                         </td>
                         <td>
-                            <span
-                                class="pill"
-                                :class="{ success: enabled(row.enable) }"
-                                >{{
-                                    enabled(row.enable) ? '启用' : '停用'
-                                }}</span
-                            >
+                            <div data-slot="table-cell-content">
+                                <span class="pill">普通</span>
+                            </div>
                         </td>
                         <td>
-                            <div
-                                v-if="enabled(row.subscribe_enable)"
-                                class="subscription"
-                            >
+                            <div data-slot="table-cell-content">
                                 <span
                                     class="pill"
-                                    :class="{
-                                        success:
-                                            row.subscribe_status === 'success',
-                                        danger:
-                                            row.subscribe_status === 'failed',
-                                    }"
+                                    :class="{ primary: row.scope === 'global' }"
                                     >{{
-                                        row.subscribe_status === 'success'
-                                            ? '成功'
-                                            : row.subscribe_status === 'failed'
-                                              ? '失败'
-                                              : '待更新'
+                                        row.scope === 'global' ? '全局' : '用户'
                                     }}</span
-                                ><span
-                                    class="muted description"
-                                    :title="String(row.subscribe_version || '')"
-                                    >{{
-                                        row.subscribe_version || '未同步'
-                                    }}</span
-                                ><span class="muted">{{
-                                    interval(row.subscribe_interval_minutes)
-                                }}</span>
+                                >
                             </div>
-                            <span v-else class="muted">未订阅</span>
-                        </td>
-                        <td class="muted">
-                            {{ row.update_at2 || row.update_at || '-' }}
                         </td>
                         <td>
-                            <div class="row-actions">
-                                <Button
-                                    variant="link"
-                                    size="inline"
-                                    type="button"
-                                    data-slot="console-link"
-                                    :disabled="busy || loading"
-                                    @click="manage(row)"
+                            <div data-slot="table-cell-content">
+                                {{
+                                    row.scope === 'global'
+                                        ? '全局规则'
+                                        : row.username ||
+                                          (row.uid
+                                              ? `UID ${row.uid}`
+                                              : '当前用户')
+                                }}
+                            </div>
+                        </td>
+                        <td>
+                            <div data-slot="table-cell-content">
+                                <span
+                                    class="pill"
+                                    :class="{ success: enabled(row.enable) }"
+                                    >{{
+                                        enabled(row.enable) ? '启用' : '停用'
+                                    }}</span
                                 >
-                                    编辑</Button
-                                ><Button
-                                    variant="link"
-                                    size="inline"
-                                    type="button"
-                                    data-slot="console-link"
-                                    v-if="!row.system_key"
-                                    class="delete-link"
-                                    :disabled="busy || loading"
-                                    @click="emit('delete', row)"
+                            </div>
+                        </td>
+                        <td>
+                            <div data-slot="table-cell-content">
+                                <div
+                                    v-if="enabled(row.subscribe_enable)"
+                                    class="subscription"
                                 >
-                                    删除
-                                </Button>
+                                    <span
+                                        class="pill"
+                                        :class="{
+                                            success:
+                                                row.subscribe_status ===
+                                                'success',
+                                            danger:
+                                                row.subscribe_status ===
+                                                'failed',
+                                        }"
+                                        >{{
+                                            row.subscribe_status === 'success'
+                                                ? '成功'
+                                                : row.subscribe_status ===
+                                                    'failed'
+                                                  ? '失败'
+                                                  : '待更新'
+                                        }}</span
+                                    ><span
+                                        class="muted description"
+                                        :title="
+                                            String(row.subscribe_version || '')
+                                        "
+                                        >{{
+                                            row.subscribe_version || '未同步'
+                                        }}</span
+                                    ><span class="muted">{{
+                                        interval(row.subscribe_interval_minutes)
+                                    }}</span>
+                                </div>
+                                <span v-else class="muted">未订阅</span>
+                            </div>
+                        </td>
+                        <td class="muted">
+                            <div data-slot="table-cell-content">
+                                {{ row.update_at2 || row.update_at || '-' }}
+                            </div>
+                        </td>
+                        <td>
+                            <div data-slot="table-cell-content">
+                                <div class="row-actions">
+                                    <Button
+                                        variant="link"
+                                        size="inline"
+                                        type="button"
+                                        data-slot="console-link"
+                                        :disabled="busy || loading"
+                                        @click="manage(row)"
+                                    >
+                                        编辑</Button
+                                    ><Button
+                                        variant="link"
+                                        size="inline"
+                                        type="button"
+                                        data-slot="console-link"
+                                        v-if="!row.system_key"
+                                        class="delete-link"
+                                        :disabled="busy || loading"
+                                        @click="emit('delete', row)"
+                                    >
+                                        删除
+                                    </Button>
+                                </div>
                             </div>
                         </td>
                     </tr>
                     <tr v-if="!rows.length">
                         <td colspan="10" class="empty">
-                            {{
-                                loading
-                                    ? '加载中…'
-                                    : error
-                                      ? '加载失败，请刷新重试'
-                                      : '暂无数据'
-                            }}
+                            <div data-slot="table-cell-content">
+                                {{
+                                    loading
+                                        ? '加载中…'
+                                        : error
+                                          ? '加载失败，请刷新重试'
+                                          : '暂无数据'
+                                }}
+                            </div>
                         </td>
                     </tr>
                 </tbody>

@@ -623,21 +623,27 @@ onUnmounted(() => {
                                         v-for="col in wafColumns"
                                         :key="col.key"
                                     >
-                                        {{ col.label }}
+                                        <div data-slot="table-cell-content">
+                                            {{ col.label }}
+                                        </div>
                                     </th>
                                     <th
                                         class="sticky right-0 bg-card shadow-sm"
                                     >
-                                        操作
+                                        <div data-slot="table-cell-content">
+                                            操作
+                                        </div>
                                     </th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <tr v-if="loading">
-                                    <td colspan="10" class="h-20">
-                                        <Spinner /><span class="sr-only"
-                                            >加载日志明细</span
-                                        >
+                                    <td colspan="10" class="">
+                                        <div data-slot="table-cell-content">
+                                            <Spinner /><span class="sr-only"
+                                                >加载日志明细</span
+                                            >
+                                        </div>
                                     </td>
                                 </tr>
                                 <template v-else
@@ -650,76 +656,86 @@ onUnmounted(() => {
                                             :key="col.key"
                                             :title="wafCell(row, col.key)"
                                         >
-                                            <template
-                                                v-if="col.key === 'action'"
+                                            <div data-slot="table-cell-content">
+                                                <template
+                                                    v-if="col.key === 'action'"
+                                                    ><span
+                                                        class="rounded px-1.5 py-0.5 text-xs"
+                                                        :class="
+                                                            row.action ===
+                                                            'protect'
+                                                                ? 'bg-red-500/10 text-red-600 dark:text-red-400'
+                                                                : 'bg-amber-500/10 text-amber-700 dark:text-amber-400'
+                                                        "
+                                                        >{{
+                                                            wafCell(
+                                                                row,
+                                                                col.key,
+                                                            )
+                                                        }}</span
+                                                    ><span
+                                                        v-if="
+                                                            wafTruthy(
+                                                                row.auto_blocked,
+                                                            )
+                                                        "
+                                                        class="mt-1 block text-xs text-orange-600 dark:text-orange-400"
+                                                        >自动封禁</span
+                                                    ></template
                                                 ><span
-                                                    class="rounded px-1.5 py-0.5 text-xs"
-                                                    :class="
-                                                        row.action === 'protect'
-                                                            ? 'bg-red-500/10 text-red-600 dark:text-red-400'
-                                                            : 'bg-amber-500/10 text-amber-700 dark:text-amber-400'
-                                                    "
+                                                    v-else
+                                                    class="block truncate"
                                                     >{{
                                                         wafCell(row, col.key)
                                                     }}</span
-                                                ><span
-                                                    v-if="
-                                                        wafTruthy(
-                                                            row.auto_blocked,
-                                                        )
-                                                    "
-                                                    class="mt-1 block text-xs text-orange-600 dark:text-orange-400"
-                                                    >自动封禁</span
-                                                ></template
-                                            ><span
-                                                v-else
-                                                class="block truncate"
-                                                >{{
-                                                    wafCell(row, col.key)
-                                                }}</span
-                                            >
+                                                >
+                                            </div>
                                         </td>
                                         <td
                                             class="sticky right-0 bg-card shadow-sm"
                                         >
-                                            <div class="flex gap-3">
-                                                <Button
-                                                    variant="link"
-                                                    size="sm"
-                                                    class="h-auto p-0"
-                                                    :disabled="!row._id"
-                                                    @click="showDetail(row)"
-                                                    >详情</Button
-                                                ><Button
-                                                    v-if="
-                                                        wafTruthy(
-                                                            row.auto_blocked,
-                                                        )
-                                                    "
-                                                    variant="link"
-                                                    size="sm"
-                                                    class="h-auto p-0"
-                                                    @click="
-                                                        prepareAction(
-                                                            'unlock',
-                                                            row,
-                                                        )
-                                                    "
-                                                    >解锁</Button
-                                                >
+                                            <div data-slot="table-cell-content">
+                                                <div class="flex gap-3">
+                                                    <Button
+                                                        variant="link"
+                                                        size="sm"
+                                                        class="h-auto p-0"
+                                                        :disabled="!row._id"
+                                                        @click="showDetail(row)"
+                                                        >详情</Button
+                                                    ><Button
+                                                        v-if="
+                                                            wafTruthy(
+                                                                row.auto_blocked,
+                                                            )
+                                                        "
+                                                        variant="link"
+                                                        size="sm"
+                                                        class="h-auto p-0"
+                                                        @click="
+                                                            prepareAction(
+                                                                'unlock',
+                                                                row,
+                                                            )
+                                                        "
+                                                        >解锁</Button
+                                                    >
+                                                </div>
                                             </div>
                                         </td>
                                     </tr>
                                     <tr v-if="!rows.length">
                                         <td
                                             colspan="10"
-                                            class="h-16 text-center text-xs text-muted-foreground"
+                                            class="text-center text-xs text-muted-foreground"
                                         >
-                                            {{
-                                                error
-                                                    ? '查询失败，请重试'
-                                                    : '暂无数据'
-                                            }}
+                                            <div data-slot="table-cell-content">
+                                                {{
+                                                    error
+                                                        ? '查询失败，请重试'
+                                                        : '暂无数据'
+                                                }}
+                                            </div>
                                         </td>
                                     </tr></template
                                 >

@@ -44,25 +44,36 @@ const forwarded = useForwardPropsEmits(props, emit);
         </CalendarHeader>
         <div class="flex flex-wrap gap-3">
             <CalendarGrid
+                as="div"
+                role="grid"
                 v-for="month in grid"
                 :key="month.value.toString()"
-                class="border-collapse"
+                class="grid"
             >
-                <CalendarGridHead
+                <CalendarGridHead as="div"
                     ><CalendarGridRow
+                        as="div"
+                        role="row"
+                        class="grid grid-cols-7"
                         ><CalendarHeadCell
+                            as="div"
+                            role="columnheader"
                             v-for="day in weekDays"
                             :key="day"
-                            class="size-9 text-xs font-normal text-muted-foreground"
+                            class="flex size-9 items-center justify-center text-xs font-normal text-muted-foreground"
                             >{{ day }}</CalendarHeadCell
                         ></CalendarGridRow
                     ></CalendarGridHead
                 >
-                <CalendarGridBody
+                <CalendarGridBody as="div"
                     ><CalendarGridRow
+                        as="div"
+                        role="row"
+                        class="grid grid-cols-7"
                         v-for="(week, index) in month.rows"
                         :key="index"
                         ><CalendarCell
+                            as="div"
                             v-for="day in week"
                             :key="day.toString()"
                             :date="day"
@@ -70,6 +81,7 @@ const forwarded = useForwardPropsEmits(props, emit);
                             ><CalendarCellTrigger
                                 :day="day"
                                 :month="month.value"
+                                data-slot="calendar-day"
                                 class="inline-flex size-8 items-center justify-center rounded-md text-sm outline-none hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring data-[disabled]:pointer-events-none data-[disabled]:opacity-30 data-[outside-view]:text-muted-foreground data-[selected]:bg-primary data-[selected]:text-primary-foreground data-[today]:font-bold" /></CalendarCell></CalendarGridRow
                 ></CalendarGridBody>
             </CalendarGrid>

@@ -154,20 +154,32 @@ onUnmounted(() => {
                 </colgroup>
                 <thead>
                     <tr>
-                        <th scope="col">消息类型</th>
-                        <th scope="col">手机提醒</th>
-                        <th scope="col">邮件提醒</th>
+                        <th scope="col">
+                            <div data-slot="table-cell-content">消息类型</div>
+                        </th>
+                        <th scope="col">
+                            <div data-slot="table-cell-content">手机提醒</div>
+                        </th>
+                        <th scope="col">
+                            <div data-slot="table-cell-content">邮件提醒</div>
+                        </th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr v-if="loading">
                         <td colspan="3" class="empty">
-                            <Spinner class="inline size-4" /> 加载中…
+                            <div data-slot="table-cell-content">
+                                <Spinner class="inline size-4" /> 加载中…
+                            </div>
                         </td>
                     </tr>
                     <tr v-else-if="!rows.length">
                         <td colspan="3" class="empty">
-                            {{ error ? '加载失败，请重试' : '暂无订阅记录' }}
+                            <div data-slot="table-cell-content">
+                                {{
+                                    error ? '加载失败，请重试' : '暂无订阅记录'
+                                }}
+                            </div>
                         </td>
                     </tr>
                     <template v-else
@@ -177,42 +189,50 @@ onUnmounted(() => {
                             :aria-busy="Boolean(saving[row.type])"
                         >
                             <td>
-                                <span>{{ labels[row.type] || row.type }}</span>
-                                <div
-                                    v-if="saveErrors[row.type]"
-                                    class="save-error"
-                                    role="alert"
-                                >
+                                <div data-slot="table-cell-content">
                                     <span>{{
-                                        saveErrors[row.type].message
-                                    }}</span
-                                    ><Button
-                                        variant="link"
-                                        size="inline"
-                                        data-slot="console-link"
-                                        type="button"
-                                        :aria-label="`重试保存${labels[row.type] || row.type}`"
-                                        @click="retry(row)"
+                                        labels[row.type] || row.type
+                                    }}</span>
+                                    <div
+                                        v-if="saveErrors[row.type]"
+                                        class="save-error"
+                                        role="alert"
                                     >
-                                        重试
-                                    </Button>
+                                        <span>{{
+                                            saveErrors[row.type].message
+                                        }}</span
+                                        ><Button
+                                            variant="link"
+                                            size="inline"
+                                            data-slot="console-link"
+                                            type="button"
+                                            :aria-label="`重试保存${labels[row.type] || row.type}`"
+                                            @click="retry(row)"
+                                        >
+                                            重试
+                                        </Button>
+                                    </div>
                                 </div>
                             </td>
                             <td>
-                                <CheckboxField
-                                    :checked="row.phone"
-                                    :disabled="saving[row.type]"
-                                    :aria-label="`${labels[row.type] || row.type}手机提醒`"
-                                    @change="change(row, 'phone', $event)"
-                                />
+                                <div data-slot="table-cell-content">
+                                    <CheckboxField
+                                        :checked="row.phone"
+                                        :disabled="saving[row.type]"
+                                        :aria-label="`${labels[row.type] || row.type}手机提醒`"
+                                        @change="change(row, 'phone', $event)"
+                                    />
+                                </div>
                             </td>
                             <td>
-                                <CheckboxField
-                                    :checked="row.email"
-                                    :disabled="saving[row.type]"
-                                    :aria-label="`${labels[row.type] || row.type}邮件提醒`"
-                                    @change="change(row, 'email', $event)"
-                                />
+                                <div data-slot="table-cell-content">
+                                    <CheckboxField
+                                        :checked="row.email"
+                                        :disabled="saving[row.type]"
+                                        :aria-label="`${labels[row.type] || row.type}邮件提醒`"
+                                        @change="change(row, 'email', $event)"
+                                    />
+                                </div>
                             </td></tr
                     ></template>
                 </tbody>

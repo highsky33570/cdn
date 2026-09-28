@@ -1684,21 +1684,28 @@ function formatInputDate(date: Date): string {
                                 <thead>
                                     <tr>
                                         <th
-                                            class="w-14 px-4 py-3 text-left font-medium text-muted-foreground"
+                                            class="w-14 text-left font-medium text-muted-foreground"
                                         >
-                                            排行
+                                            <div data-slot="table-cell-content">
+                                                排行
+                                            </div>
                                         </th>
                                         <th
-                                            class="px-4 py-3 text-left font-medium text-muted-foreground"
+                                            class="text-left font-medium text-muted-foreground"
                                         >
-                                            {{ activeTopTabDef.cols[0].label }}
+                                            <div data-slot="table-cell-content">
+                                                {{
+                                                    activeTopTabDef.cols[0]
+                                                        .label
+                                                }}
+                                            </div>
                                         </th>
                                         <th
                                             v-for="col in activeTopTabDef.cols.slice(
                                                 1,
                                             )"
                                             :key="col.key"
-                                            class="px-4 py-3 text-left font-medium text-muted-foreground"
+                                            class="text-left font-medium text-muted-foreground"
                                             :class="
                                                 col.type !== 'action'
                                                     ? 'cursor-pointer select-none hover:text-foreground'
@@ -1709,32 +1716,39 @@ function formatInputDate(date: Date): string {
                                                 toggleSort(col.key)
                                             "
                                         >
-                                            <span
-                                                class="inline-flex items-center gap-1"
-                                            >
-                                                {{ col.label }}
-                                                <template
-                                                    v-if="col.type !== 'action'"
+                                            <div data-slot="table-cell-content">
+                                                <span
+                                                    class="inline-flex items-center gap-1"
                                                 >
-                                                    <span
+                                                    {{ col.label }}
+                                                    <template
                                                         v-if="
-                                                            sortKey === col.key
+                                                            col.type !==
+                                                            'action'
                                                         "
-                                                        class="text-primary"
                                                     >
-                                                        {{
-                                                            sortDir === 'desc'
-                                                                ? '↓'
-                                                                : '↑'
-                                                        }}
-                                                    </span>
-                                                    <span
-                                                        v-else
-                                                        class="text-muted-foreground/40"
-                                                        >↕</span
-                                                    >
-                                                </template>
-                                            </span>
+                                                        <span
+                                                            v-if="
+                                                                sortKey ===
+                                                                col.key
+                                                            "
+                                                            class="text-primary"
+                                                        >
+                                                            {{
+                                                                sortDir ===
+                                                                'desc'
+                                                                    ? '↓'
+                                                                    : '↑'
+                                                            }}
+                                                        </span>
+                                                        <span
+                                                            v-else
+                                                            class="text-muted-foreground/40"
+                                                            >↕</span
+                                                        >
+                                                    </template>
+                                                </span>
+                                            </div>
                                         </th>
                                     </tr>
                                 </thead>
@@ -1744,9 +1758,11 @@ function formatInputDate(date: Date): string {
                                             :colspan="
                                                 activeTopTabDef.cols.length + 1
                                             "
-                                            class="px-4 py-12 text-center"
+                                            class="text-center"
                                         >
-                                            <Spinner class="mx-auto" />
+                                            <div data-slot="table-cell-content">
+                                                <Spinner class="mx-auto" />
+                                            </div>
                                         </td>
                                     </tr>
                                     <tr
@@ -1757,28 +1773,30 @@ function formatInputDate(date: Date): string {
                                         class="border-b transition-colors last:border-0 hover:bg-muted/20"
                                     >
                                         <!-- 排行 -->
-                                        <td
-                                            class="px-4 py-0 text-muted-foreground"
-                                        >
-                                            <span>{{ index + 1 }}</span>
+                                        <td class="text-muted-foreground">
+                                            <div data-slot="table-cell-content">
+                                                <span>{{ index + 1 }}</span>
+                                            </div>
                                         </td>
                                         <!-- 维度列（含进度条） -->
-                                        <td class="max-w-xs px-4 py-0">
-                                            <div
-                                                class="truncate"
-                                                :title="
-                                                    rowDimension(
-                                                        row,
-                                                        activeTopTab,
-                                                    )
-                                                "
-                                            >
-                                                {{
-                                                    rowDimension(
-                                                        row,
-                                                        activeTopTab,
-                                                    )
-                                                }}
+                                        <td class="max-w-xs">
+                                            <div data-slot="table-cell-content">
+                                                <div
+                                                    class="truncate"
+                                                    :title="
+                                                        rowDimension(
+                                                            row,
+                                                            activeTopTab,
+                                                        )
+                                                    "
+                                                >
+                                                    {{
+                                                        rowDimension(
+                                                            row,
+                                                            activeTopTab,
+                                                        )
+                                                    }}
+                                                </div>
                                             </div>
                                         </td>
                                         <!-- 其他列 -->
@@ -1790,24 +1808,32 @@ function formatInputDate(date: Date): string {
                                         >
                                             <td
                                                 v-if="col.type === 'action'"
-                                                class="px-4 py-0"
+                                                class=""
                                             >
-                                                <Button
-                                                    variant="link"
-                                                    size="inline"
-                                                    data-slot="console-link"
-                                                    type="button"
-                                                    class="inline-flex items-center text-sm text-primary hover:underline"
-                                                    @click="goToLogs(row)"
+                                                <div
+                                                    data-slot="table-cell-content"
                                                 >
-                                                    查看日志
-                                                </Button>
+                                                    <Button
+                                                        variant="link"
+                                                        size="inline"
+                                                        data-slot="console-link"
+                                                        type="button"
+                                                        class="inline-flex items-center text-sm text-primary hover:underline"
+                                                        @click="goToLogs(row)"
+                                                    >
+                                                        查看日志
+                                                    </Button>
+                                                </div>
                                             </td>
                                             <td
                                                 v-else
-                                                class="px-4 py-0 text-muted-foreground tabular-nums"
+                                                class="text-muted-foreground tabular-nums"
                                             >
-                                                {{ cellValue(row, col) }}
+                                                <div
+                                                    data-slot="table-cell-content"
+                                                >
+                                                    {{ cellValue(row, col) }}
+                                                </div>
                                             </td>
                                         </template>
                                     </tr>
@@ -1821,9 +1847,11 @@ function formatInputDate(date: Date): string {
                                             :colspan="
                                                 activeTopTabDef.cols.length + 1
                                             "
-                                            class="px-4 py-16 text-center text-sm text-muted-foreground"
+                                            class="text-center text-sm text-muted-foreground"
                                         >
-                                            暂无数据
+                                            <div data-slot="table-cell-content">
+                                                暂无数据
+                                            </div>
                                         </td>
                                     </tr>
                                 </tbody>
@@ -2208,59 +2236,72 @@ function formatInputDate(date: Date): string {
                                 <thead class="border-b text-muted-foreground">
                                     <tr>
                                         <th
-                                            class="px-3 py-3 text-left font-medium whitespace-nowrap"
+                                            class="text-left font-medium whitespace-nowrap"
                                         >
-                                            时间
+                                            <div data-slot="table-cell-content">
+                                                时间
+                                            </div>
+                                        </th>
+                                        <th class="text-left font-medium">
+                                            <div data-slot="table-cell-content">
+                                                域名
+                                            </div>
                                         </th>
                                         <th
-                                            class="px-3 py-3 text-left font-medium"
+                                            class="text-left font-medium whitespace-nowrap"
                                         >
-                                            域名
+                                            <div data-slot="table-cell-content">
+                                                端口
+                                            </div>
                                         </th>
                                         <th
-                                            class="px-3 py-3 text-left font-medium whitespace-nowrap"
+                                            class="text-left font-medium whitespace-nowrap"
                                         >
-                                            端口
+                                            <div data-slot="table-cell-content">
+                                                协议
+                                            </div>
                                         </th>
                                         <th
-                                            class="px-3 py-3 text-left font-medium whitespace-nowrap"
+                                            class="text-left font-medium whitespace-nowrap"
                                         >
-                                            协议
+                                            <div data-slot="table-cell-content">
+                                                方法
+                                            </div>
+                                        </th>
+                                        <th class="text-left font-medium">
+                                            <div data-slot="table-cell-content">
+                                                URI
+                                            </div>
                                         </th>
                                         <th
-                                            class="px-3 py-3 text-left font-medium whitespace-nowrap"
+                                            class="text-left font-medium whitespace-nowrap"
                                         >
-                                            方法
+                                            <div data-slot="table-cell-content">
+                                                状态码
+                                            </div>
                                         </th>
                                         <th
-                                            class="px-3 py-3 text-left font-medium"
+                                            class="text-left font-medium whitespace-nowrap"
                                         >
-                                            URI
+                                            <div data-slot="table-cell-content">
+                                                客户端IP
+                                            </div>
                                         </th>
                                         <th
-                                            class="px-3 py-3 text-left font-medium whitespace-nowrap"
+                                            class="text-left font-medium whitespace-nowrap"
                                         >
-                                            状态码
-                                        </th>
-                                        <th
-                                            class="px-3 py-3 text-left font-medium whitespace-nowrap"
-                                        >
-                                            客户端IP
-                                        </th>
-                                        <th
-                                            class="px-3 py-3 text-left font-medium whitespace-nowrap"
-                                        >
-                                            TLS指纹
+                                            <div data-slot="table-cell-content">
+                                                TLS指纹
+                                            </div>
                                         </th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     <tr v-if="logsLoading">
-                                        <td
-                                            colspan="9"
-                                            class="px-4 py-12 text-center"
-                                        >
-                                            <Spinner class="mx-auto" />
+                                        <td colspan="9" class="text-center">
+                                            <div data-slot="table-cell-content">
+                                                <Spinner class="mx-auto" />
+                                            </div>
                                         </td>
                                     </tr>
                                     <tr
@@ -2269,109 +2310,136 @@ function formatInputDate(date: Date): string {
                                         class="border-b hover:bg-muted/30"
                                     >
                                         <td
-                                            class="px-3 py-2.5 text-xs whitespace-nowrap text-muted-foreground tabular-nums"
+                                            class="text-xs whitespace-nowrap text-muted-foreground tabular-nums"
                                         >
-                                            {{
-                                                formatDate(
-                                                    row.time ??
-                                                        row.timestamp ??
-                                                        row.create_at2,
-                                                )
-                                            }}
+                                            <div data-slot="table-cell-content">
+                                                {{
+                                                    formatDate(
+                                                        row.time ??
+                                                            row.timestamp ??
+                                                            row.create_at2,
+                                                    )
+                                                }}
+                                            </div>
                                         </td>
-                                        <td class="max-w-[160px] px-3 py-2.5">
-                                            <div class="truncate">
+                                        <td class="max-w-[160px]">
+                                            <div data-slot="table-cell-content">
+                                                <div class="truncate">
+                                                    {{
+                                                        textValue(
+                                                            row.host ??
+                                                                row.domain,
+                                                        ) || '-'
+                                                    }}
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="tabular-nums">
+                                            <div data-slot="table-cell-content">
                                                 {{
                                                     textValue(
-                                                        row.host ?? row.domain,
+                                                        row.server_port ??
+                                                            row.port,
                                                     ) || '-'
                                                 }}
                                             </div>
                                         </td>
-                                        <td class="px-3 py-2.5 tabular-nums">
-                                            {{
-                                                textValue(
-                                                    row.server_port ?? row.port,
-                                                ) || '-'
-                                            }}
-                                        </td>
-                                        <td class="px-3 py-2.5">
-                                            {{
-                                                textValue(
-                                                    row.ssl ??
-                                                        row.protocol ??
-                                                        row.scheme,
-                                                ) || '-'
-                                            }}
-                                        </td>
-                                        <td
-                                            class="px-3 py-2.5 font-mono text-xs"
-                                        >
-                                            {{ textValue(row.method) || '-' }}
-                                        </td>
-                                        <td class="max-w-[200px] px-3 py-2.5">
-                                            <div
-                                                class="truncate font-mono text-xs"
-                                            >
+                                        <td class="">
+                                            <div data-slot="table-cell-content">
                                                 {{
                                                     textValue(
-                                                        row.req_uri ??
-                                                            row.uri ??
-                                                            row.url,
+                                                        row.ssl ??
+                                                            row.protocol ??
+                                                            row.scheme,
                                                     ) || '-'
                                                 }}
                                             </div>
                                         </td>
-                                        <td class="px-3 py-2.5">
-                                            <span
-                                                class="inline-flex items-center rounded px-1.5 py-0.5 text-xs font-medium tabular-nums"
-                                                :class="{
-                                                    'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400':
-                                                        String(
-                                                            row.status ?? '',
-                                                        ).startsWith('2'),
-                                                    'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400':
-                                                        String(
-                                                            row.status ?? '',
-                                                        ).startsWith('3'),
-                                                    'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400':
-                                                        String(
-                                                            row.status ?? '',
-                                                        ).startsWith('4') ||
-                                                        String(
-                                                            row.status ?? '',
-                                                        ).startsWith('5'),
-                                                    'bg-muted text-muted-foreground':
-                                                        !String(
-                                                            row.status ?? '',
-                                                        ).match(/^[2345]/),
-                                                }"
-                                            >
+                                        <td class="font-mono text-xs">
+                                            <div data-slot="table-cell-content">
                                                 {{
-                                                    textValue(row.status) || '-'
+                                                    textValue(row.method) || '-'
                                                 }}
-                                            </span>
+                                            </div>
+                                        </td>
+                                        <td class="max-w-[200px]">
+                                            <div data-slot="table-cell-content">
+                                                <div
+                                                    class="truncate font-mono text-xs"
+                                                >
+                                                    {{
+                                                        textValue(
+                                                            row.req_uri ??
+                                                                row.uri ??
+                                                                row.url,
+                                                        ) || '-'
+                                                    }}
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="">
+                                            <div data-slot="table-cell-content">
+                                                <span
+                                                    class="inline-flex items-center rounded px-1.5 py-0.5 text-xs font-medium tabular-nums"
+                                                    :class="{
+                                                        'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400':
+                                                            String(
+                                                                row.status ??
+                                                                    '',
+                                                            ).startsWith('2'),
+                                                        'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400':
+                                                            String(
+                                                                row.status ??
+                                                                    '',
+                                                            ).startsWith('3'),
+                                                        'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400':
+                                                            String(
+                                                                row.status ??
+                                                                    '',
+                                                            ).startsWith('4') ||
+                                                            String(
+                                                                row.status ??
+                                                                    '',
+                                                            ).startsWith('5'),
+                                                        'bg-muted text-muted-foreground':
+                                                            !String(
+                                                                row.status ??
+                                                                    '',
+                                                            ).match(/^[2345]/),
+                                                    }"
+                                                >
+                                                    {{
+                                                        textValue(row.status) ||
+                                                        '-'
+                                                    }}
+                                                </span>
+                                            </div>
                                         </td>
                                         <td
-                                            class="px-3 py-2.5 font-mono text-xs whitespace-nowrap"
+                                            class="font-mono text-xs whitespace-nowrap"
                                         >
-                                            {{
-                                                textValue(
-                                                    row.addr ??
-                                                        row.ip ??
-                                                        row.client_ip,
-                                                ) || '-'
-                                            }}
-                                        </td>
-                                        <td class="max-w-[120px] px-3 py-2.5">
-                                            <div
-                                                class="truncate font-mono text-xs text-muted-foreground"
-                                            >
+                                            <div data-slot="table-cell-content">
                                                 {{
                                                     textValue(
-                                                        row.tls_fp ?? row.fp,
+                                                        row.addr ??
+                                                            row.ip ??
+                                                            row.client_ip,
                                                     ) || '-'
                                                 }}
+                                            </div>
+                                        </td>
+                                        <td class="max-w-[120px]">
+                                            <div data-slot="table-cell-content">
+                                                <div
+                                                    class="truncate font-mono text-xs text-muted-foreground"
+                                                >
+                                                    {{
+                                                        textValue(
+                                                            row.tls_fp ??
+                                                                row.fp,
+                                                        ) || '-'
+                                                    }}
+                                                </div>
                                             </div>
                                         </td>
                                     </tr>
@@ -2383,9 +2451,11 @@ function formatInputDate(date: Date): string {
                                     >
                                         <td
                                             colspan="9"
-                                            class="px-4 py-16 text-center text-sm text-muted-foreground"
+                                            class="text-center text-sm text-muted-foreground"
                                         >
-                                            暂无数据
+                                            <div data-slot="table-cell-content">
+                                                暂无数据
+                                            </div>
                                         </td>
                                     </tr>
                                 </tbody>
@@ -2428,55 +2498,58 @@ function formatInputDate(date: Date): string {
                             <table class="w-full min-w-[800px] text-sm">
                                 <thead class="border-b text-muted-foreground">
                                     <tr>
-                                        <th
-                                            class="px-4 py-3 text-left font-medium"
-                                        >
-                                            Job ID
+                                        <th class="text-left font-medium">
+                                            <div data-slot="table-cell-content">
+                                                Job ID
+                                            </div>
+                                        </th>
+                                        <th class="text-left font-medium">
+                                            <div data-slot="table-cell-content">
+                                                Task ID
+                                            </div>
                                         </th>
                                         <th
-                                            class="px-4 py-3 text-left font-medium"
+                                            class="text-left font-medium whitespace-nowrap"
                                         >
-                                            Task ID
+                                            <div data-slot="table-cell-content">
+                                                申请时间
+                                            </div>
                                         </th>
                                         <th
-                                            class="px-4 py-3 text-left font-medium whitespace-nowrap"
+                                            class="text-left font-medium whitespace-nowrap"
                                         >
-                                            申请时间
+                                            <div data-slot="table-cell-content">
+                                                日志时间
+                                            </div>
                                         </th>
-                                        <th
-                                            class="px-4 py-3 text-left font-medium whitespace-nowrap"
-                                        >
-                                            日志时间
+                                        <th class="text-left font-medium">
+                                            <div data-slot="table-cell-content">
+                                                日志域名
+                                            </div>
                                         </th>
-                                        <th
-                                            class="px-4 py-3 text-left font-medium"
-                                        >
-                                            日志域名
+                                        <th class="text-left font-medium">
+                                            <div data-slot="table-cell-content">
+                                                状态
+                                            </div>
                                         </th>
-                                        <th
-                                            class="px-4 py-3 text-left font-medium"
-                                        >
-                                            状态
+                                        <th class="text-left font-medium">
+                                            <div data-slot="table-cell-content">
+                                                进度
+                                            </div>
                                         </th>
-                                        <th
-                                            class="px-4 py-3 text-left font-medium"
-                                        >
-                                            进度
-                                        </th>
-                                        <th
-                                            class="px-4 py-3 text-left font-medium"
-                                        >
-                                            操作
+                                        <th class="text-left font-medium">
+                                            <div data-slot="table-cell-content">
+                                                操作
+                                            </div>
                                         </th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     <tr v-if="jobsLoading">
-                                        <td
-                                            colspan="8"
-                                            class="px-4 py-12 text-center"
-                                        >
-                                            <Spinner class="mx-auto" />
+                                        <td colspan="8" class="text-center">
+                                            <div data-slot="table-cell-content">
+                                                <Spinner class="mx-auto" />
+                                            </div>
                                         </td>
                                     </tr>
                                     <tr
@@ -2484,150 +2557,166 @@ function formatInputDate(date: Date): string {
                                         :key="`job-${idx}`"
                                         class="border-b hover:bg-muted/30"
                                     >
-                                        <td class="px-4 py-3 tabular-nums">
-                                            {{
-                                                textValue(
-                                                    row.id ?? row.job_id,
-                                                ) || '-'
-                                            }}
-                                        </td>
-                                        <td
-                                            class="px-4 py-3 text-muted-foreground tabular-nums"
-                                        >
-                                            {{
-                                                textValue(
-                                                    row.task_id ?? row.tid,
-                                                ) || '-'
-                                            }}
-                                        </td>
-                                        <td
-                                            class="px-4 py-3 text-xs whitespace-nowrap text-muted-foreground"
-                                        >
-                                            {{
-                                                formatDate(
-                                                    row.create_at ??
-                                                        row.created_at ??
-                                                        row.create_time,
-                                                )
-                                            }}
-                                        </td>
-                                        <td
-                                            class="px-4 py-3 text-xs text-muted-foreground"
-                                        >
-                                            <div class="whitespace-nowrap">
+                                        <td class="tabular-nums">
+                                            <div data-slot="table-cell-content">
                                                 {{
                                                     textValue(
-                                                        rowDataValue(
-                                                            row,
-                                                            'start',
-                                                        ) ?? row.log_start,
-                                                    ) || '-'
-                                                }}
-                                            </div>
-                                            <div class="whitespace-nowrap">
-                                                ~
-                                                {{
-                                                    textValue(
-                                                        rowDataValue(
-                                                            row,
-                                                            'end',
-                                                        ) ?? row.log_end,
+                                                        row.id ?? row.job_id,
                                                     ) || '-'
                                                 }}
                                             </div>
                                         </td>
-                                        <td class="max-w-[160px] px-4 py-3">
-                                            <div class="truncate">
+                                        <td
+                                            class="text-muted-foreground tabular-nums"
+                                        >
+                                            <div data-slot="table-cell-content">
                                                 {{
                                                     textValue(
-                                                        rowDataValue(
-                                                            row,
-                                                            'domain',
-                                                        ) ?? row.domain,
-                                                    ) || '全部域名'
+                                                        row.task_id ?? row.tid,
+                                                    ) || '-'
                                                 }}
                                             </div>
                                         </td>
-                                        <td class="px-4 py-3">
-                                            <span
-                                                class="inline-flex items-center gap-1.5 text-xs"
-                                            >
+                                        <td
+                                            class="text-xs whitespace-nowrap text-muted-foreground"
+                                        >
+                                            <div data-slot="table-cell-content">
+                                                {{
+                                                    formatDate(
+                                                        row.create_at ??
+                                                            row.created_at ??
+                                                            row.create_time,
+                                                    )
+                                                }}
+                                            </div>
+                                        </td>
+                                        <td
+                                            class="text-xs text-muted-foreground"
+                                        >
+                                            <div data-slot="table-cell-content">
+                                                <div class="whitespace-nowrap">
+                                                    {{
+                                                        textValue(
+                                                            rowDataValue(
+                                                                row,
+                                                                'start',
+                                                            ) ?? row.log_start,
+                                                        ) || '-'
+                                                    }}
+                                                </div>
+                                                <div class="whitespace-nowrap">
+                                                    ~
+                                                    {{
+                                                        textValue(
+                                                            rowDataValue(
+                                                                row,
+                                                                'end',
+                                                            ) ?? row.log_end,
+                                                        ) || '-'
+                                                    }}
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="max-w-[160px]">
+                                            <div data-slot="table-cell-content">
+                                                <div class="truncate">
+                                                    {{
+                                                        textValue(
+                                                            rowDataValue(
+                                                                row,
+                                                                'domain',
+                                                            ) ?? row.domain,
+                                                        ) || '全部域名'
+                                                    }}
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="">
+                                            <div data-slot="table-cell-content">
                                                 <span
-                                                    class="h-2 w-2 rounded-full"
-                                                    :class="{
-                                                        'bg-green-500':
-                                                            jobStatusText(
-                                                                row,
-                                                            ) === 'done',
-                                                        'bg-red-500':
-                                                            jobStatusText(
-                                                                row,
-                                                            ) === 'error',
-                                                        'animate-pulse bg-blue-500':
-                                                            jobStatusText(
-                                                                row,
-                                                            ) === 'running',
-                                                        'bg-yellow-400':
-                                                            jobStatusText(
-                                                                row,
-                                                            ) === 'pending',
-                                                        'bg-muted-foreground':
-                                                            ![
-                                                                'done',
-                                                                'error',
-                                                                'running',
-                                                                'pending',
-                                                            ].includes(
+                                                    class="inline-flex items-center gap-1.5 text-xs"
+                                                >
+                                                    <span
+                                                        class="h-2 w-2 rounded-full"
+                                                        :class="{
+                                                            'bg-green-500':
                                                                 jobStatusText(
                                                                     row,
+                                                                ) === 'done',
+                                                            'bg-red-500':
+                                                                jobStatusText(
+                                                                    row,
+                                                                ) === 'error',
+                                                            'animate-pulse bg-blue-500':
+                                                                jobStatusText(
+                                                                    row,
+                                                                ) === 'running',
+                                                            'bg-yellow-400':
+                                                                jobStatusText(
+                                                                    row,
+                                                                ) === 'pending',
+                                                            'bg-muted-foreground':
+                                                                ![
+                                                                    'done',
+                                                                    'error',
+                                                                    'running',
+                                                                    'pending',
+                                                                ].includes(
+                                                                    jobStatusText(
+                                                                        row,
+                                                                    ),
                                                                 ),
-                                                            ),
-                                                    }"
-                                                />
-                                                {{ jobStatusText(row) }}
-                                            </span>
-                                        </td>
-                                        <td class="px-4 py-3">
-                                            <div
-                                                class="flex items-center gap-2"
-                                            >
-                                                <div
-                                                    class="h-1.5 w-20 overflow-hidden rounded-full bg-muted"
-                                                >
-                                                    <div
-                                                        class="h-full rounded-full bg-primary transition-all"
-                                                        :style="{
-                                                            width: `${jobProgress(row)}%`,
                                                         }"
                                                     />
-                                                </div>
-                                                <span
-                                                    class="text-xs text-muted-foreground tabular-nums"
-                                                    >{{
-                                                        jobProgress(row)
-                                                    }}%</span
-                                                >
+                                                    {{ jobStatusText(row) }}
+                                                </span>
                                             </div>
                                         </td>
-                                        <td class="px-4 py-3">
-                                            <a
-                                                v-if="
-                                                    jobStatusText(row) ===
-                                                    'done'
-                                                "
-                                                :href="jobDownloadUrl(row)"
-                                                target="_blank"
-                                                rel="noreferrer"
-                                                class="inline-flex items-center gap-1 rounded-md border px-2.5 py-1 text-xs transition-colors hover:bg-muted"
-                                            >
-                                                <Download class="h-3 w-3" />
-                                                下载
-                                            </a>
-                                            <span
-                                                v-else
-                                                class="text-xs text-muted-foreground"
-                                                >—</span
-                                            >
+                                        <td class="">
+                                            <div data-slot="table-cell-content">
+                                                <div
+                                                    class="flex items-center gap-2"
+                                                >
+                                                    <div
+                                                        class="h-1.5 w-20 overflow-hidden rounded-full bg-muted"
+                                                    >
+                                                        <div
+                                                            class="h-full rounded-full bg-primary transition-all"
+                                                            :style="{
+                                                                width: `${jobProgress(row)}%`,
+                                                            }"
+                                                        />
+                                                    </div>
+                                                    <span
+                                                        class="text-xs text-muted-foreground tabular-nums"
+                                                        >{{
+                                                            jobProgress(row)
+                                                        }}%</span
+                                                    >
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="">
+                                            <div data-slot="table-cell-content">
+                                                <a
+                                                    v-if="
+                                                        jobStatusText(row) ===
+                                                        'done'
+                                                    "
+                                                    :href="jobDownloadUrl(row)"
+                                                    target="_blank"
+                                                    rel="noreferrer"
+                                                    class="inline-flex items-center gap-1 rounded-md border px-2.5 py-1 text-xs transition-colors hover:bg-muted"
+                                                >
+                                                    <Download class="h-3 w-3" />
+                                                    下载
+                                                </a>
+                                                <span
+                                                    v-else
+                                                    class="text-xs text-muted-foreground"
+                                                    >—</span
+                                                >
+                                            </div>
                                         </td>
                                     </tr>
                                     <tr
@@ -2638,9 +2727,11 @@ function formatInputDate(date: Date): string {
                                     >
                                         <td
                                             colspan="8"
-                                            class="px-4 py-16 text-center text-sm text-muted-foreground"
+                                            class="text-center text-sm text-muted-foreground"
                                         >
-                                            暂无申请记录
+                                            <div data-slot="table-cell-content">
+                                                暂无申请记录
+                                            </div>
                                         </td>
                                     </tr>
                                 </tbody>
@@ -2807,24 +2898,29 @@ function formatInputDate(date: Date): string {
                         <table class="w-full min-w-[860px] table-fixed text-sm">
                             <thead class="border-b text-muted-foreground">
                                 <tr>
-                                    <th class="px-4 py-3 text-left font-medium">
-                                        时间
+                                    <th class="text-left font-medium">
+                                        <div data-slot="table-cell-content">
+                                            时间
+                                        </div>
                                     </th>
-                                    <th class="px-4 py-3 text-left font-medium">
-                                        类型
+                                    <th class="text-left font-medium">
+                                        <div data-slot="table-cell-content">
+                                            类型
+                                        </div>
                                     </th>
-                                    <th class="px-4 py-3 text-left font-medium">
-                                        指标
+                                    <th class="text-left font-medium">
+                                        <div data-slot="table-cell-content">
+                                            指标
+                                        </div>
                                     </th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <tr v-if="loading" class="border-b">
-                                    <td
-                                        class="px-4 py-12 text-center"
-                                        colspan="3"
-                                    >
-                                        <Spinner class="mx-auto" />
+                                    <td class="text-center" colspan="3">
+                                        <div data-slot="table-cell-content">
+                                            <Spinner class="mx-auto" />
+                                        </div>
                                     </td>
                                 </tr>
                                 <tr
@@ -2832,26 +2928,34 @@ function formatInputDate(date: Date): string {
                                     :key="`${rowPrimary(row)}-${index}`"
                                     class="border-b"
                                 >
-                                    <td class="px-4 py-3">
-                                        <div class="truncate">
-                                            {{ rowPrimary(row) }}
+                                    <td class="">
+                                        <div data-slot="table-cell-content">
+                                            <div class="truncate">
+                                                {{ rowPrimary(row) }}
+                                            </div>
                                         </div>
                                     </td>
-                                    <td class="px-4 py-3">
-                                        <div class="truncate">
-                                            {{ rowSecondary(row) }}
+                                    <td class="">
+                                        <div data-slot="table-cell-content">
+                                            <div class="truncate">
+                                                {{ rowSecondary(row) }}
+                                            </div>
                                         </div>
                                     </td>
-                                    <td class="px-4 py-3 tabular-nums">
-                                        {{ rowMetric(row) }}
+                                    <td class="tabular-nums">
+                                        <div data-slot="table-cell-content">
+                                            {{ rowMetric(row) }}
+                                        </div>
                                     </td>
                                 </tr>
                                 <tr v-if="!loading && rows.length === 0">
                                     <td
-                                        class="px-6 py-16 text-center text-muted-foreground"
+                                        class="text-center text-muted-foreground"
                                         colspan="3"
                                     >
-                                        暂无数据
+                                        <div data-slot="table-cell-content">
+                                            暂无数据
+                                        </div>
                                     </td>
                                 </tr>
                             </tbody>

@@ -463,27 +463,57 @@ async function remove() {
                     <thead>
                         <tr>
                             <th class="selection">
-                                <CheckboxField
-                                    aria-label="选择本页全部"
-                                    :checked="allSelected"
-                                    :disabled="loading || busy || !rows.length"
-                                    @change="
-                                        selected = allSelected
-                                            ? []
-                                            : rows.map((row) => Number(row.id))
-                                    "
-                                />
+                                <div data-slot="table-cell-content">
+                                    <CheckboxField
+                                        aria-label="选择本页全部"
+                                        :checked="allSelected"
+                                        :disabled="
+                                            loading || busy || !rows.length
+                                        "
+                                        @change="
+                                            selected = allSelected
+                                                ? []
+                                                : rows.map((row) =>
+                                                      Number(row.id),
+                                                  )
+                                        "
+                                    />
+                                </div>
                             </th>
-                            <th>ID</th>
-                            <th>{{ kind === 'rule' ? '名称' : '用户' }}</th>
-                            <th>{{ kind === 'rule' ? '用户' : '名称' }}</th>
-                            <th>{{ kind === 'rule' ? '类型' : '来源' }}</th>
+                            <th>
+                                <div data-slot="table-cell-content">ID</div>
+                            </th>
+                            <th>
+                                <div data-slot="table-cell-content">
+                                    {{ kind === 'rule' ? '名称' : '用户' }}
+                                </div>
+                            </th>
+                            <th>
+                                <div data-slot="table-cell-content">
+                                    {{ kind === 'rule' ? '用户' : '名称' }}
+                                </div>
+                            </th>
+                            <th>
+                                <div data-slot="table-cell-content">
+                                    {{ kind === 'rule' ? '类型' : '来源' }}
+                                </div>
+                            </th>
                             <th v-if="kind !== 'matcher'">
-                                {{ kind === 'rule' ? '显示' : '类型' }}
+                                <div data-slot="table-cell-content">
+                                    {{ kind === 'rule' ? '显示' : '类型' }}
+                                </div>
                             </th>
-                            <th>状态</th>
-                            <th>创建时间</th>
-                            <th>操作</th>
+                            <th>
+                                <div data-slot="table-cell-content">状态</div>
+                            </th>
+                            <th>
+                                <div data-slot="table-cell-content">
+                                    创建时间
+                                </div>
+                            </th>
+                            <th>
+                                <div data-slot="table-cell-content">操作</div>
+                            </th>
                         </tr>
                     </thead>
                     <tbody>
@@ -492,7 +522,9 @@ async function remove() {
                                 :colspan="kind === 'matcher' ? 8 : 9"
                                 class="empty"
                             >
-                                {{ loading ? '加载中…' : '暂无数据' }}
+                                <div data-slot="table-cell-content">
+                                    {{ loading ? '加载中…' : '暂无数据' }}
+                                </div>
                             </td>
                         </tr>
                         <tr
@@ -501,171 +533,212 @@ async function remove() {
                             :class="{ 'system-row': ccSystem(row) }"
                         >
                             <td class="selection">
-                                <CheckboxField
-                                    :aria-label="`选择 ${row.id}`"
-                                    :checked="selected.includes(Number(row.id))"
-                                    :disabled="busy"
-                                    @change="toggle(Number(row.id))"
-                                />
+                                <div data-slot="table-cell-content">
+                                    <CheckboxField
+                                        :aria-label="`选择 ${row.id}`"
+                                        :checked="
+                                            selected.includes(Number(row.id))
+                                        "
+                                        :disabled="busy"
+                                        @change="toggle(Number(row.id))"
+                                    />
+                                </div>
                             </td>
-                            <td>{{ row.id }}</td>
+                            <td>
+                                <div data-slot="table-cell-content">
+                                    {{ row.id }}
+                                </div>
+                            </td>
                             <template v-if="kind === 'rule'"
                                 ><td class="rule-name">
-                                    <Button
-                                        variant="link"
-                                        size="inline"
-                                        type="button"
-                                        data-slot="console-link"
-                                        class="link"
-                                        :disabled="busy"
-                                        @click="emit('manage', kind, row)"
-                                    >
-                                        {{ row.name }}
-                                    </Button>
-                                    <div class="subline">
-                                        {{
-                                            ccSystem(row)
-                                                ? '系统规则'
-                                                : '自定义规则'
-                                        }}
-                                        · 排序 {{ row.sort ?? '—' }}
+                                    <div data-slot="table-cell-content">
+                                        <Button
+                                            variant="link"
+                                            size="inline"
+                                            type="button"
+                                            data-slot="console-link"
+                                            class="link"
+                                            :disabled="busy"
+                                            @click="emit('manage', kind, row)"
+                                        >
+                                            {{ row.name }}
+                                        </Button>
+                                        <div class="subline">
+                                            {{
+                                                ccSystem(row)
+                                                    ? '系统规则'
+                                                    : '自定义规则'
+                                            }}
+                                            · 排序 {{ row.sort ?? '—' }}
+                                        </div>
                                     </div>
                                 </td>
                                 <td>
-                                    <span class="pill owner">{{
-                                        Number(row.uid) > 0
-                                            ? row.username || `用户 #${row.uid}`
-                                            : '系统'
-                                    }}</span>
+                                    <div data-slot="table-cell-content">
+                                        <span class="pill owner">{{
+                                            Number(row.uid) > 0
+                                                ? row.username ||
+                                                  `用户 #${row.uid}`
+                                                : '系统'
+                                        }}</span>
+                                    </div>
                                 </td>
                                 <td>
-                                    <span class="pill source">{{
-                                        ccSystem(row) ? '⊙ 系统' : '自定义'
-                                    }}</span>
+                                    <div data-slot="table-cell-content">
+                                        <span class="pill source">{{
+                                            ccSystem(row) ? '⊙ 系统' : '自定义'
+                                        }}</span>
+                                    </div>
                                 </td>
                                 <td>
-                                    <span
-                                        class="pill"
-                                        :class="
-                                            ccEnabled(row.is_show)
-                                                ? 'success'
-                                                : 'muted'
-                                        "
-                                        >{{
-                                            ccEnabled(row.is_show)
-                                                ? '◉ 显示'
-                                                : '隐藏'
-                                        }}</span
-                                    >
+                                    <div data-slot="table-cell-content">
+                                        <span
+                                            class="pill"
+                                            :class="
+                                                ccEnabled(row.is_show)
+                                                    ? 'success'
+                                                    : 'muted'
+                                            "
+                                            >{{
+                                                ccEnabled(row.is_show)
+                                                    ? '◉ 显示'
+                                                    : '隐藏'
+                                            }}</span
+                                        >
+                                    </div>
                                 </td></template
                             ><template v-else
                                 ><td>
-                                    {{
-                                        Number(row.uid) > 0
-                                            ? row.username || `用户 #${row.uid}`
-                                            : '系统'
-                                    }}
+                                    <div data-slot="table-cell-content">
+                                        {{
+                                            Number(row.uid) > 0
+                                                ? row.username ||
+                                                  `用户 #${row.uid}`
+                                                : '系统'
+                                        }}
+                                    </div>
                                 </td>
                                 <td class="resource-name">
-                                    <Button
-                                        variant="link"
-                                        size="inline"
-                                        type="button"
-                                        data-slot="console-link"
-                                        class="name-button"
-                                        :disabled="busy"
-                                        @click="emit('manage', kind, row)"
-                                    >
-                                        {{ row.name }}
-                                    </Button>
+                                    <div data-slot="table-cell-content">
+                                        <Button
+                                            variant="link"
+                                            size="inline"
+                                            type="button"
+                                            data-slot="console-link"
+                                            class="name-button"
+                                            :disabled="busy"
+                                            @click="emit('manage', kind, row)"
+                                        >
+                                            {{ row.name }}
+                                        </Button>
+                                    </div>
                                 </td>
                                 <td>
-                                    <span class="pill source">{{
-                                        ccSystem(row)
-                                            ? '系统规则'
-                                            : '自定义规则'
-                                    }}</span>
+                                    <div data-slot="table-cell-content">
+                                        <span class="pill source">{{
+                                            ccSystem(row)
+                                                ? '系统规则'
+                                                : '自定义规则'
+                                        }}</span>
+                                    </div>
                                 </td>
                                 <td v-if="kind === 'filter'">
-                                    {{
-                                        ccFilterLabels[String(row.type)] ??
-                                        row.type
-                                    }}
+                                    <div data-slot="table-cell-content">
+                                        {{
+                                            ccFilterLabels[String(row.type)] ??
+                                            row.type
+                                        }}
+                                    </div>
                                 </td></template
                             >
                             <td>
-                                <span class="pill" :class="ccStatus(row).tone"
-                                    >{{ kind === 'rule' ? '● ' : ''
-                                    }}{{ ccStatus(row).label }}</span
-                                >
+                                <div data-slot="table-cell-content">
+                                    <span
+                                        class="pill"
+                                        :class="ccStatus(row).tone"
+                                        >{{ kind === 'rule' ? '● ' : ''
+                                        }}{{ ccStatus(row).label }}</span
+                                    >
+                                </div>
                             </td>
                             <td>
-                                {{ row.create_at2 ?? row.create_at ?? '—' }}
+                                <div data-slot="table-cell-content">
+                                    {{ row.create_at2 ?? row.create_at ?? '—' }}
+                                </div>
                             </td>
                             <td>
-                                <div class="row-actions">
-                                    <Button
-                                        variant="link"
-                                        size="inline"
-                                        type="button"
-                                        data-slot="console-link"
-                                        class="link"
-                                        :disabled="busy"
-                                        @click="emit('manage', kind, row)"
-                                    >
-                                        管理</Button
-                                    ><DropdownMenu
-                                        ><DropdownMenuTrigger as-child
-                                            ><Button
-                                                variant="link"
-                                                size="inline"
-                                                type="button"
-                                                data-slot="console-link"
-                                                class="link row-more"
-                                                :aria-label="`更多操作 ${row.id}`"
-                                                :disabled="busy"
-                                            >
-                                                <template v-if="kind === 'rule'"
-                                                    >更多
-                                                    <ChevronDown /></template
-                                                ><MoreHorizontal
-                                                    v-else /></Button></DropdownMenuTrigger
-                                        ><DropdownMenuContent
-                                            class="console-admin-cc-workspace"
-                                            align="end"
-                                            ><DropdownMenuItem
-                                                v-if="
-                                                    kind !== 'rule' ||
-                                                    ccEnabled(row.enable)
-                                                "
-                                                :disabled="busy"
-                                                @select="
-                                                    update(0, [Number(row.id)])
-                                                "
-                                                >禁用</DropdownMenuItem
-                                            ><DropdownMenuItem
-                                                v-if="
-                                                    kind !== 'rule' ||
-                                                    !ccEnabled(row.enable)
-                                                "
-                                                :disabled="busy"
-                                                @select="
-                                                    update(1, [Number(row.id)])
-                                                "
-                                                >启用</DropdownMenuItem
-                                            ><DropdownMenuItem
-                                                v-if="
-                                                    kind !== 'rule' ||
-                                                    !ccSystem(row)
-                                                "
-                                                :disabled="busy"
-                                                @select="
-                                                    askDelete([Number(row.id)])
-                                                "
-                                                >删除</DropdownMenuItem
-                                            ></DropdownMenuContent
-                                        ></DropdownMenu
-                                    >
+                                <div data-slot="table-cell-content">
+                                    <div class="row-actions">
+                                        <Button
+                                            variant="link"
+                                            size="inline"
+                                            type="button"
+                                            data-slot="console-link"
+                                            class="link"
+                                            :disabled="busy"
+                                            @click="emit('manage', kind, row)"
+                                        >
+                                            管理</Button
+                                        ><DropdownMenu
+                                            ><DropdownMenuTrigger as-child
+                                                ><Button
+                                                    variant="link"
+                                                    size="inline"
+                                                    type="button"
+                                                    data-slot="console-link"
+                                                    class="link row-more"
+                                                    :aria-label="`更多操作 ${row.id}`"
+                                                    :disabled="busy"
+                                                >
+                                                    <template
+                                                        v-if="kind === 'rule'"
+                                                        >更多
+                                                        <ChevronDown /></template
+                                                    ><MoreHorizontal
+                                                        v-else /></Button></DropdownMenuTrigger
+                                            ><DropdownMenuContent
+                                                class="console-admin-cc-workspace"
+                                                align="end"
+                                                ><DropdownMenuItem
+                                                    v-if="
+                                                        kind !== 'rule' ||
+                                                        ccEnabled(row.enable)
+                                                    "
+                                                    :disabled="busy"
+                                                    @select="
+                                                        update(0, [
+                                                            Number(row.id),
+                                                        ])
+                                                    "
+                                                    >禁用</DropdownMenuItem
+                                                ><DropdownMenuItem
+                                                    v-if="
+                                                        kind !== 'rule' ||
+                                                        !ccEnabled(row.enable)
+                                                    "
+                                                    :disabled="busy"
+                                                    @select="
+                                                        update(1, [
+                                                            Number(row.id),
+                                                        ])
+                                                    "
+                                                    >启用</DropdownMenuItem
+                                                ><DropdownMenuItem
+                                                    v-if="
+                                                        kind !== 'rule' ||
+                                                        !ccSystem(row)
+                                                    "
+                                                    :disabled="busy"
+                                                    @select="
+                                                        askDelete([
+                                                            Number(row.id),
+                                                        ])
+                                                    "
+                                                    >删除</DropdownMenuItem
+                                                ></DropdownMenuContent
+                                            ></DropdownMenu
+                                        >
+                                    </div>
                                 </div>
                             </td>
                         </tr>
