@@ -4043,19 +4043,55 @@ input:is(
     align-items: center;
     flex-wrap: wrap;
     gap: 8px;
-    margin-bottom: 8px;
+    margin-bottom: 12px;
 }
 .search:is(.console-admin-certificates, .console-admin-certificates *) {
     display: flex;
-    align-items: center;
+    align-items: stretch;
     margin-left: auto;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+    background: var(--card);
 }
 .search:is(.console-admin-certificates, .console-admin-certificates *) > * {
+    border: 0;
     border-radius: 0;
+    box-shadow: none;
+}
+.search
+    :where([data-slot='select-trigger'], select):is(
+        .console-admin-certificates,
+        .console-admin-certificates *
+    ) {
+    border-right: 1px solid var(--border);
+    min-width: 88px;
+    height: 32px;
 }
 .search input:is(.console-admin-certificates, .console-admin-certificates *) {
-    width: 330px;
-    max-width: 40vw;
+    width: 240px;
+    max-width: 36vw;
+    height: 32px;
+    border: 0;
+}
+.search-submit:where([data-slot='button'], [data-slot^='console-']):is(
+    .console-admin-certificates,
+    .console-admin-certificates *
+) {
+    width: 36px;
+    min-width: 36px;
+    height: 32px;
+    padding: 0;
+    border-left: 1px solid var(--border);
+    border-radius: 0;
+}
+.search-submit svg:is(.console-admin-certificates, .console-admin-certificates *) {
+    width: 14px;
+    height: 14px;
+}
+.advanced-toggle:is(.console-admin-certificates, .console-admin-certificates *) {
+    margin-left: 4px;
+    white-space: nowrap;
 }
 .filters:is(.console-admin-certificates, .console-admin-certificates *) {
     display: flex;
@@ -4064,7 +4100,9 @@ input:is(
     align-items: center;
     padding: 12px;
     border: 1px solid var(--border);
-    margin-bottom: 10px;
+    border-radius: 6px;
+    margin-bottom: 12px;
+    background: color-mix(in srgb, var(--muted) 35%, var(--card));
 }
 .filters label:is(.console-admin-certificates, .console-admin-certificates *) {
     display: flex;
@@ -4074,43 +4112,8 @@ input:is(
 .filters input:is(.console-admin-certificates, .console-admin-certificates *) {
     width: 100px;
 }
-.summary:is(.console-admin-certificates, .console-admin-certificates *) {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 7px;
-    margin-bottom: 10px;
-}
-.summary
-    button:where([data-slot='button'], [data-slot^='console-']):is(
-        .console-admin-certificates,
-        .console-admin-certificates *
-    ) {
-    border: 1px solid transparent;
-    background: color-mix(in srgb, var(--muted) 60%, var(--card));
-    border-radius: 20px;
-    font-size: var(--console-text-body);
-    padding: 2px 10px;
-    min-height: 24px;
-    gap: 2px;
-}
-.summary
-    button:where([data-slot='button'], [data-slot^='console-']).active:is(
-        .console-admin-certificates,
-        .console-admin-certificates *
-    ) {
-    color: #2d8cf0;
-    border-color: #2d8cf040;
-    background: #2d8cf005;
-}
-.summary b:is(.console-admin-certificates, .console-admin-certificates *) {
-    font-weight: 500;
-}
 .muted:is(.console-admin-certificates, .console-admin-certificates *) {
     color: var(--muted-foreground);
-}
-.summary > span:is(.console-admin-certificates, .console-admin-certificates *) {
-    font-size: var(--console-text-helper);
 }
 .table-scroll:is(.console-admin-certificates, .console-admin-certificates *) {
     overflow-x: auto;
@@ -4130,66 +4133,83 @@ th:is(.console-admin-certificates, .console-admin-certificates *) {
 td:is(.console-admin-certificates, .console-admin-certificates *) {
     border-bottom: 1px solid var(--border);
     font-size: var(--console-text-body);
-    vertical-align: top;
+    vertical-align: middle;
+}
+tbody tr:is(.console-admin-certificates, .console-admin-certificates *):nth-child(even) {
+    background: color-mix(in srgb, var(--muted) 18%, var(--card));
 }
 .selection:is(.console-admin-certificates, .console-admin-certificates *) {
     width: 44px;
     text-align: center;
 }
 tbody tr:is(.console-admin-certificates, .console-admin-certificates *):hover {
-    background: color-mix(in srgb, var(--primary) 3%, var(--card));
-}
-.cert-info:is(.console-admin-certificates, .console-admin-certificates *) {
-    min-width: 215px;
-    max-width: 310px;
-}
-.copy-line:is(.console-admin-certificates, .console-admin-certificates *) {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
+    background: color-mix(in srgb, var(--muted) 40%, var(--card));
 }
 .cert-name:is(.console-admin-certificates, .console-admin-certificates *) {
     font-weight: 500;
     max-width: 280px;
-    text-overflow: ellipsis;
     overflow: hidden;
+    text-overflow: ellipsis;
     white-space: nowrap;
+    display: inline-block;
+    vertical-align: bottom;
 }
-.subline:is(.console-admin-certificates, .console-admin-certificates *) {
-    font-size: var(--console-text-helper);
-    line-height: 18px;
-    color: var(--muted-foreground);
+.domain-cell:is(.console-admin-certificates, .console-admin-certificates *) {
+    max-width: 260px;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 .actions:is(.console-admin-certificates, .console-admin-certificates *) {
     display: flex;
     align-items: center;
     gap: 8px;
 }
-.pill:is(.console-admin-certificates, .console-admin-certificates *) {
-    display: inline-block;
-    border-radius: 12px;
-    padding: 1px 8px;
-    font-size: var(--console-text-helper);
-    border: 1px solid transparent;
+.renew-on:is(.console-admin-certificates, .console-admin-certificates *) {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border-radius: 999px;
+    color: #fff;
+    background: #19be6b;
 }
-.success:is(.console-admin-certificates, .console-admin-certificates *) {
-    color: #13b96a;
-    background: #19be6b12;
-    border-color: #19be6b25;
+.renew-on svg:is(.console-admin-certificates, .console-admin-certificates *) {
+    width: 12px;
+    height: 12px;
 }
-.danger:is(.console-admin-certificates, .console-admin-certificates *) {
-    color: #f44b35;
-    background: #f44b3510;
-    border-color: #f44b3525;
+.status:is(.console-admin-certificates, .console-admin-certificates *) {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: var(--console-text-body);
 }
-.warning:is(.console-admin-certificates, .console-admin-certificates *) {
-    color: #ed960d;
-    background: #ff990010;
-    border-color: #ff990025;
+.status-dot:is(.console-admin-certificates, .console-admin-certificates *) {
+    width: 6px;
+    height: 6px;
+    border-radius: 999px;
+    background: currentColor;
 }
-.pill.muted:is(.console-admin-certificates, .console-admin-certificates *) {
-    background: var(--muted);
+.status.success:is(.console-admin-certificates, .console-admin-certificates *) {
+    color: #19be6b;
+}
+.status.danger:is(.console-admin-certificates, .console-admin-certificates *) {
+    color: var(--destructive);
+}
+.status.warning:is(.console-admin-certificates, .console-admin-certificates *) {
+    color: #ff9900;
+}
+.list-footer:is(.console-admin-certificates, .console-admin-certificates *) {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 12px;
+}
+.list-footer
+    .page-size:is(.console-admin-certificates, .console-admin-certificates *) {
+    margin-left: auto;
+    min-width: 96px;
 }
 .empty:is(.console-admin-certificates, .console-admin-certificates *) {
     text-align: center;

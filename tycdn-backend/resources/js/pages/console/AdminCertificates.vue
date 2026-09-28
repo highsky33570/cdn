@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ChevronDown, Copy, Download, Filter } from 'lucide-vue-next';
+import { Check, ChevronDown, Search } from 'lucide-vue-next';
 import { computed, onMounted, onUnmounted, reactive, ref } from 'vue';
 import { toast } from 'vue-sonner';
 import AdminSiteWorkspace from '@/components/console/AdminSiteWorkspace.vue';
@@ -28,10 +28,7 @@ import SelectOption from '@/components/ui/select/SelectOption.vue';
 import Textarea from '@/components/ui/textarea/Textarea.vue';
 import {
     certificateTypes,
-    certificateDays,
-    certificateExpiryHint,
     certificateStatus,
-    certificateSummary,
 } from '@/lib/adminCertificates';
 import {
     createAdminCert,
@@ -58,8 +55,7 @@ const tab = ref<Tab>('list'),
     total = ref(0),
     loading = ref(false),
     busy = ref(false),
-    error = ref(''),
-    now = ref(Date.now());
+    error = ref('');
 const tabs: { key: Tab; label: string }[] = [
     { key: 'list', label: '证书列表' },
     { key: 'defaults', label: '默认设置' },
@@ -67,8 +63,7 @@ const tabs: { key: Tab; label: string }[] = [
 ];
 const searchType = ref('domain'),
     search = ref(''),
-    filterOpen = ref(false),
-    summaryFilter = ref('all');
+    filterOpen = ref(false);
 const filters = reactive({
     uid: '',
     type: '',
@@ -80,30 +75,10 @@ const filters = reactive({
     dnsapi: '',
 });
 const applied = ref<Record<string, string>>({});
-const summary = computed(() => certificateSummary(rows.value, now.value));
-const summaryItems = [
-    { key: 'all', label: '全部' },
-    { key: 'normal', label: '正常' },
-    { key: 'expiring', label: '即将到期' },
-    { key: 'expired', label: '已过期' },
-    { key: 'renew', label: '自动续签' },
-    { key: 'noRenew', label: '未开启续签' },
-] as const;
-const visibleRows = computed(() =>
-    rows.value.filter((row) =>
-        summaryFilter.value === 'renew'
-            ? Number(row.auto_renew) === 1
-            : summaryFilter.value === 'noRenew'
-              ? Number(row.auto_renew) !== 1
-              : true,
-    ),
-);
 const allSelected = computed(
     () =>
-        visibleRows.value.length > 0 &&
-        visibleRows.value.every((row) =>
-            selected.value.includes(Number(row.id)),
-        ),
+        rows.value.length > 0 &&
+        rows.value.every((row) => selected.value.includes(Number(row.id))),
 );
 const pages = computed(() => Math.max(1, Math.ceil(total.value / size.value)));
 let listRequest = 0,
@@ -145,7 +120,6 @@ async function load(target = page.value) {
 
         rows.value = extractCdnflyRows(result);
         total.value = extractCdnflyTotal(result, rows.value.length);
-        now.value = Date.now();
 
         if (page.value > 1 && !rows.value.length) {
             void load(Math.max(1, Math.ceil(total.value / size.value)));
@@ -172,10 +146,9 @@ function toggle(id: number) {
 function toggleAll() {
     selected.value = allSelected.value
         ? []
-        : visibleRows.value.map((row) => Number(row.id));
+        : rows.value.map((row) => Number(row.id));
 }
 function searchCerts() {
-    summaryFilter.value = 'all';
     applied.value = Object.fromEntries(
         Object.entries({
             ...filters,
@@ -191,49 +164,9 @@ function clearFilters() {
     search.value = '';
     searchCerts();
 }
-function selectSummary(key: string) {
-    summaryFilter.value = key;
-    selected.value = [];
-
-    if (key === 'renew' || key === 'noRenew') {
-        return;
-    }
-
-    const query = { ...applied.value };
-
-    for (const name of [
-        'expire',
-        'valid',
-        'enable',
-        'issue_state',
-        'sync_state',
-    ]) {
-        delete query[name];
-    }
-
-    if (key === 'normal') {
-        query.valid = '1';
-        query.sync_state = 'done';
-    }
-
-    if (key === 'expiring') {
-        query.expire = '30';
-    }
-
-    if (key === 'expired') {
-        query.expire = '0';
-    }
-
-    applied.value = query;
+function changePageSize(value: string | number) {
+    size.value = Math.max(1, Number(value) || 10);
     void load(1);
-}
-async function copy(value: unknown) {
-    try {
-        await navigator.clipboard.writeText(String(value ?? ''));
-        toast.success('已复制');
-    } catch {
-        toast.error('复制失败');
-    }
 }
 async function exportRows() {
     busy.value = true;
@@ -727,6 +660,10 @@ async function saveEditor() {
                                 :disabled="!selected.length || busy"
                                 @select="askDelete()"
                                 >删除证书</DropdownMenuItem
+                            ><DropdownMenuItem
+                                :disabled="busy"
+                                @select="exportRows"
+                                >导出</DropdownMenuItem
                             ><DropdownMenuItem @select="load()"
                                 >刷新</DropdownMenuItem
                             ></DropdownMenuContent
@@ -746,35 +683,31 @@ async function saveEditor() {
                             aria-label="搜索证书"
                             placeholder="输入域名,模糊搜索"
                         /><Button
-                            variant="default"
+                            variant="ghost"
                             type="submit"
                             data-slot="console-action"
-                            class="primary"
+                            class="search-submit"
+                            aria-label="查询"
                         >
-                            查询
+                            <Search />
                         </Button>
                     </form>
                     <Button
-                        variant="outline"
+                        variant="link"
+                        size="inline"
                         type="button"
-                        data-slot="console-action"
+                        data-slot="console-link"
+                        class="link advanced-toggle"
                         :aria-expanded="filterOpen"
                         @click="filterOpen = !filterOpen"
                     >
-                        <Filter />筛选</Button
-                    ><Button
-                        variant="outline"
-                        type="button"
-                        data-slot="console-action"
-                        :disabled="busy"
-                        @click="exportRows"
-                    >
-                        <Download />导出
+                        高级搜索
                     </Button>
                 </div>
                 <form
                     v-if="filterOpen"
                     class="filters"
+                    aria-label="高级搜索"
                     @submit.prevent="searchCerts"
                 >
                     <label>用户ID<Input v-model="filters.uid" /></label
@@ -834,29 +767,6 @@ async function saveEditor() {
                         清除
                     </Button>
                 </form>
-                <div class="summary">
-                    <Button
-                        variant="outline"
-                        type="button"
-                        data-slot="console-action"
-                        v-for="item in summaryItems"
-                        :key="item.key"
-                        :class="{ active: summaryFilter === item.key }"
-                        @click="selectSummary(item.key)"
-                    >
-                        {{ item.label }}
-                        <b
-                            :class="
-                                item.key === 'expired'
-                                    ? 'text-destructive'
-                                    : item.key === 'expiring'
-                                      ? 'text-orange-500'
-                                      : 'text-emerald-500'
-                            "
-                            >{{ summary[item.key] }}</b
-                        ></Button
-                    ><span class="muted ml-auto">统计当前页</span>
-                </div>
                 <div class="table-scroll">
                     <table>
                         <thead>
@@ -869,7 +779,7 @@ async function saveEditor() {
                                             :disabled="
                                                 loading ||
                                                 busy ||
-                                                !visibleRows.length
+                                                !rows.length
                                             "
                                             @change="toggleAll"
                                         />
@@ -880,17 +790,17 @@ async function saveEditor() {
                                 </th>
                                 <th>
                                     <div data-slot="table-cell-content">
-                                        用户
-                                    </div>
-                                </th>
-                                <th>
-                                    <div data-slot="table-cell-content">
-                                        证书信息
+                                        名称
                                     </div>
                                 </th>
                                 <th>
                                     <div data-slot="table-cell-content">
                                         类型
+                                    </div>
+                                </th>
+                                <th>
+                                    <div data-slot="table-cell-content">
+                                        域名
                                     </div>
                                 </th>
                                 <th>
@@ -921,7 +831,7 @@ async function saveEditor() {
                             </tr>
                         </thead>
                         <tbody>
-                            <tr v-if="loading || !visibleRows.length">
+                            <tr v-if="loading || !rows.length">
                                 <td colspan="10" class="empty">
                                     <div data-slot="table-cell-content">
                                         {{ loading ? '加载中…' : '暂无数据' }}
@@ -929,7 +839,7 @@ async function saveEditor() {
                                 </td>
                             </tr>
                             <tr
-                                v-for="row in loading ? [] : visibleRows"
+                                v-for="row in loading ? [] : rows"
                                 :key="Number(row.id)"
                             >
                                 <td class="selection">
@@ -953,57 +863,17 @@ async function saveEditor() {
                                 </td>
                                 <td>
                                     <div data-slot="table-cell-content">
-                                        <strong>{{
-                                            row.username ?? row.user_name ?? '—'
-                                        }}</strong>
-                                        <div class="subline">
-                                            ID: {{ row.uid ?? '—' }}
-                                        </div>
-                                    </div>
-                                </td>
-                                <td class="cert-info">
-                                    <div data-slot="table-cell-content">
-                                        <div class="copy-line">
-                                            <Button
-                                                variant="link"
-                                                size="inline"
-                                                type="button"
-                                                data-slot="console-link"
-                                                class="link cert-name"
-                                                :title="String(row.name ?? '')"
-                                                @click="openEditor(row)"
-                                            >
-                                                {{ row.name || '—' }}</Button
-                                            ><Button
-                                                variant="ghost"
-                                                size="icon-sm"
-                                                type="button"
-                                                class="copy"
-                                                :aria-label="`复制证书名称 ${row.id}`"
-                                                @click="copy(row.name)"
-                                            >
-                                                <Copy />
-                                            </Button>
-                                        </div>
-                                        <div class="copy-line subline">
-                                            <span
-                                                class="truncate"
-                                                :title="
-                                                    String(row.domain ?? '')
-                                                "
-                                                >域名:
-                                                {{ row.domain || '—' }}</span
-                                            ><Button
-                                                variant="ghost"
-                                                size="icon-sm"
-                                                type="button"
-                                                class="copy"
-                                                :aria-label="`复制域名 ${row.id}`"
-                                                @click="copy(row.domain)"
-                                            >
-                                                <Copy />
-                                            </Button>
-                                        </div>
+                                        <Button
+                                            variant="link"
+                                            size="inline"
+                                            type="button"
+                                            data-slot="console-link"
+                                            class="link cert-name"
+                                            :title="String(row.name ?? '')"
+                                            @click="openEditor(row)"
+                                        >
+                                            {{ row.name || '—' }}
+                                        </Button>
                                     </div>
                                 </td>
                                 <td>
@@ -1013,6 +883,15 @@ async function saveEditor() {
                                                 String(row.type)
                                             ] ?? row.type
                                         }}
+                                    </div>
+                                </td>
+                                <td>
+                                    <div
+                                        data-slot="table-cell-content"
+                                        class="domain-cell"
+                                        :title="String(row.domain ?? '')"
+                                    >
+                                        {{ row.domain || '—' }}
                                     </div>
                                 </td>
                                 <td>
@@ -1032,49 +911,28 @@ async function saveEditor() {
                                             row.expire_time ??
                                             '—'
                                         }}
-                                        <div
-                                            class="subline"
-                                            :class="
-                                                certificateDays(row, now) !==
-                                                    null &&
-                                                Number(
-                                                    certificateDays(row, now),
-                                                ) <= 30
-                                                    ? 'text-orange-500'
-                                                    : ''
-                                            "
-                                        >
-                                            {{
-                                                certificateExpiryHint(row, now)
-                                            }}
-                                        </div>
                                     </div>
                                 </td>
                                 <td>
                                     <div data-slot="table-cell-content">
                                         <span
-                                            class="pill"
-                                            :class="
-                                                Number(row.auto_renew) === 1
-                                                    ? 'success'
-                                                    : 'muted'
-                                            "
-                                            >{{
-                                                Number(row.auto_renew) === 1
-                                                    ? '● 已开启'
-                                                    : '未开启'
-                                            }}</span
+                                            v-if="Number(row.auto_renew) === 1"
+                                            class="renew-on"
+                                            title="已开启"
+                                            aria-label="已开启"
                                         >
+                                            <Check />
+                                        </span>
+                                        <span v-else class="muted">—</span>
                                     </div>
                                 </td>
                                 <td>
                                     <div data-slot="table-cell-content">
                                         <span
-                                            class="pill"
+                                            class="status"
                                             :class="certificateStatus(row).tone"
                                             :title="certificateStatus(row).tip"
-                                            >●
-                                            {{
+                                            ><i class="status-dot" aria-hidden="true" />{{
                                                 certificateStatus(row).text
                                             }}</span
                                         >
@@ -1092,21 +950,6 @@ async function saveEditor() {
                                                 @click="openEditor(row)"
                                             >
                                                 管理</Button
-                                            ><Button
-                                                variant="link"
-                                                size="inline"
-                                                type="button"
-                                                data-slot="console-link"
-                                                v-if="row.type !== 'custom'"
-                                                class="link"
-                                                :disabled="busy"
-                                                @click="
-                                                    batch('reissue', [
-                                                        Number(row.id),
-                                                    ])
-                                                "
-                                            >
-                                                重新申请</Button
                                             ><DropdownMenu
                                                 ><DropdownMenuTrigger as-child
                                                     ><Button
@@ -1122,6 +965,18 @@ async function saveEditor() {
                                                 ><DropdownMenuContent
                                                     class="console-admin-certificates"
                                                     align="end"
+                                                    ><DropdownMenuItem
+                                                        v-if="
+                                                            row.type !==
+                                                            'custom'
+                                                        "
+                                                        :disabled="busy"
+                                                        @select="
+                                                            batch('reissue', [
+                                                                Number(row.id),
+                                                            ])
+                                                        "
+                                                        >重新申请</DropdownMenuItem
                                                     ><DropdownMenuItem
                                                         :disabled="busy"
                                                         @select="
@@ -1186,14 +1041,26 @@ async function saveEditor() {
                         </tbody>
                     </table>
                 </div>
-                <ConsolePagination
-                    :total="total"
-                    :page="page"
-                    :previous-disabled="loading || page <= 1"
-                    :next-disabled="loading || page >= pages"
-                    @previous="load(page - 1)"
-                    @next="load(page + 1)"
-                />
+                <div class="list-footer">
+                    <ConsolePagination
+                        :total="total"
+                        :page="page"
+                        :previous-disabled="loading || page <= 1"
+                        :next-disabled="loading || page >= pages"
+                        @previous="load(page - 1)"
+                        @next="load(page + 1)"
+                    />
+                    <SelectField
+                        class="page-size"
+                        :model-value="String(size)"
+                        aria-label="每页条数"
+                        @update:model-value="changePageSize"
+                    >
+                        <SelectOption value="10">10 / 页</SelectOption>
+                        <SelectOption value="20">20 / 页</SelectOption>
+                        <SelectOption value="50">50 / 页</SelectOption>
+                    </SelectField>
+                </div>
             </div>
             <div
                 v-else-if="tab === 'defaults'"
