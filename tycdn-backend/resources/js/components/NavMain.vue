@@ -59,11 +59,17 @@ function isParentButtonActive(item: NavItem) {
 
 const openMenuTitles = ref<Set<string>>(
     new Set(
-        isMobile.value
-            ? []
-            : props.items
-                  .filter((item) => item.children?.length && isActive(item))
-                  .map((item) => item.title),
+        (() => {
+            if (isMobile.value) {
+                return [];
+            }
+
+            const activeTitle = props.items.find(
+                (item) => item.children?.length && isActive(item),
+            )?.title;
+
+            return activeTitle ? [activeTitle] : [];
+        })(),
     ),
 );
 
@@ -72,14 +78,15 @@ function isMenuOpen(item: NavItem) {
 }
 
 function setMenuOpen(item: NavItem, open: boolean) {
-    const next = new Set(openMenuTitles.value);
-
+    // Accordion: only one group stays expanded at a time.
     if (open) {
-        next.add(item.title);
-    } else {
-        next.delete(item.title);
+        openMenuTitles.value = new Set([item.title]);
+
+        return;
     }
 
+    const next = new Set(openMenuTitles.value);
+    next.delete(item.title);
     openMenuTitles.value = next;
 }
 
@@ -119,11 +126,13 @@ watch(openMobile, (value) => {
 
 watch(currentUrl, () => {
     if (!isMobile.value && state.value !== 'collapsed') {
-        for (const item of props.items) {
-            if (item.children?.length && isActive(item)) {
-                setMenuOpen(item, true);
-            }
-        }
+        const activeTitle = props.items.find(
+            (item) => item.children?.length && isActive(item),
+        )?.title;
+
+        openMenuTitles.value = activeTitle
+            ? new Set([activeTitle])
+            : new Set();
     }
 });
 </script>
@@ -150,11 +159,13 @@ watch(currentUrl, () => {
                             <component :is="item.icon" />
                             <span>{{ item.title }}</span>
                             <ChevronRight
-                                class="ml-auto transition-transform group-data-[collapsible=icon]:hidden group-data-[state=open]/collapsible:rotate-90"
+                                class="ml-auto transition-transform duration-300 ease-out group-data-[collapsible=icon]:hidden group-data-[state=open]/collapsible:rotate-90"
                             />
                         </SidebarMenuButton>
                     </CollapsibleTrigger>
-                    <CollapsibleContent>
+                    <CollapsibleContent
+                        class="overflow-hidden data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down"
+                    >
                         <SidebarMenuSub>
                             <SidebarMenuSubItem
                                 v-for="child in item.children"

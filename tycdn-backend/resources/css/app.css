@@ -62,6 +62,31 @@
     --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
     --color-sidebar-border: var(--sidebar-border);
     --color-sidebar-ring: var(--sidebar-ring);
+
+    --animate-collapsible-down: collapsible-down 320ms ease-out;
+    --animate-collapsible-up: collapsible-up 280ms ease-in;
+}
+
+@keyframes collapsible-down {
+    from {
+        height: 0;
+        opacity: 0;
+    }
+    to {
+        height: var(--reka-collapsible-content-height);
+        opacity: 1;
+    }
+}
+
+@keyframes collapsible-up {
+    from {
+        height: var(--reka-collapsible-content-height);
+        opacity: 1;
+    }
+    to {
+        height: 0;
+        opacity: 0;
+    }
 }
 
 /*
