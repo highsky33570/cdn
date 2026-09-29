@@ -5685,6 +5685,264 @@ td:is(.console-admin-node-monitoring, .console-admin-node-monitoring *) {
 }
 
 /* pages/console/AdminSoldPackages.vue */
+.sold-workspace:is(
+    .console-admin-sold-packages,
+    .console-admin-sold-packages *
+) {
+    font-size: var(--console-text-body);
+}
+.sold-toolbar:is(
+    .console-admin-sold-packages,
+    .console-admin-sold-packages *
+) {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 14px;
+}
+.sold-selection-hint:is(
+    .console-admin-sold-packages,
+    .console-admin-sold-packages *
+) {
+    font-size: 12px;
+    color: var(--muted-foreground);
+}
+.sold-search:is(
+    .console-admin-sold-packages,
+    .console-admin-sold-packages *
+) {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    margin-left: 4px;
+}
+.sold-search-input:is(
+    .console-admin-sold-packages,
+    .console-admin-sold-packages *
+) {
+    width: 108px;
+    height: 32px;
+}
+.sold-search-input--wide:is(
+    .console-admin-sold-packages,
+    .console-admin-sold-packages *
+) {
+    width: 148px;
+}
+.sold-advanced-toggle:is(
+    .console-admin-sold-packages,
+    .console-admin-sold-packages *
+) {
+    padding-inline: 4px;
+    min-height: 0;
+}
+.sold-filters:is(
+    .console-admin-sold-packages,
+    .console-admin-sold-packages *
+) {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px 14px;
+    margin-bottom: 16px;
+    padding: 14px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: color-mix(in oklab, var(--muted) 45%, transparent);
+}
+.sold-filters label:is(
+    .console-admin-sold-packages,
+    .console-admin-sold-packages *
+) {
+    display: grid;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--muted-foreground);
+}
+.sold-filter-actions:is(
+    .console-admin-sold-packages,
+    .console-admin-sold-packages *
+) {
+    display: flex;
+    align-items: end;
+    gap: 8px;
+}
+.sold-cell:is(.console-admin-sold-packages, .console-admin-sold-packages *) {
+    display: flex;
+    min-width: 0;
+    max-width: 100%;
+    align-items: baseline;
+    gap: 8px;
+    overflow: hidden;
+}
+.sold-cell--inline:is(
+    .console-admin-sold-packages,
+    .console-admin-sold-packages *
+) {
+    flex-wrap: nowrap;
+    white-space: nowrap;
+}
+.sold-name:is(.console-admin-sold-packages, .console-admin-sold-packages *) {
+    display: inline;
+    height: auto;
+    min-height: 0;
+    flex: 0 1 auto;
+    padding: 0;
+    overflow: hidden;
+    font-weight: 600;
+    line-height: 1.3;
+    text-align: left;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.sold-base-name:is(
+    .console-admin-sold-packages,
+    .console-admin-sold-packages *
+) {
+    flex: 0 1 auto;
+    overflow: hidden;
+    font-weight: 500;
+    line-height: 1.3;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.sold-meta:is(.console-admin-sold-packages, .console-admin-sold-packages *) {
+    margin: 0;
+    flex: 0 1 auto;
+    overflow: hidden;
+    font-size: 12px;
+    line-height: 1.3;
+    color: var(--muted-foreground);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.sold-period:is(.console-admin-sold-packages, .console-admin-sold-packages *) {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 1px;
+    min-width: 0;
+    font-size: 12px;
+    line-height: 1.25;
+    color: var(--foreground);
+}
+.sold-period > div:is(
+        .console-admin-sold-packages,
+        .console-admin-sold-packages *
+    ) {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    min-width: 0;
+    white-space: nowrap;
+}
+.sold-period-label:is(
+    .console-admin-sold-packages,
+    .console-admin-sold-packages *
+) {
+    flex: 0 0 auto;
+    color: var(--muted-foreground);
+}
+.sold-period-value:is(
+    .console-admin-sold-packages,
+    .console-admin-sold-packages *
+) {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.sold-traffic:is(.console-admin-sold-packages, .console-admin-sold-packages *) {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    gap: 8px;
+}
+.sold-traffic--inline:is(
+    .console-admin-sold-packages,
+    .console-admin-sold-packages *
+) {
+    white-space: nowrap;
+}
+.sold-traffic-text:is(
+    .console-admin-sold-packages,
+    .console-admin-sold-packages *
+) {
+    flex: 0 0 auto;
+    font-size: 12px;
+    color: var(--muted-foreground);
+}
+.sold-traffic-text strong:is(
+    .console-admin-sold-packages,
+    .console-admin-sold-packages *
+) {
+    font-weight: 600;
+    color: var(--foreground);
+}
+.sold-traffic-bar:is(
+    .console-admin-sold-packages,
+    .console-admin-sold-packages *
+) {
+    display: block;
+    flex: 1 1 56px;
+    height: 6px;
+    min-width: 40px;
+    max-width: 88px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: color-mix(in oklab, var(--muted-foreground) 16%, transparent);
+}
+.sold-traffic-bar > span:is(
+        .console-admin-sold-packages,
+        .console-admin-sold-packages *
+    ) {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: #2d8cf0;
+    transition: width 200ms ease;
+}
+.sold-traffic-bar > span.is-mid:is(
+        .console-admin-sold-packages,
+        .console-admin-sold-packages *
+    ) {
+    background: #f0a020;
+}
+.sold-traffic-bar > span.is-high:is(
+        .console-admin-sold-packages,
+        .console-admin-sold-packages *
+    ) {
+    background: #e5484d;
+}
+.sold-actions:is(.console-admin-sold-packages, .console-admin-sold-packages *) {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 2px;
+    overflow: hidden;
+}
+.sold-actions button:is(
+        .console-admin-sold-packages,
+        .console-admin-sold-packages *
+    ) {
+    height: 28px;
+    padding-inline: 8px;
+    color: #2d8cf0;
+}
+/* Shared table cells are 48px with overflow:auto — hide scrollbars here and
+   keep sold-package content single-line / compact so nothing clips. */
+.console-admin-sold-packages
+    table
+    :is(th, td)
+    > [data-slot='table-cell-content'] {
+    overflow: hidden !important;
+    scrollbar-width: none;
+}
+.console-admin-sold-packages
+    table
+    :is(th, td)
+    > [data-slot='table-cell-content']::-webkit-scrollbar {
+    display: none;
+}
 .section-title:is(
     .console-admin-sold-packages,
     .console-admin-sold-packages *
@@ -5711,6 +5969,14 @@ td:is(.console-admin-node-monitoring, .console-admin-node-monitoring *) {
     text-align: right;
     line-height: 1.5;
 }
+@media (max-width: 1100px) {
+    .sold-filters:is(
+        .console-admin-sold-packages,
+        .console-admin-sold-packages *
+    ) {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
 @media (max-width: 1000px) {
     .sold-grid:is(
         .console-admin-sold-packages,
@@ -5720,11 +5986,33 @@ td:is(.console-admin-node-monitoring, .console-admin-node-monitoring *) {
     }
 }
 @media (max-width: 760px) {
+    .sold-filters:is(
+        .console-admin-sold-packages,
+        .console-admin-sold-packages *
+    ),
     .sold-grid:is(
         .console-admin-sold-packages,
         .console-admin-sold-packages *
     ) {
         grid-template-columns: 1fr;
+    }
+    .sold-search:is(
+        .console-admin-sold-packages,
+        .console-admin-sold-packages *
+    ) {
+        width: 100%;
+        margin-left: 0;
+    }
+    .sold-search-input:is(
+        .console-admin-sold-packages,
+        .console-admin-sold-packages *
+    ),
+    .sold-search-input--wide:is(
+        .console-admin-sold-packages,
+        .console-admin-sold-packages *
+    ) {
+        flex: 1 1 120px;
+        width: auto;
     }
 }
 @media (max-width: 430px) {

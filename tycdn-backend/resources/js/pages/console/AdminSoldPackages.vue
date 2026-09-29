@@ -7,6 +7,8 @@ import {
     ShoppingCart,
     Activity,
     ChartColumn,
+    ChevronDown,
+    Search,
 } from 'lucide-vue-next';
 import { computed, onMounted, reactive, ref, watch } from 'vue';
 import { toast } from 'vue-sonner';
@@ -26,6 +28,13 @@ import {
     DialogDescription,
     DialogFooter,
 } from '@/components/ui/dialog';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -77,6 +86,17 @@ const filters = reactive({
     user_package: '',
     cname_hostname: '',
 });
+const filterOpen = ref(false);
+const activeFilterCount = computed(
+    () =>
+        Object.entries(filters).filter(([key, value]) => {
+            if (key === 'order_by') {
+                return value !== 'id';
+            }
+
+            return value !== '' && value !== 'all';
+        }).length,
+);
 const basePackages = ref<CdnflyRecord[]>([]),
     options = ref<AdminPackageOptions>({
         regions: [],
@@ -168,11 +188,11 @@ onMounted(() => {
     void loadOptions();
 });
 const columns = [
-    { key: 'sold', label: '已售套餐' },
-    { key: 'base', label: '基础套餐' },
-    { key: 'period', label: '周期' },
-    { key: 'traffic', label: '已用 / 总流量' },
-    { key: 'status', label: '状态' },
+    { key: 'sold', label: '已售套餐', width: '260px' },
+    { key: 'base', label: '基础套餐', width: '130px' },
+    { key: 'period', label: '周期', width: '220px' },
+    { key: 'traffic', label: '流量', width: '160px' },
+    { key: 'status', label: '状态', width: '100px' },
 ];
 const baseId = (row: CdnflyRecord) => row.package ?? row.package_id;
 const baseName = (row: CdnflyRecord) =>
@@ -191,18 +211,61 @@ function status(row: CdnflyRecord) {
 
     return '正常';
 }
+function statusVariant(
+    row: CdnflyRecord,
+): 'secondary' | 'outline' | 'destructive' {
+    if (String(row.enable) === '0') {
+        return 'destructive';
+    }
+
+    if (String(row.traffic_exceed) === '1') {
+        return 'outline';
+    }
+
+    return 'secondary';
+}
 const valueText = (value: unknown) =>
     value === undefined || value === null || value === ''
         ? '—'
         : String(value) === '-1'
           ? '不限'
           : String(value);
+function trafficCapGb(row: CdnflyRecord): number | null {
+    if (row.traffic === undefined || row.traffic === null || row.traffic === '') {
+        return null;
+    }
+
+    if (String(row.traffic) === '-1') {
+        return -1;
+    }
+
+    const base = Number(row.traffic);
+    const upgrade = Number(row.traffic_upgrade ?? 0);
+
+    if (!Number.isFinite(base)) {
+        return null;
+    }
+
+    return base + (Number.isFinite(upgrade) ? upgrade : 0);
+}
 function trafficTotal(row: CdnflyRecord) {
-    return String(row.traffic) === '-1'
-        ? '不限'
-        : row.traffic === undefined
-          ? '—'
-          : `${Number(row.traffic) + Number(row.traffic_upgrade ?? 0)}GB`;
+    const cap = trafficCapGb(row);
+
+    if (cap === null) {
+        return '—';
+    }
+
+    return cap === -1 ? '不限' : `${cap}GB`;
+}
+function trafficPercent(row: CdnflyRecord): number | null {
+    const used = Number(row.traffic_usage);
+    const cap = trafficCapGb(row);
+
+    if (!Number.isFinite(used) || cap === null || cap <= 0) {
+        return null;
+    }
+
+    return Math.min(100, Math.max(0, Math.round((used / cap) * 100)));
 }
 const busy = ref(false),
     actionOpen = ref(false),
@@ -636,38 +699,95 @@ async function changePackage() {
 
 <template>
     <div
-        class="console-admin-sold-packages sold-packages-workspace flex flex-1 flex-col p-4 md:p-6"
+        class="console-admin-sold-packages sold-packages-workspace flex flex-1 flex-col p-3 md:p-5"
     >
-        <section
-            class="console-panel rounded-xl border bg-card p-4 text-card-foreground md:p-5"
-        >
-            <div class="mb-3 flex flex-wrap gap-2">
+        <section class="sold-workspace rounded-xl border bg-card p-4 shadow-sm">
+            <div class="sold-toolbar">
                 <Button
                     size="sm"
                     :disabled="!selected.length || busy"
                     @click="openAction('sync')"
                     ><RefreshCw />同步数据</Button
-                ><Button
+                >
+                <DropdownMenu
+                    ><DropdownMenuTrigger as-child
+                        ><Button
+                            size="sm"
+                            variant="outline"
+                            :disabled="busy"
+                            >更多操作<ChevronDown /></Button
+                    ></DropdownMenuTrigger>
+                    <DropdownMenuContent
+                        class="console-admin-sold-packages"
+                        align="start"
+                    >
+                        <DropdownMenuItem
+                            :disabled="!selected.length || busy"
+                            @select="bulkUpdate({ enable: 1 })"
+                            ><Play class="mr-2 size-3.5" />启用</DropdownMenuItem
+                        >
+                        <DropdownMenuItem
+                            :disabled="!selected.length || busy"
+                            @select="openAction('disable')"
+                            ><Pause class="mr-2 size-3.5" />禁用</DropdownMenuItem
+                        >
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                            :disabled="!selected.length || busy"
+                            class="text-destructive"
+                            @select="
+                                deleteError = '';
+                                deleteOpen = true;
+                            "
+                            ><Trash2 class="mr-2 size-3.5" />删除</DropdownMenuItem
+                        >
+                        <DropdownMenuItem
+                            :disabled="loading || busy"
+                            @select="loadRows"
+                            ><RefreshCw class="mr-2 size-3.5" />刷新</DropdownMenuItem
+                        >
+                    </DropdownMenuContent></DropdownMenu
+                >
+                <span
+                    v-if="selected.length"
+                    class="sold-selection-hint"
+                    >已选 {{ selected.length }} 项</span
+                >
+                <form class="sold-search" @submit.prevent="search">
+                    <Input
+                        v-model="filters.uid"
+                        aria-label="用户ID"
+                        placeholder="用户ID"
+                        class="sold-search-input"
+                    /><Input
+                        v-model="filters.user_package"
+                        aria-label="用户套餐"
+                        placeholder="用户套餐"
+                        class="sold-search-input"
+                    /><Input
+                        v-model="filters.cname_hostname"
+                        aria-label="解析值"
+                        placeholder="解析值 / CNAME"
+                        class="sold-search-input sold-search-input--wide"
+                    /><Button
+                        type="submit"
+                        size="sm"
+                        variant="ghost"
+                        aria-label="查询"
+                        ><Search
+                    /></Button>
+                </form>
+                <Button
                     size="sm"
-                    :disabled="!selected.length || busy"
-                    @click="bulkUpdate({ enable: 1 })"
-                    ><Play />启用</Button
-                ><Button
-                    size="sm"
-                    variant="outline"
-                    :disabled="!selected.length || busy"
-                    @click="openAction('disable')"
-                    ><Pause />禁用</Button
-                ><Button
-                    size="sm"
-                    variant="destructive"
-                    :disabled="!selected.length || busy"
-                    @click="
-                        deleteError = '';
-                        deleteOpen = true;
-                    "
-                    ><Trash2 />删除</Button
-                ><Button
+                    variant="link"
+                    class="sold-advanced-toggle"
+                    :aria-expanded="filterOpen"
+                    @click="filterOpen = !filterOpen"
+                    >高级筛选{{
+                        activeFilterCount ? ` (${activeFilterCount})` : ''
+                    }}</Button
+                >
+                <Button
                     size="sm"
                     variant="ghost"
                     class="ml-auto"
@@ -676,90 +796,101 @@ async function changePackage() {
                     ><RefreshCw />刷新</Button
                 >
             </div>
-            <div class="mb-3 flex flex-wrap gap-2">
-                <Select v-model="filters.expire" @update:model-value="search"
-                    ><SelectTrigger class="w-44" aria-label="到期时间"
-                        ><SelectValue /></SelectTrigger
-                    ><SelectContent class="console-admin-sold-packages"
-                        ><SelectItem value="all">所有到期时间</SelectItem
-                        ><SelectItem value="30">一个月内到期</SelectItem
-                        ><SelectItem value="7">一周内到期</SelectItem
-                        ><SelectItem value="0"
-                            >已到期</SelectItem
-                        ></SelectContent
-                    ></Select
-                >
-                <Select
-                    v-model="filters.base_package"
-                    @update:model-value="search"
-                    ><SelectTrigger class="w-44" aria-label="基础套餐"
-                        ><SelectValue
-                            placeholder="所有基础套餐" /></SelectTrigger
-                    ><SelectContent class="console-admin-sold-packages"
-                        ><SelectItem value="all">所有基础套餐</SelectItem
-                        ><SelectItem
-                            v-for="row in basePackages"
-                            :key="String(row.id)"
-                            :value="String(row.id)"
-                            >{{ row.name }}</SelectItem
-                        ></SelectContent
-                    ></Select
-                >
-                <Select v-model="filters.order_by" @update:model-value="search"
-                    ><SelectTrigger class="w-44" aria-label="排序"
-                        ><SelectValue /></SelectTrigger
-                    ><SelectContent class="console-admin-sold-packages"
-                        ><SelectItem value="id">按购买时间排序</SelectItem
-                        ><SelectItem value="end_at"
-                            >按到期时间排序</SelectItem
-                        ></SelectContent
-                    ></Select
-                >
-                <Select v-model="filters.enable" @update:model-value="search"
-                    ><SelectTrigger class="w-44" aria-label="状态"
-                        ><SelectValue /></SelectTrigger
-                    ><SelectContent class="console-admin-sold-packages"
-                        ><SelectItem value="all">所有状态</SelectItem
-                        ><SelectItem value="1">启用</SelectItem
-                        ><SelectItem value="0">禁用</SelectItem></SelectContent
-                    ></Select
-                >
-                <Select
-                    v-model="filters.traffic_exceed"
-                    @update:model-value="search"
-                    ><SelectTrigger class="w-44" aria-label="流量使用情况"
-                        ><SelectValue /></SelectTrigger
-                    ><SelectContent class="console-admin-sold-packages"
-                        ><SelectItem value="all">套餐流量使用情况</SelectItem
-                        ><SelectItem value="1">套餐流量用完</SelectItem
-                        ><SelectItem value="0"
-                            >套餐流量未用完</SelectItem
-                        ></SelectContent
-                    ></Select
-                >
-            </div>
-            <form class="mb-4 flex flex-wrap gap-2" @submit.prevent="search">
+            <form
+                v-if="filterOpen"
+                class="sold-filters"
+                aria-label="高级筛选"
+                @submit.prevent="search"
+            >
                 <label
-                    data-slot="console-input-group"
-                    v-for="field in [
-                        { key: 'uid', label: '用户ID' },
-                        { key: 'user_package', label: '用户套餐' },
-                        { key: 'cname_hostname', label: '解析值' },
-                    ] as const"
-                    :key="field.key"
-                    class="flex min-w-0 items-center"
-                    ><span
-                        class="flex h-9 shrink-0 items-center rounded-l-md border border-r-0 bg-muted px-2 text-sm"
-                        >{{ field.label }}</span
-                    ><Input
-                        v-model="filters[field.key]"
-                        :aria-label="field.label"
-                        :placeholder="`输入${field.label}`"
-                        class="w-40 rounded-l-none" /></label
-                ><Button type="submit" size="sm" variant="outline">查询</Button
-                ><Button type="button" size="sm" variant="link" @click="clear"
-                    >清除</Button
+                    >到期时间
+                    <Select
+                        v-model="filters.expire"
+                        @update:model-value="search"
+                        ><SelectTrigger aria-label="到期时间"
+                            ><SelectValue /></SelectTrigger
+                        ><SelectContent class="console-admin-sold-packages"
+                            ><SelectItem value="all">全部</SelectItem
+                            ><SelectItem value="30">一个月内到期</SelectItem
+                            ><SelectItem value="7">一周内到期</SelectItem
+                            ><SelectItem value="0"
+                                >已到期</SelectItem
+                            ></SelectContent
+                        ></Select
+                    ></label
                 >
+                <label
+                    >基础套餐
+                    <Select
+                        v-model="filters.base_package"
+                        @update:model-value="search"
+                        ><SelectTrigger aria-label="基础套餐"
+                            ><SelectValue
+                                placeholder="全部" /></SelectTrigger
+                        ><SelectContent class="console-admin-sold-packages"
+                            ><SelectItem value="all">全部</SelectItem
+                            ><SelectItem
+                                v-for="row in basePackages"
+                                :key="String(row.id)"
+                                :value="String(row.id)"
+                                >{{ row.name }}</SelectItem
+                            ></SelectContent
+                        ></Select
+                    ></label
+                >
+                <label
+                    >排序
+                    <Select
+                        v-model="filters.order_by"
+                        @update:model-value="search"
+                        ><SelectTrigger aria-label="排序"
+                            ><SelectValue /></SelectTrigger
+                        ><SelectContent class="console-admin-sold-packages"
+                            ><SelectItem value="id">购买时间</SelectItem
+                            ><SelectItem value="end_at"
+                                >到期时间</SelectItem
+                            ></SelectContent
+                        ></Select
+                    ></label
+                >
+                <label
+                    >状态
+                    <Select
+                        v-model="filters.enable"
+                        @update:model-value="search"
+                        ><SelectTrigger aria-label="状态"
+                            ><SelectValue /></SelectTrigger
+                        ><SelectContent class="console-admin-sold-packages"
+                            ><SelectItem value="all">全部</SelectItem
+                            ><SelectItem value="1">启用</SelectItem
+                            ><SelectItem value="0"
+                                >禁用</SelectItem
+                            ></SelectContent
+                        ></Select
+                    ></label
+                >
+                <label
+                    >流量
+                    <Select
+                        v-model="filters.traffic_exceed"
+                        @update:model-value="search"
+                        ><SelectTrigger aria-label="流量使用情况"
+                            ><SelectValue /></SelectTrigger
+                        ><SelectContent class="console-admin-sold-packages"
+                            ><SelectItem value="all">全部</SelectItem
+                            ><SelectItem value="1">已用完</SelectItem
+                            ><SelectItem value="0"
+                                >未用完</SelectItem
+                            ></SelectContent
+                        ></Select
+                    ></label
+                >
+                <div class="sold-filter-actions">
+                    <Button type="submit" size="sm">查询</Button>
+                    <Button type="button" size="sm" variant="outline" @click="clear"
+                        >清除</Button
+                    >
+                </div>
             </form>
             <Alert
                 v-if="error || optionsError"
@@ -790,65 +921,93 @@ async function changePackage() {
                 @update:selected="selected = $event.map(Number)"
             >
                 <template #cell-sold="{ row }"
-                    ><Button
-                        variant="link"
-                        class="h-auto p-0 font-medium"
-                        @click="showDetail(row)"
-                        >{{ row.name ?? baseName(row) }}</Button
-                    >
-                    <p
-                        data-typography="helper"
-                        class="mt-1 text-muted-foreground"
-                    >
-                        ID: {{ row.id }} / 用户: {{ row.user_name ?? '—' }} ({{
-                            row.uid ?? row.user_id
-                        }})
-                    </p></template
+                    ><div class="sold-cell sold-cell--inline">
+                        <Button
+                            variant="link"
+                            class="sold-name"
+                            @click="showDetail(row)"
+                            >{{ row.name ?? baseName(row) }}</Button
+                        >
+                        <span class="sold-meta"
+                            >#{{ row.id }} · {{ row.user_name ?? '—' }} ({{
+                                row.uid ?? row.user_id ?? '—'
+                            }})</span
+                        >
+                    </div></template
                 >
                 <template #cell-base="{ row }"
-                    ><span class="font-medium">{{ baseName(row) }}</span>
-                    <p
-                        data-typography="helper"
-                        class="mt-1 text-muted-foreground"
-                    >
-                        基础套餐 ID: {{ baseId(row) }}
-                    </p></template
+                    ><div class="sold-cell sold-cell--inline">
+                        <span class="sold-base-name">{{ baseName(row) }}</span>
+                        <span class="sold-meta"
+                            >ID {{ baseId(row) ?? '—' }}</span
+                        >
+                    </div></template
                 >
                 <template #cell-period="{ row }"
-                    ><div class="space-y-1 text-xs text-muted-foreground">
-                        <p data-typography="body">
-                            购买: {{ formatDate(String(row.create_at ?? '')) }}
-                        </p>
-                        <p data-typography="body">
-                            到期: {{ formatDate(String(row.end_at ?? '')) }}
-                        </p>
+                    ><div class="sold-period">
+                        <div>
+                            <span class="sold-period-label">购买</span>
+                            <span class="sold-period-value">{{
+                                formatDate(String(row.create_at ?? ''))
+                            }}</span>
+                        </div>
+                        <div>
+                            <span class="sold-period-label">到期</span>
+                            <span class="sold-period-value">{{
+                                formatDate(String(row.end_at ?? ''))
+                            }}</span>
+                        </div>
                     </div></template
                 >
                 <template #cell-traffic="{ row }"
-                    >{{ valueText(row.traffic_usage) }}GB /
-                    {{ trafficTotal(row) }}</template
+                    ><div class="sold-traffic sold-traffic--inline">
+                        <span class="sold-traffic-text"
+                            ><strong
+                                >{{ valueText(row.traffic_usage) }}GB</strong
+                            >
+                            / {{ trafficTotal(row) }}</span
+                        >
+                        <span
+                            v-if="trafficPercent(row) !== null"
+                            class="sold-traffic-bar"
+                            role="meter"
+                            :aria-valuenow="trafficPercent(row) ?? 0"
+                            aria-valuemin="0"
+                            aria-valuemax="100"
+                            ><span
+                                :style="{
+                                    width: `${trafficPercent(row)}%`,
+                                }"
+                                :class="{
+                                    'is-high': (trafficPercent(row) ?? 0) >= 90,
+                                    'is-mid':
+                                        (trafficPercent(row) ?? 0) >= 70 &&
+                                        (trafficPercent(row) ?? 0) < 90,
+                                }"
+                        /></span>
+                    </div></template
                 >
                 <template #cell-status="{ row }"
-                    ><Badge
-                        :variant="
-                            String(row.enable) === '0'
-                                ? 'destructive'
-                                : 'secondary'
-                        "
-                        >{{ status(row) }}</Badge
-                    ></template
+                    ><Badge :variant="statusVariant(row)">{{
+                        status(row)
+                    }}</Badge></template
                 >
                 <template #row-actions="{ row }"
-                    ><Button size="sm" variant="ghost" @click="showDetail(row)"
-                        >详情</Button
-                    ><Button size="sm" variant="ghost" @click="edit(row)"
-                        >编辑</Button
-                    ><Button
-                        size="sm"
-                        variant="ghost"
-                        @click="showUpgrades(row)"
-                        >升降配</Button
-                    ></template
+                    ><div class="sold-actions">
+                        <Button
+                            size="sm"
+                            variant="ghost"
+                            @click="showDetail(row)"
+                            >详情</Button
+                        ><Button size="sm" variant="ghost" @click="edit(row)"
+                            >编辑</Button
+                        ><Button
+                            size="sm"
+                            variant="ghost"
+                            @click="showUpgrades(row)"
+                            >升降配</Button
+                        >
+                    </div></template
                 > </ConsoleDataTable
             ><PackagePagination
                 v-model:page="page"
