@@ -3049,6 +3049,16 @@ input:is(
     nav:is(.console-admin-access-logs, .console-admin-access-logs *) {
     justify-content: flex-start;
 }
+.access-range-label:is(
+    .console-admin-access-logs,
+    .console-admin-access-logs *
+) {
+    display: inline-flex;
+    align-items: center;
+    line-height: 1.4;
+    color: var(--muted-foreground);
+    font-size: var(--console-text-helper);
+}
 .user-access-log
     .access-toolbar
     form:is(.console-admin-access-logs, .console-admin-access-logs *)

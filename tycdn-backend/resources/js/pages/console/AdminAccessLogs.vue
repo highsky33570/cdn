@@ -662,19 +662,10 @@ onUnmounted(() => {
                         class="mb-3 flex flex-wrap items-center gap-2 text-xs"
                         aria-label="已应用筛选"
                     >
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            data-slot="console-action"
-                            type="button"
-                            @click="
-                                Object.assign(draft, filters);
-                                advanced = true;
-                            "
-                        >
+                        <span class="access-range-label">
                             时间范围：{{ filters.start.replace('T', ' ') }} -
                             {{ filters.end.replace('T', ' ') }}
-                        </Button>
+                        </span>
                         <span
                             v-for="tag in tags"
                             :key="tag.key"
