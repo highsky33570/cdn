@@ -29,10 +29,15 @@ const isAdmin = computed(
     () => user.value.is_admin === true || user.value.role === 'admin',
 );
 
-// Prefer the pathname helper so query strings / absolute URLs cannot leave
-// this stuck on the admin label after switching to the personal console.
 const adminScope = computed(
     () => isAdmin.value && currentUrl.value.startsWith('/console/admin'),
+);
+
+const switchHref = computed(() =>
+    adminScope.value ? '/console' : '/console/admin',
+);
+const switchLabel = computed(() =>
+    adminScope.value ? '切换到个人控制台' : '切换到管理控制台',
 );
 </script>
 
@@ -84,11 +89,9 @@ const adminScope = computed(
             </details>
             <Link
                 v-if="isAdmin"
-                :href="adminScope ? '/console' : '/console/admin'"
+                :href="switchHref"
                 class="m-2 rounded-lg border px-3 py-2 text-center text-sm text-primary group-data-[collapsible=icon]:hidden"
-                >{{
-                    adminScope ? '切换到个人控制台' : '切换到管理控制台'
-                }}</Link
+                >{{ switchLabel }}</Link
             >
         </SidebarFooter>
 

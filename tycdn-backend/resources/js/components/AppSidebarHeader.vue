@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import UserMenuContent from '@/components/UserMenuContent.vue';
+import { useCurrentUrl } from '@/composables/useCurrentUrl';
 import { adminNavItems, consoleNavigationTitle } from '@/lib/consoleNavigation';
 import type { BreadcrumbItem } from '@/types';
 
@@ -25,6 +26,7 @@ const props = withDefaults(
 );
 
 const page = usePage();
+const { currentUrl } = useCurrentUrl();
 
 type BreadcrumbMeta = [section: string, sectionHref: string, page: string];
 
@@ -131,7 +133,7 @@ const consoleBreadcrumbMeta: Record<string, BreadcrumbMeta> = {
 };
 
 const effectiveBreadcrumbs = computed(() => {
-    const path = page.url.split('?')[0];
+    const path = currentUrl.value;
     const title = consoleNavigationTitle(path);
 
     if (title) {

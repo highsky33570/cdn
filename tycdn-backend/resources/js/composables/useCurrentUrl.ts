@@ -1,7 +1,7 @@
 import type { InertiaLinkProps } from '@inertiajs/vue3';
-import { usePage } from '@inertiajs/vue3';
+import { router, usePage } from '@inertiajs/vue3';
 import type { ComputedRef, DeepReadonly } from 'vue';
-import { computed, readonly } from 'vue';
+import { computed, readonly, ref, watch } from 'vue';
 import { toUrl } from '@/lib/utils';
 
 export type UseCurrentUrlReturn = {
@@ -22,16 +22,61 @@ export type UseCurrentUrlReturn = {
     ) => T | F;
 };
 
-const page = usePage();
-const currentUrlReactive = computed(
-    () =>
-        new URL(
-            page.url,
+function pathnameOf(url: string): string {
+    try {
+        return new URL(
+            url,
             typeof window !== 'undefined'
                 ? window.location.origin
                 : 'http://localhost',
-        ).pathname,
+        ).pathname;
+    } catch {
+        return String(url).split('?')[0] || '/';
+    }
+}
+
+const page = usePage();
+
+/**
+ * Layout chrome (sidebar, nav active state) can miss Inertia page.url updates
+ * across soft navigations — the switch button stayed on the previous console
+ * until a full refresh. Keep an explicit path ref in sync with router events
+ * and the page URL so scope flips immediately.
+ */
+const pathRef = ref(
+    pathnameOf(
+        typeof window !== 'undefined' ? window.location.pathname : page.url || '/',
+    ),
 );
+
+function syncPath(url: string): void {
+    const next = pathnameOf(url);
+
+    if (pathRef.value !== next) {
+        pathRef.value = next;
+    }
+}
+
+watch(
+    () => page.url,
+    (url) => {
+        if (typeof url === 'string' && url !== '') {
+            syncPath(url);
+        }
+    },
+    { immediate: true },
+);
+
+if (typeof window !== 'undefined') {
+    router.on('navigate', (event) => {
+        syncPath(event.detail.page.url);
+    });
+    router.on('success', (event) => {
+        syncPath(event.detail.page.url);
+    });
+}
+
+const currentUrlReactive = computed(() => pathRef.value);
 
 export function useCurrentUrl(): UseCurrentUrlReturn {
     function isCurrentUrl(
