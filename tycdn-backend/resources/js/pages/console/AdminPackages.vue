@@ -173,92 +173,109 @@ const BACKUP_NONE_VALUE = '__none__';
  */
 const TIER_PRESETS = [
     {
-        key: 'mini',
-        label: '入门',
-        name: 'JPN-Mini',
-        slug: 'jpn-mini',
-        price: '5',
+        key: 'advanced',
+        label: '高级',
+        name: '高级版',
+        slug: 'advanced',
+        price: '50',
+        badge: '',
         limits: {
-            traffic: '50',
-            bandwidth: '100Mbps',
-            connection: '2000',
-            domain: '5',
-            main_domain: '1',
+            traffic: '512',
+            bandwidth: '50Mbps',
+            connection: '5000',
+            domain: '20',
+            main_domain: '20',
             http_port: '0',
             stream_port: '0',
         },
-        // Custom CC rules are the upsell; basic CC protection is included
-        // everywhere because the agent does it anyway.
-        custom_cc_rule: '0',
-        features: ['东京 BGP 线路', '被攻击不额外收费', '5 分钟内开通'],
-        description: '日本东京节点入门套餐，适合个人站点与小流量业务。',
+        custom_cc_rule: '1',
+        features: ['防投诉：不支持', '共享节点但是屏蔽', '节点线路：优质'],
+        description: '入门级防护套餐，适合中小型站点。',
     },
     {
-        key: 'standard',
-        label: '标准',
-        name: 'JPN-Standard',
-        slug: 'jpn-standard',
-        price: '10',
+        key: 'professional',
+        label: '专业',
+        name: '专业版',
+        slug: 'professional',
+        price: '130',
+        badge: '',
         limits: {
-            traffic: '100',
-            bandwidth: '300Mbps',
-            connection: '5000',
-            domain: '15',
-            main_domain: '5',
+            traffic: '2000',
+            bandwidth: '100Mbps',
+            connection: '10000',
+            domain: '40',
+            main_domain: '40',
             http_port: '2',
             stream_port: '0',
         },
-        custom_cc_rule: '0',
-        features: ['东京 BGP 线路', '被攻击不额外收费', '免费 SSL 证书'],
-        description: '日本东京节点标准套餐，适合中小企业站点与多域名业务。',
+        custom_cc_rule: '1',
+        features: ['防投诉：不支持', '共享节点但是屏蔽', '节点线路：优质'],
+        description: '更高域名与流量配额，适合成长型业务。',
     },
     {
-        key: 'plus',
-        label: '进阶',
-        name: 'JPN-Plus',
-        slug: 'jpn-plus',
-        price: '20',
+        key: 'commercial',
+        label: '商业',
+        name: '商业版',
+        slug: 'commercial',
+        price: '260',
+        badge: '',
         limits: {
-            traffic: '200',
-            bandwidth: '1Gbps',
-            connection: '10000',
-            domain: '30',
-            main_domain: '10',
+            traffic: '4000',
+            bandwidth: '100Mbps',
+            connection: '20000',
+            domain: '80',
+            main_domain: '80',
             http_port: '5',
             stream_port: '5',
         },
         custom_cc_rule: '1',
-        features: [
-            '东京 BGP 线路',
-            '被攻击不额外收费',
-            '免费 SSL 证书',
-            '工单优先响应',
-        ],
-        description: '日本东京节点进阶套餐，适合流量增长期的业务。',
+        features: ['防投诉：不支持', '共享节点但是屏蔽', '节点线路：优质'],
+        description: '面向多站点与更高月流量需求的商业套餐。',
     },
     {
-        key: 'pro',
-        label: '高阶',
-        name: 'JPN-Pro',
-        slug: 'jpn-pro',
-        price: '30',
+        key: 'invincible',
+        label: '无敌',
+        name: '无敌版',
+        slug: 'invincible',
+        price: '600',
+        badge: 'recommend',
         limits: {
-            traffic: '300',
-            bandwidth: '1Gbps',
-            connection: '20000',
-            domain: '60',
-            main_domain: '20',
+            traffic: '-1',
+            bandwidth: '100Mbps',
+            connection: '50000',
+            domain: '160',
+            main_domain: '160',
             http_port: '10',
             stream_port: '10',
         },
         custom_cc_rule: '1',
+        features: ['防投诉：支持', '共享节点但是屏蔽', '节点线路：优质'],
+        description: '不限流量与防投诉支持，推荐选购。',
+    },
+    {
+        key: 'private-custom',
+        label: '定制',
+        name: '私人定制版',
+        slug: 'private-custom',
+        price: '1199',
+        badge: 'custom',
+        limits: {
+            traffic: '-1',
+            bandwidth: '100Mbps',
+            connection: '-1',
+            domain: '-1',
+            main_domain: '-1',
+            http_port: '20',
+            stream_port: '20',
+        },
+        custom_cc_rule: '1',
         features: [
-            '东京 BGP 线路',
-            '被攻击不额外收费',
-            '免费 SSL 证书',
-            '专属技术支持',
+            '防投诉：支持',
+            '独立节点（高峰期更稳定）',
+            '过移动屏蔽、地区屏蔽',
+            '节点线路：顶级中的顶级',
         ],
-        description: '日本东京节点高阶套餐，适合高并发与多站点业务。',
+        description: '不限域名与流量，独立节点与顶级线路。',
     },
 ];
 
@@ -399,6 +416,7 @@ const portalForm = reactive({
     slug: '',
     description: '',
     features: '',
+    badge: 'none',
     sort_order: '',
 });
 
@@ -427,8 +445,8 @@ function applyTierPreset(preset: TierPreset): void {
     form.l2_state = '0';
     // Real-name verification blocks checkout unless you actually police it.
     form.id_verify = '0';
-    // A plain VPS has no scrubbing in front of it.
-    form.ddos_protect = '不支持';
+    // Scrubbing copy matches the sample storefront tiers.
+    form.ddos_protect = '无敌抗';
 
     form.month_price = preset.price;
     form.quarter_price = '';
@@ -439,6 +457,7 @@ function applyTierPreset(preset: TierPreset): void {
     portalForm.slug = preset.slug;
     portalForm.description = preset.description;
     portalForm.features = preset.features.join('\n');
+    portalForm.badge = preset.badge || 'none';
     portalForm.sort_order = String(
         (TIER_PRESETS.findIndex((tier) => tier.key === preset.key) + 1) * 10,
     );
@@ -455,6 +474,7 @@ function resetPortalForm(
     portalForm.slug = existing?.slug ?? '';
     portalForm.description = existing?.description ?? '';
     portalForm.features = (existing?.features ?? []).join('\n');
+    portalForm.badge = existing?.badge || 'none';
     portalForm.sort_order = existing ? String(existing.sort_order) : '';
 }
 
@@ -473,6 +493,10 @@ function portalPayload(): Record<string, unknown> {
             .filter((line) => line !== ''),
         sort_order:
             portalForm.sort_order === '' ? 0 : Number(portalForm.sort_order),
+        badge:
+            portalForm.badge && portalForm.badge !== 'none'
+                ? portalForm.badge
+                : null,
         is_active: portalForm.sell,
         currency: PORTAL_CURRENCY,
     };
@@ -3359,6 +3383,27 @@ onMounted(() => {
                                     rows="3"
                                     class="w-full rounded-md border border-input bg-background p-3 text-sm"
                                 />
+                                <div class="package-field max-w-xs">
+                                    <Label for="portal-badge">角标</Label>
+                                    <Select v-model="portalForm.badge">
+                                        <SelectTrigger id="portal-badge">
+                                            <SelectValue placeholder="无" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectGroup>
+                                                <SelectItem value="none"
+                                                    >无</SelectItem
+                                                >
+                                                <SelectItem value="recommend"
+                                                    >推荐</SelectItem
+                                                >
+                                                <SelectItem value="custom"
+                                                    >定制</SelectItem
+                                                >
+                                            </SelectGroup>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
                                 <div
                                     v-if="dialogMode === 'create'"
                                     class="flex flex-wrap gap-2"

@@ -1,5 +1,13 @@
 <template>
-  <article data-public-style class="public-plan-card plan-card" :class="{ 'is-selected': selected }">
+  <article
+    data-public-style
+    class="public-plan-card plan-card"
+    :class="{
+      'is-selected': selected,
+      'is-featured': Boolean(badgeLabel)
+    }"
+  >
+    <span v-if="badgeLabel" class="plan-badge">{{ badgeLabel }}</span>
     <div class="plan-card__heading">
       <span v-if="number !== null" class="plan-number" aria-hidden="true">{{
         String(number).padStart(2, '0')
@@ -26,18 +34,30 @@
         }}</span>
         <span
           ><span class="inclusion-label">{{ spec.label }}：</span
-          ><strong :class="{ 'is-unlimited': spec.value === '不限' }">{{
-            spec.value
-          }}</strong></span
+          ><strong
+            :class="{
+              'is-unlimited': spec.value === '不限',
+              'is-highlight': spec.highlight
+            }"
+            >{{ spec.value }}</strong
+          ></span
         >
       </li>
       <li v-for="(feature, index) in features" :key="`feature-${index}`">
         <span class="inclusion-mark" aria-hidden="true">✓</span
-        ><span class="inclusion-feature">{{ feature }}</span>
+        ><span
+          class="inclusion-feature"
+          :class="{ 'is-highlight': feature.highlight }"
+          >{{ feature.text }}</span
+        >
       </li>
     </ul>
     <div class="plan-actions">
-      <a v-if="amount !== null" :href="checkoutUrl" class="button button--primary"
+      <a
+        v-if="amount !== null"
+        :href="checkoutUrl"
+        class="button"
+        :class="badgeLabel ? 'button--accent' : 'button--primary'"
         >立即使用 <span aria-hidden="true">↗</span></a
       >
       <button v-else class="button" disabled>当前周期不可用</button>
@@ -59,7 +79,8 @@ import {
   formatAmount,
   displayCurrency,
   productSpecs,
-  productFeatures
+  productFeatures,
+  productBadgeLabel
 } from '../utils/products'
 import { buildAuthPageUrl, buildConsoleCheckoutPath, dashboardLoginUrl } from '../config/runtime'
 const props = defineProps({
@@ -76,12 +97,18 @@ const priceText = computed(() => formatAmount(amount.value))
 const specs = computed(() => productSpecs(props.product))
 const features = computed(() => {
   // Older catalog responses may provide prose specs without structured limits.
-  const fallback =
-    !specs.value.length && Array.isArray(props.product.specs)
-      ? props.product.specs.filter((item) => typeof item === 'string' && item.trim())
-      : []
-  return [...new Set([...fallback, ...productFeatures(props.product)])]
+  const authored = productFeatures(props.product)
+  if (authored.length || specs.value.length) {
+    return authored
+  }
+  const fallback = Array.isArray(props.product.specs)
+    ? props.product.specs
+        .filter((item) => typeof item === 'string' && item.trim())
+        .map((text) => ({ text: text.trim(), highlight: false }))
+    : []
+  return fallback
 })
+const badgeLabel = computed(() => productBadgeLabel(props.product.badge))
 const checkoutUrl = computed(() =>
   buildAuthPageUrl(dashboardLoginUrl, buildConsoleCheckoutPath(props.product.id))
 )

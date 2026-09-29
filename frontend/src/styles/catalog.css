@@ -37,6 +37,23 @@
   border-color: var(--accent);
   box-shadow: 0 0 0 1px var(--accent);
 }
+.plan-badge:is(.public-plan-card, .public-plan-card *):not(:where(.public-plan-card [data-public-style] *)) {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 1;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #b7f000;
+  color: #111;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1.2;
+}
+.plan-card.is-featured:is(.public-plan-card, .public-plan-card *):not(:where(.public-plan-card [data-public-style] *)) {
+  border-color: color-mix(in srgb, #b7f000 55%, var(--border));
+}
 .plan-card__heading:is(.public-plan-card, .public-plan-card *):not(:where(.public-plan-card [data-public-style] *)) {
   display: flex;
   align-items: center;
@@ -124,8 +141,11 @@ h3:is(.public-plan-card, .public-plan-card *):not(:where(.public-plan-card [data
   color: var(--text);
   font-weight: 600;
 }
-.plan-inclusions strong.is-unlimited:is(.public-plan-card, .public-plan-card *):not(:where(.public-plan-card [data-public-style] *)) {
-  color: var(--accent);
+.plan-inclusions strong.is-unlimited:is(.public-plan-card, .public-plan-card *):not(:where(.public-plan-card [data-public-style] *)),
+.plan-inclusions strong.is-highlight:is(.public-plan-card, .public-plan-card *):not(:where(.public-plan-card [data-public-style] *)),
+.inclusion-feature.is-highlight:is(.public-plan-card, .public-plan-card *):not(:where(.public-plan-card [data-public-style] *)) {
+  color: #6f9f00;
+  font-weight: 600;
 }
 .inclusion-feature:is(.public-plan-card, .public-plan-card *):not(:where(.public-plan-card [data-public-style] *)) {
   color: var(--text);

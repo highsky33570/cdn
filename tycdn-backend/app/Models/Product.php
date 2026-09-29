@@ -18,6 +18,7 @@ class Product extends Model
         'currency',
         'is_active',
         'sort_order',
+        'badge',
         'features',
     ];
 

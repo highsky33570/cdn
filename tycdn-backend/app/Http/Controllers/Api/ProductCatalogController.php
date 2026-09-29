@@ -43,6 +43,7 @@ class ProductCatalogController extends Controller
                     'price_quarterly' => $product->price_quarterly,
                     'price_yearly' => $product->price_yearly,
                     'currency' => $product->currency,
+                    'badge' => $product->badge,
                     // Authored claims, never inferred or filtered.
                     'features' => is_array($product->features) ? $product->features : [],
                     // Enforced limits, rendered as prose.

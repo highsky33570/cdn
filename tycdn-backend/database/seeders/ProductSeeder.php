@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\Product;
 use App\Models\ProductCdnflyMapping;
+use App\Support\SampleSubscriptionCatalog;
 use Illuminate\Database\Seeder;
 
 /**
@@ -16,75 +17,36 @@ use Illuminate\Database\Seeder;
  *
  * Run with:  php artisan db:seed --class=ProductSeeder
  *
- * Safe to re-run: rows are matched on slug and updated in place, so prices can be
- * changed here and re-seeded without creating duplicates or breaking existing
- * orders (which reference product_id).
+ * Prefer `php artisan packages:sync-sample-catalog` on a live master — that
+ * updates CDNfly package limits and links products in one step. This seeder
+ * only writes the portal half and is safe to re-run (matched on slug).
  *
  * CDNfly package ids are deployment-specific. Supply them via CDNFLY_PACKAGE_IDS
  * as a comma separated "slug:packageId" list, e.g.
  *
- *     CDNFLY_PACKAGE_IDS="jpn-mini:101,jpn-standard:102"
- *
- * Any product without an id still gets a mapping row, so provisioning fails with
- * the actionable `missing_cdnfly_package_id` rather than `missing_product_mapping`.
+ *     CDNFLY_PACKAGE_IDS="advanced:1,professional:2,commercial:3,invincible:4,private-custom:5"
  */
 class ProductSeeder extends Seeder
 {
-    /**
-     * Initial catalogue data. Quarterly/yearly are plain multiples of
-     * the monthly price -- no discount is assumed. Review before going live; a
-     * zero price would make checkout reject the order outright.
-     *
-     * @var list<array<string, mixed>>
-     */
-    private const PLANS = [
-        [
-            'slug' => 'jpn-mini',
-            'name' => 'JPN-Mini',
-            'price_monthly' => 5.00,
-            'sort_order' => 10,
-            'features' => ['50 GiB 流量', '1 个网站', '100 Mbps 带宽', '50MiB 上传', 'WebSocket'],
-        ],
-        [
-            'slug' => 'jpn-standard',
-            'name' => 'JPN-Standard',
-            'price_monthly' => 10.00,
-            'sort_order' => 20,
-            'features' => ['100 GiB 流量', '5 个网站', '300 Mbps 带宽', '100MiB 上传', 'WebSocket'],
-        ],
-        [
-            'slug' => 'jpn-plus',
-            'name' => 'JPN-Plus',
-            'price_monthly' => 20.00,
-            'sort_order' => 30,
-            'features' => ['200 GiB 流量', '10 个网站', '1 Gbps 带宽', '200MiB 上传', 'WebSocket'],
-        ],
-        [
-            'slug' => 'jpn-pro',
-            'name' => 'JPN-Pro',
-            'price_monthly' => 30.00,
-            'sort_order' => 40,
-            'features' => ['300 GiB 流量', '20 个网站', '1 Gbps 带宽', '300MiB 上传', 'WebSocket'],
-        ],
-    ];
-
     public function run(): void
     {
         $packageIds = $this->configuredPackageIds();
         $missing = [];
+        $keep = SampleSubscriptionCatalog::slugs();
 
-        foreach (self::PLANS as $plan) {
+        foreach (SampleSubscriptionCatalog::tiers() as $plan) {
             $product = Product::updateOrCreate(
                 ['slug' => $plan['slug']],
                 [
                     'name' => $plan['name'],
-                    'description' => null,
+                    'description' => $plan['description'],
                     'price_monthly' => $plan['price_monthly'],
                     'price_quarterly' => round($plan['price_monthly'] * 3, 2),
                     'price_yearly' => round($plan['price_monthly'] * 12, 2),
                     'currency' => 'USD',
                     'is_active' => true,
                     'sort_order' => $plan['sort_order'],
+                    'badge' => $plan['badge'],
                     'features' => $plan['features'],
                 ],
             );
@@ -101,12 +63,17 @@ class ProductSeeder extends Seeder
             }
         }
 
-        $this->command?->info('已同步 '.count(self::PLANS).' 个套餐到 products 表。');
+        Product::query()
+            ->whereNotIn('slug', $keep)
+            ->where('is_active', true)
+            ->update(['is_active' => false]);
+
+        $this->command?->info('已同步 '.count($keep).' 个套餐到 products 表。');
 
         if ($missing !== []) {
             $this->command?->warn('以下套餐尚未绑定 CDNfly 套餐 ID，支付可以完成但开通会失败：');
             $this->command?->warn('  '.implode(', ', $missing));
-            $this->command?->warn('请设置 CDNFLY_PACKAGE_IDS="slug:id,slug:id" 后重新执行，或直接更新 product_cdnfly_mappings.cdnfly_plan_id。');
+            $this->command?->warn('请设置 CDNFLY_PACKAGE_IDS="slug:id,slug:id" 后重新执行，或运行 packages:sync-sample-catalog。');
         }
     }
 

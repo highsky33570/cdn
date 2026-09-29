@@ -24,7 +24,7 @@
             ><h2>套餐特性</h2>
             <ul>
               <li v-for="(feature, index) in features" :key="index">
-                {{ feature }}
+                {{ feature.text }}
               </li>
             </ul></template
           >

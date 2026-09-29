@@ -44,11 +44,28 @@ class PackageProductLinker
                 'currency' => strtoupper((string) ($portal['currency'] ?? 'USD')),
                 'is_active' => (bool) ($portal['is_active'] ?? true),
                 'sort_order' => (int) ($portal['sort_order'] ?? 0),
+                'badge' => $this->badge($portal['badge'] ?? null),
                 'features' => $this->features($portal['features'] ?? null),
             ];
 
             if ($product) {
                 $product->fill($attributes)->save();
+
+                // An explicitly requested slug that is still free should win —
+                // otherwise re-pointing package #1 at "advanced" leaves the
+                // old jpn-mini slug on a renamed tier.
+                $wanted = Str::slug((string) ($portal['slug'] ?? ''));
+
+                if (
+                    $wanted !== ''
+                    && $product->slug !== $wanted
+                    && ! Product::query()
+                        ->where('slug', $wanted)
+                        ->whereKeyNot($product->id)
+                        ->exists()
+                ) {
+                    $product->forceFill(['slug' => $wanted])->save();
+                }
             } else {
                 $product = Product::query()->create($attributes + [
                     'slug' => $this->slug($portal['slug'] ?? null, $cdnflyPackageId),
@@ -175,6 +192,13 @@ class PackageProductLinker
         $text = trim((string) ($value ?? ''));
 
         return $text === '' ? null : $text;
+    }
+
+    private function badge(mixed $value): ?string
+    {
+        $badge = strtolower(trim((string) ($value ?? '')));
+
+        return in_array($badge, ['recommend', 'custom'], true) ? $badge : null;
     }
 
     /**

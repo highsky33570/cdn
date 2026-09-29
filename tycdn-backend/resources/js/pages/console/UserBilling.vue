@@ -88,6 +88,7 @@ const total = ref(0);
 const productCatalog = ref<LocalBillingProduct[]>([]);
 const products = ref<LocalBillingProduct[]>([]);
 const services = ref<SubscriptionRow[]>([]);
+const hasActiveSubscription = ref(false);
 const trafficPacks = ref<CdnflyRecord[]>([]);
 const userPackages = ref<CdnflyRecord[]>([]);
 
@@ -206,7 +207,10 @@ async function loadProducts(): Promise<void> {
     errorMessage.value = '';
 
     try {
-        const result = await ensureProductsLoaded();
+        const [result] = await Promise.all([
+            ensureProductsLoaded(),
+            refreshActiveSubscriptionGate(),
+        ]);
         const search = filters.search.trim().toLowerCase();
         const visible =
             search === ''
@@ -225,6 +229,35 @@ async function loadProducts(): Promise<void> {
         errorMessage.value = getErrorMessage(error);
     } finally {
         loading.value = false;
+    }
+}
+
+async function refreshActiveSubscriptionGate(): Promise<void> {
+    try {
+        const [localResult, cdnflyResult] = await Promise.allSettled([
+            listBillingServiceInstances({ page: 1, per_page: 50 }),
+            listUserPackages({ page: 1, limit: 50 }),
+        ]);
+
+        const localActive =
+            localResult.status === 'fulfilled'
+                ? localResult.value.items.some((service) =>
+                      ['active', 'provisioning'].includes(
+                          String(service.status).toLowerCase(),
+                      ),
+                  )
+                : false;
+
+        const cdnflyActive =
+            cdnflyResult.status === 'fulfilled'
+                ? extractCdnflyRows(cdnflyResult.value).some((row) =>
+                      usageActive(row),
+                  )
+                : false;
+
+        hasActiveSubscription.value = localActive || cdnflyActive;
+    } catch {
+        // Soft-fail: backend still enforces the rule at checkout.
     }
 }
 
@@ -292,6 +325,9 @@ async function loadServices(targetPage = page.value): Promise<void> {
         );
 
         services.value = [...cdnflyServices, ...localOnly];
+        hasActiveSubscription.value = services.value.some((service) =>
+            subscriptionIsActive(service),
+        );
         total.value =
             normalizedSearch === ''
                 ? (cdnflyResult.status === 'fulfilled'
@@ -768,6 +804,15 @@ function maybeOpenProductFromQuery(): void {
 }
 
 function openPurchaseDialog(product?: LocalBillingProduct): void {
+    if (hasActiveSubscription.value) {
+        formError.value =
+            '您已有生效中的套餐，请续费或升级现有套餐，无法同时购买多个套餐。';
+        errorMessage.value = formError.value;
+        toast.error(formError.value);
+
+        return;
+    }
+
     selectedProduct.value = product ?? null;
     renewalService.value = null;
     form.product_id = product ? String(product.id) : '';
@@ -985,9 +1030,10 @@ function trafficPackMetric(record: CdnflyRecord): string {
                     <Button
                         v-if="props.view === 'subscriptions'"
                         class="w-fit"
+                        :disabled="hasActiveSubscription"
                         @click="goToPackagePurchase"
                     >
-                        购买套餐
+                        {{ hasActiveSubscription ? '已有生效套餐' : '购买套餐' }}
                     </Button>
                     <CardTitle v-else class="text-base">{{ title }}</CardTitle>
                     <div
@@ -1036,10 +1082,15 @@ function trafficPackMetric(record: CdnflyRecord): string {
                             v-if="props.view === 'packages'"
                             type="button"
                             variant="outline"
+                            :disabled="hasActiveSubscription"
                             @click="openPurchaseDialog()"
                         >
                             <ShoppingCart data-icon="inline-start" />
-                            手动购买
+                            {{
+                                hasActiveSubscription
+                                    ? '已有生效套餐'
+                                    : '手动购买'
+                            }}
                         </Button>
                     </div>
                 </form>
@@ -1395,6 +1446,9 @@ function trafficPackMetric(record: CdnflyRecord): string {
                                             <Button
                                                 variant="outline"
                                                 size="sm"
+                                                :disabled="
+                                                    hasActiveSubscription
+                                                "
                                                 @click="
                                                     openPurchaseDialog(product)
                                                 "
@@ -1402,7 +1456,11 @@ function trafficPackMetric(record: CdnflyRecord): string {
                                                 <ShoppingCart
                                                     data-icon="inline-start"
                                                 />
-                                                购买
+                                                {{
+                                                    hasActiveSubscription
+                                                        ? '已有套餐'
+                                                        : '购买'
+                                                }}
                                             </Button>
                                         </div>
                                     </td>

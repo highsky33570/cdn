@@ -518,6 +518,7 @@ class AdminController extends Controller
                 'currency' => $product->currency,
                 'is_active' => (bool) $product->is_active,
                 'sort_order' => (int) $product->sort_order,
+                'badge' => $product->badge,
                 'features' => $product->features ?? [],
             ];
         }
@@ -548,7 +549,7 @@ class AdminController extends Controller
             'ok' => true,
             'data' => $product->only([
                 'id', 'slug', 'name', 'price_monthly', 'price_quarterly',
-                'price_yearly', 'currency', 'is_active', 'sort_order',
+                'price_yearly', 'currency', 'is_active', 'sort_order', 'badge',
             ]),
         ]);
     }
@@ -574,6 +575,7 @@ class AdminController extends Controller
             'portal.price_yearly' => ['nullable', 'numeric', 'min:0', 'max:99999999'],
             'portal.currency' => ['nullable', 'string', 'size:3'],
             'portal.sort_order' => ['nullable', 'integer', 'min:0', 'max:9999'],
+            'portal.badge' => ['nullable', 'string', 'in:recommend,custom'],
             'portal.is_active' => ['nullable', 'boolean'],
             'portal.features' => ['nullable', 'array', 'max:20'],
             'portal.features.*' => ['string', 'max:100'],

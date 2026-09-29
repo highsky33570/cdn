@@ -103,6 +103,7 @@ export interface AdminPackageProduct {
     currency: string;
     is_active: boolean;
     sort_order: number;
+    badge?: string | null;
     features: string[];
 }
 

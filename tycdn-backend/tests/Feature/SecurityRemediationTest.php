@@ -61,9 +61,9 @@ class SecurityRemediationTest extends TestCase
                 'status_code' => 200,
                 'data' => [
                     'trade_id' => 'TRADE-1',
-                    'amount' => 19.98,
+                    'amount' => 9.99,
                     'currency' => 'usd',
-                    'actual_amount' => 19.98,
+                    'actual_amount' => 9.99,
                     'receive_address' => 'TEpusdtPayAddress',
                     'token' => 'usdt',
                     'payment_url' => 'https://pay.example.test/checkout/TRADE-1',
@@ -87,20 +87,21 @@ class SecurityRemediationTest extends TestCase
         $response = $this->actingAs($user)->postJson('/api/payments/epusdt/create', [
             'product_id' => $product->id,
             'billing_cycle' => 'monthly',
-            'quantity' => 2,
+            'quantity' => 1,
             'user_id' => $otherUser->id,
             'fiat_amount' => 0.01,
         ]);
 
         $response
             ->assertCreated()
-            ->assertJsonPath('data.amount', 19.98);
+            ->assertJsonPath('data.amount', 9.99);
 
         $this->assertDatabaseHas('orders', [
             'user_id' => $user->id,
             'product_id' => $product->id,
-            'fiat_amount' => 19.98,
-            'gateway_amount' => 19.98,
+            'fiat_amount' => 9.99,
+            'gateway_amount' => 9.99,
+            'quantity' => 1,
         ]);
 
         Http::assertSent(function ($request) {

@@ -265,6 +265,15 @@ body .arco-btn-text:not(.arco-btn-disabled):hover {
   border-color: var(--accent-hover);
   background: var(--accent-hover);
 }
+.button--accent {
+  border-color: #9ad000;
+  background: #b7f000;
+  color: #111;
+}
+.button--accent:hover {
+  border-color: #8bc000;
+  background: #a8e000;
+}
 .button:disabled {
   opacity: 0.55;
   cursor: not-allowed;

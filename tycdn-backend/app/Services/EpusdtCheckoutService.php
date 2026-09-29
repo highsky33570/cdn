@@ -24,7 +24,7 @@ class EpusdtCheckoutService
             'product_id' => ['required', 'integer'],
             'order_type' => ['nullable', 'string', 'max:20'],
             'billing_cycle' => ['nullable', 'string', 'in:month,quarter,year,monthly,quarterly,yearly'],
-            'quantity' => ['nullable', 'integer', 'min:1'],
+            'quantity' => ['nullable', 'integer', 'min:1', 'max:1'],
             'service_instance_id' => ['nullable', 'integer'],
             'fiat_currency' => ['nullable', 'string', 'max:10', 'regex:/^[A-Za-z]{3,10}$/'],
         ];
@@ -42,8 +42,18 @@ class EpusdtCheckoutService
             ->firstOrFail();
 
         $orderType = $this->normalizeOrderType((string) ($validated['order_type'] ?? 'new'));
-        $quantity = max(1, (int) ($validated['quantity'] ?? 1));
+        // One package per order — stacking quantity would create parallel tiers.
+        $quantity = 1;
         $billingCycle = $this->normalizeBillingCycle((string) ($validated['billing_cycle'] ?? 'monthly'));
+
+        // One live subscription only. Renew/upgrade the existing package;
+        // buying a second tier beside it is not allowed.
+        if ($orderType === 'new' && app(UserActiveSubscription::class)->hasActive($user)) {
+            throw ValidationException::withMessages([
+                'product_id' => '您已有生效中的套餐，请续费或升级现有套餐，无法同时购买多个套餐。',
+            ]);
+        }
+
         $quote = app(ProductPricingService::class)->quote($product, $billingCycle, $quantity);
         $serviceInstance = $this->resolveTargetServiceInstance($user, $product, $validated, $orderType);
 
