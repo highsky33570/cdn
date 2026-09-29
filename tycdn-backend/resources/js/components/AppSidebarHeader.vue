@@ -149,7 +149,7 @@ const effectiveBreadcrumbs = computed(() => {
         return [
             {
                 title: path.startsWith('/console/admin')
-                    ? '全局管理'
+                    ? '管理控制台'
                     : '个人控制台',
                 href: path.startsWith('/console/admin')
                     ? '/console/admin'

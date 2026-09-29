@@ -14,6 +14,7 @@ import {
     SidebarMenuItem,
     SidebarRail,
 } from '@/components/ui/sidebar';
+import { useCurrentUrl } from '@/composables/useCurrentUrl';
 import {
     mainNavItems,
     adminNavItems,
@@ -22,13 +23,16 @@ import {
 import type { User } from '@/types';
 
 const page = usePage();
+const { currentUrl } = useCurrentUrl();
 const user = computed(() => page.props.auth.user as User);
 const isAdmin = computed(
     () => user.value.is_admin === true || user.value.role === 'admin',
 );
 
+// Prefer the pathname helper so query strings / absolute URLs cannot leave
+// this stuck on the admin label after switching to the personal console.
 const adminScope = computed(
-    () => isAdmin.value && page.url.startsWith('/console/admin'),
+    () => isAdmin.value && currentUrl.value.startsWith('/console/admin'),
 );
 </script>
 
@@ -55,7 +59,7 @@ const adminScope = computed(
         <SidebarContent>
             <NavMain
                 :key="adminScope ? 'admin' : 'user'"
-                :label="adminScope ? '全局管理' : '个人控制台'"
+                :label="adminScope ? '管理控制台' : '个人控制台'"
                 :items="adminScope ? adminNavItems : mainNavItems"
             />
         </SidebarContent>
@@ -82,7 +86,9 @@ const adminScope = computed(
                 v-if="isAdmin"
                 :href="adminScope ? '/console' : '/console/admin'"
                 class="m-2 rounded-lg border px-3 py-2 text-center text-sm text-primary group-data-[collapsible=icon]:hidden"
-                >{{ adminScope ? '切换到个人控制台' : '切换到全局管理' }}</Link
+                >{{
+                    adminScope ? '切换到个人控制台' : '切换到管理控制台'
+                }}</Link
             >
         </SidebarFooter>
 
