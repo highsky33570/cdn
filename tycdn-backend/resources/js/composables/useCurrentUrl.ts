@@ -22,34 +22,44 @@ export type UseCurrentUrlReturn = {
     ) => T | F;
 };
 
-function pathnameOf(url: string): string {
-    try {
-        return new URL(
-            url,
-            typeof window !== 'undefined'
-                ? window.location.origin
-                : 'http://localhost',
-        ).pathname;
-    } catch {
-        return String(url).split('?')[0] || '/';
+function pathnameOf(url: unknown): string {
+    if (typeof window !== 'undefined' && (url === null || url === undefined || url === '')) {
+        return window.location.pathname;
     }
+
+    if (typeof URL !== 'undefined' && url instanceof URL) {
+        return url.pathname;
+    }
+
+    if (typeof url === 'string' && url !== '') {
+        try {
+            return new URL(
+                url,
+                typeof window !== 'undefined'
+                    ? window.location.origin
+                    : 'http://localhost',
+            ).pathname;
+        } catch {
+            return url.split('?')[0] || '/';
+        }
+    }
+
+    if (url && typeof url === 'object' && 'pathname' in url) {
+        return String((url as { pathname: unknown }).pathname || '/');
+    }
+
+    return typeof window !== 'undefined' ? window.location.pathname : '/';
 }
 
 const page = usePage();
 
 /**
- * Layout chrome (sidebar, nav active state) can miss Inertia page.url updates
- * across soft navigations — the switch button stayed on the previous console
- * until a full refresh. Keep an explicit path ref in sync with router events
- * and the page URL so scope flips immediately.
+ * Layout chrome can miss soft-navigation URL updates. Keep an explicit path
+ * ref synced from router visit events and window.location.
  */
-const pathRef = ref(
-    pathnameOf(
-        typeof window !== 'undefined' ? window.location.pathname : page.url || '/',
-    ),
-);
+const pathRef = ref(pathnameOf(null));
 
-function syncPath(url: string): void {
+function syncPath(url?: unknown): void {
     const next = pathnameOf(url);
 
     if (pathRef.value !== next) {
@@ -58,22 +68,27 @@ function syncPath(url: string): void {
 }
 
 watch(
-    () => page.url,
+    () => page.url as unknown,
     (url) => {
-        if (typeof url === 'string' && url !== '') {
-            syncPath(url);
-        }
+        syncPath(url);
     },
     { immediate: true },
 );
 
 if (typeof window !== 'undefined') {
+    router.on('before', (event) => {
+        syncPath(event.detail.visit.url);
+    });
     router.on('navigate', (event) => {
         syncPath(event.detail.page.url);
     });
     router.on('success', (event) => {
         syncPath(event.detail.page.url);
     });
+    router.on('finish', () => {
+        syncPath();
+    });
+    window.addEventListener('popstate', () => syncPath());
 }
 
 const currentUrlReactive = computed(() => pathRef.value);

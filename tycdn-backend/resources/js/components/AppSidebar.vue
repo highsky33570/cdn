@@ -1,7 +1,6 @@
 <script setup lang="ts">
-import { Link, usePage } from '@inertiajs/vue3';
-
-import { computed } from 'vue';
+import { Link, router, usePage } from '@inertiajs/vue3';
+import { computed, onMounted, onUnmounted, ref } from 'vue';
 import AppLogo from '@/components/AppLogo.vue';
 import NavMain from '@/components/NavMain.vue';
 import {
@@ -14,7 +13,6 @@ import {
     SidebarMenuItem,
     SidebarRail,
 } from '@/components/ui/sidebar';
-import { useCurrentUrl } from '@/composables/useCurrentUrl';
 import {
     mainNavItems,
     adminNavItems,
@@ -23,14 +21,62 @@ import {
 import type { User } from '@/types';
 
 const page = usePage();
-const { currentUrl } = useCurrentUrl();
 const user = computed(() => page.props.auth.user as User);
 const isAdmin = computed(
     () => user.value.is_admin === true || user.value.role === 'admin',
 );
 
+function pathnameOf(url: unknown): string {
+    if (typeof window !== 'undefined' && (url === null || url === undefined || url === '')) {
+        return window.location.pathname;
+    }
+
+    if (typeof URL !== 'undefined' && url instanceof URL) {
+        return url.pathname;
+    }
+
+    if (typeof url === 'string' && url !== '') {
+        try {
+            return new URL(
+                url,
+                typeof window !== 'undefined'
+                    ? window.location.origin
+                    : 'http://localhost',
+            ).pathname;
+        } catch {
+            return url.split('?')[0] || '/';
+        }
+    }
+
+    if (url && typeof url === 'object' && 'pathname' in url) {
+        return String((url as { pathname: unknown }).pathname || '/');
+    }
+
+    return typeof window !== 'undefined' ? window.location.pathname : '/';
+}
+
+function pathIsAdmin(path: string): boolean {
+    return path === '/console/admin' || path.startsWith('/console/admin/');
+}
+
+/**
+ * Own the console mode in this sidebar. Deriving only from Inertia page.url
+ * left the switch label stuck on “个人” after soft-navigating to /console
+ * (nav could remount while the label lagged). Flip optimistically on click and
+ * re-sync from visit/router/window location.
+ */
+const path = ref(pathnameOf(null));
+
+function syncPath(url?: unknown): void {
+    const next = pathnameOf(url);
+
+    if (path.value !== next) {
+        path.value = next;
+    }
+}
+
 const adminScope = computed(
-    () => isAdmin.value && currentUrl.value.startsWith('/console/admin'),
+    () => isAdmin.value && pathIsAdmin(path.value),
 );
 
 const switchHref = computed(() =>
@@ -39,6 +85,48 @@ const switchHref = computed(() =>
 const switchLabel = computed(() =>
     adminScope.value ? '切换到个人控制台' : '切换到管理控制台',
 );
+
+function onSwitchClick(): void {
+    // Immediate flip so the label never waits on the Inertia round-trip.
+    path.value = adminScope.value ? '/console' : '/console/admin';
+}
+
+const cleanups: Array<() => void> = [];
+
+onMounted(() => {
+    syncPath();
+
+    cleanups.push(
+        router.on('before', (event) => {
+            syncPath(event.detail.visit.url);
+        }),
+    );
+    cleanups.push(
+        router.on('navigate', (event) => {
+            syncPath(event.detail.page.url);
+        }),
+    );
+    cleanups.push(
+        router.on('success', (event) => {
+            syncPath(event.detail.page.url);
+        }),
+    );
+    cleanups.push(
+        router.on('finish', () => {
+            syncPath();
+        }),
+    );
+
+    const onPopState = () => syncPath();
+    window.addEventListener('popstate', onPopState);
+    cleanups.push(() => window.removeEventListener('popstate', onPopState));
+});
+
+onUnmounted(() => {
+    while (cleanups.length > 0) {
+        cleanups.pop()?.();
+    }
+});
 </script>
 
 <template>
@@ -89,8 +177,10 @@ const switchLabel = computed(() =>
             </details>
             <Link
                 v-if="isAdmin"
+                :key="switchLabel"
                 :href="switchHref"
                 class="m-2 rounded-lg border px-3 py-2 text-center text-sm text-primary group-data-[collapsible=icon]:hidden"
+                @click="onSwitchClick"
                 >{{ switchLabel }}</Link
             >
         </SidebarFooter>
