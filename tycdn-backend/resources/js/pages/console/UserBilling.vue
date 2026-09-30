@@ -1021,6 +1021,7 @@ function trafficPackMetric(record: CdnflyRecord): string {
         <Card
             :class="{
                 'ruiyi-subscriptions': props.view === 'subscriptions',
+                'billing-packages': props.view === 'packages',
             }"
         >
             <CardHeader class="space-y-4">

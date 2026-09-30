@@ -450,6 +450,12 @@
     background: hsl(210 50% 98%);
 }
 
+/* Catalog rows are not selectable — only the action button should react to
+ * hover. Global tr:hover made “已有套餐/购买” look like a full-row select. */
+.console-shell .billing-packages tbody tr:hover {
+    background: transparent;
+}
+
 /* Master-style resource rankings share six columns across every dimension. */
 .console-shell .analytics-ranking-panel,
 .console-shell .analytics-ranking-table-card {
@@ -516,6 +522,10 @@
 
 .dark .console-shell tbody tr:hover {
     background: hsl(211 25% 17%);
+}
+
+.dark .console-shell .billing-packages tbody tr:hover {
+    background: transparent;
 }
 
 .console-shell [role='dialog'] {
