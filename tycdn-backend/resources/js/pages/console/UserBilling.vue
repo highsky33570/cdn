@@ -1031,10 +1031,9 @@ function trafficPackMetric(record: CdnflyRecord): string {
                     <Button
                         v-if="props.view === 'subscriptions'"
                         class="w-fit"
-                        :disabled="hasActiveSubscription"
                         @click="goToPackagePurchase"
                     >
-                        {{ hasActiveSubscription ? '已有生效套餐' : '购买套餐' }}
+                        购买套餐
                     </Button>
                     <CardTitle v-else class="text-base">{{ title }}</CardTitle>
                     <div
@@ -1083,15 +1082,10 @@ function trafficPackMetric(record: CdnflyRecord): string {
                             v-if="props.view === 'packages'"
                             type="button"
                             variant="outline"
-                            :disabled="hasActiveSubscription"
                             @click="openPurchaseDialog()"
                         >
                             <ShoppingCart data-icon="inline-start" />
-                            {{
-                                hasActiveSubscription
-                                    ? '已有生效套餐'
-                                    : '手动购买'
-                            }}
+                            手动购买
                         </Button>
                     </div>
                 </form>
@@ -1447,9 +1441,6 @@ function trafficPackMetric(record: CdnflyRecord): string {
                                             <Button
                                                 variant="outline"
                                                 size="sm"
-                                                :disabled="
-                                                    hasActiveSubscription
-                                                "
                                                 @click="
                                                     openPurchaseDialog(product)
                                                 "
@@ -1457,11 +1448,7 @@ function trafficPackMetric(record: CdnflyRecord): string {
                                                 <ShoppingCart
                                                     data-icon="inline-start"
                                                 />
-                                                {{
-                                                    hasActiveSubscription
-                                                        ? '已有套餐'
-                                                        : '购买'
-                                                }}
+                                                购买
                                             </Button>
                                         </div>
                                     </td>
