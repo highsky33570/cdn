@@ -35,6 +35,13 @@ trait ReportsCdnflyFailures
     {
         $upstream = trim($e->getMessage());
 
+        // Service layer wraps CDNfly's short text as
+        // "CDNfly admin delete cert failed: 请先禁用再删除". Strip the wrapper so
+        // the dialog shows the actionable reason, not our internal context label.
+        if (preg_match('/^CDNfly .+? failed:\s*(.+)$/s', $upstream, $matches) === 1) {
+            $upstream = trim($matches[1]);
+        }
+
         Log::warning('CDNfly request failed', [
             'context' => $context,
             'error' => $upstream,

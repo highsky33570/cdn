@@ -1005,22 +1005,20 @@ class CdnflyApiService
     public function createCert(User $user, array $data): array
     {
         $response = $this->userHttp($user)->post('/v1/certs', $data);
+        $body = $this->parseResponse($response, 'create cert');
+        $this->assertCertCreateReturnedId($body, 'create cert');
 
-        return $this->parseResponse($response, 'create cert');
+        return $body;
     }
 
     public function updateCert(User $user, int $certId, array $data): array
     {
-        $response = $this->userHttp($user)->put("/v1/certs/{$certId}", $data);
-
-        return $this->parseResponse($response, 'update cert');
+        return $this->writeCert($this->userHttp($user), $certId, $data, 'update cert');
     }
 
     public function deleteCert(User $user, int $certId): array
     {
-        $response = $this->userHttp($user)->delete("/v1/certs/{$certId}");
-
-        return $this->parseResponse($response, 'delete cert');
+        return $this->deleteCertAfterDisable($this->userHttp($user), $certId, 'delete cert');
     }
 
     public function listSiteGroups(User $user, array $params = []): array
@@ -1396,24 +1394,107 @@ class CdnflyApiService
     {
         $this->ensureOutboundEnabled('admin create cert');
         $response = $this->adminHttp()->post('/v1/certs', $data);
+        $body = $this->parseResponse($response, 'admin create cert');
+        $this->assertCertCreateReturnedId($body, 'admin create cert');
 
-        return $this->parseResponse($response, 'admin create cert');
+        return $body;
     }
 
     public function adminUpdateCert(int $id, array $data): array
     {
         $this->ensureOutboundEnabled('admin update cert');
-        $response = $this->adminHttp()->put("/v1/certs/{$id}", $data);
 
-        return $this->parseResponse($response, 'admin update cert');
+        return $this->writeCert($this->adminHttp(), $id, $data, 'admin update cert');
     }
 
     public function adminDeleteCert(int $id): array
     {
         $this->ensureOutboundEnabled('admin delete cert');
-        $response = $this->adminHttp()->delete("/v1/certs/{$id}");
 
-        return $this->parseResponse($response, 'admin delete cert');
+        return $this->deleteCertAfterDisable($this->adminHttp(), $id, 'admin delete cert');
+    }
+
+    /**
+     * CDNfly returns code 0 with data "1" (string id) on a real create. A soft
+     * no-op still says 「证书添加成功」but data is "0"/empty — treat that as failure.
+     *
+     * @param  array<string, mixed>  $body
+     */
+    private function assertCertCreateReturnedId(array $body, string $context): void
+    {
+        $id = data_get($body, 'data');
+
+        if ($id === null || $id === '' || $id === '0' || $id === 0) {
+            throw new \RuntimeException(
+                "CDNfly {$context} failed: 证书添加失败（主控未返回有效证书 ID）",
+            );
+        }
+    }
+
+    /**
+     * Enable/disable must go through PUT /v1/certs as a JSON array (panel contract).
+     * Single-resource PUT often returns 「更新证书成功」without changing enable.
+     * Always send version when the master provides one, then re-read to confirm.
+     *
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
+    private function writeCert(PendingRequest $http, int $id, array $data, string $context): array
+    {
+        $current = $this->parseResponse($http->get("/v1/certs/{$id}"), "{$context} get");
+        $cert = is_array($current['data'] ?? null) ? $current['data'] : [];
+
+        if (! array_key_exists('version', $data) && isset($cert['version'])) {
+            $data['version'] = (int) $cert['version'];
+        }
+
+        if (array_key_exists('enable', $data)) {
+            $enable = ((int) $data['enable']) === 1 ? 1 : 0;
+            $item = array_merge($data, [
+                'id' => $id,
+                'enable' => $enable,
+            ]);
+            // Docs: batch modify is PUT /v1/certs with [{id, enable, ...}].
+            $body = $this->parseResponse(
+                $http->put('/v1/certs', [$item]),
+                $context,
+            );
+            $after = $this->parseResponse($http->get("/v1/certs/{$id}"), "{$context} verify");
+            $actual = (int) data_get($after, 'data.enable', -1);
+            if ($actual !== $enable) {
+                throw new \RuntimeException(
+                    "CDNfly {$context} failed: 证书状态未变更。若有站点正在使用该证书请先解绑；否则请检查主控证书写入是否异常。",
+                );
+            }
+
+            return $body;
+        }
+
+        return $this->parseResponse(
+            $http->put("/v1/certs/{$id}", $data),
+            $context,
+        );
+    }
+
+    /**
+     * CDNfly refuses to delete an enabled cert ("请先禁用再删除"). Disable first
+     * (and verify), then delete — same pattern as line assignments.
+     *
+     * @return array<string, mixed>
+     */
+    private function deleteCertAfterDisable(PendingRequest $http, int $id, string $context): array
+    {
+        $current = $this->parseResponse($http->get("/v1/certs/{$id}"), "{$context} get");
+        $enable = (int) data_get($current, 'data.enable', 1);
+
+        if ($enable === 1) {
+            $this->writeCert($http, $id, ['enable' => 0], str_replace('delete', 'update', $context));
+        }
+
+        return $this->parseResponse(
+            $http->delete("/v1/certs/{$id}"),
+            $context,
+        );
     }
 
     // ─── Admin: DNS APIs (global) ─────────────────────────────
